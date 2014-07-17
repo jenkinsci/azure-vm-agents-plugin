@@ -17,9 +17,6 @@ package com.microsoftopentechnologies.azure;
 
 import hudson.model.Descriptor.FormException;
 import hudson.model.Hudson;
-import hudson.model.User;
-import hudson.util.FormValidation;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,9 +48,6 @@ import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
-import jenkins.security.ApiTokenProperty;
-
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.xml.sax.SAXException;
@@ -77,7 +71,6 @@ import com.microsoft.windowsazure.management.compute.models.HostedServicePropert
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineOSImageGetResponse;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineOSImageListResponse.VirtualMachineOSImage;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineVMImageListResponse.VirtualMachineVMImage;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceCheckNameAvailabilityResponse;
 import com.microsoft.windowsazure.management.compute.models.InputEndpoint;
 import com.microsoft.windowsazure.management.compute.models.InstanceEndpoint;
 import com.microsoft.windowsazure.management.compute.models.OSVirtualHardDisk;
@@ -562,6 +555,7 @@ public class AzureManagementServiceDelegate {
 				certParams.setThumbprint(certMap.get("thumbPrint"));
 				certParams.setThumbprintAlgorithm(certMap.get("certAlg"));
 				ServiceCertificateGetResponse resp = client.getServiceCertificatesOperations().get(certParams);
+				//TODO: add additional checks for certificate support
 				exists = true;
 			}
 		} catch (Exception e) {
@@ -1423,7 +1417,7 @@ public class AzureManagementServiceDelegate {
 	private static String getCustomImageStorageAccountName(URI uri) {
 		String storageAccountName = null;
 		LOGGER.info("AzureManagementServiceDelegate: getCustomImageStorageAccountName: mediaLinkURL is "+uri);
-		if (uri == null){
+		if (uri != null){
 			storageAccountName = uri.getHost().substring(0, uri.getHost().indexOf("."));
 		}
 		LOGGER.info("AzureManagementServiceDelegate: getCustomImageStorageAccountName: storage account name is "+storageAccountName);
