@@ -1,0 +1,93 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+		<table width="100%">
+			<f:section title="${%General_Configuration}">
+				<f:entry title="${%Template_Name}" field="templateName" help="/plugin/azure-slave-plugin/help-templateName.html">
+					<f:textbox />
+				</f:entry>  
+		 	 
+				<f:entry title="${%Template_Description}" field="templateDesc" help="/plugin/azure-slave-plugin/help-templateDesc.html">
+					<f:textbox />
+				</f:entry>
+		 	 
+				<f:entry title="${%Labels}" field="labels" help="/plugin/azure-slave-plugin/help-labels.html">
+		    		<f:textbox />
+				</f:entry>
+		 	  
+				<f:entry title="${%Location}" field="location" help="/plugin/azure-slave-plugin/help-location.html">
+					<f:select />
+				</f:entry>
+		  
+				<f:entry title="${%Virtual_Machine_Size}" field="virtualMachineSize" help="/plugin/azure-slave-plugin/help-virtualMachineSize.html">
+					<f:select />
+		  	 	</f:entry>
+		  		
+				<f:entry title="${%Storage_Account_Name}" field="storageAccountName" help="/plugin/azure-slave-plugin/help-storageAccountName.html">
+					<f:textbox />
+		  		</f:entry>
+		  		
+		  		<f:entry title="${%RetentionTimeInMin}" field="retentionTimeInMin" help="/plugin/azure-slave-plugin/help-retentionTimeInMin.html">
+		    		<f:textbox default="60" />
+				</f:entry>
+				
+				<f:slave-mode name="useSlaveAlwaysIfAvail" node="${instance}" help="/plugin/azure-slave-plugin/help-slaveMode.html" default="EXCLUSIVE"/>
+			</f:section>
+		 	 
+			<f:section title="${%Image_Configuration}">
+				<f:entry title="${%Image_Family_Or_ID}" field="imageIdOrFamily" help="/plugin/azure-slave-plugin/help-imageIdOrFamily.html">
+					<f:combobox clazz="setting-input"/>
+				</f:entry>
+				
+				<f:entry title="${%Launch_Method}" field="slaveLaunchMethod" help="/plugin/azure-slave-plugin/help-slaveLaunchMethod.html">
+					<f:select />
+		  	 	</f:entry>
+		 	 
+				<f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-slave-plugin/help-initScript.html">
+					<f:textarea />
+				</f:entry>
+		 	 
+				<f:entry title="${%Username}" field="adminUserName" help="/plugin/azure-slave-plugin/help-adminUserName.html">
+					<f:textbox />
+				</f:entry>
+				
+				<f:entry title="${%Password}" field="adminPassword" help="/plugin/azure-slave-plugin/help-adminPassword.html">
+					<f:password />
+				</f:entry>
+			</f:section>
+		
+			<f:advanced>				 
+				<f:entry title="${%Slave_Workspace}" field="slaveWorkSpace" help="/plugin/azure-slave-plugin/help-slaveWorkSpace.html">
+					<f:textbox />
+				</f:entry>
+		    	
+		    	<f:entry title="${%JVM_Options}" field="jvmOptions" help="/plugin/azure-slave-plugin/help-jvmOptions.html">
+		    		<f:textbox />
+				</f:entry>
+				
+				<f:entry title="${%CloudServiceName}" field="cloudServiceName" help="/plugin/azure-slave-plugin/help-cloudServiceName.html">
+					<f:textbox />
+				</f:entry>
+
+				<f:entry title="${%noOfParallelJobs}" field="noOfParallelJobs" help="/plugin/azure-slave-plugin/help-noOfParallelJobs.html">
+					<f:textbox default="${descriptor.getDefaultNoOfExecutors()}" />
+				</f:entry>
+
+				<f:entry title="${%Template_Status}" field="templateStatus" help="/plugin/azure-slave-plugin/help-templateStatus.html">
+					<f:select />
+		  	 	</f:entry>
+		  	 	
+		  	 	<f:entry title="${%Template_Status_Details}" field="templateStatusDetails" help="/plugin/azure-slave-plugin/help-templateStatusDetails.html">
+					<f:textarea />
+		  	 	</f:entry>
+			</f:advanced>
+		  	<f:entry title="">
+				<div align="right">
+					<f:repeatableDeleteButton value="${%Delete_Template}" />
+				</div>
+			</f:entry>
+			<f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration" 
+			with="subscriptionId,serviceManagementCert,passPhrase,serviceManagementURL,maxVirtualMachinesLimit,templateName,labels,location,virtualMachineSize,storageAccountName,
+			noOfParallelJobs,imageIdOrFamily,slaveLaunchMethod,initScript,adminUserName,adminPassword,retentionTimeInMin,cloudServiceName,templateStatus,jvmOptions" />
+			
+		</table>
+</j:jelly>

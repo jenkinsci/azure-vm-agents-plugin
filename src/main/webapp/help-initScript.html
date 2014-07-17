@@ -1,0 +1,19 @@
+<div>
+<b>At a minimum, init script needs to install java runtime</b>.<br></br>
+	
+Custom prepared images are suggested if initialization script is taking more than 20 minutes.<br></br>
+ 
+Below are the examples of initialization scripts. </br></br>	
+1)	<b>Ubuntu</b></br>
+		&nbsp;&nbsp;&nbsp;&nbsp;# Install Java</br>
+		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update</br>
+		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br>
+		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update --fix-missing</br>
+		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br></br>		
+2)	For Windows slaves with JNLP launch, if no Init script is entered then plugin will execute default powershell script
+    which will work only if anonymous access is allowed for master machine. </br></br>
+
+       If your master machine is configured with security options, refer to script 
+       <a href="https://gist.github.com/snallami/5aa9ea2c57836a3b3635" target="_blank">https://gist.github.com/snallami/5aa9ea2c57836a3b3635</a>
+       and edit it accordingly. </br>
+</div>
