@@ -101,7 +101,7 @@ public class StorageServiceDelegate {
 	/**
 	 * This methods checks if service type URI present in the list and returns 
 	 * type specific URI back 
-	 * @param storageAccountURLs
+	 * @param config
 	 * @param storageAccountName
 	 * @param type
 	 * @return
@@ -217,7 +217,7 @@ public class StorageServiceDelegate {
 	 * @param storageAccountName
 	 * @param storageAccountKey
 	 * @param containerName
-	 * @param blobURL
+	 * @param strBlobURL
 	 * @return SAS URL
 	 * @throws Exception
 	 */
@@ -237,7 +237,7 @@ public class StorageServiceDelegate {
 		// At this point need to throw an error back since container itself did not exist.
 		if (!container.exists()) {
 			throw new AzureCloudException("StorageServiceDelegate: generateSASURL: Container " + containerName
-					+ " doesnot exist in storage account " + storageAccountName);
+					+ " does not exist in storage account " + storageAccountName);
 		}
 
 		SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy();

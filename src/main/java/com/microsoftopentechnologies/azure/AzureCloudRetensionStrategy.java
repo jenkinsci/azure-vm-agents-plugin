@@ -60,12 +60,12 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
                     LOGGER.info("AzureCloudRetensionStrategy: check: Idle timeout reached for slave: "+slaveNode.getName());
                     
                     int retryCount = 0;
-                    boolean successfull = false;
+                    boolean successful = false;
                     // Retrying for 30 times with 30 seconds wait time between each retry
-                    while (retryCount < 30 && !successfull) {
+                    while (retryCount < 30 && !successful) {
 	                    try {
 							slaveNode.getNode().idleTimeout();
-							successfull = true;
+							successful = true;
 						} catch (Exception e) {
 							retryCount++;
 							LOGGER.info("AzureCloudRetensionStrategy: check: Exception occured while calling timeout on node , \n"
