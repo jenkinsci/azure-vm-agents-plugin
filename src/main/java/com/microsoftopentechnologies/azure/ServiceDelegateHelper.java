@@ -39,6 +39,8 @@ import com.microsoft.windowsazure.management.ManagementService;
 import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
 import com.microsoft.windowsazure.management.compute.ComputeManagementService;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
+import com.microsoft.windowsazure.management.network.NetworkManagementClient;
+import com.microsoft.windowsazure.management.network.NetworkManagementService;
 import com.microsoft.windowsazure.management.storage.StorageManagementClient;
 import com.microsoft.windowsazure.management.storage.StorageManagementService;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
@@ -140,6 +142,19 @@ public class ServiceDelegateHelper {
 			 Thread.currentThread().setContextClassLoader(thread);
 		 }
 	}
+	
+	// Gets ManagementClient
+	public static NetworkManagementClient getNetworkManagementClient(Configuration config) {
+		 ClassLoader thread = Thread.currentThread().getContextClassLoader();
+		 Thread.currentThread().setContextClassLoader(AzureManagementServiceDelegate.class.getClassLoader());
+	
+		 try {
+			 return NetworkManagementService.create(config);
+		 } finally {
+			 Thread.currentThread().setContextClassLoader(thread);
+		 }
+	}
+
 
 	/**
 	 * Loads certificate into keystore and also creates keystore file in user home
