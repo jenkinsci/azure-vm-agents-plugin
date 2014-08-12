@@ -17,6 +17,7 @@ package com.microsoftopentechnologies.azure;
 
 import hudson.model.Descriptor.FormException;
 import hudson.model.Hudson;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +49,7 @@ import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.xml.sax.SAXException;
@@ -88,10 +90,15 @@ import com.microsoft.windowsazure.management.compute.models.VirtualMachineOSImag
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineRoleType;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineShutdownParameters;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineVMImageListResponse;
+import com.microsoft.windowsazure.management.models.AffinityGroupGetResponse;
 import com.microsoft.windowsazure.management.models.LocationsListResponse;
 import com.microsoft.windowsazure.management.models.LocationsListResponse.Location;
 import com.microsoft.windowsazure.management.models.RoleSizeListResponse;
 import com.microsoft.windowsazure.management.models.RoleSizeListResponse.RoleSize;
+import com.microsoft.windowsazure.management.network.NetworkManagementClient;
+import com.microsoft.windowsazure.management.network.models.NetworkListResponse;
+import com.microsoft.windowsazure.management.network.models.NetworkListResponse.Subnet;
+import com.microsoft.windowsazure.management.network.models.NetworkListResponse.VirtualNetworkSite;
 import com.microsoft.windowsazure.management.storage.StorageManagementClient;
 import com.microsoft.windowsazure.management.storage.StorageManagementService;
 import com.microsoft.windowsazure.management.storage.models.CheckNameAvailabilityResponse;
@@ -134,6 +141,20 @@ public class AzureManagementServiceDelegate {
 			Map<ImageProperties, String> imageProperties = getImageProperties(config, template.getImageIdOrFamily().trim());
 			LOGGER.info("AzureManagementServiceDelegate: createVirtualMachine: imageProperties "+imageProperties);
 			
+			// Get virtual network location
+			VirtualNetworkSite virtualNetworkSite  = getVirtualNetworkSite(config, template.getVirtualNetworkName());
+			String virtualNetworkLocation = null;
+			String affinityGroupName = null;
+			if (virtualNetworkSite != null) {
+				Subnet subnet = getSubnet(virtualNetworkSite, template.getSubnetName());
+				// set derived values back in template so that there won't be case sensitive issues.
+				template.setVirtualNetworkName(virtualNetworkSite.getName());
+				template.setSubnetName(subnet != null ? subnet.getName() : null);
+				virtualNetworkLocation = getVirtualNetworkLocation(config, virtualNetworkSite);
+				affinityGroupName = virtualNetworkSite.getAffinityGroup();
+			}
+			String resourceLocation = virtualNetworkLocation == null ? template.getLocation() : virtualNetworkLocation;
+			
 			String mediaURI = imageProperties.get(ImageProperties.MEDIAURI);
 			String customImageStorageAccountName = null ;
 			if (mediaURI != null) {
@@ -147,7 +168,7 @@ public class AzureManagementServiceDelegate {
 			// create storage account if required
 			if (customImageStorageAccountName == null && AzureUtil.isNull(template.getStorageAccountName()))  {
 				try {
-					String storageAccountName = createStorageAccount(config, template.getLocation());
+					String storageAccountName = createStorageAccount(config, resourceLocation, affinityGroupName);
 					template.setStorageAccountName(storageAccountName);
 				} catch(Exception e) {
 					template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
@@ -164,7 +185,7 @@ public class AzureManagementServiceDelegate {
 			int retryCount = 0;
 			
 			// Check if cloud service exists or not , if not create new one
-			if ((createCloudServiceIfNotExists(config, cloudServiceName, template.getLocation())) || (deploymentName == null) ) {
+			if ((createCloudServiceIfNotExists(config, cloudServiceName, resourceLocation, affinityGroupName)) || (deploymentName == null) ) {
 				deploymentName = cloudServiceName;
 				LOGGER.info("AzureManagementServiceDelegate: createVirtualMachine: Creating deployment " + deploymentName +
 						    " for cloud service " + cloudServiceName);
@@ -686,7 +707,7 @@ public class AzureManagementServiceDelegate {
 	 * @throws ExecutionException
 	 * @throws TransformerException
 	 */
-	private static boolean createCloudServiceIfNotExists(Configuration config, String cloudServiceName, String location) throws IOException,
+	private static boolean createCloudServiceIfNotExists(Configuration config, String cloudServiceName, String location, String affinityGroupName) throws IOException,
 			ServiceException, ParserConfigurationException, SAXException, AzureCloudException, URISyntaxException, InterruptedException,
 			ExecutionException, TransformerException {
 		ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
@@ -710,7 +731,10 @@ public class AzureManagementServiceDelegate {
 		HostedServiceCreateParameters params = new HostedServiceCreateParameters();
 		params.setServiceName(cloudServiceName);
 		params.setLabel(cloudServiceName);
-		params.setLocation(location);
+		if (affinityGroupName == null) 
+			params.setLocation(location);
+		else
+			params.setAffinityGroup(affinityGroupName);
 		client.getHostedServicesOperations().create(params);
 
 		LOGGER.info("AzureManagementServiceDelegate: createCloudServiceIfNotExists: Created new cloud service with name " + cloudServiceName);
@@ -839,7 +863,7 @@ public class AzureManagementServiceDelegate {
 
 		ArrayList<Role> roles = new ArrayList<Role>();
 		parameters.setRoles(roles);
-
+		
 		Role role = new Role();
 		roles.add(role);
 
@@ -870,7 +894,12 @@ public class AzureManagementServiceDelegate {
 		// set OS configuration params
 		configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
 		// set Network configuration set
-		configurationSets.add(getNetworkConfigurationSet(osType, template.getSlaveLaunchMethod()));
+		configurationSets.add(getNetworkConfigurationSet(osType, template));
+		
+		// set virtual network name
+		if (AzureUtil.isNotNull(template.getVirtualNetworkName())) {
+			parameters.setVirtualNetworkName(template.getVirtualNetworkName().trim());
+		}
 		return parameters;
 	}
 	
@@ -912,7 +941,12 @@ public class AzureManagementServiceDelegate {
 		// set OS configuration params
 		configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
 		// set Network configuration set
-		configurationSets.add(getNetworkConfigurationSet(osType, template.getSlaveLaunchMethod()));
+		configurationSets.add(getNetworkConfigurationSet(osType, template));
+		
+		// set virtual network name
+//		if (AzureUtil.isNotNull(template.getVirtualNetworkName())) {
+//			params.setVirtualNetworkName(template.getVirtualNetworkName().trim());
+//		}
 		return params;
 	}
 	
@@ -1000,9 +1034,9 @@ public class AzureManagementServiceDelegate {
 	}
 	
 	/** Prepares OS specific configuration 
-	 * @param slaveLaunchMethod 
+	 * @param template.getSlaveLaunchMethod() 
 	 * @param osType */
-	private static ConfigurationSet getNetworkConfigurationSet(String osType, String slaveLaunchMethod) {
+	private static ConfigurationSet getNetworkConfigurationSet(String osType, AzureSlaveTemplate template) {
 		ConfigurationSet networkConfigset = new ConfigurationSet();
 		networkConfigset.setConfigurationSetType(ConfigurationSetTypes.NETWORKCONFIGURATION);
 		// Define endpoints
@@ -1010,7 +1044,7 @@ public class AzureManagementServiceDelegate {
 		networkConfigset.setInputEndpoints(enpoints);
 		
 		// Add SSH endpoint if launch method is SSH
-		if (Constants.LAUNCH_METHOD_SSH.equalsIgnoreCase(slaveLaunchMethod)) {
+		if (Constants.LAUNCH_METHOD_SSH.equalsIgnoreCase(template.getSlaveLaunchMethod())) {
 			InputEndpoint sshPort = new InputEndpoint();
 			enpoints.add(sshPort);
 			sshPort.setName(Constants.EP_SSH_NAME);
@@ -1025,6 +1059,15 @@ public class AzureManagementServiceDelegate {
 			rdpPort.setName(Constants.EP_RDP_NAME);
 			rdpPort.setProtocol(Constants.PROTOCOL_TCP);
 			rdpPort.setLocalPort(Constants.DEFAULT_RDP_PORT);
+		}
+		
+		if (AzureUtil.isNotNull(template.getVirtualNetworkName()) && 
+				AzureUtil.isNotNull(template.getSubnetName())) {
+			ArrayList<String> subnetNames = new ArrayList<String>();
+			subnetNames.add(template.getSubnetName().trim());
+			
+			networkConfigset.setSubnetNames(subnetNames);
+			
 		}
 		
 		return networkConfigset;
@@ -1078,8 +1121,8 @@ public class AzureManagementServiceDelegate {
 		return storageAccounts;
 	}
 	
-	public static String createStorageAccount(Configuration config, String location) throws Exception {
-		LOGGER.info("AzureManagemenServiceDelegate: createStorageAccount: location "+location);
+	public static String createStorageAccount(Configuration config, String location, String affinityGroupName) throws Exception {
+		LOGGER.info("AzureManagemenServiceDelegate: createStorageAccount: location "+location+ " affinityGroup "+affinityGroupName);
 		StorageManagementClient client = StorageManagementService.create(config);
 		
 		// Prepare storage account create properties
@@ -1091,7 +1134,11 @@ public class AzureManagementServiceDelegate {
 		} while (!isStorageAccountNameAvailable(config, name));
 		
 		sacp.setName(name);
-		sacp.setLocation(location);
+		if (affinityGroupName == null) {
+			sacp.setLocation(location);
+		} else {
+			sacp.setAffinityGroup(affinityGroupName);
+		}
 		sacp.setLabel(name);
 		
 		OperationStatusResponse response = client.getStorageAccountsOperations().create(sacp);
@@ -1315,7 +1362,6 @@ public class AzureManagementServiceDelegate {
 	}
 	
 	public static Set<String> getVirtualImageFamilyList(Configuration config) throws Exception {
-		LOGGER.info ("AzureManagementServiceDelegate: getVirtualImageFamilyList: Getting VM Family list ");
 		Set<String> imageFamilies = new HashSet<String>();
 		
 		for (VirtualMachineOSImage image: getVirtualMachineOSImageList(config)) {
@@ -1490,6 +1536,74 @@ public class AzureManagementServiceDelegate {
 		LOGGER.severe("AzureManagementServiceDelegate: getImageProperties: Image information not found for "+imageIDOrFamily);
 		return null;
 	}
+	
+	/** Returns virtual network site properties */
+	private static VirtualNetworkSite getVirtualNetworkSite(Configuration config, String virtualNetworkName)  {
+		LOGGER.info("AzureManagementServiceDelegate: getVirtualNetworkInfo: virtualNetworkName is "+virtualNetworkName);
+		try {
+			NetworkManagementClient client = ServiceDelegateHelper.getNetworkManagementClient(config);
+			NetworkListResponse listResponse = client.getNetworksOperations().list();
+			
+			if (listResponse != null) {
+				ArrayList<VirtualNetworkSite> sites = listResponse.getVirtualNetworkSites();
+				
+				for (VirtualNetworkSite site : sites) {
+					if (virtualNetworkName.equalsIgnoreCase(site.getName())) {
+						return site;
+					}
+				}
+			}
+		} catch (Exception e) {
+			LOGGER.severe("AzureManagementServiceDelegate: getVirtualNetworkInfo: Got exception while getting virtual network info "+virtualNetworkName);
+		}
+			
+		return null;
+	}
+	
+	private static String getVirtualNetworkLocation(Configuration config, VirtualNetworkSite virtualNetworkSite) {
+		LOGGER.info("AzureManagementServiceDelegate: getVirtualNetworkLocation: virtualNetworkName is "+virtualNetworkSite.getName());
+		
+		if (virtualNetworkSite.getAffinityGroup() != null) {
+			return getAffinityGroupLocation(config, virtualNetworkSite.getAffinityGroup());
+		}/* currently virtual network site does not have location attribute
+		
+		 else if (virtualNetworkSite.getLocation() != null) {  
+			return virtualNetworkSite.getLocation();
+		} */
+		LOGGER.info("AzureManagementServiceDelegate: getVirtualNetworkLocation: returning null");
+		return null;
+	}
+	
+	private static Subnet getSubnet(VirtualNetworkSite virtualNetworkSite, String subnetName) {
+		if (AzureUtil.isNotNull(subnetName)) {
+			ArrayList<Subnet> subnets = virtualNetworkSite.getSubnets();
+			if (subnets != null) {
+				
+				boolean found = false;
+				for (Subnet subnet : subnets) {
+					if (subnet.getName().equalsIgnoreCase(subnetName)) {
+						return subnet;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static String getAffinityGroupLocation(Configuration config, String affinityGroup) {
+		LOGGER.info("AzureManagementServiceDelegate: getAffinityGroupLocation: affinityGroup is "+affinityGroup);
+		ManagementClient client = ServiceDelegateHelper.getManagementClient(config);
+		AffinityGroupGetResponse response;
+		
+		try {
+			response = client.getAffinityGroupsOperations().get(affinityGroup);
+			return response.getLocation();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		LOGGER.info("AzureManagementServiceDelegate: getAffinityGroupLocation: returning null");
+		return null;
+	}
     
 	/**
 	 * Verifies template configuration by making server calls if needed
@@ -1498,7 +1612,8 @@ public class AzureManagementServiceDelegate {
 	public static List<String> verifyTemplate(String subscriptionId, String serviceManagementCert, String passPhrase,
 			String serviceManagementURL, String maxVirtualMachinesLimit, String templateName, String labels, String location, String virtualMachineSize,
 			String storageAccountName, String noOfParallelJobs, String imageIdOrFamily, String slaveLaunchMethod, String initScript, String adminUserName,
-			String adminPassword, String retentionTimeInMin, String cloudServiceName,String templateStatus,String jvmOptions, boolean returnOnSingleError)  {
+			String adminPassword, String virtualNetworkName, String subnetName, String retentionTimeInMin, String cloudServiceName,String templateStatus,
+			String jvmOptions, boolean returnOnSingleError)  {
 		
 		List<String> errors = new ArrayList<String>();
 		Configuration config = null;
@@ -1560,14 +1675,15 @@ public class AzureManagementServiceDelegate {
 		}
 		
 		verifyTemplateAsync(config, templateName, maxVirtualMachinesLimit, cloudServiceName, location, 
-							imageIdOrFamily, slaveLaunchMethod, storageAccountName, errors, returnOnSingleError);
+							imageIdOrFamily, slaveLaunchMethod, storageAccountName, virtualNetworkName, subnetName, errors, returnOnSingleError);
 		
 		return errors;
 	}
 	
 	private static void verifyTemplateAsync(final Configuration config, final String templateName, final String maxVirtualMachinesLimit,
 			final String cloudServiceName, final String location, final String imageIdOrFamily, 
-			final String slaveLaunchMethod, final String storageAccountName, List<String> errors, boolean returnOnSingleError ) {
+			final String slaveLaunchMethod, final String storageAccountName, final String virtualNetworkName, 
+			final String subnetName, List<String> errors, boolean returnOnSingleError ) {
 		
 		List<Callable<String>> verificationTaskList = new ArrayList<Callable<String>>();
 		
@@ -1596,6 +1712,16 @@ public class AzureManagementServiceDelegate {
   	        }
 		};
 		verificationTaskList.add(callVerifyImageIdOrFamily);
+		
+		// Callable for virtual network.
+		Callable<String> callVerifyVirtualNetwork = new Callable<String>() {
+			public String call() throws Exception {
+				return verifyVirtualNetwork(config, virtualNetworkName, subnetName);
+  	        }
+		};
+		verificationTaskList.add(callVerifyVirtualNetwork);
+		
+		
 		
 		ExecutorService executorService = Executors.newFixedThreadPool(verificationTaskList.size());
     	
@@ -1793,6 +1919,35 @@ public class AzureManagementServiceDelegate {
 				}
 			}
 			return Constants.OP_SUCCESS;
+	}
+	
+	private static String verifyVirtualNetwork(Configuration config, String virtualNetworkName, String subnetName) {
+		if (AzureUtil.isNotNull(virtualNetworkName)) {
+			VirtualNetworkSite virtualNetworkSite = getVirtualNetworkSite(config, virtualNetworkName);
+		
+			if (virtualNetworkSite == null) {
+				return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName);
+			}
+			
+			if (AzureUtil.isNotNull(subnetName)) {
+				ArrayList<Subnet> subnets = virtualNetworkSite.getSubnets();
+				if (subnets != null) {
+					
+					boolean found = false;
+					for (Subnet subnet : subnets) {
+						if (subnet.getName().equalsIgnoreCase(subnetName)) {
+							found = true;
+							break;
+						}
+					}
+					
+					if (!found) {
+						return Messages.Azure_GC_Template_subnet_NotFound(subnetName);
+					}
+				}
+			}
+		}
+		return Constants.OP_SUCCESS;
 	}
 	
 	

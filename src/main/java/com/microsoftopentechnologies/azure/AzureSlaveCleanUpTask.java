@@ -33,8 +33,6 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 	}
 
 	public void execute(TaskListener arg0) throws IOException, InterruptedException {
-		LOGGER.info("AzureSlaveCleanUpTask: execute: start");
-		
 		for (Computer computer : Jenkins.getInstance().getComputers()) {
 			if (computer instanceof AzureComputer) {
 				AzureComputer azureComputer = (AzureComputer)computer;
@@ -80,7 +78,6 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 				}
 			}
 		}
-		LOGGER.info("AzureSlaveCleanUpTask: execute: end");
 	}
 
 	public long getRecurrencePeriod() {

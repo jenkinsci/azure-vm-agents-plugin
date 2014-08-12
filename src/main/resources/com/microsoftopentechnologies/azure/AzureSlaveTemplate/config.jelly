@@ -55,7 +55,15 @@
 				</f:entry>
 			</f:section>
 		
-			<f:advanced>				 
+			<f:advanced>
+				<f:entry title="${%VirtualNetwork_Name}" field="virtualNetworkName" help="/plugin/azure-slave-plugin/help-virtualNetworkName.html">
+					<f:textbox />
+				</f:entry>
+				
+				<f:entry title="${%Subnet_Name}" field="subnetName" help="/plugin/azure-slave-plugin/help-subnetName.html">
+					<f:textbox />
+				</f:entry>
+								 
 				<f:entry title="${%Slave_Workspace}" field="slaveWorkSpace" help="/plugin/azure-slave-plugin/help-slaveWorkSpace.html">
 					<f:textbox />
 				</f:entry>
@@ -87,7 +95,7 @@
 			</f:entry>
 			<f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration" 
 			with="subscriptionId,serviceManagementCert,passPhrase,serviceManagementURL,maxVirtualMachinesLimit,templateName,labels,location,virtualMachineSize,storageAccountName,
-			noOfParallelJobs,imageIdOrFamily,slaveLaunchMethod,initScript,adminUserName,adminPassword,retentionTimeInMin,cloudServiceName,templateStatus,jvmOptions" />
+			noOfParallelJobs,imageIdOrFamily,slaveLaunchMethod,initScript,adminUserName,adminPassword,virtualNetworkName,subnetName,retentionTimeInMin,cloudServiceName,templateStatus,jvmOptions" />
 			
 		</table>
 </j:jelly>

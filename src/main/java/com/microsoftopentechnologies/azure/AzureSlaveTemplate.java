@@ -79,6 +79,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 	private String adminPassword;
 	private String slaveWorkSpace;
 	private int retentionTimeInMin;
+	private String virtualNetworkName;
+	private String subnetName;
 	private String jvmOptions;
 	private String cloudServiceName;
 	private String templateStatus;
@@ -90,8 +92,9 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 	@DataBoundConstructor
 	public AzureSlaveTemplate(String templateName, String templateDesc, String labels, String location, String virtualMachineSize,
 			String storageAccountName, String noOfParallelJobs, Node.Mode useSlaveAlwaysIfAvail, String imageIdOrFamily, String slaveLaunchMethod,
-			String initScript, String adminUserName, String adminPassword, String slaveWorkSpace, String jvmOptions, String cloudServiceName,
-			String retentionTimeInMin, String templateStatus, String templateStatusDetails) {
+			String initScript, String adminUserName, String adminPassword, String virtualNetworkName, String subnetName,
+			String slaveWorkSpace, String jvmOptions, String cloudServiceName, String retentionTimeInMin, 
+			String templateStatus, String templateStatusDetails) {
 		this.templateName = templateName;
 		this.templateDesc = templateDesc;
 		this.labels = labels;
@@ -110,6 +113,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		this.slaveLaunchMethod = slaveLaunchMethod;
 		this.adminUserName = adminUserName;
 		this.adminPassword = adminPassword;
+		this.virtualNetworkName = virtualNetworkName;
+		this.subnetName = subnetName;
 		this.slaveWorkSpace = slaveWorkSpace;
 		this.jvmOptions = jvmOptions;
 		if (AzureUtil.isNull(retentionTimeInMin) || !retentionTimeInMin.matches(Constants.REG_EX_DIGIT)) {
@@ -178,7 +183,23 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 	public String getAdminPassword() {
 		return adminPassword;
 	}
+	
+	public String getVirtualNetworkName() {
+		return virtualNetworkName;
+	}
+	
+	public void setVirtualNetworkName(String virtualNetworkName) {
+		this.virtualNetworkName = virtualNetworkName;
+	}
+	
+	public String getSubnetName() {
+		return subnetName;
+	}
 
+	public void setSubnetName(String subnetName) {
+		this.subnetName = subnetName;
+	}
+	
 	public String getSlaveWorkSpace() {
 		return slaveWorkSpace;
 	}
@@ -298,8 +319,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		return AzureManagementServiceDelegate.verifyTemplate
 				(azureCloud.getSubscriptionId(), azureCloud.getServiceManagementCert(), azureCloud.getPassPhrase(), azureCloud.getServiceManagementURL(),
 				 azureCloud.getMaxVirtualMachinesLimit()+"", templateName, labels, location, virtualMachineSize, storageAccountName, noOfParallelJobs+"", 
-				 imageIdOrFamily,slaveLaunchMethod, initScript, adminUserName, adminPassword, retentionTimeInMin+"", cloudServiceName, 
-				 templateStatus, jvmOptions, true);
+				 imageIdOrFamily,slaveLaunchMethod, initScript, adminUserName, adminPassword, virtualNetworkName, subnetName,
+				 retentionTimeInMin+"", cloudServiceName, templateStatus, jvmOptions, true);
 	}
 
     @Extension
@@ -315,7 +336,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		private transient Map<String, Configuration> configObjectsMap = new HashMap<String, Configuration>();
 		
 		private synchronized List<String> getVMSizes(String subscriptionId, String serviceManagementCert, String passPhrase, String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: getVMSizes: start");
 			// check if there is entry already in map
 			List<String> vmSizes = vmSizesMap.get(subscriptionId+serviceManagementCert);
 			
@@ -339,7 +359,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		 }
 		
 		private List<String> getDefaultVMSizes(String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: getDefaultVMSizes: start");
 			List<String> vmSizes = new ArrayList<String>();
 			vmSizes.add("Basic_A1");
 			vmSizes.add("Basic_A0");
@@ -356,7 +375,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		}
 		
 		private synchronized List<String> getVMLocations(String subscriptionId, String serviceManagementCert, String passPhrase, String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: getVMLocations: start");
 			// check if there is entry already in map
 			List<String> locations = locationsMap.get(subscriptionId+serviceManagementCert);
 			
@@ -380,7 +398,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		 }
 		
 		private List<String> getDefaultLocations(String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: getDefaultLocations: start");
 			List<String> locations = new ArrayList<String>();
 			
 			if (serviceManagementURL != null && serviceManagementURL.toLowerCase().equalsIgnoreCase("china")) {
@@ -404,7 +421,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		}
 		
 		private synchronized Set<String> getImageFamilyList(String subscriptionId, String serviceManagementCert, String passPhrase, String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: getImageFamilyList: start");
 			// check if there is entry already in map
 			Set<String> imageFamilyList = imageFamilyListMap.get(subscriptionId+serviceManagementCert);
 			
@@ -425,7 +441,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		
 		
 		private Configuration getConfiguration(String subscriptionId, String serviceManagementCert, String passPhrase, String serviceManagementURL) throws IOException {
-			LOGGER.info("AzureSlaveTemplate: getConfiguration: start");
 			// check if there is an entry already in a map
 			Configuration config = configObjectsMap.get(subscriptionId+serviceManagementCert);
 			if (config != null ) {
@@ -444,7 +459,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 				@RelativePath("..") @QueryParameter String serviceManagementURL)
 				throws IOException, ServletException {
 			
-			LOGGER.info("AzureSlaveTemplate: doFillVirtualMachineSizeItems: start");
 			ListBoxModel model = new ListBoxModel();
 			// Validate data
 			if (AzureUtil.isNull(subscriptionId) || AzureUtil.isNull(serviceManagementCert)) {
@@ -470,7 +484,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 				@RelativePath("..") @QueryParameter String passPhrase,
 				@RelativePath("..") @QueryParameter String serviceManagementURL)
 				throws IOException, ServletException {
-			LOGGER.info("AzureSlaveTemplate: doFillLocationItems: start");
 			ListBoxModel model = new ListBoxModel();
 			// validate
 			if (AzureUtil.isNull(subscriptionId) || AzureUtil.isNull(serviceManagementCert)) {
@@ -491,7 +504,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		}
 		
 		public ListBoxModel doFillSlaveLaunchMethodItems() {
-			LOGGER.info("AzureSlaveTemplate: doFillSlaveLaunchMethod: start");
 			ListBoxModel model = new ListBoxModel();
 			model.add(Constants.LAUNCH_METHOD_SSH);
 			model.add(Constants.LAUNCH_METHOD_JNLP);
@@ -511,7 +523,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 				@RelativePath("..") @QueryParameter String serviceManagementCert,
 				@RelativePath("..") @QueryParameter String passPhrase,
 				@RelativePath("..") @QueryParameter String serviceManagementURL) {
-			LOGGER.info("AzureSlaveTemplate: doFillImageIdOrFamilyItems: start");
 			ComboBoxModel model = new ComboBoxModel();
 			
 			if (AzureUtil.isNull(subscriptionId) || AzureUtil.isNull(serviceManagementCert)) {
@@ -637,13 +648,15 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 				@QueryParameter String virtualMachineSize, @QueryParameter String storageAccountName,
 				@QueryParameter String noOfParallelJobs, @QueryParameter String imageIdOrFamily, @QueryParameter String slaveLaunchMethod,
 				@QueryParameter String initScript, @QueryParameter String adminUserName,
-				@QueryParameter String adminPassword, @QueryParameter String retentionTimeInMin, @QueryParameter String cloudServiceName,
+				@QueryParameter String adminPassword, @QueryParameter String virtualNetworkName, @QueryParameter String subnetName,
+				@QueryParameter String retentionTimeInMin, @QueryParameter String cloudServiceName,
 				@QueryParameter String templateStatus, @QueryParameter String jvmOptions) {
 			
 			List<String> errors = AzureManagementServiceDelegate.verifyTemplate(
 					subscriptionId, serviceManagementCert, passPhrase, serviceManagementURL, maxVirtualMachinesLimit,
 					templateName, labels, location, virtualMachineSize, storageAccountName, noOfParallelJobs, imageIdOrFamily,
-					slaveLaunchMethod, initScript, adminUserName, adminPassword, retentionTimeInMin, cloudServiceName,templateStatus,jvmOptions, false);
+					slaveLaunchMethod, initScript, adminUserName, adminPassword, virtualNetworkName, subnetName,
+					retentionTimeInMin, cloudServiceName,templateStatus,jvmOptions, false);
 			
 			
 			if (errors.size() > 0) {

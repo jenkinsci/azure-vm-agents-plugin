@@ -37,8 +37,6 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 	public long check(AzureComputer slaveNode) {
         // if idleTerminationMinutes is zero then it means that never terminate the slave instance 
 		if  (idleTerminationMinutes == 0) {
-			LOGGER.info("AzureCloudRetensionStrategy: check: Idle termination time for node is zero , "
-					+ "no need to terminate the slave "+slaveNode.getDisplayName());
         	return 1;
         }
 
