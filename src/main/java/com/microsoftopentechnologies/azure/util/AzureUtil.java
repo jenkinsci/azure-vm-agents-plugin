@@ -59,12 +59,6 @@ public class AzureUtil {
 		}
 		return buf.toString();
 	}
-
-	/** Returns next random integer */
-	public static int getRandonInt(int minRange, int maxRange) {
-		Random random = new Random();
-		return random.nextInt((maxRange - minRange) + 1) + minRange;
-	}
 	
 	/** Validates storage account name */
 	public static boolean validateStorageAccountName(String storageAccountName) {

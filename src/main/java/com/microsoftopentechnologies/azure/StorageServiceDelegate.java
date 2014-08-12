@@ -71,7 +71,7 @@ public class StorageServiceDelegate {
 			response = client.getStorageAccountsOperations().get(storageAccountName);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "+storageAccountName+ " doesnot exist");
+			throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "+storageAccountName+ " does not exist");
 		}
 		return response.getStorageAccount().getProperties().getEndpoints();
 	}
@@ -89,7 +89,7 @@ public class StorageServiceDelegate {
 		try {
 			response = client.getStorageAccountsOperations().get(storageAccountName);
 		} catch (Exception e) {
-			throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "+storageAccountName+ " doesnot exist");
+			throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "+storageAccountName+ " does not exist");
 		}
 	
 		StorageAccount sa = response.getStorageAccount();
@@ -115,7 +115,7 @@ public class StorageServiceDelegate {
 		ArrayList<URI> storageAccountURLs = getStorageAccountURIs(config, storageAccountName);
 		
 		if (storageAccountURLs == null || storageAccountURLs.size() == 0) {
-			LOGGER.info("StorageServiceDelegate: getStorageAccountURI: storageAccountURLs is null, returning dafault");
+			LOGGER.info("StorageServiceDelegate: getStorageAccountURI: storageAccountURLs is null, returning default");
 			//return default url
 			return defaultURL;		
 		}
@@ -129,7 +129,7 @@ public class StorageServiceDelegate {
 		
 		// This case may never happen - just cautious 
 		if (serviceURI == null || serviceURI.length() == 0) {
-			LOGGER.info("StorageServiceDelegate: getStorageAccountURI: serviceURI is null, returning dafault");
+			LOGGER.info("StorageServiceDelegate: getStorageAccountURI: serviceURI is null, returning default");
 			return defaultURL;
 		}
 		
@@ -258,7 +258,7 @@ public class StorageServiceDelegate {
 		String sas = container.generateSharedAccessSignature(policy, null);
 		strBlobURL = strBlobURL.replace("http://", "https://");
 
-		LOGGER.info("StorageServiceDelegate: generateSASURL: Sucessfully generated SAS url "+ strBlobURL + "?" + sas);
+		LOGGER.info("StorageServiceDelegate: generateSASURL: Successfully generated SAS url "+ strBlobURL + "?" + sas);
 		return strBlobURL + "?" + sas;
 	}
 }
