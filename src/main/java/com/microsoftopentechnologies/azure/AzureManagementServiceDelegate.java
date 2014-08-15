@@ -107,8 +107,10 @@ import com.microsoft.windowsazure.management.storage.models.StorageAccountCreate
 import com.microsoft.windowsazure.management.storage.models.StorageAccountListResponse;
 import com.microsoft.windowsazure.management.storage.models.StorageAccountProperties;
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
+import com.microsoftopentechnologies.azure.retry.ExponentialRetryStrategy;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 /**
  * Business delegate class which handles calls to Azure management service SDK.
  * @author Suresh Nallamilli (snallami@gmail.com)
@@ -237,7 +239,7 @@ public class AzureManagementServiceDelegate {
 			}
 			
 			// Reset template status if call is successful after retries
-			if (successful && Constants.TEMPLATE_STATUS_ACTIVE.equals(template.getTemplateStatus())) {
+			if (successful && Constants.TEMPLATE_STATUS_DISBALED.equals(template.getTemplateStatus())) {
 				template.setTemplateStatus(Constants.TEMPLATE_STATUS_ACTIVE);
 				template.setTemplateStatusDetails("");
 			}
@@ -254,8 +256,8 @@ public class AzureManagementServiceDelegate {
 	/** Handle provisioning errors 	*/
 	public static void handleProvisioningException(Exception ex, AzureSlaveTemplate template, String deploymentName) throws AzureCloudException {
 		// conflict error - wait for 1 minute and try again
-		if (isConflictError(ex.getMessage())) {
-			if (isDeploymentAlreadyOccupied(ex.getMessage())) {
+		if (AzureUtil.isConflictError(ex.getMessage())) {
+			if (AzureUtil.isDeploymentAlreadyOccupied(ex.getMessage())) {
 				LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: Deployment already occupied");
 				
 				// Throw exception so that in retry this will go through
@@ -268,13 +270,13 @@ public class AzureManagementServiceDelegate {
 					//ignore
 				}
 			}
-		} else if (isBadRequestOrForbidden(ex.getMessage())) {
+		} else if (AzureUtil.isBadRequestOrForbidden(ex.getMessage())) {
 			LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: Got bad request or forbidden");
 			// no point in retrying
 			template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
 			template.setTemplateStatusDetails("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
 			throw new AzureCloudException("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
-		} else if (isDeploymentNotFound(ex.getMessage(), deploymentName)) {
+		} else if (AzureUtil.isDeploymentNotFound(ex.getMessage(), deploymentName)) {
 			LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: Deployment not found");
 			
 			// Throw exception so that in retry this will go through
@@ -293,39 +295,6 @@ public class AzureManagementServiceDelegate {
 		}
 	}
 	
-	private static boolean isConflictError(String errorMessage) {
-		if (AzureUtil.isNull(errorMessage)) {
-			return false;
-		}
-		
-		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && errorMessage.contains(Constants.ERROR_CODE_CONFLICT);
-	}
-	
-	private static boolean isBadRequestOrForbidden(String errorMessage) {
-		if (AzureUtil.isNull(errorMessage)) {
-			return false;
-		}
-
-		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && 
-				(errorMessage.contains(Constants.ERROR_CODE_BAD_REQUEST) || errorMessage.contains(Constants.ERROR_CODE_FORBIDDEN));
-	}
-	
-	private static boolean isDeploymentNotFound(String errorMessage, String deploymentName) {
-		if (AzureUtil.isNull(errorMessage) || AzureUtil.isNull(deploymentName)) {
-			return false;
-		}
-		
-		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && 
-				errorMessage.contains(Constants.ERROR_CODE_RESOURCE_NF) && errorMessage.contains("The deployment name '"+deploymentName+"' does not exist" );
-	}
-	
-	private static boolean isDeploymentAlreadyOccupied(String errorMessage) {
-		if (AzureUtil.isNull(errorMessage)) {
-			return false;
-		}	
-		
-		return errorMessage.contains("The specified deployment slot Production is occupied");
-	}
 	
 	/** Retrieves production slot deployment name for cloud service*/
 	private static String getExistingDeploymentName(Configuration config, String cloudServiceName) {
@@ -1216,18 +1185,22 @@ public class AzureManagementServiceDelegate {
 					passPhrase, serviceManagementURL);
 			return verifyConfiguration(config);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return "Failure: Exception occured while validating subscription configuration" + e;
 		}
 	}
 	
-	public static String verifyConfiguration(Configuration config) {
+	public static String verifyConfiguration(final Configuration config) {
+		Callable<String> task = new Callable<String>() {
+			public String call() throws Exception {
+				ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
+				client.getHostedServicesOperations().checkNameAvailability("CI_SYSTEM");
+				return "Success";
+			}
+		};
+		
 		try {
-			ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
-			client.getHostedServicesOperations().checkNameAvailability("CI_SYSTEM");
-			return "Success";
-		} catch (Exception e) {
-			e.printStackTrace();
+			return ExecutionEngine.executeWithRetry(task, new ExponentialRetryStrategy(3 /*Max. retries*/, 2/*Max wait interval betweeb retries*/));
+		} catch (AzureCloudException e) {
 			return "Failure: Exception occured while validating subscription configuration" + e;
 		}
 	}
@@ -1578,8 +1551,6 @@ public class AzureManagementServiceDelegate {
 		if (AzureUtil.isNotNull(subnetName)) {
 			ArrayList<Subnet> subnets = virtualNetworkSite.getSubnets();
 			if (subnets != null) {
-				
-				boolean found = false;
 				for (Subnet subnet : subnets) {
 					if (subnet.getName().equalsIgnoreCase(subnetName)) {
 						return subnet;
@@ -1835,6 +1806,7 @@ public class AzureManagementServiceDelegate {
 		return Constants.OP_SUCCESS;
 	}
 	
+	// For future use
 	private static String verifyStorageAccountName(Configuration config, String storageAccountName, String location) {
 		try {
 			if (isNullOrEmpty(storageAccountName)) {
@@ -1946,6 +1918,8 @@ public class AzureManagementServiceDelegate {
 					}
 				}
 			}
+		} else if (AzureUtil.isNotNull(subnetName)) {
+			return Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty();
 		}
 		return Constants.OP_SUCCESS;
 	}

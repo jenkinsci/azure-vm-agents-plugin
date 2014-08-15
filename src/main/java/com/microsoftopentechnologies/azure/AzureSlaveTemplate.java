@@ -31,17 +31,23 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import javax.ws.rs.core.NewCookie;
 
 import jenkins.model.Jenkins;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
+import com.microsoftopentechnologies.azure.retry.DefaultRetryStrategy;
+import com.microsoftopentechnologies.azure.retry.LinearRetryForAllExceptions;
+import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
 import com.microsoft.windowsazure.management.compute.models.DeploymentSlot;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.FailureStage;
 
 import hudson.Extension;
 import hudson.RelativePath;
@@ -268,10 +274,9 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 	public void waitForReadyRole(final AzureSlave slave) throws Exception {
 		final Configuration config = ServiceDelegateHelper.loadConfiguration(azureCloud.getSubscriptionId(), 
 				azureCloud.getServiceManagementCert(), azureCloud.getPassPhrase(), azureCloud.getServiceManagementURL());
-		ExecutorService executorService = Executors.newFixedThreadPool(1);
 		
-		Future<Void> future = executorService.submit(new Callable<Void>() {
-		    public Void call() throws Exception {
+		Callable<Void> task = new Callable<Void>() {
+			public Void call() throws Exception {
 				String status = "NA";
 				while (!status.equalsIgnoreCase(Constants.READY_ROLE_STATUS)) {
 					LOGGER.info("AzureSlaveTemplate: waitForReadyRole: Current status of virtual machine "+slave.getNodeName()+" is "+status);
@@ -281,30 +286,59 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 					LOGGER.info("AzureSlaveTemplate: waitForReadyRole: Waiting for 30 more seconds for role to be provisioned");
 				}
 				return null;
-  	        }
-		});
+			}
+		};
 		
 		try {
-            // Get will block until time expires or until task completes
-			future.get(45, TimeUnit.MINUTES);
+			ExecutionEngine.executeWithRetry(task, new DefaultRetryStrategy(10 /*max retries*/, 10 /*Default backoff*/ , 45 * 60 /* Max. timeout in seconds */));
             LOGGER.info("AzureSlaveTemplate: waitForReadyRole: virtual machine "+slave.getNodeName()+" is in ready state");
-         } catch (ExecutionException executionException) {
-        	 disableTemplate("Got ExecutionException while checking for role availability "+executionException);
-        	 LOGGER.info("AzureSlaveTemplate: waitForReadyRole: Got ExecutionException while checking for role availability "+executionException);
-        	 throw executionException;
-         } catch (TimeoutException timeoutException) {
-        	 disableTemplate("AzureSlaveTemplate: waitForReadyRole: Timed out "+timeoutException);
-        	 LOGGER.info("AzureSlaveTemplate: waitForReadyRole: Timed out "+timeoutException);
-        	 throw timeoutException;
+         } catch (AzureCloudException exception) {
+        	 handleTemplateStatus("Got exception while checking for role availability "+exception, FailureStage.PROVISIONING, slave);
+        	 LOGGER.info("AzureSlaveTemplate: waitForReadyRole: Got exception while checking for role availability "+exception);
+        	 throw exception;
          }
 	}
 	
-	public void disableTemplate(String message) {
-		setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-		setTemplateStatusDetails("Post provisioning Error: Not able to verify role status " + " Root cause: "+message);
+	public void handleTemplateStatus(String message, FailureStage failureStep, final AzureSlave slave) {
+		// Delete slave in azure
+		if (slave != null) {
+			Callable<Void> task = new Callable<Void>() {
+				public Void call() throws Exception {
+					AzureManagementServiceDelegate.terminateVirtualMachine(slave, false);
+					return null;
+				}
+			};
+			
+			try {
+    			ExecutionEngine.executeWithRetry(task,  new LinearRetryForAllExceptions(30 /*maxRetries*/, 30/*waitinterval*/, 30 * 60/*timeout*/));
+    		} catch (AzureCloudException e) {
+    			LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: could not terminate or shutdown "+slave.getNodeName());
+    		}
+		}
 		
-		// Register template for periodic check so that jenkins can make template active if validation errors are corrected
-		AzureTemplateMonitorTask.registerTemplate(this);
+		// Disable template if applicable
+		if (!templateStatus.equals(Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS)) {
+			setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
+			// Register template for periodic check so that jenkins can make template active if validation errors are corrected
+			AzureTemplateMonitorTask.registerTemplate(this);
+		} else {
+			// Wait for a while before retry
+			if (FailureStage.VALIDATION.equals(failureStep)) {
+				// No point trying immediately - wait for 5 minutes.
+				LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: Got validation error while provisioning slave, waiting for 5 minutes before retry");
+				try {
+					Thread.sleep(5 * 60 * 1000);
+				} catch (InterruptedException e) {}
+			} else {
+				// Failure might be during Provisioning or post provisioning. back off for 10 minutes before retry.
+				LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: Got "+failureStep+" error, waiting for 10 minutes before retry");
+				try {
+					Thread.sleep(10 * 60 * 1000);
+				} catch (InterruptedException e) {}
+			}
+			
+		}
+		setTemplateStatusDetails("Post provisioning Error: Not able to verify role status " + " Root cause: "+message);
 		
 	}
 	
@@ -514,6 +548,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 		public ListBoxModel doFillTemplateStatusItems() {
 			ListBoxModel model = new ListBoxModel();
 			model.add(Constants.TEMPLATE_STATUS_ACTIVE);
+			model.add(Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS);
 			model.add(Constants.TEMPLATE_STATUS_DISBALED);
 			return model;
 		}

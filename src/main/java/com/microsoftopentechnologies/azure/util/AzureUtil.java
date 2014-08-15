@@ -211,6 +211,48 @@ public class AzureUtil {
 		}
 		return false;
 	}
+	
+	public static boolean isConflictError(String errorMessage) {
+		if (AzureUtil.isNull(errorMessage)) {
+			return false;
+		}
+		
+		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && errorMessage.contains(Constants.ERROR_CODE_CONFLICT);
+	}
+	
+	public static boolean isHostNotFound(String errorMessage) {
+		if (AzureUtil.isNull(errorMessage)) {
+			return false;
+		}
+		
+		return errorMessage.contains(Constants.ERROR_CODE_UNKNOWN_HOST);
+	}
+	
+	public static boolean isBadRequestOrForbidden(String errorMessage) {
+		if (isNull(errorMessage)) {
+			return false;
+		}
+
+		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && 
+				(errorMessage.contains(Constants.ERROR_CODE_BAD_REQUEST) || errorMessage.contains(Constants.ERROR_CODE_FORBIDDEN));
+	}
+	
+	public static boolean isDeploymentNotFound(String errorMessage, String deploymentName) {
+		if (isNull(errorMessage) || isNull(deploymentName)) {
+			return false;
+		}
+		
+		return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && 
+				errorMessage.contains(Constants.ERROR_CODE_RESOURCE_NF) && errorMessage.contains("The deployment name '"+deploymentName+"' does not exist" );
+	}
+	
+	public static boolean isDeploymentAlreadyOccupied(String errorMessage) {
+		if (isNull(errorMessage)) {
+			return false;
+		}	
+		
+		return errorMessage.contains("The specified deployment slot Production is occupied");
+	}
 }
 
 

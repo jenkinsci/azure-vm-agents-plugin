@@ -45,6 +45,7 @@ public class Constants {
 	
 	/** Template Status */
 	public static final String TEMPLATE_STATUS_ACTIVE = "Active";
+	public static final String TEMPLATE_STATUS_ACTIVE_ALWAYS = "Active Always";
 	public static final String TEMPLATE_STATUS_DISBALED = "Disabled";
 	public static final int MAX_PROV_RETRIES = 20;	
 	
@@ -54,6 +55,7 @@ public class Constants {
 	public static final String ERROR_CODE_BAD_REQUEST="BadRequest";
 	public static final String ERROR_CODE_FORBIDDEN="Forbidden";
 	public static final String ERROR_CODE_SERVICE_EXCEPTION="ServiceException";
+	public static final String ERROR_CODE_UNKNOWN_HOST="UnknownHostException";
 	
 	/** End points */
 	public static final String PROTOCOL_TCP = "tcp";

@@ -1,6 +1,9 @@
 <div>
-If "Enabled", Jenkins will try to create slaves from template for job execution.</br></br>
-This field will be set to "Disabled" if there are any unrecoverable errors during provisioning which needs manual intervention.</br></br>
-	
-You can set this field to be "Disabled" if you want to temporarily suspend creation of slaves based on this template.
+If "Active", Jenkins will try to create slaves from template during job execution.
+
+You can set this field to "Disabled" if you want to temporarily suspend creation of slaves based on this template.
+You can set this field to "Active Always", if you do not want Jenkins to disable template. Note that this setting may
+create slaves in a loop if there are errors during provisioning.     
+
+This field will be set to "Disabled" if there are any unrecoverable errors during provisioning which needs manual intervention.
 </div>

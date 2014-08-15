@@ -48,6 +48,7 @@ import hudson.util.StreamTaskListener;
 import com.microsoftopentechnologies.azure.AzureSlaveTemplate;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.FailureStage;
 
 public class AzureCloud extends Cloud {
 	private final String subscriptionId;
@@ -94,11 +95,11 @@ public class AzureCloud extends Cloud {
 	}
 
 	public boolean canProvision(Label label) {
-		LOGGER.info("Azurecloud: canProvision: called for AzureCloud with label "+label.getDisplayName());
 		AzureSlaveTemplate template =  getAzureSlaveTemplate(label);
 		
 		// return false if there is no template
 		if (template == null) {
+			LOGGER.info("Azurecloud: canProvision: template not found for label "+label.getDisplayName());
 			return false;
 		} else if (template.getTemplateStatus().equalsIgnoreCase(Constants.TEMPLATE_STATUS_DISBALED)) {
 			LOGGER.info("Azurecloud: canProvision: template "+template.getTemplateName() + 
@@ -167,22 +168,26 @@ public class AzureCloud extends Cloud {
 				if (errors.size() > 0 ) {
 					LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName() + "has validation errors , cannot"
 							+" provision slaves with this configuration "+errors);
-					slaveTemplate.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-					slaveTemplate.setTemplateStatusDetails("Validation Error: Validation errors in template \n" + " Root cause: "+errors);
+					slaveTemplate.handleTemplateStatus("Validation Error: Validation errors in template \n" + " Root cause: "+errors, 
+							FailureStage.VALIDATION, null);
 					
 					// Register template for periodic check so that jenkins can make template active if validation errors are corrected
-					AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
+					if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(slaveTemplate.getTemplateStatus())) {
+						AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
+					}
 					break;
 				} else {
 					LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName() + " has no validation errors");
 				}
 			} catch (Exception e) {
 				LOGGER.severe("Azure Cloud: provision: Exception occured while validating template"+e);
-				slaveTemplate.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-				slaveTemplate.setTemplateStatusDetails("Validation Error: Exception occured while validating template "+e.getMessage());
+				slaveTemplate.handleTemplateStatus("Validation Error: Exception occured while validating template "+e.getMessage(), 
+						FailureStage.VALIDATION, null);
 				
 				// Register template for periodic check so that jenkins can make template active if validation errors are corrected
-				AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
+				if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(slaveTemplate.getTemplateStatus())) {
+					AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
+				}
 				break;
 			}
 
@@ -197,22 +202,27 @@ public class AzureCloud extends Cloud {
 									+ " with OS "+slave.getOsType());
 							slaveTemplate.setVirtualMachineDetails(slave);
 							
-							if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
-								 slaveTemplate.waitForReadyRole(slave);
-								 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
-								 Thread.sleep(2 * 60 * 1000);
-								 LOGGER.info("Azure Cloud: provision: ssh server may be up by this time");
-								 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
-								 Hudson.getInstance().addNode(slave);
-								 slave.toComputer().connect(false).get();
-							 } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
-								 LOGGER.info("Azure Cloud: provision: Checking for slave status");
-								 slaveTemplate.waitForReadyRole(slave);
-								 Hudson.getInstance().addNode(slave);
-								 
-								 // Wait until node is online
-								 waitUntilOnline(slave);
-							 }
+							try {
+								if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
+									 slaveTemplate.waitForReadyRole(slave);
+									 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
+									 Thread.sleep(2 * 60 * 1000);
+									 LOGGER.info("Azure Cloud: provision: ssh server may be up by this time");
+									 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
+									 Hudson.getInstance().addNode(slave);
+									 slave.toComputer().connect(false).get();
+								 } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
+									 LOGGER.info("Azure Cloud: provision: Checking for slave status");
+									 slaveTemplate.waitForReadyRole(slave);
+									 Hudson.getInstance().addNode(slave);
+									 
+									 // Wait until node is online
+									 waitUntilOnline(slave);
+								 }
+							} catch (Exception e) {
+								slaveTemplate.handleTemplateStatus(e.getMessage(), FailureStage.POSTPROVISIONING, slave);
+								throw e;
+							}
 							return slave;
 						}
 					}), slaveTemplate.getNoOfParallelJobs()));
