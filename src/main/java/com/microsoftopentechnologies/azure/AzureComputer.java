@@ -42,8 +42,8 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave>  {
 		try {
 			deleteSlave();
 		} catch(Exception e) {
-			LOGGER.info("AzureComputer: doDoDelete: Exception occured while deleting slave "+e);
-			throw new IOException("Error occured while deleting node, jenkins will try to clean up node automatically after some time. "
+			LOGGER.info("AzureComputer: doDoDelete: Exception occurred while deleting slave "+e);
+			throw new IOException("Error occurred while deleting node, jenkins will try to clean up node automatically after some time. "
 					+ " \n Root cause: "+e.getMessage());
 		}
 		return new HttpRedirect("..");
@@ -60,7 +60,7 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave>  {
 			slave.deprovision();
 		} catch (Exception e) {
 			
-			LOGGER.severe("AzureComputer : Exception occured while deleting  " + getName() + " slave");
+			LOGGER.severe("AzureComputer : Exception occurred while deleting  " + getName() + " slave");
 			LOGGER.severe("Root cause " + e.getMessage());
 			throw e;
 		}

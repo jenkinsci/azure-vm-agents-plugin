@@ -41,7 +41,7 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 				try {
 					if (azureComputer.isOffline()) {
 						if (!slaveNode.isDeleteSlave()) {
-							// Find out if node exists in azure , if not continue with delete else donot delete node 
+							// Find out if node exists in azure , if not continue with delete else do not delete node
 							// although it is offline. May be JNLP or SSH launch is in progress
 							if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
 								LOGGER.info("AzureSlaveCleanUpTask: execute: VM "+slaveNode.getDisplayName()+" exists in cloud");
@@ -50,13 +50,13 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 						}
 						
 						int retryCount = 0;
-		                boolean successfull = false;
+		                boolean successful = false;
 		                
 		                // Retrying for 30 times with 30 seconds wait time between each retry
-		                while (retryCount < 30 && !successfull) {
+		                while (retryCount < 30 && !successful) {
 		                	try {
 		                		slaveNode.idleTimeout();
-								successfull = true;
+								successful = true;
 							} catch (Exception e) {
 								retryCount++;
 								LOGGER.info("AzureSlaveCleanUpTask: execute: Exception occured while calling timeout on node , \n"

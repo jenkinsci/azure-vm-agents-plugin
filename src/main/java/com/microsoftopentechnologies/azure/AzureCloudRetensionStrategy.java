@@ -62,7 +62,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
     					LOGGER.info("AzureCloudRetensionStrategy: check: exception occured while closing channel for: "+slaveNode.getName());
     				}
                     LOGGER.info("AzureCloudRetensionStrategy: check: Idle timeout reached for slave: "+slaveNode.getName());
-                    
+                   
                     java.util.concurrent.Callable<Void> task = new java.util.concurrent.Callable<Void>() {
             			public Void call() throws Exception {
             				slaveNode.getNode().idleTimeout();

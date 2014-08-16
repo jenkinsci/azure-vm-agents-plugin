@@ -201,7 +201,6 @@ public class AzureCloud extends Cloud {
 							LOGGER.info("Azure Cloud: provision: Getting virtual machine properties for slave "+slave.getNodeName() 
 									+ " with OS "+slave.getOsType());
 							slaveTemplate.setVirtualMachineDetails(slave);
-							
 							try {
 								if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
 									 slaveTemplate.waitForReadyRole(slave);
@@ -304,8 +303,8 @@ public class AzureCloud extends Cloud {
 				LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName() + "has no validation errors");
 			}
 		} catch (Exception e) {
-			LOGGER.severe("Azure Cloud: provision: Exception occured while validating template "+e);
-			sendError("Exception occured while validating template "+e);
+			LOGGER.severe("Azure Cloud: provision: Exception occurred while validating template "+e);
+			sendError("Exception occurred while validating template "+e);
 			return;
 		}
 		
@@ -322,7 +321,7 @@ public class AzureCloud extends Cloud {
 				
 				if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
 					 slaveTemplate.waitForReadyRole(slave);
-					 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
+					 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to come up");
 					 Thread.sleep(2 * 60 * 1000);
 					 LOGGER.info("Azure Cloud: provision: ssh server may be up by this time");
 					 LOGGER.info("Azure Cloud:  provision: Adding slave to azure nodes ");

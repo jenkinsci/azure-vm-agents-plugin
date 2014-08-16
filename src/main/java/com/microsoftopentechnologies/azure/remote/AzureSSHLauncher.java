@@ -69,7 +69,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 			LOGGER.info("AzureSSHLauncher: launch: marking slave for delete ");
 			slave.setDeleteSlave(true);
 			
-			// Checking if we need to mark template as disabled. Need to revist this logic based on tests.
+			// Checking if we need to mark template as disabled. Need to re-visit this logic based on tests.
 			if (e instanceof ConnectException) {
     			LOGGER.severe("AzureSSHLauncher: launch: Got connect exception. Might be due to firewall rules");
     			markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL);
@@ -183,7 +183,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 			
 			if (!sftpChannel.isClosed()) {
 	    		try {
-	    			LOGGER.warning("AzureSSHLauncher: copyFileToRemote: Chaneel is not yet closed , waiting for 10 seconds");
+	    			LOGGER.warning("AzureSSHLauncher: copyFileToRemote: Channel is not yet closed , waiting for 10 seconds");
 					Thread.sleep(10 * 1000);
 				 } catch (InterruptedException e) {
 					 //ignore error
@@ -192,7 +192,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 			LOGGER.info("AzureSSHLauncher: copyFileToRemote: copied file Successfully to "+remotePath);
 		} catch (Exception e) {
 			e.printStackTrace();
-			LOGGER.severe("AzureSSHLauncher: copyFileToRemote: Error occured while copying file to remote host "+e.getMessage());
+			LOGGER.severe("AzureSSHLauncher: copyFileToRemote: Error occurred while copying file to remote host "+e.getMessage());
 			throw e;
 		} finally {
 			 try {
@@ -229,7 +229,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 	    		
 	    	if (!channel.isClosed()) {
 	    		try {
-	    			LOGGER.warning("AzureSSHLauncher: executeRemoteCommand: Chaneel is not yet closed , waiting for 10 seconds");
+	    			LOGGER.warning("AzureSSHLauncher: executeRemoteCommand: Channel is not yet closed , waiting for 10 seconds");
 					Thread.sleep(10 * 1000);
 				 } catch (InterruptedException e) {
 					 //ignore error
@@ -239,7 +239,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 	        return channel.getExitStatus();
         } catch (JSchException jse) {
         	jse.printStackTrace();
-        	LOGGER.severe("AzureSSHLauncher: executeRemoteCommand: got exception while executing remote comamnd " + jse);
+        	LOGGER.severe("AzureSSHLauncher: executeRemoteCommand: got exception while executing remote command " + jse);
         } catch (IOException ex) {
         	ex.printStackTrace();
         	LOGGER.warning("IO failure during running " + command);
@@ -272,7 +272,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
                 session = getRemoteSession(slave.getAdminUserName(), slave.getAdminPassword(), slave.getPublicDNSName(), slave.getSshPort());
                 LOGGER.info("AzureSSHLauncher: connectToSsh: Got remote connection");
             } catch (Exception e) {
-            	// Retry till max count and throw exception if not sucessfull even after that
+            	// Retry till max count and throw exception if not successful even after that
             	if (currRetryCount >= maxRetryCount) {
             		throw e;
             	}

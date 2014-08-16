@@ -733,7 +733,7 @@ public class AzureManagementServiceDelegate {
 	
 	/**
 	 * Checks if cloud service already exists in the subscription.
-	 * @param client ComputeManagementClient
+	 * @param config ComputeManagementClient
 	 * @param cloudServiceName cloud service name
 	 * @return true if cloud service exists else returns false
 	 */
@@ -748,7 +748,7 @@ public class AzureManagementServiceDelegate {
 				return true;
 			}
 		} catch (Exception e) {
-			LOGGER.info("AzureManagementServiceDelegate: doesCloudServiceLocationMatch: Got exception while chekcing for cloud service location");
+			LOGGER.info("AzureManagementServiceDelegate: doesCloudServiceLocationMatch: Got exception while checking for cloud service location");
 			throw e;
 		}
 		
@@ -779,14 +779,9 @@ public class AzureManagementServiceDelegate {
 	public static boolean validateCloudServiceName(Configuration config, String cloudServiceName) throws Exception {
 		ComputeManagementClient client = ComputeManagementService.create(config);
 		
-		// Check if cloud service name already exists in subscription
-		if (checkIfCloudServiceExists(client, cloudServiceName)) {
-			return true;
-		} else if (isCloudServiceNameAvailable(client, cloudServiceName)) { // Check if name is available
-			return true;
-		}
-		
-		return false;
+		// Check if cloud service name already exists in subscription or if name is available
+        return checkIfCloudServiceExists(client, cloudServiceName) ||
+                isCloudServiceNameAvailable(client, cloudServiceName);
 	}
 
 	/**
