@@ -45,7 +45,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 		if  (idleTerminationMinutes == 0) {
         	return 1;
         }
-
+		
         // Do we need to check about slave status?
 		if (slaveNode.isIdle()) {
             if (idleTerminationMinutes > 0) {

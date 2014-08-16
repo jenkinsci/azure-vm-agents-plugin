@@ -1194,7 +1194,7 @@ public class AzureManagementServiceDelegate {
 		};
 		
 		try {
-			return ExecutionEngine.executeWithRetry(task, new ExponentialRetryStrategy(3 /*Max. retries*/, 2/*Max wait interval betweeb retries*/));
+			return ExecutionEngine.executeWithRetry(task, new ExponentialRetryStrategy(3 /*Max. retries*/, 2/*Max wait interval between retries*/));
 		} catch (AzureCloudException e) {
 			return "Failure: Exception occured while validating subscription configuration" + e;
 		}
