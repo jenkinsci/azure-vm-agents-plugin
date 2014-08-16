@@ -26,7 +26,11 @@ public class ExecutionEngine {
 		Future<T> result = executorService.submit(retryTask);
 		
 		try {
-			return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
+			if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
+				return result.get();
+			} else {
+				return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
+			}	
 		} catch (TimeoutException timeoutException) {
 			throw new AzureCloudException("Operation timed out: ",timeoutException);
 		} catch (Exception ex) {
