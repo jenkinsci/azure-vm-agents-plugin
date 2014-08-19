@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.FailureStage;
 import com.microsoftopentechnologies.azure.remote.AzureSSHLauncher;
 
 import hudson.Extension;
@@ -267,8 +268,7 @@ public class AzureSlave extends AbstractCloudSlave  {
 		AzureCloud azureCloud = getCloud();
 		AzureSlaveTemplate slaveTemplate = azureCloud.getAzureSlaveTemplate(templateName);
 		
-		slaveTemplate.setTemplateStatus(templateStatus);
-		slaveTemplate.setTemplateStatusDetails(templateStatusDetails);
+		slaveTemplate.handleTemplateStatus(templateStatusDetails, FailureStage.POSTPROVISIONING, this);
 	}
 	
 	public String toString() {

@@ -1,9 +1,11 @@
 <div>
-If "Active", Jenkins will try to create slaves from template during job execution.
+If set to "Active until first failure", Jenkins will keep attempting to create slaves from the template during the job execution until the first unrecoverable error 
+is encountered, at which point this setting will be automatically changed to "Disabled".
 
-You can set this field to "Disabled" if you want to temporarily suspend creation of slaves based on this template.
-You can set this field to "Active Always", if you do not want Jenkins to disable template. Note that this setting may
-create slaves in a loop if there are errors during provisioning.     
+If set to "Disabled", the creation of slaves based on this template will be suspended. 
 
-This field will be set to "Disabled" if there are any unrecoverable errors during provisioning which needs manual intervention.
+If set to "Active always", Jenkins will continue attempting to provision slaves based on this template regardless of any failures that may occur.  Note that this setting may
+result in an excessive allocation of resources for the malfunctioning slaves. Such a continuous slave provisioning process can be stopped manually by changing the slave 
+provisioning setting to "Disabled", or fixing the underlying issue causing the failures.
+
 </div>

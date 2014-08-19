@@ -111,6 +111,7 @@ import com.microsoftopentechnologies.azure.retry.ExponentialRetryStrategy;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.ExecutionEngine;
+import com.microsoftopentechnologies.azure.util.FailureStage;
 /**
  * Business delegate class which handles calls to Azure management service SDK.
  * @author Suresh Nallamilli (snallami@gmail.com)
@@ -173,8 +174,7 @@ public class AzureManagementServiceDelegate {
 					String storageAccountName = createStorageAccount(config, resourceLocation, affinityGroupName);
 					template.setStorageAccountName(storageAccountName);
 				} catch(Exception e) {
-					template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-					template.setTemplateStatusDetails("Pre-Provisioning Failure: Exception occured while creating storage account. Root cause: "+e.getMessage());
+					template.handleTemplateStatus("Pre-Provisioning Failure: Exception occured while creating storage account. Root cause: "+e.getMessage(), FailureStage.PREPROVISIONING, null);
 					throw new AzureCloudException("Pre-Provisioning Failure: Exception occured while creating storage account. Root cause: "+e.getMessage());
 				}
 			}
@@ -202,9 +202,8 @@ public class AzureManagementServiceDelegate {
 					} catch (Exception ex) {
 						handleProvisioningException(ex, template, deploymentName);
 						
-						if (retryCount == Constants.MAX_PROV_RETRIES) {
-							template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-							template.setTemplateStatusDetails("Provisioning Failure: Not able to create virtual machine even after 20 retries "+ex);
+						if (retryCount >= Constants.MAX_PROV_RETRIES) {
+							template.handleTemplateStatus("Provisioning Failure: Not able to create virtual machine even after 20 retries "+ex, FailureStage.PROVISIONING, null);
 							throw new AzureCloudException("AzureManagementServiceDelegate: createVirtualMachine: Unable to create virtual machine "+ex.getMessage());
 						}
 					}
@@ -227,8 +226,7 @@ public class AzureManagementServiceDelegate {
 						handleProvisioningException(ex, template, deploymentName);
 						
 						if (retryCount == Constants.MAX_PROV_RETRIES) {
-							template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-							template.setTemplateStatusDetails("Provisioning Failure: Not able to create virtual machine even after 20 retries "+ex);
+							template.handleTemplateStatus("Provisioning Failure: Not able to create virtual machine even after 20 retries "+ex, FailureStage.PROVISIONING, null);
 							throw new AzureCloudException("AzureManagementServiceDelegate: createVirtualMachine: Unable to create virtual machine "+ex.getMessage());
 						}
 												
@@ -273,8 +271,7 @@ public class AzureManagementServiceDelegate {
 		} else if (AzureUtil.isBadRequestOrForbidden(ex.getMessage())) {
 			LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: Got bad request or forbidden");
 			// no point in retrying
-			template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-			template.setTemplateStatusDetails("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
+			template.handleTemplateStatus("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage(), FailureStage.PROVISIONING, null);
 			throw new AzureCloudException("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
 		} else if (AzureUtil.isDeploymentNotFound(ex.getMessage(), deploymentName)) {
 			LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: Deployment not found");
@@ -284,8 +281,7 @@ public class AzureManagementServiceDelegate {
 		} else {
 			LOGGER.info("AzureManagementServiceDelegate: handleProvisioningException: "+ex);
 			// set template status to disabled so that jenkins won't provision more slaves
-			template.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-			template.setTemplateStatusDetails("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
+			template.handleTemplateStatus("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage(), FailureStage.PROVISIONING, null);
 			// wait for 10 seconds and then retry
 			try {
 				Thread.sleep(10 * 1000);
@@ -498,6 +494,20 @@ public class AzureManagementServiceDelegate {
 			//For rest of the errors just assume vm exists
 		}
 		return true;
+	}
+	
+	public static boolean confirmVMExists(ComputeManagementClient client, String cloudServiceName, String deploymentName, String VMName)
+	throws ServiceException, Exception{
+		LOGGER.info("AzureManagementServiceDelegate: confirmVirtualMachineExists: VM name "+VMName);
+		try {
+			client.getVirtualMachinesOperations().get(cloudServiceName, deploymentName, VMName);
+			return true;
+		} catch (ServiceException se) {
+			throw se;
+		}
+		catch (Exception e) {
+			throw e;
+		}
 	}
 
 	/**
@@ -1283,10 +1293,12 @@ public class AzureManagementServiceDelegate {
 				else
 					client.getVirtualMachinesOperations().deleteAsync(slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName(), true);
 			} else {
-				if (sync)
-					client.getDeploymentsOperations().deleteByName(slave.getCloudServiceName(), slave.getDeploymentName(), true);
-				else
-					client.getDeploymentsOperations().deleteByNameAsync(slave.getCloudServiceName(), slave.getDeploymentName(), true);
+				if (confirmVMExists(client, slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName())) {
+					if (sync)
+						client.getDeploymentsOperations().deleteByName(slave.getCloudServiceName(), slave.getDeploymentName(), true);
+					else
+						client.getDeploymentsOperations().deleteByNameAsync(slave.getCloudServiceName(), slave.getDeploymentName(), true);
+				}
 			}
 		} catch (ServiceException se) {
 			// Check if VM is already deleted 

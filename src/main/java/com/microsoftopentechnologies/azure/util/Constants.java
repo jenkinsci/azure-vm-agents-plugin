@@ -44,8 +44,8 @@ public class Constants {
 	public static final String LAUNCH_METHOD_SSH = "SSH";
 	
 	/** Template Status */
-	public static final String TEMPLATE_STATUS_ACTIVE = "Active";
-	public static final String TEMPLATE_STATUS_ACTIVE_ALWAYS = "Active Always";
+	public static final String TEMPLATE_STATUS_ACTIVE = "Active until first failure";
+	public static final String TEMPLATE_STATUS_ACTIVE_ALWAYS = "Active always";
 	public static final String TEMPLATE_STATUS_DISBALED = "Disabled";
 	public static final int MAX_PROV_RETRIES = 20;	
 	
