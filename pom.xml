@@ -7,7 +7,7 @@
 	</parent>
 
 	<artifactId>azure-slave-plugin</artifactId>
-	<version>0.2.0</version>
+	<version>0.2.1-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Azure Slave Plugin</name>
 	<description>Provisions slave on Azure cloud</description>
@@ -127,7 +127,7 @@
 		<connection>scm:git:ssh://git@github.com/jenkinsci/azure-slave-plugin.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-slave-plugin.git</developerConnection>
 		<url>https://github.com/jenkinsci/azure-slave-plugin</url>
-	  <tag>azure-slave-plugin-0.2.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<repositories>
