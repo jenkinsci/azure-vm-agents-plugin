@@ -241,7 +241,7 @@ public class AzureManagementServiceDelegate {
 				template.setTemplateStatus(Constants.TEMPLATE_STATUS_ACTIVE);
 				template.setTemplateStatusDetails("");
 			}
-			LOGGER.info("Sucessfully created virtual machine in cloud service "	+ slave);
+			LOGGER.info("Successfully created virtual machine in cloud service "	+ slave);
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOGGER.severe("AzureManagementServiceDelegate: createVirtualMachine:: Unable to create virtual machine due to " + e.getMessage());
@@ -361,14 +361,6 @@ public class AzureManagementServiceDelegate {
 	public static ArrayList<ResourceExtensionReference> addResourceExtenions(String roleName, String storageAccountName, 
 			String storageAccountKey, String containerName, String blobURL, String fileName, String jenkinsServerURL) throws Exception {
 		ArrayList<ResourceExtensionReference> resourceExtensions = new ArrayList<ResourceExtensionReference>();
-		// Add BG info extension
-		ResourceExtensionReference bgInfo = new ResourceExtensionReference();
-		resourceExtensions.add(bgInfo);
-		bgInfo.setReferenceName("BGInfo");
-		bgInfo.setPublisher("Microsoft.Compute");
-		bgInfo.setName("BGInfo");
-		bgInfo.setVersion("1.*");
-		bgInfo.setState("Enable");
 
 		// Add custom script extension
 		ResourceExtensionReference customExtension = new ResourceExtensionReference();
@@ -503,11 +495,13 @@ public class AzureManagementServiceDelegate {
 			client.getVirtualMachinesOperations().get(cloudServiceName, deploymentName, VMName);
 			return true;
 		} catch (ServiceException se) {
-			throw se;
-		}
-		catch (Exception e) {
+			if (Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(se.getErrorCode())) { 
+				return false;
+			}
+		} catch (Exception e) {
 			throw e;
 		}
+		return false;
 	}
 
 	/**
@@ -851,7 +845,7 @@ public class AzureManagementServiceDelegate {
 		role.setProvisionGuestAgent(true);
 		// set OS disk configuration param
 		ImageType imageType = ImageType.valueOf(imageProperties.get(ImageProperties.IMAGETYPE));
-		if (ImageType.VMIMAGE.equals(imageType)) {
+		if (ImageType.VMIMAGE_GENERALIZED.equals(imageType) || ImageType.VMIMAGE_SPECIALIZED.equals(imageType)) {
 			role.setVMImageName(imageProperties.get(ImageProperties.NAME));
 		} else {
 			role.setOSVirtualHardDisk(getOSVirtualHardDisk(config, template, cloudServiceName, virtualMachineName, imageProperties));
@@ -865,8 +859,10 @@ public class AzureManagementServiceDelegate {
 			role.setResourceExtensionReferences(handleCustomScriptExtension(config, virtualMachineName, cloudServiceName, template));
 		}
 
-		// set OS configuration params
-		configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
+		if (!ImageType.VMIMAGE_SPECIALIZED.equals(imageType)) {
+			// set OS configuration params
+			configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
+		}
 		// set Network configuration set
 		configurationSets.add(getNetworkConfigurationSet(osType, template));
 		
@@ -898,7 +894,7 @@ public class AzureManagementServiceDelegate {
 		params.setProvisionGuestAgent(true);
 		// set OS disk configuration param
 		ImageType imageType = ImageType.valueOf(imageProperties.get(ImageProperties.IMAGETYPE));
-		if (ImageType.VMIMAGE.equals(imageType)) {
+		if (ImageType.VMIMAGE_GENERALIZED.equals(imageType) || ImageType.VMIMAGE_SPECIALIZED.equals(imageType)) {
 			params.setVMImageName(imageProperties.get(ImageProperties.NAME));
 		} else {
 			params.setOSVirtualHardDisk(getOSVirtualHardDisk(config, template, cloudServiceName, virtualMachineName, imageProperties));
@@ -912,8 +908,10 @@ public class AzureManagementServiceDelegate {
 			params.setResourceExtensionReferences(handleCustomScriptExtension(config, virtualMachineName, cloudServiceName, template));
 		}
 		
-		// set OS configuration params
-		configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
+		if (!ImageType.VMIMAGE_SPECIALIZED.equals(imageType)) {
+			// set OS configuration params
+			configurationSets.add(getOSConfigurationSet(template, cloudServiceName, virtualMachineName, osType));
+		}
 		// set Network configuration set
 		configurationSets.add(getNetworkConfigurationSet(osType, template));
 		
@@ -1284,7 +1282,6 @@ public class AzureManagementServiceDelegate {
 	
 	/** Deletes Azure virtual machine */
 	public static void terminateVirtualMachine(AzureSlave slave, boolean sync) throws Exception {
-		LOGGER.info("AzureManagementServiceDelegate: terminateVirtualMachine: terminate VM called with sync flag "+sync);
 		ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(slave);
 		try {
 			if (getRoleCount(client, slave.getCloudServiceName()) > 1) {
@@ -1303,8 +1300,6 @@ public class AzureManagementServiceDelegate {
 		} catch (ServiceException se) {
 			// Check if VM is already deleted 
 			if (Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(se.getErrorCode())) {
-				LOGGER.info("AzureManagementServiceDelegate: terminateVirtualMachine: error code " + se.getErrorCode()+ " VM not found.\n"
-						+ " Ignoring exception since VM is not found in Azure cloud. ");
 				// If VM is already deleted then just ignore exception.
 				return;
 			}
@@ -1362,7 +1357,6 @@ public class AzureManagementServiceDelegate {
 	
 	/** Checks whether image ID is valid or not **/
 	public static String isValidImageID(String imageID, Map<ImageProperties, String> imageProps, Configuration config) {
-		LOGGER.info("AzureManagementServiceDelegate: isValidImageID: checking validity of imageID "+imageID);
 		try {
 			ComputeManagementClient client = ComputeManagementService.create(config);		
 			VirtualMachineOSImageGetResponse response = client.getVirtualMachineOSImagesOperations().get(imageID);
@@ -1380,7 +1374,6 @@ public class AzureManagementServiceDelegate {
 						imageProps.put(ImageProperties.MEDIAURI, response.getMediaLinkUri().toString());
 					}
 				}
-				LOGGER.info("AzureManagementServiceDelegate: isValidImageID: "+imageID+" is a valid OS image id or custom OS image id");
 				return response.getName();
 			}
 		} catch (Exception e) {
@@ -1391,7 +1384,6 @@ public class AzureManagementServiceDelegate {
 	
 	/** Checks whether custom image ID is valid or not **/
 	public static String isValidCustomImageID(String imageID, Map<ImageProperties, String> imageProps, Configuration config) {
-		LOGGER.info("AzureManagementServiceDelegate: isValidCustomImageID: checking validity of custom image "+imageID);
 		try {
 			ComputeManagementClient client = ComputeManagementService.create(config);		
 			VirtualMachineVMImageListResponse response = client.getVirtualMachineVMImagesOperations().list();
@@ -1411,10 +1403,13 @@ public class AzureManagementServiceDelegate {
 							OsType = "Linux";
 						}
 						imageProps.put(ImageProperties.OSTYPE, OsType);
-						imageProps.put(ImageProperties.IMAGETYPE, ImageType.VMIMAGE.name());
+						String vmOSState = image.getOSDiskConfiguration().getOSState();
+						if (vmOSState != null && vmOSState.equalsIgnoreCase("Generalized"))
+							imageProps.put(ImageProperties.IMAGETYPE, ImageType.VMIMAGE_GENERALIZED.name());
+						else
+							imageProps.put(ImageProperties.IMAGETYPE, ImageType.VMIMAGE_SPECIALIZED.name());
 						imageProps.put(ImageProperties.MEDIAURI, image.getOSDiskConfiguration().getMediaLink().toString());
 					}
-					LOGGER.info("AzureManagementServiceDelegate: isValidCustomImageID: "+imageID+ " is a valid custom image");
 					return image.getName();
 				}
 			}
@@ -1452,7 +1447,6 @@ public class AzureManagementServiceDelegate {
 	
 	/** Checks whether image family is valid or not **/
 	public static String isValidImageFamily(String imageFamily, Map<ImageProperties, String> imageProperties, Configuration config) {
-		LOGGER.info("AzureManagementServiceDelegate: isValidImageFamily: imageFamily "+imageFamily);
 		VirtualMachineOSImage latestVMImage = null;
 		try {
 		// Retrieve latest image 
@@ -1478,7 +1472,6 @@ public class AzureManagementServiceDelegate {
 						imageProperties.put(ImageProperties.MEDIAURI, latestVMImage.getMediaLinkUri().toString());
 					}
 			}
-			LOGGER.info("AzureManagementServiceDelegate: isValidImageFamily: using imageID "+latestVMImage.getName());
 			return latestVMImage.getName();
 		}
 		
@@ -1490,7 +1483,6 @@ public class AzureManagementServiceDelegate {
 	
 	/** Returns image properties */
 	public static Map<ImageProperties, String> getImageProperties(Configuration config, String imageIDOrFamily)  {
-		LOGGER.info("AzureManagementServiceDelegate: getImageProperties: imageIDOrFamily is "+imageIDOrFamily);
 		String imageID = null;
 
 		Map<ImageProperties, String> imageProperties = new HashMap<ImageProperties, String>();
@@ -1513,13 +1505,11 @@ public class AzureManagementServiceDelegate {
 			return imageProperties;
 		}
 			
-		LOGGER.severe("AzureManagementServiceDelegate: getImageProperties: Image information not found for "+imageIDOrFamily);
 		return null;
 	}
 	
 	/** Returns virtual network site properties */
 	private static VirtualNetworkSite getVirtualNetworkSite(Configuration config, String virtualNetworkName)  {
-		LOGGER.info("AzureManagementServiceDelegate: getVirtualNetworkInfo: virtualNetworkName is "+virtualNetworkName);
 		try {
 			NetworkManagementClient client = ServiceDelegateHelper.getNetworkManagementClient(config);
 			NetworkListResponse listResponse = client.getNetworksOperations().list();
@@ -1536,7 +1526,6 @@ public class AzureManagementServiceDelegate {
 		} catch (Exception e) {
 			LOGGER.severe("AzureManagementServiceDelegate: getVirtualNetworkInfo: Got exception while getting virtual network info "+virtualNetworkName);
 		}
-			
 		return null;
 	}
 	

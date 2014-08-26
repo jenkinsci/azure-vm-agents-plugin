@@ -206,13 +206,13 @@ public class AzureCloud extends Cloud {
 									 slaveTemplate.waitForReadyRole(slave);
 									 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
 									 Thread.sleep(2 * 60 * 1000);
-									 LOGGER.info("Azure Cloud: provision: ssh server may be up by this time");
 									 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
 									 Hudson.getInstance().addNode(slave);
 									 slave.toComputer().connect(false).get();
 								 } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
 									 LOGGER.info("Azure Cloud: provision: Checking for slave status");
 									 slaveTemplate.waitForReadyRole(slave);
+									 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
 									 Hudson.getInstance().addNode(slave);
 									 
 									 // Wait until node is online

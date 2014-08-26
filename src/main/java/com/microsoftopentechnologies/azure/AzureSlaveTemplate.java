@@ -338,7 +338,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 			}
 			
 		}
-		setTemplateStatusDetails("Post provisioning Error: Not able to verify role status " + " Root cause: "+message);
+		setTemplateStatusDetails(message);
 		
 	}
 	

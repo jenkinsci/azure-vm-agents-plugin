@@ -18,5 +18,6 @@ package com.microsoftopentechnologies.azure;
 public enum ImageType {
 	OSIMAGE,
 	OSIMAGE_CUSTOM,
-	VMIMAGE
+	VMIMAGE_GENERALIZED,
+	VMIMAGE_SPECIALIZED
 }
