@@ -7,7 +7,7 @@
 	</parent>
 
 	<artifactId>azure-slave-plugin</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.2.1-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Azure Slave Plugin</name>
 	<description>Provisions slave on Azure cloud</description>
