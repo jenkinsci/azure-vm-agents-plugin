@@ -1,9 +1,9 @@
 <div>
-	This controls the number of concurrent builds that Jenkins can perform. So the value affects the overall system load Jenkins may incur.
+	This controls the number of concurrent builds that Jenkins can perform. So this value affects the overall system load Jenkins may incur.
 	A good value to start with would be the number of processors on your system.
 
-    Increasing this value beyond that would cause each build to take longer, but it could increase the overall throughput, 
-    because it allows CPU to build one project while another build is waiting for I/O.
+    Increasing this value beyond that would cause each build to take longer, but it could increase the overall throughput by allowing
+    the CPU to build one project while another build is waiting for the I/O.
 
-    Slaves may not have zero executors. Assumes default value if invalid value is entered.	
+    Slaves may not have zero executors. The default value is assumed if an invalid value is entered.	
 </div>
