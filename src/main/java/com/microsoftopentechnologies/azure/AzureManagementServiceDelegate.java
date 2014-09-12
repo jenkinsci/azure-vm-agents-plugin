@@ -915,10 +915,6 @@ public class AzureManagementServiceDelegate {
 		// set Network configuration set
 		configurationSets.add(getNetworkConfigurationSet(osType, template));
 		
-		// set virtual network name
-//		if (AzureUtil.isNotNull(template.getVirtualNetworkName())) {
-//			params.setVirtualNetworkName(template.getVirtualNetworkName().trim());
-//		}
 		return params;
 	}
 	
@@ -1039,7 +1035,6 @@ public class AzureManagementServiceDelegate {
 			subnetNames.add(template.getSubnetName().trim());
 			
 			networkConfigset.setSubnetNames(subnetNames);
-			
 		}
 		
 		return networkConfigset;
