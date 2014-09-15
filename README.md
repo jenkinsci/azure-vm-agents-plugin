@@ -49,9 +49,11 @@ h.    Specify the retention time in minutes. This defines the number of minutes 
       deleting an idle slave.<br>
       Specify 0 if you do not want idle slaves to be deleted automatically.<br>
 i.    Select a usage option:<br>
-         &nbsp;&nbsp;&nbsp;&nbsp;If "Utilize this node as much as possibl" is selected, then Jenkins may run any job on the slave as long as it is available.<br>
-         &nbsp;&nbsp;&nbsp;&nbsp;If "Leave this node for tied jobs only" is selected, Jenkins will only build a project (or job) on this node when that project specifically was tied to that node.<br>
-         &nbsp;&nbsp;&nbsp;&nbsp;This allows a slave to be reserved for certain kinds of jobs.<br>
+      If "Utilize this node as much as possibl" is selected, then Jenkins may run any job on the slave as long as it 
+      is available.<br>
+      If "Leave this node for tied jobs only" is selected, Jenkins will only build a project (or job) on this node 
+      when that project specifically was tied to that node.<br>
+      This allows a slave to be reserved for certain kinds of jobs.<br>
 j.    For the Image Family or ID , enter either an available image family name or a specific image ID. <br>
       If you want to specify an image family, then just enter the first character with the proper case to see an
       automatically generated list of available families. Jenkins will use the latest image within the selected family.<br>
@@ -62,18 +64,20 @@ j.    For the Image Family or ID , enter either an available image family name o
       family. For this reason, it is recommended that you use the image family to refer to public platform images, and image 
       ID’s for your own custom-prepared images.<br>
 k.    For the launch method, select SSH or JNLP.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Linux slaves can be launched using SSH only.<br> 
-&nbsp;&nbsp;&nbsp;&nbsp;Windows slaves can be launched using SSH or JNLP. <b>For Windows slaves, if the launch method is SSH 
-then image needs to be custom-prepared with an SSH server pre-installed.</b><br><br>
+         Linux slaves can be launched using SSH only.<br> 
+         Windows slaves can be launched using SSH or JNLP. For Windows slaves, if the launch method is SSH then 
+         image needs to be custom-prepared with an SSH server pre-installed.<br>
+      
       When using the JNLP launch option, ensure the following:<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;1) Jenkins URL (Manage Jenkins --> configure system --> Jenkins Location) 
-                                 The URL needs to be reachable by the Azure slave, so make sure to configure any relevant                                      firewall rules accordingly.<br> 
-      &nbsp;&nbsp;&nbsp;&nbsp;2) TCP port for JNLP slave agents (Manage Jenkins --> configure global security --> Enable    
-                                                                 security --> TCP port for JNLP slaves). <br>
+      1) Jenkins URL (Manage Jenkins --> configure system --> Jenkins Location) 
+         The URL needs to be reachable by the Azure slave, so make sure to configure any relevant                                      firewall rules accordingly.<br> 
+      2) TCP port for JNLP slave agents (Manage Jenkins --> configure global security --> Enable    
+         security --> TCP port for JNLP slaves). <br>
       The TCP port needs to be reachable from the Azure slave launched using JNLP. It is recommended to use a fixed port so         that any necessary firewall exceptions can be made. <br>
       If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP slave agents" and, in case of 
       Windows, add the necessary firewall rules inside virtual machine (Run --> firewall.cpl).<br> 
-l.    For the Init script, provide a script to install at least a Java runtime if the image does not have Java pre-installed.<br>
+l.    For the Init script, provide a script to install at least a Java runtime if the image does not have Java   
+      pre-installed.<br>
       For the JNLP launch method, the init script must be in PowerShell.<br>
       If the init script is expected to take a long time to execute, it is recommended to prepare custom images with the            necessary software pre-installed.<br>
       For more details about how to prepare custom images, refer to the below links:<br>
