@@ -1,5 +1,5 @@
 # azure-slave-plugin
-==================
+
 
 Jenkins Plugin to create Azure slaves.
 
