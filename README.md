@@ -77,9 +77,8 @@ Supports creating
       For the JNLP launch method, the init script must be in PowerShell.
       If the init script is expected to take a long time to execute, it is recommended to prepare custom images with the            necessary software pre-installed.<br>
       For more details about how to prepare custom images, refer to the below links:<br>
-      [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
-      
-      [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
+      * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
+      * [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
 13. Specify a user name and a password as per the rules explained in the help text.
 14. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect 
       to your Azure account to verify the correctness of the supplied information.
