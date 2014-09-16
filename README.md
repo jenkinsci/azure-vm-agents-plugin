@@ -79,20 +79,19 @@ Supports creating
       For the JNLP launch method, the init script must be in PowerShell.
       If the init script is expected to take a long time to execute, it is recommended to prepare custom images with the            necessary software pre-installed.<br>
       For more details about how to prepare custom images, refer to the below links:<br>
-      http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/<br>
-      http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/<br>
+      [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
+      [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
 13. Specify a user name and a password as per the rules explained in the help text.
 14. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect 
       to your Azure account to verify the correctness of the supplied information.
 
+## Template Configuration for Ubuntu images.
+1. Configure an Azure profile and Template as per the above instructions.
+2. If the init script is expected to take a long time to complete, it is recommended to use a custom-prepared Ubuntu 
+   image that has the required software pre-installed, including a Java runtime 
+3. For platform images, you may specify an Init script as below to install Java, Git and Ant:
 
-<h2>Template Configuration for Ubuntu images.</h2>
-a) Configure an Azure profile and Template as per the above instructions.<br>
-b) If the init script is expected to take a long time to complete, it is recommended to use a custom-prepared Ubuntu 
-   image that has the required software pre-installed, including a Java runtime<br> 
-c) For platform images, you may specify an Init script as below to install Java, Git and Ant:<br>
-
-<pre><code>
+```
       #Install Java
       sudo apt-get -y update
       sudo apt-get install -y openjdk-7-jdk
@@ -106,14 +105,15 @@ c) For platform images, you may specify an Init script as below to install Java,
       sudo apt-get install -y ant
       sudo apt-get -y update --fix-missing
       sudo apt-get install -y ant
-</code></pre>
+```
 
-<h2>Template configuration for Windows images with launch method JNLP. </h2>
-a) Make sure to follow the instructions specified in III k above for JNLP.<br>
-b) If the Jenkins master does not have a security configuration, leave the Init script blank for the default 
-   script to execute on the slave.<br>
-c) If the Jenkins master has a security configuration, then refer to the script at    
-   https://gist.github.com/snallami/5aa9ea2c57836a3b3635 and modify the script with the proper Jenkins credentials.<br>
+## Template configuration for Windows images with launch method JNLP.
+1. Make sure to follow the instructions specified above for JNLP.
+2. If the Jenkins master does not have a security configuration, leave the Init script blank for the default 
+   script to execute on the slave.
+3. If the Jenkins master has a security configuration, then refer to the script at    
+   [Script for Windows slave](https://gist.github.com/snallami/5aa9ea2c57836a3b3635) and modify the script with the proper 
+   Jenkins credentials.
 
    At a minimum, the script needs to be modified with the Jenkins user name and API token.
    To get the API token, click on your username --> configure --> show api token<br>
