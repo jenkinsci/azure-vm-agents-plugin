@@ -19,14 +19,14 @@ Supports creating
 5. Click either “Install without restart” or “Download now and install after restart”.
 6. Restart Jenkins if necessary.<br>
 
-<H2>Configure the plugin : Azure profile configuration</H2>
-a)    Within the Jenkins dashboard, click Manage Jenkins --> Configure System --> Scroll to the bottom of the page 
-      and find the section with the dropdown "Add new cloud" --> click on it and select "Microsoft Azure"<br>
-b)    Enter the subscription ID and the management certificate from your publish settings file. 
-      If you don’t have a publish settings file, click on the help button and follow the directions to 
-      download the publish settings file.<br>
-c)    Click on “Verify configuration” to make sure that the profile configuration is done correctly.<br>
-d)    Save and continue with the template configuration (See instructions below)<br>
+## Configure the plugin : Azure profile configuration
+1. Within the Jenkins dashboard, click Manage Jenkins --> Configure System --> Scroll to the bottom of the page 
+   and find the section with the dropdown "Add new cloud" --> click on it and select "Microsoft Azure"
+2. Enter the subscription ID and the management certificate from your publish settings file. 
+   If you don’t have a publish settings file, click on the help button and follow the directions to 
+   download the publish settings file.
+3. Click on “Verify configuration” to make sure that the profile configuration is done correctly.
+4. Save and continue with the template configuration (See instructions below)<br>
 
 <H2>Configure the plugin : Template configuration.</H2>
 a)    Click on the "Add" option to add a template. A template is used to define an Azure slave configuration, like 
