@@ -15,13 +15,13 @@ Supports creating
 
 
 
-<H2>How to install the Azure Slave plugin</H2>
-a)      Within the Jenkins dashboard, click Manage Jenkins.<br>
-b)      In the Manage Jenkins page, click Manage Plugins.<br>
-c)      Click the Available tab.<br>
-d)      In the "Cluster Management and Distributed Build" section, select the Azure Slave plugin.<br>
-e)      Click either “Install without restart” or “Download now and install after restart”.<br>
-f)      Restart Jenkins if necessary.<br>
+## How to install the Azure Slave plugin
+1. Within the Jenkins dashboard, click Manage Jenkins.
+2. In the Manage Jenkins page, click Manage Plugins.
+3. Click the Available tab.
+4. In the "Cluster Management and Distributed Build" section, select the Azure Slave plugin.
+5. Click either “Install without restart” or “Download now and install after restart”.
+6. Restart Jenkins if necessary.<br>
 
 <H2>Configure the plugin : Azure profile configuration</H2>
 a)    Within the Jenkins dashboard, click Manage Jenkins --> Configure System --> Scroll to the bottom of the page 
