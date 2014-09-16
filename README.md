@@ -66,11 +66,9 @@ Supports creating
   When using the JNLP launch option, ensure the following:
   * Jenkins URL (Manage Jenkins --> configure system --> Jenkins Location) 
     * The URL needs to be reachable by the Azure slave, so make sure to configure any relevant                                      firewall rules accordingly.
-  * TCP port for JNLP slave agents (Manage Jenkins --> configure global security --> Enable 
-         security --> TCP port for JNLP slaves).
+  * TCP port for JNLP slave agents (Manage Jenkins --> configure global security --> Enable security --> TCP port for JNLP slaves).
     * The TCP port needs to be reachable from the Azure slave launched using JNLP. It is recommended to use a fixed port so         that any necessary firewall exceptions can be made.
     
-     
       If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP slave agents" and, in case of 
       Windows, add the necessary firewall rules inside virtual machine (Run --> firewall.cpl).
 12. For the Init script, provide a script to install at least a Java runtime if the image does not have Java   
@@ -80,6 +78,7 @@ Supports creating
       If the init script is expected to take a long time to execute, it is recommended to prepare custom images with the            necessary software pre-installed.<br>
       For more details about how to prepare custom images, refer to the below links:<br>
       [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
+      
       [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
 13. Specify a user name and a password as per the rules explained in the help text.
 14. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect 
@@ -112,7 +111,7 @@ Supports creating
 2. If the Jenkins master does not have a security configuration, leave the Init script blank for the default 
    script to execute on the slave.
 3. If the Jenkins master has a security configuration, then refer to the script at    
-   [Script for Windows slave](https://gist.github.com/snallami/5aa9ea2c57836a3b3635) and modify the script with the proper 
+   https://gist.github.com/snallami/5aa9ea2c57836a3b3635 and modify the script with the proper 
    Jenkins credentials.
 
    At a minimum, the script needs to be modified with the Jenkins user name and API token.
