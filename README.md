@@ -120,5 +120,37 @@ Supports creating
 
    The below statement in the script needs to be modified:
    $credentails="username:apitoken"
+   
+## Create a Jenkins job that runs on a Linux slave node on Azure
+1. In the Jenkins dashboard, click New Item/Job.
+2. Enter a name for the task/Job you are creating.
+3. For the project type, select Freestyle project and click OK.
+4. In the task configuration page, select Restrict where this project can be run.
+5. In the Label Expression field, enter label given during template configuration.
+6. In the Build section, click Add build step and select Execute shell.
+7. In the text area that appears, paste the following script.
+ 
+ ````
+  # Clone from git repo
+  currentDir="$PWD"
+  if [ -e sample ]; then
+    cd sample
+    git pull origin master
+  else
+    git clone https://github.com/snallami/sample.git
+  fi
+ 
+ # change directory to project
+ cd $currentDir/sample/ACSFilter
+ 
+ #Execute build task
+ ant
+ ````
+8. Save Job and click on Build now.
+9. Jenkins will create a slave node on Azure cloud using the template created in the previous section and 
+   execute the script you specified in the build step for this task.
+10. Logs are available @ Manage Jenkins --> System logs --> All Jenkins logs.
+11. Once the node is provisined in Azure, which typically takes about 5 to 7 minutes, node gets added to Jenkins.
+
 
  
