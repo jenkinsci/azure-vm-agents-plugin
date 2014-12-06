@@ -28,6 +28,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
+import jenkins.model.Jenkins;
+import jenkins.slaves.JnlpSlaveAgentProtocol;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -195,6 +198,31 @@ public class AzureCloud extends Cloud {
 					Computer.threadPoolForRemoting.submit(new Callable<Node>() {
 						
 						public Node call() throws Exception {
+							
+							// Verify if there are any shutdown(deallocated) nodes that can be reused.
+							for (Computer slaveComputer : Jenkins.getInstance().getComputers()) {
+								if (slaveComputer instanceof AzureComputer && slaveComputer.isOffline()) {
+									AzureComputer azureComputer = (AzureComputer)slaveComputer;
+									AzureSlave slaveNode = azureComputer.getNode();
+									
+									LOGGER.info("Azure Cloud: provision: "+slaveNode.getLabelString());
+
+									if (!slaveNode.isDeleteSlave() && slaveNode.getLabelString().contains(slaveTemplate.getLabels())) {
+										try {
+											AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
+											//waitUntilOnline(slaveNode);
+											
+											 Hudson.getInstance().addNode(slaveNode);
+											 slaveNode.toComputer().connect(false).get();
+										} catch (Exception e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+									}
+									
+								}
+							}
+
 							@SuppressWarnings("deprecation")
 							AzureSlave slave = slaveTemplate.provisionSlave(new StreamTaskListener(System.out));
 							// Get virtual machine properties
@@ -203,15 +231,15 @@ public class AzureCloud extends Cloud {
 							slaveTemplate.setVirtualMachineDetails(slave);
 							try {
 								if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
-									 slaveTemplate.waitForReadyRole(slave);
-									 LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
-									 Thread.sleep(2 * 60 * 1000);
+									// slaveTemplate.waitForReadyRole(slave);
+									// LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
+									// Thread.sleep(2 * 60 * 1000);
 									 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
 									 Hudson.getInstance().addNode(slave);
 									 slave.toComputer().connect(false).get();
 								 } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
 									 LOGGER.info("Azure Cloud: provision: Checking for slave status");
-									 slaveTemplate.waitForReadyRole(slave);
+									 // slaveTemplate.waitForReadyRole(slave);
 									 LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
 									 Hudson.getInstance().addNode(slave);
 									 

@@ -30,6 +30,10 @@
 		    		<f:textbox default="60" />
 				</f:entry>
 				
+				<f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"  help="/plugin/azure-slave-plugin/help-shutdownOnIdle.html">
+ 					<f:checkbox/>
+    		 	</f:entry>				
+				
 				<f:slave-mode name="useSlaveAlwaysIfAvail" node="${instance}" help="/plugin/azure-slave-plugin/help-slaveMode.html" default="EXCLUSIVE"/>
 			</f:section>
 		 	 
@@ -41,7 +45,7 @@
 				<f:entry title="${%Launch_Method}" field="slaveLaunchMethod" help="/plugin/azure-slave-plugin/help-slaveLaunchMethod.html">
 					<f:select />
 		  	 	</f:entry>
-		 	 
+		  	 			 	 
 				<f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-slave-plugin/help-initScript.html">
 					<f:textarea />
 				</f:entry>
@@ -79,7 +83,7 @@
 				<f:entry title="${%noOfParallelJobs}" field="noOfParallelJobs" help="/plugin/azure-slave-plugin/help-noOfParallelJobs.html">
 					<f:textbox default="${descriptor.getDefaultNoOfExecutors()}" />
 				</f:entry>
-
+				
 				<f:entry title="${%Template_Status}" field="templateStatus" help="/plugin/azure-slave-plugin/help-templateStatus.html">
 					<f:select />
 		  	 	</f:entry>

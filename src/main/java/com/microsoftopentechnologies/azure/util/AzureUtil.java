@@ -35,19 +35,45 @@ public class AzureUtil {
 
 	
     // Although ugly to maintain this is best way for now.
-	public static String DEFAULT_INIT_SCRIPT = "Set-ExecutionPolicy Unrestricted"+ "\n" + 
-						"$jenkinsserverurl = $args[0]"+ "\n" + "$vmname = $args[1]" + "\n"+
-			             "$source = \"http://azure.azulsystems.com/zulu/zulu1.7.0_51-7.3.0.4-win64.zip?jenkins\""+ "\n" +
-                          "mkdir c:\\azurecsdir" 	+ "\n" +	"$destination = \"c:\\azurecsdir\\zuluJDK.zip\""+ "\n" +
-			             "$wc = New-Object System.Net.WebClient "+ "\n" + "$wc.DownloadFile($source, $destination)"+ "\n" +
-                          "$shell_app=new-object -com shell.application" + "\n" + "$zip_file = $shell_app.namespace($destination)" + "\n" + 
-			             "mkdir c:\\java" + "\n" + "$destination = $shell_app.namespace(\"c:\\java\")"+ "\n" + "$destination.Copyhere($zip_file.items())" + "\n" + 
-                          "$slaveSource = $jenkinsserverurl + \"jnlpJars/slave.jar\"" + "\n" + "$destSource = \"c:\\java\\slave.jar\"" + "\n" + 
-			             "$wc = New-Object System.Net.WebClient" + "\n" + "$wc.DownloadFile($slaveSource, $destSource)" + "\n" + 
-                          "$java=\"c:\\java\\zulu1.7.0_51-7.3.0.4-win64\\bin\\java.exe\"" + "\n" + "$jar=\"-jar\"" + "\n" + 
-			             "$jnlpUrl=\"-jnlpUrl\""+ "\n" + "$serverURL=$jenkinsserverurl+\"computer/\" + $vmname + \"/slave-agent.jnlp\""+ "\n" +
-                          "& $java $jar $destSource $jnlpUrl $serverURL";    
-	
+	public static String DEFAULT_INIT_SCRIPT = "Set-ExecutionPolicy Unrestricted"+ "\n" +
+												"$jenkinsServerUrl = $args[0]"+ "\n" +
+												"$vmName = $args[1]" + "\n" +
+												"$secret = $args[2]" + "\n" +
+												"$jenkinsSlaveJarUrl = $jenkinsServerUrl + \"jnlpJars/slave.jar\"" + "\n" +
+												"$jnlpUrl=$jenkinsServerUrl + 'computer/' + $vmName + '/slave-agent.jnlp'" + "\n" +
+												"$baseDir = 'c:\\azurecsdir'" + "\n" +	
+												"$JDKUrl = 'http://azure.azulsystems.com/zulu/zulu1.7.0_51-7.3.0.4-win64.zip?jenkins'" + "\n" +	
+												"$destinationJDKZipPath = $baseDir + '\\zuluJDK.zip'" + "\n" +	
+												"$destinationSlaveJarPath = $baseDir + '\\slave.jar'" + "\n" +
+												"$javaExe = $baseDir + '\\zulu1.7.0_51-7.3.0.4-win64\\bin\\java.exe'" + "\n" +
+												"function Get-ScriptPath" + "\n" + "{" + "\n" +
+												"return $MyInvocation.ScriptName;" + "\n" + "}" + "\n" +
+												"If(-not((Test-Path $destinationJDKZipPath)))" + "\n" + "{" + "\n" +
+												"md -Path $baseDir -Force" + "\n" +
+												"$wc = New-Object System.Net.WebClient" + "\n" +
+												"$wc.DownloadFile($JDKUrl, $destinationJDKZipPath)" + "\n" +
+												"$shell_app = new-object -com shell.application" + "\n" +
+												"$zip_file = $shell_app.namespace($destinationJDKZipPath)" + "\n" +
+												"$javaInstallDir = $shell_app.namespace($baseDir)" + "\n" +
+												"$javaInstallDir.Copyhere($zip_file.items())" + "\n" +
+												"$wc = New-Object System.Net.WebClient" + "\n" +
+												"$wc.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)" + "\n" +
+												"$scriptPath = Get-ScriptPath" + "\n" +
+												"$content = 'powershell.exe -ExecutionPolicy Unrestricted -file' + ' '+ $scriptPath + ' '+ $jenkinsServerUrl + ' ' + $vmName + ' ' + $secret" + "\n" +
+												"schtasks /create /tn \"Jenkins slave agent\" /ru \"SYSTEM\" /sc onstart /rl HIGHEST /delay 0000:30 /tr $content /f" + "\n" +
+												"$scriptPath = Get-ScriptPath" + "\n" + "}" + "\n" +
+												"$process = New-Object System.Diagnostics.Process;" + "\n" +
+												"$process.StartInfo.FileName = $javaExe;" + "\n" +
+												"If($secret)" + "\n" + "{" + "\n" +
+												"$process.StartInfo.Arguments = \"-jar $destinationSlaveJarPath -secret $secret -jnlpUrl $jnlpUrl\"" + "\n" + "}" + "\n" + "else" + "\n" + "{" + "\n" +
+												"$process.StartInfo.Arguments = \"-jar $destinationSlaveJarPath -jnlpUrl $jnlpUrl\"" + "\n" + "}" + "\n" +
+												"$process.StartInfo.RedirectStandardError = $true;" + "\n" +
+												"$process.StartInfo.RedirectStandardOutput = $true;" + "\n" +
+												"$process.StartInfo.UseShellExecute = $false;" + "\n" +
+												"$process.StartInfo.CreateNoWindow = $true;" + "\n" +
+												"$process.StartInfo;" + "\n" +
+												"$process.Start();" + "\n" ;
+												
 	/** Converts bytes to hex representation */
 	public static String hexify(byte bytes[]) {
 		char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',

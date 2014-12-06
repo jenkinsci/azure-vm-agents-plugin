@@ -50,6 +50,8 @@ import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import jenkins.slaves.JnlpSlaveAgentProtocol;
+
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.xml.sax.SAXException;
@@ -331,6 +333,8 @@ public class AzureManagementServiceDelegate {
 			String fileName = cloudServiceName+roleName+"initscript.ps1";
 			String initScript = null;
 			
+			String jnlpSecret = JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(roleName);
+			
 			if (AzureUtil.isNull(template.getInitScript())) {
 				// Move this to a file
 				initScript = AzureUtil.DEFAULT_INIT_SCRIPT;
@@ -349,7 +353,7 @@ public class AzureManagementServiceDelegate {
 			}
 			LOGGER.info("AzureManagementServiceDelegate: handleCustomScriptExtension: Jenkins server url "+jenkinsServerURL);
 			// set custom script extension in role
-			return addResourceExtenions(roleName, template.getStorageAccountName(), storageAccountKey, Constants.CONFIG_CONTAINER_NAME, blobURL, fileName, jenkinsServerURL);
+			return addResourceExtenions(roleName, template.getStorageAccountName(), storageAccountKey, Constants.CONFIG_CONTAINER_NAME, blobURL, fileName, jenkinsServerURL, jnlpSecret);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new AzureCloudException("AzureManagementServiceDelegate: handleCustomScriptExtension: Exception occured while adding custom extension "+e);
@@ -359,7 +363,7 @@ public class AzureManagementServiceDelegate {
 	
     /** Adds BGInfo and CustomScript extension */
 	public static ArrayList<ResourceExtensionReference> addResourceExtenions(String roleName, String storageAccountName, 
-			String storageAccountKey, String containerName, String blobURL, String fileName, String jenkinsServerURL) throws Exception {
+			String storageAccountKey, String containerName, String blobURL, String fileName, String jenkinsServerURL, String jnlpSecret) throws Exception {
 		ArrayList<ResourceExtensionReference> resourceExtensions = new ArrayList<ResourceExtensionReference>();
 
 		// Add custom script extension
@@ -394,7 +398,7 @@ public class AzureManagementServiceDelegate {
 //		}
 //		LOGGER.info("AzureManagementServiceDelegate: addResourceExtenions: user.getId() "+userID + " API token "+token);
 		
-		pubicConfig.setValue(getCustomScriptPublicConfigValue(sasURL, fileName, jenkinsServerURL, roleName));
+		pubicConfig.setValue(getCustomScriptPublicConfigValue(sasURL, fileName, jenkinsServerURL, roleName, jnlpSecret));
 		pubicConfig.setType("Public");
 
 		ResourceExtensionParameterValue privateConfig = new ResourceExtensionParameterValue();
@@ -407,8 +411,8 @@ public class AzureManagementServiceDelegate {
 	}
 	
 	/** JSON string custom script public config value */
-	public static String getCustomScriptPublicConfigValue(String sasURL, String fileName, String jenkinsServerURL, String vmName)
-	throws Exception {
+	public static String getCustomScriptPublicConfigValue(String sasURL, String fileName, String jenkinsServerURL, String vmName, 
+			String jnlpSecret) throws Exception {
 		JsonFactory factory = new JsonFactory();
 		StringWriter stringWriter = new StringWriter();
 		JsonGenerator json = factory.createJsonGenerator(stringWriter);
@@ -418,7 +422,7 @@ public class AzureManagementServiceDelegate {
 		json.writeString(sasURL);
 		json.writeEndArray();
 		json.writeStringField("commandToExecute","powershell -ExecutionPolicy Unrestricted -file " + fileName
-			    + " " + jenkinsServerURL + " " + vmName);
+			    + " " + jenkinsServerURL + " " + vmName + " " + jnlpSecret);
 		json.writeEndObject();
 		json.close();
 		return stringWriter.toString();
