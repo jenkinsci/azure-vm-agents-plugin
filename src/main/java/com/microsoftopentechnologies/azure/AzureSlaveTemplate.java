@@ -99,7 +99,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 	public AzureSlaveTemplate(String templateName, String templateDesc, String labels, String location, String virtualMachineSize,
 			String storageAccountName, String noOfParallelJobs, Node.Mode useSlaveAlwaysIfAvail, String imageIdOrFamily, String slaveLaunchMethod,
 			String initScript, String adminUserName, String adminPassword, String virtualNetworkName, String subnetName,
-			String slaveWorkSpace, String jvmOptions, String cloudServiceName, String retentionTimeInMin, 
+			String slaveWorkSpace, String jvmOptions, String cloudServiceName, String retentionTimeInMin, boolean shutdownOnIdle, 
 			String templateStatus, String templateStatusDetails) {
 		this.templateName = templateName;
 		this.templateDesc = templateDesc;
@@ -113,7 +113,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 			this.noOfParallelJobs = Integer.parseInt(noOfParallelJobs);
 		}
 		this.useSlaveAlwaysIfAvail = useSlaveAlwaysIfAvail;
-		this.shutdownOnIdle = false;
+		this.shutdownOnIdle = shutdownOnIdle;
 		this.imageIdOrFamily = imageIdOrFamily;
 		this.initScript = initScript;
 		this.slaveLaunchMethod = slaveLaunchMethod;
