@@ -422,7 +422,7 @@ public class AzureManagementServiceDelegate {
 		json.writeString(sasURL);
 		json.writeEndArray();
 		json.writeStringField("commandToExecute","powershell -ExecutionPolicy Unrestricted -file " + fileName
-			    + " " + jenkinsServerURL + " " + vmName + " " + jnlpSecret);
+			    + " " + jenkinsServerURL + " " + vmName + " " + jnlpSecret+ "  "+ " 2>>c:\\error.log");
 		json.writeEndObject();
 		json.close();
 		return stringWriter.toString();
@@ -1316,6 +1316,7 @@ public class AzureManagementServiceDelegate {
 	
 	/** Starts Azure virtual machine */
 	public static void startVirtualMachine(AzureSlave slave) throws Exception {
+		LOGGER.info("AzureManagementServiceDelegate: startVirtualMachine: "+slave.getNodeName());
 		ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(slave);
 		client.getVirtualMachinesOperations().start(slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName());
 	}

@@ -198,22 +198,37 @@ public class AzureCloud extends Cloud {
 					Computer.threadPoolForRemoting.submit(new Callable<Node>() {
 						
 						public Node call() throws Exception {
+							LOGGER.info("Azure Cloud: provision: inside call method");
 							
 							// Verify if there are any shutdown(deallocated) nodes that can be reused.
 							for (Computer slaveComputer : Jenkins.getInstance().getComputers()) {
+								LOGGER.info("Azure Cloud: provision: got slave computer "+slaveComputer.getName());
 								if (slaveComputer instanceof AzureComputer && slaveComputer.isOffline()) {
 									AzureComputer azureComputer = (AzureComputer)slaveComputer;
 									AzureSlave slaveNode = azureComputer.getNode();
 									
-									LOGGER.info("Azure Cloud: provision: "+slaveNode.getLabelString());
+									LOGGER.info("Azure Cloud: provision: slave node"+slaveNode.getLabelString());
+									LOGGER.info("Azure Cloud: provision: slave template"+slaveTemplate.getLabels());
 
-									if (!slaveNode.isDeleteSlave() && slaveNode.getLabelString().contains(slaveTemplate.getLabels())) {
+									if (!slaveNode.isDeleteSlave() && slaveNode.getLabelString().equalsIgnoreCase(slaveTemplate.getLabels())) {
 										try {
-											AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
-											//waitUntilOnline(slaveNode);
-											
-											 Hudson.getInstance().addNode(slaveNode);
-											 slaveNode.toComputer().connect(false).get();
+											if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
+												LOGGER.info("Found existing node , starting VM "+slaveNode.getNodeName());
+												AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
+												//waitUntilOnline(slaveNode);
+												
+												 Hudson.getInstance().addNode(slaveNode);
+												 if (slaveNode.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) 
+													 slaveNode.toComputer().connect(false).get();
+												 else
+													// Wait until node is online
+													 waitUntilOnline(slaveNode);
+												 
+												 azureComputer.setAcceptingTasks(true);
+												 return slaveNode;
+											} else {
+												slaveNode.setDeleteSlave(true);
+											}
 										} catch (Exception e) {
 											// TODO Auto-generated catch block
 											e.printStackTrace();
@@ -222,6 +237,8 @@ public class AzureCloud extends Cloud {
 									
 								}
 							}
+							
+							LOGGER.info("Azure Cloud: provision: Provisioning new slave for label "+slaveTemplate.getLabels());
 
 							@SuppressWarnings("deprecation")
 							AzureSlave slave = slaveTemplate.provisionSlave(new StreamTaskListener(System.out));

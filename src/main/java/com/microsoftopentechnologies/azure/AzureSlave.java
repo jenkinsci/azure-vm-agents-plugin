@@ -242,9 +242,12 @@ public class AzureSlave extends AbstractCloudSlave  {
 	
 	public void idleTimeout() throws Exception {
 		if (shutdownOnIdle) {
-			LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is true, shutting down slave "+this.getDisplayName());
-			AzureManagementServiceDelegate.shutdownVirtualMachine(this);
-			setDeleteSlave(false);
+			// Call shutdown only if the slave is online
+			if (this.getComputer().isOnline()) {
+				LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is true, shutting down slave "+this.getDisplayName());
+				AzureManagementServiceDelegate.shutdownVirtualMachine(this);
+				setDeleteSlave(false);
+			}
 		} else {
 			LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is false, deleting slave "+this.getDisplayName());
 			setDeleteSlave(true);

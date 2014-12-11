@@ -35,7 +35,9 @@ If(-not((Test-Path $destinationJDKZipPath)))
 	
 	$scriptPath = Get-ScriptPath
 	$content = 'powershell.exe -ExecutionPolicy Unrestricted -file' + ' '+ $scriptPath + ' '+ $jenkinsServerUrl + ' ' + $vmName + ' ' + $secret
-	schtasks /create /tn "Jenkins slave agent" /ru "SYSTEM" /sc onstart /rl HIGHEST /delay 0000:30 /tr $content /f
+	$commandFile = $baseDir + '\slaveagenttask.cmd'
+	$content | Out-File $commandFile -Encoding ASCII -Append
+	schtasks /create /tn "Jenkins slave agent" /ru "SYSTEM" /sc onstart /rl HIGHEST /delay 0000:30 /tr $commandFile /f
 }
 
 # Launching jenkins slave agent					  

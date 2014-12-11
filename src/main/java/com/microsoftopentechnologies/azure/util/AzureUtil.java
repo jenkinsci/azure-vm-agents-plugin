@@ -60,7 +60,9 @@ public class AzureUtil {
 												"$wc.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)" + "\n" +
 												"$scriptPath = Get-ScriptPath" + "\n" +
 												"$content = 'powershell.exe -ExecutionPolicy Unrestricted -file' + ' '+ $scriptPath + ' '+ $jenkinsServerUrl + ' ' + $vmName + ' ' + $secret" + "\n" +
-												"schtasks /create /tn \"Jenkins slave agent\" /ru \"SYSTEM\" /sc onstart /rl HIGHEST /delay 0000:30 /tr $content /f" + "\n" +
+												"$commandFile = $baseDir + '\\slaveagenttask.cmd'" + "\n" +
+												"$content | Out-File $commandFile -Encoding ASCII -Append"  + "\n" +
+												"schtasks /create /tn \"Jenkins slave agent\" /ru \"SYSTEM\" /sc onstart /rl HIGHEST /delay 0000:30 /tr $commandFile /f" + "\n" +
 												"$scriptPath = Get-ScriptPath" + "\n" + "}" + "\n" +
 												"$process = New-Object System.Diagnostics.Process;" + "\n" +
 												"$process.StartInfo.FileName = $javaExe;" + "\n" +
