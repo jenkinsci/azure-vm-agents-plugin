@@ -267,6 +267,10 @@ public class AzureSlave extends AbstractCloudSlave  {
 		Hudson.getInstance().removeNode(this);
 	}
 	
+	public boolean isVMAliveOrHealthy() throws Exception {		
+		return AzureManagementServiceDelegate.isVMAliveOrHealthy(this);
+	}
+	
 	public void setTemplateStatus(String templateStatus, String templateStatusDetails) {
 		AzureCloud azureCloud = getCloud();
 		AzureSlaveTemplate slaveTemplate = azureCloud.getAzureSlaveTemplate(templateName);

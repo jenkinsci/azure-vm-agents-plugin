@@ -215,15 +215,15 @@ public class AzureCloud extends Cloud {
 											if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
 												LOGGER.info("Found existing node , starting VM "+slaveNode.getNodeName());
 												AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
-												//waitUntilOnline(slaveNode);
-												
+												// set virtual machine details again
+												Thread.sleep(30 * 1000); // wait for 30 seconds
+												 AzureManagementServiceDelegate.setVirtualMachineDetails(slaveNode, slaveTemplate);
 												 Hudson.getInstance().addNode(slaveNode);
 												 if (slaveNode.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) 
 													 slaveNode.toComputer().connect(false).get();
 												 else
 													// Wait until node is online
 													 waitUntilOnline(slaveNode);
-												 
 												 azureComputer.setAcceptingTasks(true);
 												 return slaveNode;
 											} else {

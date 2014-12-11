@@ -28,6 +28,7 @@ import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 
 import hudson.model.Descriptor;
 import hudson.remoting.Callable;
+import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.TimeUnit2;
 
@@ -54,6 +55,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
                 	// close channel
                 	try {
                 		slaveNode.setAcceptingTasks(false);
+                		slaveNode.disconnect(OfflineCause.create(Messages._IDLE_TIMEOUT_SHUTDOWN()));
                 		if (slaveNode.getChannel() != null ) {
     						slaveNode.getChannel().close();
                 		}

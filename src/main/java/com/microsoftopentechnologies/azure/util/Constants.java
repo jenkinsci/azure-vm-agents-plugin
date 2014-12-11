@@ -81,4 +81,10 @@ public class Constants {
 	
 	/** Role Status */
 	public static final String READY_ROLE_STATUS = "ReadyRole";
+	public static final String DELETING_VM_STATUS = "DeletingVM";
+	public static final String STOPPED_VM_STATUS = "StoppedVM";
+	public static final String STOPPING_VM_STATUS = "StoppingVM";
+	public static final String STOPPING_ROLE_STATUS = "StoppingRole";
+	public static final String STOPPED_DEALLOCATED_VM_STATUS = "StoppedDeallocated";
+	
 }

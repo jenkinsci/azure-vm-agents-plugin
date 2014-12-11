@@ -456,6 +456,7 @@ public class AzureManagementServiceDelegate {
 		ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
 		DeploymentGetResponse response = client.getDeploymentsOperations().getByName(azureSlave.getCloudServiceName(), 
 				azureSlave.getDeploymentName());
+		
 		// Getting the first virtual IP
 		azureSlave.setPublicDNSName(response.getVirtualIPAddresses().get(0).getAddress().getHostAddress());
 
@@ -1229,6 +1230,22 @@ public class AzureManagementServiceDelegate {
 		return status;
 	}
 	
+	/** Checks if VM is alive or healthy */	
+	public static boolean isVMAliveOrHealthy(AzureSlave slave) throws Exception {
+		Configuration config = ServiceDelegateHelper.loadConfiguration(slave.getSubscriptionID(), slave.getManagementCert(),
+				                                                         slave.getPassPhrase(), slave.getManagementURL());
+		String status = getVirtualMachineStatus(config, slave.getCloudServiceName(), DeploymentSlot.Production, slave.getNodeName());
+		LOGGER.info("AzureManagementServiceDelegate: isVMAliveOrHealthy: status " + status);
+		// if VM status is DeletingVM/StoppedVM/StoppingRole/StoppingVM then consider VM to be not healthy
+		if (status != null && (Constants.STOPPED_VM_STATUS.equalsIgnoreCase(status) || Constants.STOPPING_VM_STATUS.equalsIgnoreCase(status)
+				 			  || Constants.STOPPING_ROLE_STATUS.equalsIgnoreCase(status) || Constants.DELETING_VM_STATUS.equalsIgnoreCase(status)
+				 			  || Constants.STOPPED_DEALLOCATED_VM_STATUS.equalsIgnoreCase(status))) {
+			return false;
+		} else {
+			return true;
+		}
+	} 
+	
 	/** Retrieves count of role instances in a cloud service*/
 	public static int getRoleCount(ComputeManagementClient client, String cloudServiceName) throws Exception {
 		DeploymentGetResponse response = client.getDeploymentsOperations().getBySlot(cloudServiceName, DeploymentSlot.Production);
@@ -1317,8 +1334,24 @@ public class AzureManagementServiceDelegate {
 	/** Starts Azure virtual machine */
 	public static void startVirtualMachine(AzureSlave slave) throws Exception {
 		LOGGER.info("AzureManagementServiceDelegate: startVirtualMachine: "+slave.getNodeName());
+		int retryCount = 0;
+		boolean successful = false;
 		ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(slave);
-		client.getVirtualMachinesOperations().start(slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName());
+		
+		while (!successful) {
+			try {
+				client.getVirtualMachinesOperations().start(slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName());
+				successful = true; // may be we can just return
+			} catch (Exception e) {
+				LOGGER.info("AzureManagementServiceDelegate: startVirtualMachine: got exception while starting VM "+ slave.getNodeName()+ " will be retryig again");
+				if (retryCount > Constants.MAX_PROV_RETRIES) { 
+					throw e;
+				} else {
+					retryCount++;
+					Thread.sleep(30 * 1000); // wait for 30 seconds
+				}
+			}
+		}
 	}
 	
 	/** Gets Virtual Image List **/
