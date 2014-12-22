@@ -1237,14 +1237,12 @@ public class AzureManagementServiceDelegate {
 		String status = getVirtualMachineStatus(config, slave.getCloudServiceName(), DeploymentSlot.Production, slave.getNodeName());
 		LOGGER.info("AzureManagementServiceDelegate: isVMAliveOrHealthy: status " + status);
 		// if VM status is DeletingVM/StoppedVM/StoppingRole/StoppingVM then consider VM to be not healthy
-		if (status != null && (Constants.STOPPED_VM_STATUS.equalsIgnoreCase(status) || Constants.STOPPING_VM_STATUS.equalsIgnoreCase(status)
-				 			  || Constants.STOPPING_ROLE_STATUS.equalsIgnoreCase(status) || Constants.DELETING_VM_STATUS.equalsIgnoreCase(status)
-				 			  || Constants.STOPPED_DEALLOCATED_VM_STATUS.equalsIgnoreCase(status))) {
-			return false;
-		} else {
+		if (status != null && Constants.READY_ROLE_STATUS.equalsIgnoreCase(status)) {
 			return true;
+		} else {
+			return false;
 		}
-	} 
+	}
 	
 	/** Retrieves count of role instances in a cloud service*/
 	public static int getRoleCount(ComputeManagementClient client, String cloudServiceName) throws Exception {

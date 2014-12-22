@@ -314,7 +314,9 @@ public class AzureCloud extends Cloud {
 	
 	private static void markSlaveForDeletion(AzureSlave slave, String message) {
 		slave.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED, message);
-		slave.toComputer().setTemporarilyOffline(true, OfflineCause.create(Messages._Slave_Failed_To_Connect()));
+		if (slave.toComputer() != null) {
+			slave.toComputer().setTemporarilyOffline(true, OfflineCause.create(Messages._Slave_Failed_To_Connect()));
+		}
 		slave.setDeleteSlave(true);
 	}
 	

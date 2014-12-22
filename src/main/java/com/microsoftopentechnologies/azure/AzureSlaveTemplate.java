@@ -31,7 +31,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-import javax.ws.rs.core.NewCookie;
 
 import jenkins.model.Jenkins;
 
