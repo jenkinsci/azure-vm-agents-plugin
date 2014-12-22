@@ -136,8 +136,14 @@ public class AzureCloud extends Cloud {
 	/** Returns slave template associated with the label */
 	public AzureSlaveTemplate getAzureSlaveTemplate(Label label) {
 		for (AzureSlaveTemplate slaveTemplate : instTemplates) {
-			if (label.matches(slaveTemplate.getLabelDataSet())) {
-				return slaveTemplate;
+			if (slaveTemplate.getUseSlaveAlwaysIfAvail() == Node.Mode.NORMAL) {
+				if (label == null || label.matches(slaveTemplate.getLabelDataSet())) {
+					return slaveTemplate;
+				}
+			} else if (slaveTemplate.getUseSlaveAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
+				if (label != null && label.matches(slaveTemplate.getLabelDataSet())) {
+					return slaveTemplate;
+				}
 			}
 		}
 		return null;
@@ -286,8 +292,8 @@ public class AzureCloud extends Cloud {
 				try {
 					slave.toComputer().waitUntilOnline();
 				} catch (InterruptedException e) {
-                	 // just ignore
-                }
+					 // just ignore
+				}
 				return "success";
 			}
 		};
