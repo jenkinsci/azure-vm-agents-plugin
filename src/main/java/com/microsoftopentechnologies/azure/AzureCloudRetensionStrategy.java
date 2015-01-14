@@ -82,7 +82,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 						// We won't get exception for RNF , so for other exception types we can retry
 						if (e.getMessage().contains("not found in the currently deployed service")) {
 							LOGGER.info("AzureCloudRetensionStrategy: execute: Slave does not exist in the subscription anymore, setting shutdownOnIdle to True");
-							slaveNode.setShutdownOnIdle(true);
+							slaveNode.getNode().setShutdownOnIdle(true);
 						}
 					}
                 }
