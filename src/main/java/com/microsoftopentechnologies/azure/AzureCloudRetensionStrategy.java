@@ -77,7 +77,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 					} catch (AzureCloudException ae) {
             			LOGGER.info("AzureCloudRetensionStrategy: check: could not terminate or shutdown "+slaveNode.getName());
 					} catch (Exception e) {
-						LOGGER.info("AzureCloudRetensionStrategy: execute: Exception occured while calling timeout on node , \n"
+						LOGGER.info("AzureCloudRetensionStrategy: execute: Exception occured while calling timeout on node, \n"
 									+ "Error code "+e.getMessage());
 						// We won't get exception for RNF , so for other exception types we can retry
 						if (e.getMessage().contains("not found in the currently deployed service")) {
