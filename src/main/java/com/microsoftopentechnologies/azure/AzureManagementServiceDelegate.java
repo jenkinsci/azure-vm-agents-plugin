@@ -263,7 +263,7 @@ public class AzureManagementServiceDelegate {
 				// Throw exception so that in retry this will go through
 				throw new AzureCloudException("Provisioning Failure: Exception occured while creating virtual machine. Root cause: "+ex.getMessage());
 			} else {
-				LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: conflict error: waiting for a minute ad will try again");
+				LOGGER.info("AzureManagementServiceDelegate: handleProvisioningServiceException: conflict error: waiting for a minute and will try again");
 				try {
 					Thread.sleep(60 * 1000);
 				} catch (InterruptedException e) {
@@ -1341,7 +1341,7 @@ public class AzureManagementServiceDelegate {
 				client.getVirtualMachinesOperations().start(slave.getCloudServiceName(), slave.getDeploymentName(), slave.getNodeName());
 				successful = true; // may be we can just return
 			} catch (Exception e) {
-				LOGGER.info("AzureManagementServiceDelegate: startVirtualMachine: got exception while starting VM "+ slave.getNodeName()+ " will be retryig again");
+				LOGGER.info("AzureManagementServiceDelegate: startVirtualMachine: got exception while starting VM "+ slave.getNodeName()+ ". Will retry again after 30 seconds. Current retry count "+retryCount + " / " + Constants.MAX_PROV_RETRIES + "\n");
 				if (retryCount > Constants.MAX_PROV_RETRIES) { 
 					throw e;
 				} else {
