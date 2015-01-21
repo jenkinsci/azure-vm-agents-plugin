@@ -41,7 +41,7 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 				try {
 					if (azureComputer.isOffline()) {
 						if (!slaveNode.isDeleteSlave()) {
-							// Find out if node exists in azure , if not continue with delete else do not delete node
+							// Find out if node exists in azure, if not continue with delete else do not delete node
 							// although it is offline. May be JNLP or SSH launch is in progress
 							if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
 								LOGGER.info("AzureSlaveCleanUpTask: execute: VM "+slaveNode.getDisplayName()+" exists in cloud");
@@ -59,10 +59,15 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 								successful = true;
 							} catch (Exception e) {
 								retryCount++;
-								LOGGER.info("AzureSlaveCleanUpTask: execute: Exception occured while calling timeout on node , \n"
-											+ "Will retry again after 30 seconds. Current retry count "+retryCount + "\n"
+								LOGGER.info("AzureSlaveCleanUpTask: execute: Exception occured while calling timeout on node, \n"
+											+ "Will retry again after 30 seconds. Current retry count "+retryCount + " / 30\n"
 											+ "Error code "+e.getMessage());
 								// We won't get exception for RNF , so for other exception types we can retry
+								if (e.getMessage().contains("not found in the currently deployed service")) {
+									LOGGER.info("AzureSlaveCleanUpTask: execute: Slave does not exist in the subscription anymore, setting shutdownOnIdle to True");
+									slaveNode.setShutdownOnIdle(true);
+									break;
+								}
 								try {
 									Thread.sleep(30 * 1000);
 								} catch (InterruptedException e1) {

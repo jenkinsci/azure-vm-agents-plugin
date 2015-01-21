@@ -67,6 +67,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
                    
                     java.util.concurrent.Callable<Void> task = new java.util.concurrent.Callable<Void>() {
             			public Void call() throws Exception {
+            				LOGGER.info("AzureCloudRetensionStrategy: going to idleTimeout slave: "+slaveNode.getName());
             				slaveNode.getNode().idleTimeout();
             				return null;
             			}
@@ -74,9 +75,17 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
             		
             		try {
             			ExecutionEngine.executeWithRetry(task,  new LinearRetryForAllExceptions(30 /*maxRetries*/, 30/*waitinterval*/, 30 * 60/*timeout*/));
-            		} catch (AzureCloudException e) {
+					} catch (AzureCloudException ae) {
             			LOGGER.info("AzureCloudRetensionStrategy: check: could not terminate or shutdown "+slaveNode.getName());
-            		}
+					} catch (Exception e) {
+						LOGGER.info("AzureCloudRetensionStrategy: execute: Exception occured while calling timeout on node, \n"
+									+ "Error code "+e.getMessage());
+						// We won't get exception for RNF , so for other exception types we can retry
+						if (e.getMessage().contains("not found in the currently deployed service")) {
+							LOGGER.info("AzureCloudRetensionStrategy: execute: Slave does not exist in the subscription anymore, setting shutdownOnIdle to True");
+							slaveNode.getNode().setShutdownOnIdle(true);
+						}
+					}
                 }
             } 
         }

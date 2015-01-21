@@ -31,7 +31,7 @@ public class AzureUtil {
 	public static final String VAL_SPECIAL_CHAR_REGEX = "(?=.*[!@#$%^&*.]).{1,}";
 	public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z!@#\\$%\\^&\\*\\.]*{8,123})";
 	
-	public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{6,15})";
+	public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
 
 	
     // Although ugly to maintain this is best way for now.

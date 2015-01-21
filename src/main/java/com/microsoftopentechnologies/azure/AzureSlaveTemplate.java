@@ -329,10 +329,10 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 					Thread.sleep(5 * 60 * 1000);
 				} catch (InterruptedException e) {}
 			} else {
-				// Failure might be during Provisioning or post provisioning. back off for 10 minutes before retry.
-				LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: Got "+failureStep+" error, waiting for 10 minutes before retry");
+				// Failure might be during Provisioning or post provisioning. back off for 5 minutes before retry.
+				LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: Got "+failureStep+" error, waiting for 5 minutes before retry");
 				try {
-					Thread.sleep(10 * 60 * 1000);
+					Thread.sleep(5 * 60 * 1000);
 				} catch (InterruptedException e) {}
 			}
 			

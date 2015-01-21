@@ -213,13 +213,13 @@ public class AzureCloud extends Cloud {
 									AzureComputer azureComputer = (AzureComputer)slaveComputer;
 									AzureSlave slaveNode = azureComputer.getNode();
 									
-									LOGGER.info("Azure Cloud: provision: slave node"+slaveNode.getLabelString());
-									LOGGER.info("Azure Cloud: provision: slave template"+slaveTemplate.getLabels());
+									LOGGER.info("Azure Cloud: provision: slave node "+slaveNode.getLabelString());
+									LOGGER.info("Azure Cloud: provision: slave template "+slaveTemplate.getLabels());
 
 									if (!slaveNode.isDeleteSlave() && slaveNode.getLabelString().equalsIgnoreCase(slaveTemplate.getLabels())) {
 										try {
 											if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
-												LOGGER.info("Found existing node , starting VM "+slaveNode.getNodeName());
+												LOGGER.info("Found existing node, starting VM "+slaveNode.getNodeName());
 												AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
 												// set virtual machine details again
 												Thread.sleep(30 * 1000); // wait for 30 seconds
