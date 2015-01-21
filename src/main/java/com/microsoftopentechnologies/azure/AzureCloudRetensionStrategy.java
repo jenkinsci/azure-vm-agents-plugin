@@ -67,6 +67,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
                    
                     java.util.concurrent.Callable<Void> task = new java.util.concurrent.Callable<Void>() {
             			public Void call() throws Exception {
+            				LOGGER.info("AzureCloudRetensionStrategy: going to idleTimeout slave: "+slaveNode.getName());
             				slaveNode.getNode().idleTimeout();
             				return null;
             			}
