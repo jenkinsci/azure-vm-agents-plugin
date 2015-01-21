@@ -19,15 +19,12 @@ import java.util.logging.Logger;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
-import com.microsoftopentechnologies.azure.retry.ExponentialRetryStrategy;
 import com.microsoftopentechnologies.azure.retry.LinearRetryForAllExceptions;
 import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 
 import hudson.model.Descriptor;
-import hudson.remoting.Callable;
 import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.TimeUnit2;

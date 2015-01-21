@@ -24,7 +24,6 @@ import com.microsoftopentechnologies.azure.AzureComputer;
 import com.microsoftopentechnologies.azure.Messages;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
-import com.microsoftopentechnologies.azure.util.FailureStage;
 
 import hudson.model.Descriptor;
 import hudson.model.Hudson;

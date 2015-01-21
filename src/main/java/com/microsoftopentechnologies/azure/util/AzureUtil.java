@@ -15,8 +15,6 @@
  */
 package com.microsoftopentechnologies.azure.util;
 
-import java.util.Random;
-
 public class AzureUtil {
 	private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 	private final static String NOT_A_NUMBER_FORMAT = ".*[^0-9].*";

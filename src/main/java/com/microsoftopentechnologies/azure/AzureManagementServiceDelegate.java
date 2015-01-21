@@ -18,15 +18,10 @@ package com.microsoftopentechnologies.azure;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Hudson;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,7 +57,6 @@ import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.management.ManagementClient;
 import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
 import com.microsoft.windowsazure.management.compute.ComputeManagementService;
-import com.microsoft.windowsazure.management.compute.models.CertificateFormat;
 import com.microsoft.windowsazure.management.compute.models.ConfigurationSet;
 import com.microsoft.windowsazure.management.compute.models.ConfigurationSetTypes;
 import com.microsoft.windowsazure.management.compute.models.DeploymentGetResponse;
@@ -83,9 +77,6 @@ import com.microsoft.windowsazure.management.compute.models.ResourceExtensionPar
 import com.microsoft.windowsazure.management.compute.models.ResourceExtensionReference;
 import com.microsoft.windowsazure.management.compute.models.Role;
 import com.microsoft.windowsazure.management.compute.models.RoleInstance;
-import com.microsoft.windowsazure.management.compute.models.ServiceCertificateCreateParameters;
-import com.microsoft.windowsazure.management.compute.models.ServiceCertificateGetParameters;
-import com.microsoft.windowsazure.management.compute.models.ServiceCertificateGetResponse;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineCreateDeploymentParameters;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineCreateParameters;
 import com.microsoft.windowsazure.management.compute.models.VirtualMachineOSImageListResponse;
@@ -509,93 +500,6 @@ public class AzureManagementServiceDelegate {
 		return false;
 	}
 
-	/**
-	 * Uploads certificate to windows azure certificate store.
-	 * @param client
-	 * @param cloudServiceName
-	 * @param certData
-	 * @throws AzureCloudException
-	 */
-	private static void uploadCertsIfNotExists(ComputeManagementClient client, String cloudServiceName, byte[] certData) 
-			throws AzureCloudException {
-		try {
-			if (checkIfCertExists(client, cloudServiceName, certData)) {
-				LOGGER.info("AzureManagementServiceDelegate: uploadCertsIfNotExists: Certificate already exists in hosted service "	+ cloudServiceName);
-				return;
-			}
-
-			// Try to upload to hosted service
-			ServiceCertificateCreateParameters params = new ServiceCertificateCreateParameters();
-			params.setCertificateFormat(CertificateFormat.Cer);
-			params.setData(certData);
-			client.getServiceCertificatesOperations().create(cloudServiceName, params);
-		} catch (Exception e) {
-			e.printStackTrace();
-			LOGGER.severe("Error: Unable to upload certificates due to " + e.getMessage());
-			throw new AzureCloudException("Error: Unable to upload certificates due to " + e.getMessage());
-		}
-	}
-
-	/**
-	 * Checks if certificate is alreday present in Azure certificate storage
-	 * @param client
-	 * @param cloudServiceName
-	 * @param certData
-	 * @return
-	 */
-	private static boolean checkIfCertExists(ComputeManagementClient client, String cloudServiceName, byte[] certData) {
-		boolean exists = false;
-		try {
-			Map<String, String> certMap = getCertInfo(certData);
-
-			if (certMap != null) {
-				ServiceCertificateGetParameters certParams = new ServiceCertificateGetParameters();
-				certParams.setServiceName(cloudServiceName);
-				certParams.setThumbprint(certMap.get("thumbPrint"));
-				certParams.setThumbprintAlgorithm(certMap.get("certAlg"));
-				ServiceCertificateGetResponse resp = client.getServiceCertificatesOperations().get(certParams);
-				//TODO: add additional checks for certificate support
-				exists = true;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			LOGGER.severe("Error occured while getting cert data");
-			return exists;
-		}
-		return exists;
-	}
-
-	/**
-	 * Gets certificate information
-	 * @param certData
-	 * @return
-	 * @throws AzureCloudException
-	 */
-	private static Map<String, String> getCertInfo(byte[] certData) throws AzureCloudException {
-		Map<String, String> certDataMap = new HashMap<String, String>();
-
-		try {
-			CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-			InputStream is = new ByteArrayInputStream(certData);
-			X509Certificate cert = (X509Certificate) certificateFactory.generateCertificate(is);
-			String certAlg = cert.getSigAlgName();
-			certDataMap.put("certAlg", certAlg);
-			// Calculate thumbPrint
-			MessageDigest mdigest = MessageDigest.getInstance(certAlg);
-			byte[] der = cert.getEncoded();
-			mdigest.update(der);
-			byte[] digest = mdigest.digest();
-			String thumbPrint = AzureUtil.hexify(digest).toUpperCase();
-			certDataMap.put("thumbPrint", thumbPrint);
-		} catch (Exception e) {
-			e.printStackTrace();
-			LOGGER.severe("Error occured while parsing certificate data " + e.getMessage());
-			throw new AzureCloudException("Error occured while parsing certificate data "
-			+ e.getMessage());
-		}
-		return certDataMap.size() > 0 ? certDataMap : null;
-	}
-    
 	/** Creates Azure slave object with necessary info */
 	private static AzureSlave parseDeploymentResponse(OperationStatusResponse response, String cloudServiceName,
 			AzureSlaveTemplate template, VirtualMachineCreateDeploymentParameters params) throws AzureCloudException {

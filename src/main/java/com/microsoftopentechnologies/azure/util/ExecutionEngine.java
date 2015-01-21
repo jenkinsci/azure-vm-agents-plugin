@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
-import com.microsoftopentechnologies.azure.retry.DefaultRetryStrategy;
 import com.microsoftopentechnologies.azure.retry.NoRetryStrategy;
 import com.microsoftopentechnologies.azure.retry.RetryStrategy;
 import com.microsoftopentechnologies.azure.retry.RetryTask;

@@ -29,7 +29,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
-import jenkins.slaves.JnlpSlaveAgentProtocol;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
