@@ -278,10 +278,7 @@ public class AzureCloud extends Cloud {
 					}), slaveTemplate.getNoOfParallelJobs()));
 
 			// Decrement workload
-			//workLoad -= slaveTemplate.getNoOfParallelJobs();
-			//In our case, the above solution doesn't work because of always using two executors. The "Master" job triggers other jobs, working as a "pipeline.
-			//TODO: a new option for changing the value.
-			workLoad -= 1;
+			workLoad -= slaveTemplate.getNoOfParallelJobs();
 		}
 		return plannedNodes;
 	}
