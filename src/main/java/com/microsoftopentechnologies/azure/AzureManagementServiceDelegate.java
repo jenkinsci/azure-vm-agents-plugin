@@ -1134,17 +1134,22 @@ public class AzureManagementServiceDelegate {
 		return status;
 	}
 	
-	/** Checks if VM is alive or healthy */	
+	/** Checks if VM is reachable and in a valid state to connect  */	
 	public static boolean isVMAliveOrHealthy(AzureSlave slave) throws Exception {
 		Configuration config = ServiceDelegateHelper.loadConfiguration(slave.getSubscriptionID(), slave.getManagementCert(),
 				                                                         slave.getPassPhrase(), slave.getManagementURL());
 		String status = getVirtualMachineStatus(config, slave.getCloudServiceName(), DeploymentSlot.Production, slave.getNodeName());
 		LOGGER.info("AzureManagementServiceDelegate: isVMAliveOrHealthy: status " + status);
 		// if VM status is DeletingVM/StoppedVM/StoppingRole/StoppingVM then consider VM to be not healthy
-		if (status != null && Constants.READY_ROLE_STATUS.equalsIgnoreCase(status)) {
-			return true;
-		} else {
+		if (status != null &&  
+				(Constants.DELETING_VM_STATUS.equalsIgnoreCase(status) ||
+				 Constants.STOPPED_VM_STATUS.equalsIgnoreCase(status) ||
+				 Constants.STOPPING_VM_STATUS.equalsIgnoreCase(status) ||
+				 Constants.STOPPING_ROLE_STATUS.equalsIgnoreCase(status) ||
+				 Constants.STOPPED_DEALLOCATED_VM_STATUS.equalsIgnoreCase(status))) {
 			return false;
+		} else {
+			return true;
 		}
 	}
 	
