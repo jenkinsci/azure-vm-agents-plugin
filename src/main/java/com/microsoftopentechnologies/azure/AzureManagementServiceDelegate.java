@@ -1808,8 +1808,9 @@ public class AzureManagementServiceDelegate {
 					}
 				}
 				
-				if (imageProps!= null && !imageProps.get(ImageProperties.LOCATION).contains(location)) {
-					return Messages.Azure_GC_Template_ImageFamilyOrID_LOC_No_Match(imageProps.get(ImageProperties.LOCATION)) +saValidation;
+				String storageLocation = imageProps.get(ImageProperties.LOCATION);
+				if (imageProps!= null && storageLocation != null && !storageLocation.contains(location)) {
+					return Messages.Azure_GC_Template_ImageFamilyOrID_LOC_No_Match(storageLocation) +saValidation;
 				}
 				
 				if(imageProps!= null && (!Constants.OS_TYPE_WINDOWS.equalsIgnoreCase(imageProps.get(ImageProperties.OSTYPE)) && 
