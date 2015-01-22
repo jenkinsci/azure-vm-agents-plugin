@@ -1536,11 +1536,6 @@ public class AzureManagementServiceDelegate {
 			return errors;
 		}
 		
-		//Verify labels
-		if (isNullOrEmpty(labels)) {
-			errors.add(Messages.Azure_GC_Template_Label_Null_Or_Empty());
-		}
-		
 		//Verify number of parallel jobs
 		if (returnOnSingleError) {
 			validationResult = verifyNoOfExecutors(noOfParallelJobs);

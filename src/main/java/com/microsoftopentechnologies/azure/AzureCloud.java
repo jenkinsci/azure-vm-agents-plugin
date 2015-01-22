@@ -215,7 +215,7 @@ public class AzureCloud extends Cloud {
 									LOGGER.info("Azure Cloud: provision: slave node "+slaveNode.getLabelString());
 									LOGGER.info("Azure Cloud: provision: slave template "+slaveTemplate.getLabels());
 
-									if (!slaveNode.isDeleteSlave() && slaveNode.getLabelString().equalsIgnoreCase(slaveTemplate.getLabels())) {
+									if (isNodeEligibleForReuse(slaveNode, slaveTemplate)) {
 										try {
 											if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
 												LOGGER.info("Found existing node, starting VM "+slaveNode.getNodeName());
@@ -315,6 +315,28 @@ public class AzureCloud extends Cloud {
 	       future.cancel(true);
 	       executorService.shutdown();
 	    }
+	}
+	
+	/**
+	 * Checks if node configuration matches with template definition.
+	 */
+	private static boolean isNodeEligibleForReuse(AzureSlave slaveNode, AzureSlaveTemplate slaveTemplate) {
+
+		// Do not reuse slave if it is marked for deletion.  
+		if (slaveNode.isDeleteSlave()) {
+			return false;
+		}
+		
+		// Check for null label and mode.
+		if (AzureUtil.isNull(slaveNode.getLabelString()) && (slaveNode.getMode() == Node.Mode.NORMAL)) {
+			return true;
+		}
+		
+		if (AzureUtil.isNotNull(slaveNode.getLabelString()) &&slaveNode.getLabelString().equalsIgnoreCase(slaveTemplate.getLabels())) {
+			return true;
+		}
+
+		return false;
 	}
 	
 	private static void markSlaveForDeletion(AzureSlave slave, String message) {
