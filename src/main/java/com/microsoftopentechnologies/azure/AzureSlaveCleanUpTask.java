@@ -50,12 +50,12 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 						}
 						
 						int retryCount = 0;
-		                boolean successful = false;
-		                
-		                // Retrying for 30 times with 30 seconds wait time between each retry
-		                while (retryCount < 30 && !successful) {
-		                	try {
-		                		slaveNode.idleTimeout();
+						boolean successful = false;
+						
+						// Retrying for 30 times with 30 seconds wait time between each retry
+						while (retryCount < 30 && !successful) {
+							try {
+								slaveNode.idleTimeout();
 								successful = true;
 							} catch (Exception e) {
 								retryCount++;
@@ -69,12 +69,13 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 									e1.printStackTrace();
 								}
 							}
-	                	}
-		                
-		                Jenkins.getInstance().removeNode(slaveNode);
+						}
+						
+						Jenkins.getInstance().removeNode(slaveNode);
 					}
 				} catch (Exception e) {
-					LOGGER.severe("AzureSlaveCleanUpTask: execute: failed to remove node " +e);
+					LOGGER.severe("AzureSlaveCleanUpTask: execute: failed to remove node " + e);
+					e.printStackTrace();
 				}
 			}
 		}
