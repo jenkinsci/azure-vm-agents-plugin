@@ -43,30 +43,30 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
 				AzureComputer azureComputer = (AzureComputer)computer;
 				final AzureSlave slaveNode = azureComputer.getNode();
 				
-				if (!slaveNode.isDeleteSlave()) {
-					// Find out if node exists in azure, if not continue with delete else do not delete node
-					// although it is offline. May be JNLP or SSH launch is in progress
+				if (azureComputer.isOffline()) {
 					if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
-						LOGGER.info("AzureSlaveCleanUpTask: execute: VM "+slaveNode.getDisplayName()+" exists in cloud");
-					} else { // node does not exists in azure , so we can safely remove node from Jenkins.
+						if (!slaveNode.isDeleteSlave()) { 
+							continue; //If agent is not marked for deletion, it means it is active.
+						}
+						
+						Callable<Void> task = new Callable<Void>() {
+							public Void call() throws Exception {
+								slaveNode.idleTimeout();
+								return null;
+							}
+						};
+						
+						try {
+							ExecutionEngine.executeWithRetry(task, new DefaultRetryStrategy(3 /*max retries*/, 
+									10 /*Default backoff in seconds*/ , 1 * 60 /* Max. timeout in seconds */));
+				         } catch (AzureCloudException exception) {
+				        	// No need to throw exception back, just log and move on. 
+				        	 LOGGER.info("AzureSlaveCleanUpTask: execute: failed to remove node "+exception);
+				         }
+					} else {
 						Jenkins.getInstance().removeNode(slaveNode);
 					}
-					continue;
 				}
-						
-				Callable<Void> task = new Callable<Void>() {
-					public Void call() throws Exception {
-						slaveNode.idleTimeout();
-						return null;
-					}
-				};
-						
-				try {
-					ExecutionEngine.executeWithRetry(task, new DefaultRetryStrategy(3 /*max retries*/, 10 /*Default backoff in seconds*/ , 1 * 60 /* Max. timeout in seconds */));
-		         } catch (AzureCloudException exception) {
-		        	// No need to throw exception back, just log and move on. 
-		        	 LOGGER.info("AzureSlaveCleanUpTask: execute: failed to remove node "+exception);
-		         }
 			}
 		}
 	}
