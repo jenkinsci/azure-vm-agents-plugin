@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+import jenkins.model.Jenkins;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.microsoftopentechnologies.azure.util.Constants;
@@ -252,19 +254,19 @@ public class AzureSlave extends AbstractCloudSlave  {
 			LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is false, deleting slave "+this.getDisplayName());
 			setDeleteSlave(true);
 			AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
-			Hudson.getInstance().removeNode(this);
+			Jenkins.getInstance().removeNode(this);
 		}
 	}
 	
 	public AzureCloud getCloud() {
-    	return (AzureCloud) Hudson.getInstance().getCloud(cloudName);
+    	return (AzureCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 	
 	public void deprovision() throws Exception {
 		LOGGER.info("AzureSlave: deprovision: Deprovision called for slave "+this.getDisplayName());
 		AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
 		setDeleteSlave(true);
-		Hudson.getInstance().removeNode(this);
+		Jenkins.getInstance().removeNode(this);
 	}
 	
 	public boolean isVMAliveOrHealthy() throws Exception {		
