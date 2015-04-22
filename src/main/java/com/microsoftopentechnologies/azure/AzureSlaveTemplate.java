@@ -303,7 +303,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 			};
 			
 			try {
-    			ExecutionEngine.executeWithRetry(task,  new LinearRetryForAllExceptions(30 /*maxRetries*/, 30/*waitinterval*/, 30 * 60/*timeout*/));
+    			ExecutionEngine.executeWithRetry(task,  new LinearRetryForAllExceptions(3 /*maxRetries*/, 30/*waitinterval*/, 2 * 60/*timeout*/));
     		} catch (AzureCloudException e) {
     			LOGGER.info("AzureSlaveTemplate: handleTemplateStatus: could not terminate or shutdown "+slave.getNodeName());
     		}
@@ -332,7 +332,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 			
 		}
 		setTemplateStatusDetails(message);
-		
 	}
 	
 	public int getVirtualMachineCount() throws Exception {
