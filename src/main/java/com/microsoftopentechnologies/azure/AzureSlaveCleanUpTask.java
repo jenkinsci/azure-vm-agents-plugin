@@ -31,48 +31,54 @@ import hudson.model.Computer;
 
 @Extension
 public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
-	private static final Logger LOGGER = Logger.getLogger(AzureSlaveCleanUpTask.class.getName());
 
-	public AzureSlaveCleanUpTask() {
-		super("Azure slave clean task");
-	}
+    private static final Logger LOGGER = Logger.getLogger(AzureSlaveCleanUpTask.class.getName());
 
-	public void execute(TaskListener arg0) throws IOException, InterruptedException {
-		for (Computer computer : Jenkins.getInstance().getComputers()) {
-			if (computer instanceof AzureComputer) {
-				AzureComputer azureComputer = (AzureComputer)computer;
-				final AzureSlave slaveNode = azureComputer.getNode();
-				
-				if (azureComputer.isOffline()) {
-					if(AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
-						if (!slaveNode.isDeleteSlave()) { 
-							continue; //If agent is not marked for deletion, it means it is active.
-						}
-						
-						Callable<Void> task = new Callable<Void>() {
-							public Void call() throws Exception {
-								slaveNode.idleTimeout();
-								return null;
-							}
-						};
-						
-						try {
-							ExecutionEngine.executeWithRetry(task, new DefaultRetryStrategy(3 /*max retries*/, 
-									10 /*Default backoff in seconds*/ , 1 * 60 /* Max. timeout in seconds */));
-				         } catch (AzureCloudException exception) {
-				        	// No need to throw exception back, just log and move on. 
-				        	 LOGGER.info("AzureSlaveCleanUpTask: execute: failed to remove node "+exception);
-				         }
-					} else {
-						Jenkins.getInstance().removeNode(slaveNode);
-					}
-				}
-			}
-		}
-	}
+    public AzureSlaveCleanUpTask() {
+        super("Azure slave clean task");
+    }
 
-	public long getRecurrencePeriod() {
-		// Every 5 minutes
-		return 15 * 60 * 1000;
-	}
+    @Override
+    public void execute(TaskListener arg0) throws IOException, InterruptedException {
+        for (Computer computer : Jenkins.getInstance().getComputers()) {
+            if (computer instanceof AzureComputer) {
+                AzureComputer azureComputer = (AzureComputer) computer;
+                final AzureSlave slaveNode = azureComputer.getNode();
+
+                if (azureComputer.isOffline()) {
+                    if (AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
+                        if (!slaveNode.isDeleteSlave()) {
+                            continue; //If agent is not marked for deletion, it means it is active.
+                        }
+
+                        Callable<Void> task = new Callable<Void>() {
+
+                            public Void call() throws Exception {
+                                slaveNode.idleTimeout();
+                                return null;
+                            }
+                        };
+
+                        try {
+                            ExecutionEngine.executeWithRetry(task,
+                                    new DefaultRetryStrategy(3 /* max retries */,
+                                            10 /* Default backoff in seconds */, 1 * 60 /* Max.
+                                     * timeout in seconds */));
+                        } catch (AzureCloudException exception) {
+                            // No need to throw exception back, just log and move on. 
+                            LOGGER.info("AzureSlaveCleanUpTask: execute: failed to remove node " + exception);
+                        }
+                    } else {
+                        Jenkins.getInstance().removeNode(slaveNode);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public long getRecurrencePeriod() {
+        // Every 5 minutes
+        return 15 * 60 * 1000;
+    }
 }

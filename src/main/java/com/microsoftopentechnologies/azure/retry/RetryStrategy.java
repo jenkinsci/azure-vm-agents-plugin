@@ -21,15 +21,15 @@ import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public interface RetryStrategy {
-	
-	public void handleRetry(Exception e) throws AzureCloudException;
-	
-	public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException;
-	
-	public int getWaitPeriodInSeconds(int currentRetryCount, Exception e);
-	
-	public int getMaxTimeoutInSeconds();
-	
-	public void reset();
-	
+
+    void handleRetry(Exception e) throws AzureCloudException;
+
+    boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException;
+
+    int getWaitPeriodInSeconds(int currentRetryCount, Exception e);
+
+    int getMaxTimeoutInSeconds();
+
+    void reset();
+
 }

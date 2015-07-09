@@ -1,3 +1,18 @@
+/*
+ Copyright 2014 Microsoft Open Technologies, Inc.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
 package com.microsoftopentechnologies.azure.util;
 
 import java.util.concurrent.Callable;
@@ -13,30 +28,30 @@ import com.microsoftopentechnologies.azure.retry.RetryStrategy;
 import com.microsoftopentechnologies.azure.retry.RetryTask;
 
 public class ExecutionEngine {
-	
-	public static <T> T executeWithNoRetry(Callable<T> task) throws AzureCloudException {
-		return executeWithRetry(task, new NoRetryStrategy());
-	}
-	
-	public static <T> T executeWithRetry(Callable<T> task, RetryStrategy retryStrategy) throws AzureCloudException {
-		RetryTask<T> retryTask = new RetryTask<T>(task, retryStrategy);
-		
-		ExecutorService executorService = Executors.newSingleThreadExecutor();
-		Future<T> result = executorService.submit(retryTask);
-		
-		try {
-			if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
-				return result.get();
-			} else {
-				return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
-			}	
-		} catch (TimeoutException timeoutException) {
-			throw new AzureCloudException("Operation timed out: ",timeoutException);
-		} catch (Exception ex) {
-			throw new AzureCloudException(ex.getMessage(), ex);
-		} finally {
-			executorService.shutdown();
-		}
-	}
-	
+
+    public static <T> T executeWithNoRetry(Callable<T> task) throws AzureCloudException {
+        return executeWithRetry(task, new NoRetryStrategy());
+    }
+
+    public static <T> T executeWithRetry(Callable<T> task, RetryStrategy retryStrategy) throws AzureCloudException {
+        RetryTask<T> retryTask = new RetryTask<T>(task, retryStrategy);
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<T> result = executorService.submit(retryTask);
+
+        try {
+            if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
+                return result.get();
+            } else {
+                return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
+            }
+        } catch (TimeoutException timeoutException) {
+            throw new AzureCloudException("Operation timed out: ", timeoutException);
+        } catch (Exception ex) {
+            throw new AzureCloudException(ex.getMessage(), ex);
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
 }

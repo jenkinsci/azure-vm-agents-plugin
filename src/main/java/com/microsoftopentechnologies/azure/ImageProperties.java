@@ -16,9 +16,11 @@
 package com.microsoftopentechnologies.azure;
 
 public enum ImageProperties {
-	NAME,
-	LOCATION,
-	OSTYPE,
-	IMAGETYPE,
-	MEDIAURI
+
+    NAME,
+    LOCATION,
+    OSTYPE,
+    IMAGETYPE,
+    MEDIAURI
+
 }

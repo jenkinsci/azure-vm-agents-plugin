@@ -22,54 +22,63 @@ import com.microsoftopentechnologies.azure.util.AzureUtil;
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class DefaultRetryStrategy implements RetryStrategy {
-	protected int currentRetryCount = 0;
-	protected int maxRetries = 3;
-	protected int waitInterval = 2; // 2 seconds
-	protected int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
-	
-	public DefaultRetryStrategy() {
-	}
-	
-	public DefaultRetryStrategy(int maxRetries, int waitInterval, int defaultTimeoutInSeconds) {
-		this.maxRetries = maxRetries;
-		this.waitInterval = waitInterval;
-		this.defaultTimeoutInSeconds = defaultTimeoutInSeconds;
-	}
 
-	public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
-		if (currentRetryCount >=  maxRetries) {
-			throw new AzureCloudException("Exceeded maximum retry count "+maxRetries, e);
-		} else if (AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage())) {
-			return true;
-		} else {	
-			return false;
-		}
-	}
+    protected int currentRetryCount = 0;
 
-	public void handleRetry(Exception e) throws AzureCloudException {
-		currentRetryCount++;
-		
-		if(canRetry(currentRetryCount, e)) {
-			try {
-				Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * 1000);
-			} catch (InterruptedException e1) {
-			}
-		}
-	}
+    protected int maxRetries = 3;
 
-	public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
-		return waitInterval;
-	}
+    protected int waitInterval = 2; // 2 seconds
 
-	public int getMaxTimeoutInSeconds() {
-		return defaultTimeoutInSeconds;
-	}
-	
-	public void reset() {
-		currentRetryCount = 0;
-		maxRetries = 3;
-		waitInterval = 2;
-		defaultTimeoutInSeconds = 4 * 60;
-	}
+    protected int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
+
+    public DefaultRetryStrategy() {
+    }
+
+    public DefaultRetryStrategy(int maxRetries, int waitInterval, int defaultTimeoutInSeconds) {
+        this.maxRetries = maxRetries;
+        this.waitInterval = waitInterval;
+        this.defaultTimeoutInSeconds = defaultTimeoutInSeconds;
+    }
+
+    @Override
+    public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
+        if (currentRetryCount >= maxRetries) {
+            throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);
+        } else if (AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void handleRetry(Exception e) throws AzureCloudException {
+        currentRetryCount++;
+
+        if (canRetry(currentRetryCount, e)) {
+            try {
+                Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * 1000);
+            } catch (InterruptedException e1) {
+            }
+        }
+    }
+
+    @Override
+    public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
+        return waitInterval;
+    }
+
+    @Override
+    public int getMaxTimeoutInSeconds() {
+        return defaultTimeoutInSeconds;
+    }
+
+    @Override
+    public void reset() {
+        currentRetryCount = 0;
+        maxRetries = 3;
+        waitInterval = 2;
+        defaultTimeoutInSeconds = 4 * 60;
+    }
 
 }

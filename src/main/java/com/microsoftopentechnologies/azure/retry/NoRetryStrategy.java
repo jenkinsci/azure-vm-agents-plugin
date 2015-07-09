@@ -21,34 +21,40 @@ import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class NoRetryStrategy implements RetryStrategy {
-	private int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
-	
-	public NoRetryStrategy() {
-	}
-	
-	public NoRetryStrategy(int defaultTimeoutInSeconds) {
-		this.defaultTimeoutInSeconds = defaultTimeoutInSeconds;
-	}
 
-	public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
-		return false;
-	}
+    private int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
 
-	public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
-		return 0;
-	}
+    public NoRetryStrategy() {
+    }
 
-	public void handleRetry(Exception e) throws AzureCloudException {
-		throw new AzureCloudException(e.getMessage(), e);
-	}
+    public NoRetryStrategy(int defaultTimeoutInSeconds) {
+        this.defaultTimeoutInSeconds = defaultTimeoutInSeconds;
+    }
 
-	public int getMaxTimeoutInSeconds() {
-		return defaultTimeoutInSeconds;
-	}
+    @Override
+    public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
+        return false;
+    }
 
-	public void reset() {
-		// Resetting back to default values
-		defaultTimeoutInSeconds = 4 * 60; // 4 minutes
-	}
+    @Override
+    public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
+        return 0;
+    }
+
+    @Override
+    public void handleRetry(Exception e) throws AzureCloudException {
+        throw new AzureCloudException(e.getMessage(), e);
+    }
+
+    @Override
+    public int getMaxTimeoutInSeconds() {
+        return defaultTimeoutInSeconds;
+    }
+
+    @Override
+    public void reset() {
+        // Resetting back to default values
+        defaultTimeoutInSeconds = 4 * 60; // 4 minutes
+    }
 
 }
