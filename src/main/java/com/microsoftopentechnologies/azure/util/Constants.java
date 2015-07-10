@@ -43,7 +43,7 @@ public class Constants {
 
     public static final int DEFAULT_IDLE_TIME = 60;
 
-    public static final String DEFAULT_MANAGEMENT_URL = "https://management.core.windows.net";
+    public static final String DEFAULT_MANAGEMENT_URL = "https://management.core.windows.net/";
 
     public static final String AZURE_CLOUD_DISPLAY_NAME = "Microsoft Azure";
 

@@ -1655,7 +1655,7 @@ public class AzureManagementServiceDelegate {
             response = client.getAffinityGroupsOperations().get(affinityGroup);
             return response.getLocation();
         } catch (Exception e) {
-            e.printStackTrace();
+            // ignore
         }
         LOGGER.info("AzureManagementServiceDelegate: getAffinityGroupLocation: returning null");
         return null;

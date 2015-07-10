@@ -32,8 +32,6 @@ import jenkins.model.Jenkins;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
 
 import hudson.Extension;
 import hudson.model.Computer;
@@ -48,6 +46,7 @@ import hudson.util.StreamTaskListener;
 
 import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.FailureStage;
+import java.nio.charset.Charset;
 import org.apache.commons.lang.StringUtils;
 
 public class AzureCloud extends Cloud {
@@ -99,7 +98,7 @@ public class AzureCloud extends Cloud {
         readResolve();
     }
 
-    protected Object readResolve() {
+    private Object readResolve() {
         for (AzureSlaveTemplate template : instTemplates) {
             template.azureCloud = this;
         }
@@ -186,6 +185,11 @@ public class AzureCloud extends Cloud {
         return null;
     }
 
+    public List<AzureSlaveTemplate> getInstTemplates() {
+        return Collections.unmodifiableList(instTemplates);
+    }
+
+    @Override
     public Collection<PlannedNode> provision(Label label, int workLoad) {
         LOGGER.info("Azure Cloud: provision: start for label " + label + " workLoad " + workLoad);
         final AzureSlaveTemplate slaveTemplate = getAzureSlaveTemplate(label);
@@ -267,19 +271,17 @@ public class AzureCloud extends Cloud {
                                                 slaveNode.setDeleteSlave(true);
                                             }
                                         } catch (Exception e) {
-                                            // TODO Auto-generated catch block
-                                            e.printStackTrace();
+                                            // ignore
                                         }
                                     }
-
                                 }
                             }
 
                             LOGGER.info("Azure Cloud: provision: Provisioning new slave for label " + slaveTemplate.
                                     getLabels());
 
-                            @SuppressWarnings("deprecation")
-                            AzureSlave slave = slaveTemplate.provisionSlave(new StreamTaskListener(System.out));
+                            AzureSlave slave = slaveTemplate.provisionSlave(
+                                    new StreamTaskListener(System.out, Charset.defaultCharset()));
                             // Get virtual machine properties
                             LOGGER.info("Azure Cloud: provision: Getting virtual machine properties for slave "
                                     + slave.getNodeName() + " with OS " + slave.getOsType());
@@ -356,7 +358,6 @@ public class AzureCloud extends Cloud {
      * Checks if node configuration matches with template definition.
      */
     private static boolean isNodeEligibleForReuse(AzureSlave slaveNode, AzureSlaveTemplate slaveTemplate) {
-
         // Do not reuse slave if it is marked for deletion.  
         if (slaveNode.isDeleteSlave()) {
             return false;
@@ -381,85 +382,6 @@ public class AzureCloud extends Cloud {
             slave.toComputer().setTemporarilyOffline(true, OfflineCause.create(Messages._Slave_Failed_To_Connect()));
         }
         slave.setDeleteSlave(true);
-    }
-
-    public void doProvision(StaplerRequest req, StaplerResponse rsp, @QueryParameter String templateName)
-            throws Exception {
-
-        LOGGER.info("Azure Cloud: doProvision: start name = " + templateName);
-        checkPermission(PROVISION);
-
-        if (StringUtils.isBlank(templateName)) {
-            sendError("Azure Cloud: doProvision: Azure Slave template name is missing", req, rsp);
-            return;
-        }
-
-        final AzureSlaveTemplate slaveTemplate = getAzureSlaveTemplate(templateName);
-
-        if (slaveTemplate == null) {
-            sendError("Azure Cloud: doProvision: Azure Slave template configuration is not there for  : "
-                    + templateName, req, rsp);
-            return;
-        }
-
-        // 1. Verify template
-        try {
-            LOGGER.info("Azure Cloud: doProvision: Verifying template " + slaveTemplate.getTemplateName());
-            List<String> errors = slaveTemplate.verifyTemplate();
-
-            if (errors.isEmpty()) {
-                LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName()
-                        + "has no validation errors");
-            } else {
-                LOGGER.info("Azure Cloud: doProvision: template " + slaveTemplate.getTemplateName()
-                        + " has validation errors , cannot"
-                        + " provision slaves with this configuration " + errors);
-                sendError("template " + slaveTemplate.getTemplateName() + "has validation errors " + errors, req, rsp);
-                return;
-            }
-        } catch (Exception e) {
-            LOGGER.severe("Azure Cloud: provision: Exception occurred while validating template " + e);
-            sendError("Exception occurred while validating template " + e);
-            return;
-        }
-
-        LOGGER.severe("Azure Cloud: doProvision: creating slave ");
-        Computer.threadPoolForRemoting.submit(new Callable<Node>() {
-
-            @Override
-            public Node call() throws Exception {
-                @SuppressWarnings("deprecation")
-                AzureSlave slave = slaveTemplate.provisionSlave(new StreamTaskListener(System.out));
-                // Get virtual machine properties
-                LOGGER.info("Azure Cloud: provision: Getting virtual machine properties for slave "
-                        + slave.getNodeName() + " with OS " + slave.getOsType());
-                slaveTemplate.setVirtualMachineDetails(slave);
-
-                if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
-                    slaveTemplate.waitForReadyRole(slave);
-                    LOGGER.info("Azure Cloud: provision: Waiting for ssh server to come up");
-                    Thread.sleep(2 * 60 * 1000);
-                    LOGGER.info("Azure Cloud: provision: ssh server may be up by this time");
-                    LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
-                    Jenkins.getInstance().addNode(slave);
-                    slave.toComputer().connect(false).get();
-                } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
-                    LOGGER.info("Azure Cloud: provision: Checking for slave status");
-                    slaveTemplate.waitForReadyRole(slave);
-                    Jenkins.getInstance().addNode(slave);
-
-                    // Wait until node is online
-                    waitUntilOnline(slave);
-                }
-                return slave;
-            }
-        });
-        rsp.sendRedirect2(req.getContextPath() + "/computer/");
-        return;
-    }
-
-    public List<AzureSlaveTemplate> getInstTemplates() {
-        return Collections.unmodifiableList(instTemplates);
     }
 
     @Extension

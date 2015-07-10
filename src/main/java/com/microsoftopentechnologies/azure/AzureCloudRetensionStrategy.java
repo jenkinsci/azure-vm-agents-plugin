@@ -40,6 +40,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
         this.idleTerminationMinutes = idleTerminationMinutes;
     }
 
+    @Override
     public long check(final AzureComputer slaveNode) {
         // if idleTerminationMinutes is zero then it means that never terminate the slave instance 
         if (idleTerminationMinutes == 0) {
@@ -59,7 +60,6 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
                             slaveNode.getChannel().close();
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
                         LOGGER.info("AzureCloudRetensionStrategy: check: exception occured while closing channel for: "
                                 + slaveNode.getName());
                     }
@@ -100,6 +100,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
         return 1;
     }
 
+    @Override
     public void start(AzureComputer azureComputer) {
         //TODO: check when this method is getting called and add code accordingly
         LOGGER.info("AzureCloudRetensionStrategy: start: azureComputer name " + azureComputer.getDisplayName());
@@ -108,6 +109,7 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
 
+        @Override
         public String getDisplayName() {
             return Constants.AZURE_CLOUD_DISPLAY_NAME;
         }

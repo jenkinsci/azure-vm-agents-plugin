@@ -89,7 +89,7 @@ public class AzureSlavePostBuildAction extends Recorder {
                 try {
                     Thread.sleep(30 * 1000);
                 } catch (InterruptedException e1) {
-                    e1.printStackTrace();
+                    // ignore
                 }
             }
         }

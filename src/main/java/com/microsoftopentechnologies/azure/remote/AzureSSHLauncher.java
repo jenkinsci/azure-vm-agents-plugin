@@ -26,7 +26,6 @@ import com.microsoftopentechnologies.azure.Messages;
 import com.microsoftopentechnologies.azure.util.Constants;
 
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.remoting.Channel.Listener;
@@ -41,6 +40,7 @@ import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -57,6 +57,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
     private static final String remoteInitFileName = "init.sh";
 
+    @Override
     public void launch(SlaveComputer slaveComputer, TaskListener listener) {
         LOGGER.info("AzureSSHLauncher: launch: launch method called for slave ");
         AzureComputer computer = (AzureComputer) slaveComputer;
@@ -135,7 +136,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
             LOGGER.info("AzureSSHLauncher: launch: java runtime present, copying slaves.jar to remote");
             InputStream inputStream =
-                    new ByteArrayInputStream(Hudson.getInstance().getJnlpJars("slave.jar").readFully());
+                    new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").readFully());
             copyFileToRemote(session, inputStream, "slave.jar");
 
             String jvmopts = slave.getJvmOptions();
@@ -216,7 +217,6 @@ public class AzureSSHLauncher extends ComputerLauncher {
             }
             LOGGER.info("AzureSSHLauncher: copyFileToRemote: copied file Successfully to " + remotePath);
         } catch (Exception e) {
-            e.printStackTrace();
             LOGGER.severe("AzureSSHLauncher: copyFileToRemote: Error occurred while copying file to remote host "
                     + e.getMessage());
             throw e;
@@ -265,10 +265,8 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
             return channel.getExitStatus();
         } catch (JSchException jse) {
-            jse.printStackTrace();
             LOGGER.severe("AzureSSHLauncher: executeRemoteCommand: got exception while executing remote command " + jse);
         } catch (IOException ex) {
-            ex.printStackTrace();
             LOGGER.warning("IO failure during running " + command);
         } finally {
             if (channel != null) {
