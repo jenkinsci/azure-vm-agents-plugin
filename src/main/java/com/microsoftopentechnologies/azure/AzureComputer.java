@@ -23,6 +23,7 @@ import org.kohsuke.stapler.HttpResponse;
 
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.OfflineCause;
+import java.util.logging.Level;
 
 public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
 
@@ -32,35 +33,44 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
         super(slave);
     }
 
+    @Override
     public HttpResponse doDoDelete() throws IOException {
-        LOGGER.info("AzureComputer: doDoDelete called for slave " + getNode().getNodeName());
-        setTemporarilyOffline(true, OfflineCause.create(Messages._Delete_Slave()));
-        getNode().setDeleteSlave(true);
-        try {
-            deleteSlave();
-        } catch (Exception e) {
-            LOGGER.info("AzureComputer: doDoDelete: Exception occurred while deleting slave " + e);
-            throw new IOException(
-                    "Error occurred while deleting node, jenkins will try to clean up node automatically after some time. "
-                    + " \n Root cause: " + e.getMessage());
+        AzureSlave slave = getNode();
+
+        if (slave != null) {
+            LOGGER.log(Level.INFO, "AzureComputer: doDoDelete called for slave {0}", slave.getNodeName());
+            setTemporarilyOffline(true, OfflineCause.create(Messages._Delete_Slave()));
+
+            slave.setDeleteSlave(true);
+            try {
+                deleteSlave();
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "AzureComputer: doDoDelete: Exception occurred while deleting slave", e);
+
+                throw new IOException(
+                        "Error deleting node, jenkins will try to clean up node automatically after some time. ", e);
+            }
         }
         return new HttpRedirect("..");
     }
 
     public void deleteSlave() throws Exception, InterruptedException {
-        LOGGER.info("AzureComputer : deleteSlave: Deleting " + getName() + " slave");
+        LOGGER.log(Level.INFO, "AzureComputer : deleteSlave: Deleting {0} slave", getName());
 
         AzureSlave slave = getNode();
-        if (slave.getChannel() != null) {
-            slave.getChannel().close();
-        }
-        try {
-            slave.deprovision();
-        } catch (Exception e) {
 
-            LOGGER.severe("AzureComputer : Exception occurred while deleting  " + getName() + " slave");
-            LOGGER.severe("Root cause " + e.getMessage());
-            throw e;
+        if (slave != null) {
+            if (slave.getChannel() != null) {
+                slave.getChannel().close();
+            }
+            try {
+                slave.deprovision();
+            } catch (Exception e) {
+
+                LOGGER.log(Level.SEVERE, "AzureComputer : Exception occurred while deleting  {0} slave", getName());
+                LOGGER.log(Level.SEVERE, "Root cause", e);
+                throw e;
+            }
         }
     }
 }

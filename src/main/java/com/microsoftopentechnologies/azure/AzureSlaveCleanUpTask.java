@@ -28,6 +28,7 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.model.Computer;
+import java.util.logging.Level;
 
 @Extension
 public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
@@ -45,14 +46,11 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
                 AzureComputer azureComputer = (AzureComputer) computer;
                 final AzureSlave slaveNode = azureComputer.getNode();
 
-                if (azureComputer.isOffline()) {
-                    if (AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
-                        if (!slaveNode.isDeleteSlave()) {
-                            continue; //If agent is not marked for deletion, it means it is active.
-                        }
-
+                if (azureComputer.isOffline() && slaveNode.isDeleteSlave()) {
+                    if (AzureManagementServiceDelegate.virtualMachineExists(slaveNode)) {
                         Callable<Void> task = new Callable<Void>() {
 
+                            @Override
                             public Void call() throws Exception {
                                 slaveNode.idleTimeout();
                                 return null;
@@ -60,13 +58,16 @@ public final class AzureSlaveCleanUpTask extends AsyncPeriodicWork {
                         };
 
                         try {
-                            ExecutionEngine.executeWithRetry(task,
-                                    new DefaultRetryStrategy(3 /* max retries */,
-                                            10 /* Default backoff in seconds */, 1 * 60 /* Max.
-                                     * timeout in seconds */));
+                            ExecutionEngine.executeWithRetry(task, new DefaultRetryStrategy(
+                                    3, // max retries
+                                    10, // Default backoff in seconds 
+                                    30 * 60 // Max timeout in seconds
+                            ));
                         } catch (AzureCloudException exception) {
                             // No need to throw exception back, just log and move on. 
-                            LOGGER.info("AzureSlaveCleanUpTask: execute: failed to remove node " + exception);
+                            LOGGER.log(Level.INFO,
+                                    "AzureSlaveCleanUpTask: execute: failed to remove " + slaveNode.getDisplayName(),
+                                    exception);
                         }
                     } else {
                         Jenkins.getInstance().removeNode(slaveNode);

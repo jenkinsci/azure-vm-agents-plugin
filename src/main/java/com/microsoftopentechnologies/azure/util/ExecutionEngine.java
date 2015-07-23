@@ -29,15 +29,14 @@ import com.microsoftopentechnologies.azure.retry.RetryTask;
 
 public class ExecutionEngine {
 
-    public static <T> T executeWithNoRetry(Callable<T> task) throws AzureCloudException {
+    public static <T> T executeWithNoRetry(final Callable<T> task) throws AzureCloudException {
         return executeWithRetry(task, new NoRetryStrategy());
     }
 
-    public static <T> T executeWithRetry(Callable<T> task, RetryStrategy retryStrategy) throws AzureCloudException {
-        RetryTask<T> retryTask = new RetryTask<T>(task, retryStrategy);
-
+    public static <T> T executeWithRetry(final Callable<T> task, final RetryStrategy retryStrategy)
+            throws AzureCloudException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<T> result = executorService.submit(retryTask);
+        Future<T> result = executorService.submit(new RetryTask<T>(task, retryStrategy));
 
         try {
             if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
@@ -48,10 +47,17 @@ public class ExecutionEngine {
         } catch (TimeoutException timeoutException) {
             throw new AzureCloudException("Operation timed out: ", timeoutException);
         } catch (Exception ex) {
-            throw new AzureCloudException(ex.getMessage(), ex);
+            throw new AzureCloudException(ex);
         } finally {
             executorService.shutdown();
         }
     }
 
+    public static <T> Future<T> executeAsync(final Callable<T> task, final RetryStrategy retryStrategy)
+            throws AzureCloudException {
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        final Future<T> res = executorService.submit(new RetryTask<T>(task, retryStrategy));
+        executorService.shutdown();
+        return res;
+    }
 }

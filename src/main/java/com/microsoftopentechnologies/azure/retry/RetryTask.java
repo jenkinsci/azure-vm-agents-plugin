@@ -18,11 +18,15 @@ package com.microsoftopentechnologies.azure.retry;
 import java.util.concurrent.Callable;
 
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class RetryTask<T> implements Callable<T> {
+
+    private static final Logger LOGGER = Logger.getLogger(RetryTask.class.getName());
 
     private final Callable<T> task;
 
@@ -44,6 +48,7 @@ public class RetryTask<T> implements Callable<T> {
             try {
                 return task.call();
             } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Handle retry due to: ", e);
                 retryStrategy.handleRetry(e);
             }
         }

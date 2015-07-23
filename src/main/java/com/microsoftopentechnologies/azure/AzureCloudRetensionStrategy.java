@@ -78,8 +78,11 @@ public class AzureCloudRetensionStrategy extends RetentionStrategy<AzureComputer
 
                     try {
                         ExecutionEngine.executeWithRetry(task,
-                                new LinearRetryForAllExceptions(30 /* maxRetries */, 30/* waitinterval */,
-                                        30 * 60/* timeout */));
+                                new LinearRetryForAllExceptions(
+                                        30, // maxRetries
+                                        30, // waitinterval
+                                        30 * 60 // timeout
+                                ));
                     } catch (AzureCloudException ae) {
                         LOGGER.info("AzureCloudRetensionStrategy: check: could not terminate or shutdown " + slaveNode.
                                 getName());

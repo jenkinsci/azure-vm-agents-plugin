@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 
@@ -58,7 +59,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
     private static final String remoteInitFileName = "init.sh";
 
     @Override
-    public void launch(SlaveComputer slaveComputer, TaskListener listener) {
+    public void launch(final SlaveComputer slaveComputer, final TaskListener listener) {
         LOGGER.info("AzureSSHLauncher: launch: launch method called for slave ");
         AzureComputer computer = (AzureComputer) slaveComputer;
         AzureSlave slave = computer.getNode();
@@ -78,27 +79,29 @@ public class AzureSSHLauncher extends ComputerLauncher {
         Session session = null;
 
         try {
-            session = connectToSsh(slave, logger);
-        } catch (Exception e) {
-            LOGGER.info("AzureSSHLauncher: launch: Got exception while connecting to slave " + e.getMessage());
-            LOGGER.info("AzureSSHLauncher: launch: marking slave for delete ");
+            session = connectToSsh(slave);
+        } catch (UnknownHostException e) {
+            LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: "
+                    + "Got unknown host exception. Virtual machine might have been deleted already", e);
             slave.setDeleteSlave(true);
-
+        } catch (ConnectException e) {
+            LOGGER.log(Level.SEVERE,
+                    "AzureSSHLauncher: launch: Got connect exception. Might be due to firewall rules", e);
+            markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL);
+        } catch (Exception e) {
             // Checking if we need to mark template as disabled. Need to re-visit this logic based on tests.
-            if (e instanceof ConnectException) {
-                LOGGER.severe("AzureSSHLauncher: launch: Got connect exception. Might be due to firewall rules");
-                markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL);
-            } else if (e instanceof UnknownHostException) {
-                LOGGER.severe(
-                        "AzureSSHLauncher: launch: Got unknown host exception. Virtual machine might have been deleted already");
-            } else if (e.getMessage() != null && e.getMessage().equalsIgnoreCase("Auth fail")) {
-                LOGGER.severe(
-                        "AzureSSHLauncher: launch: Authentication failure. Image may not be supporting password authentication");
+            if (e.getMessage() != null && e.getMessage().equalsIgnoreCase("Auth fail")) {
+                LOGGER.log(Level.SEVERE,
+                        "AzureSSHLauncher: launch: "
+                        + "Authentication failure. Image may not be supporting password authentication", e);
                 markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_AUTH_FAIL);
             } else {
-                LOGGER.severe("AzureSSHLauncher: launch: Got  exception. " + e.getMessage());
+                LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: Got  exception", e);
                 markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL + e.getMessage());
             }
+        }
+
+        if (session == null) {
             return;
         }
 
@@ -107,8 +110,8 @@ public class AzureSSHLauncher extends ComputerLauncher {
             String initScript = slave.getInitScript();
 
             // Executing script only if script is not executed even once
-            if (initScript != null && initScript.trim().length() > 0 && executeRemoteCommand(session,
-                    "test -e ~/.azure-slave-init", logger) != 0) {
+            if (StringUtils.isNotBlank(initScript)
+                    && executeRemoteCommand(session, "test -e ~/.azure-slave-init", logger) != 0) {
                 LOGGER.info("AzureSSHLauncher: launch: Init script is not null, preparing to execute script remotely");
                 copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), remoteInitFileName);
 
@@ -116,7 +119,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
                 // Make sure to change file permission for execute if needed. TODO: need to test
                 int exitStatus = executeRemoteCommand(session, "sh " + remoteInitFileName, logger);
                 if (exitStatus != 0) {
-                    LOGGER.severe("AzureSSHLauncher: launch: init script failed: exit code=" + exitStatus);
+                    LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: init script failed: exit code={0}", exitStatus);
                     //TODO: Do we need to expose flag and act accordingly?? For now ignoring init script failures
                 } else {
                     LOGGER.info("AzureSSHLauncher: launch: init script got executed successfully");
@@ -128,20 +131,20 @@ public class AzureSSHLauncher extends ComputerLauncher {
             LOGGER.info("AzureSSHLauncher: launch: checking for java runtime");
 
             if (executeRemoteCommand(session, "java -fullversion", logger) != 0) {
-                LOGGER.info(
-                        "AzureSSHLauncher: launch: Java not found. At a minimum init script should ensure that java runtime is installed");
+                LOGGER.info("AzureSSHLauncher: launch: Java not found. "
+                        + "At a minimum init script should ensure that java runtime is installed");
                 markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_JAVA_NOT_FOUND);
                 return;
             }
 
             LOGGER.info("AzureSSHLauncher: launch: java runtime present, copying slaves.jar to remote");
-            InputStream inputStream =
-                    new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").readFully());
+            InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").
+                    readFully());
             copyFileToRemote(session, inputStream, "slave.jar");
 
             String jvmopts = slave.getJvmOptions();
             String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar slave.jar";
-            LOGGER.info("AzureSSHLauncher: launch: launching slave agent: " + execCommand);
+            LOGGER.log(Level.INFO, "AzureSSHLauncher: launch: launching slave agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");
             jschChannel.setCommand(execCommand);
@@ -150,6 +153,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
             computer.setChannel(jschChannel.getInputStream(), jschChannel.getOutputStream(), logger, new Listener() {
 
+                @Override
                 public void onClosed(Channel channel, IOException cause) {
                     if (jschChannel != null) {
                         jschChannel.disconnect();
@@ -164,8 +168,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
             LOGGER.info("AzureSSHLauncher: launch: launched slave successfully");
             successful = true;
         } catch (Exception e) {
-            LOGGER.info("AzureSSHLauncher: launch: got exception " + e);
-            LOGGER.info("AzureSSHLauncher: launch: Exception message" + e.getMessage());
+            LOGGER.log(Level.INFO, "AzureSSHLauncher: launch: got exception ", e);
         } finally {
             if (!successful) {
                 if (session != null) {
@@ -176,29 +179,31 @@ public class AzureSSHLauncher extends ComputerLauncher {
     }
 
     private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws Exception {
-        LOGGER.info("AzureSSHLauncher: getRemoteSession: getting remote session for user " + userName + " to host "
-                + dnsName + ":" + sshPort);
+        LOGGER.log(Level.INFO,
+                "AzureSSHLauncher: getRemoteSession: getting remote session for user {0} to host {1}:{2}",
+                new Object[] { userName, dnsName, sshPort });
         JSch remoteClient = new JSch();
-        Session session = null;
         try {
-            session = remoteClient.getSession(userName, dnsName, sshPort);
+            final Session session = remoteClient.getSession(userName, dnsName, sshPort);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setPassword(password);
             // pinging server for every 1 minutes to keep the connection alive
             session.setServerAliveInterval(60 * 1000);
             session.connect();
-            LOGGER.info("AzureSSHLauncher: getRemoteSession: Got remote session for user " + userName + " to host "
-                    + dnsName + ":" + sshPort);
+            LOGGER.log(Level.INFO,
+                    "AzureSSHLauncher: getRemoteSession: Got remote session for user {0} to host {1}:{2}",
+                    new Object[] { userName, dnsName, sshPort });
             return session;
         } catch (JSchException e) {
-            LOGGER.severe("AzureSSHLauncher: getRemoteSession: Got exception while connecting to remote host "
-                    + dnsName + ":" + sshPort + " " + e.getMessage());
+            LOGGER.log(Level.SEVERE,
+                    "AzureSSHLauncher: getRemoteSession: Got exception while connecting to remote host {0}:{1} {2}",
+                    new Object[] { dnsName, sshPort, e.getMessage() });
             throw e;
         }
     }
 
     private void copyFileToRemote(Session jschSession, InputStream stream, String remotePath) throws Exception {
-        LOGGER.info("AzureSSHLauncher: copyFileToRemote: Initiating file transfer to " + remotePath);
+        LOGGER.log(Level.INFO, "AzureSSHLauncher: copyFileToRemote: Initiating file transfer to {0}", remotePath);
         ChannelSftp sftpChannel = null;
 
         try {
@@ -215,10 +220,11 @@ public class AzureSSHLauncher extends ComputerLauncher {
                     //ignore error
                 }
             }
-            LOGGER.info("AzureSSHLauncher: copyFileToRemote: copied file Successfully to " + remotePath);
+            LOGGER.log(Level.INFO, "AzureSSHLauncher: copyFileToRemote: copied file Successfully to {0}", remotePath);
         } catch (Exception e) {
-            LOGGER.severe("AzureSSHLauncher: copyFileToRemote: Error occurred while copying file to remote host "
-                    + e.getMessage());
+            LOGGER.log(Level.SEVERE,
+                    "AzureSSHLauncher: copyFileToRemote: Error occurred while copying file to remote host {0}",
+                    e.getMessage());
             throw e;
         } finally {
             try {
@@ -231,13 +237,13 @@ public class AzureSSHLauncher extends ComputerLauncher {
         }
     }
 
-    private int executeRemoteCommand(Session jschSession, String command, PrintStream logger) {
+    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger) {
         ChannelExec channel = null;
         LOGGER.info("AzureSSHLauncher: executeRemoteCommand: start");
         try {
             channel = createExecChannel(jschSession, command);
             final InputStream inputStream = channel.getInputStream();
-            final InputStream errorStream = ((ChannelExec) channel).getErrStream();
+            final InputStream errorStream = channel.getErrStream();
 
             // Read from input stream
             try {
@@ -255,8 +261,8 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
             if (!channel.isClosed()) {
                 try {
-                    LOGGER.warning(
-                            "AzureSSHLauncher: executeRemoteCommand: Channel is not yet closed , waiting for 10 seconds");
+                    LOGGER.warning("AzureSSHLauncher: executeRemoteCommand:"
+                            + " Channel is not yet closed , waiting for 10 seconds");
                     Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
                     //ignore error
@@ -265,9 +271,11 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
             return channel.getExitStatus();
         } catch (JSchException jse) {
-            LOGGER.severe("AzureSSHLauncher: executeRemoteCommand: got exception while executing remote command " + jse);
+            LOGGER.log(Level.SEVERE,
+                    "AzureSSHLauncher: executeRemoteCommand: got exception while executing remote command\n" + command,
+                    jse);
         } catch (IOException ex) {
-            LOGGER.warning("IO failure during running " + command);
+            LOGGER.log(Level.WARNING, "IO failure during running {0}", command);
         } finally {
             if (channel != null) {
                 channel.disconnect();
@@ -277,16 +285,16 @@ public class AzureSSHLauncher extends ComputerLauncher {
         return -1;
     }
 
-    private ChannelExec createExecChannel(Session jschSession, String command) throws JSchException {
-        ChannelExec echannel = (ChannelExec) jschSession.openChannel("exec");
+    private ChannelExec createExecChannel(final Session jschSession, final String command) throws JSchException {
+        final ChannelExec echannel = (ChannelExec) jschSession.openChannel("exec");
         echannel.setCommand(command);
         echannel.setInputStream(null);
         echannel.setErrStream(System.err);
-        echannel.connect();
+        echannel.connect(60 * 1000);
         return echannel;
     }
 
-    private Session connectToSsh(AzureSlave slave, PrintStream logger) throws Exception {
+    private Session connectToSsh(final AzureSlave slave) throws Exception {
         LOGGER.info("AzureSSHLauncher: connectToSsh: start");
         Session session = null;
         int maxRetryCount = 6;
@@ -304,9 +312,9 @@ public class AzureSSHLauncher extends ComputerLauncher {
                     throw e;
                 }
                 // keep retrying till time out
-                LOGGER.severe(
-                        "AzureSSHLauncher: connectToSsh: Got exception while connecting to remote host. Will be trying again after 1 minute "
-                        + e.getMessage());
+                LOGGER.log(Level.SEVERE,
+                        "AzureSSHLauncher: connectToSsh: Got exception while connecting to remote host. "
+                        + "Will be trying again after 1 minute {0}", e.getMessage());
                 Thread.sleep(1 * 60 * 1000);
                 // continue again
                 continue;

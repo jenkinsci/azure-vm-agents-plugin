@@ -15,17 +15,21 @@
  */
 package com.microsoftopentechnologies.azure;
 
+import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
+import com.microsoft.azure.management.resources.ResourceManagementClient;
+import com.microsoft.azure.management.resources.ResourceManagementService;
+import com.microsoft.azure.management.resources.models.DeploymentOperation;
+import com.microsoft.azure.management.resources.models.ProvisioningState;
+import com.microsoft.windowsazure.Configuration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
@@ -47,19 +51,20 @@ import hudson.util.StreamTaskListener;
 import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.FailureStage;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
 
 public class AzureCloud extends Cloud {
 
+    public static final Logger LOGGER = Logger.getLogger(AzureCloud.class.getName());
+
     private final String subscriptionId;
 
-    private final String nativeClientId;
+    private final String clientId;
+
+    private final String clientSecret;
 
     private final String oauth2TokenEndpoint;
-
-    private final String azureUsername;
-
-    private final String azurePassword;
 
     private final String serviceManagementURL;
 
@@ -67,20 +72,25 @@ public class AzureCloud extends Cloud {
 
     private final List<AzureSlaveTemplate> instTemplates;
 
-    public static final Logger LOGGER = Logger.getLogger(AzureCloud.class.getName());
-
     @DataBoundConstructor
-    public AzureCloud(String id, String subscriptionId, String nativeClientId, String oauth2TokenEndpoint,
-            String azureUsername, String azurePassword, String serviceManagementURL,
-            String maxVirtualMachinesLimit, List<AzureSlaveTemplate> instTemplates, String fileName, String fileData) {
+    public AzureCloud(
+            final String id,
+            final String subscriptionId,
+            final String clientId,
+            final String clientSecret,
+            final String oauth2TokenEndpoint,
+            final String serviceManagementURL,
+            final String maxVirtualMachinesLimit,
+            final List<AzureSlaveTemplate> instTemplates,
+            final String fileName,
+            final String fileData) {
 
         super(Constants.AZURE_CLOUD_PREFIX + subscriptionId);
 
         this.subscriptionId = subscriptionId;
-        this.nativeClientId = nativeClientId;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
         this.oauth2TokenEndpoint = oauth2TokenEndpoint;
-        this.azureUsername = azureUsername;
-        this.azurePassword = azurePassword;
 
         this.serviceManagementURL = StringUtils.isBlank(serviceManagementURL)
                 ? Constants.DEFAULT_MANAGEMENT_URL
@@ -106,21 +116,23 @@ public class AzureCloud extends Cloud {
     }
 
     @Override
-    public boolean canProvision(Label label) {
+    public boolean canProvision(final Label label) {
         AzureSlaveTemplate template = getAzureSlaveTemplate(label);
 
         // return false if there is no template
         if (template == null) {
             if (label != null) {
-                LOGGER.info("Azurecloud: canProvision: template not found for label " + label.getDisplayName());
+                LOGGER.log(Level.INFO,
+                        "Azurecloud: canProvision: template not found for label {0}", label.getDisplayName());
             } else {
                 LOGGER.info("Azurecloud: canProvision: template not found for empty label. "
                         + "All templates exclusive to jobs that require that template.");
             }
             return false;
         } else if (template.getTemplateStatus().equalsIgnoreCase(Constants.TEMPLATE_STATUS_DISBALED)) {
-            LOGGER.info("Azurecloud: canProvision: template " + template.getTemplateName()
-                    + " is marked has disabled, cannot provision slaves");
+            LOGGER.log(Level.INFO,
+                    "Azurecloud: canProvision: template {0} is marked has disabled, cannot provision slaves",
+                    template.getTemplateName());
             return false;
         } else {
             return true;
@@ -131,20 +143,16 @@ public class AzureCloud extends Cloud {
         return subscriptionId;
     }
 
-    public String getNativeClientId() {
-        return nativeClientId;
+    public String getClientId() {
+        return clientId;
     }
 
     public String getOauth2TokenEndpoint() {
         return oauth2TokenEndpoint;
     }
 
-    public String getAzureUsername() {
-        return azureUsername;
-    }
-
-    public String getAzurePassword() {
-        return azurePassword;
+    public String getClientSecret() {
+        return clientSecret;
     }
 
     public String getServiceManagementURL() {
@@ -155,8 +163,13 @@ public class AzureCloud extends Cloud {
         return maxVirtualMachinesLimit;
     }
 
-    /** Returns slave template associated with the label */
-    public AzureSlaveTemplate getAzureSlaveTemplate(Label label) {
+    /**
+     * Returns slave template associated with the label.
+     *
+     * @param label
+     * @return
+     */
+    public AzureSlaveTemplate getAzureSlaveTemplate(final Label label) {
         for (AzureSlaveTemplate slaveTemplate : instTemplates) {
             if (slaveTemplate.getUseSlaveAlwaysIfAvail() == Node.Mode.NORMAL) {
                 if (label == null || label.matches(slaveTemplate.getLabelDataSet())) {
@@ -171,8 +184,13 @@ public class AzureCloud extends Cloud {
         return null;
     }
 
-    /** Returns slave template associated with the name */
-    public AzureSlaveTemplate getAzureSlaveTemplate(String name) {
+    /**
+     * Returns slave template associated with the name.
+     *
+     * @param name
+     * @return
+     */
+    public AzureSlaveTemplate getAzureSlaveTemplate(final String name) {
         if (StringUtils.isBlank(name)) {
             return null;
         }
@@ -189,141 +207,251 @@ public class AzureCloud extends Cloud {
         return Collections.unmodifiableList(instTemplates);
     }
 
-    @Override
-    public Collection<PlannedNode> provision(Label label, int workLoad) {
-        LOGGER.info("Azure Cloud: provision: start for label " + label + " workLoad " + workLoad);
-        final AzureSlaveTemplate slaveTemplate = getAzureSlaveTemplate(label);
-        List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>();
+    private boolean verifyTemplate(final AzureSlaveTemplate template) {
+        boolean isVerified;
+        try {
+            LOGGER.log(Level.INFO, "Azure Cloud: provision: Verifying template {0}", template.getTemplateName());
 
-        while (workLoad > 0) {
-            // Verify template
+            final List<String> errors = template.verifyTemplate();
+
+            isVerified = errors.isEmpty();
+
+            if (isVerified) {
+                LOGGER.log(Level.INFO,
+                        "Azure Cloud: provision: template {0} has no validation errors", template.getTemplateName());
+            } else {
+                LOGGER.log(Level.INFO, "Azure Cloud: provision: template {0}"
+                        + " has validation errors , cannot provision slaves with this configuration {1}",
+                        new Object[] { template.getTemplateName(), errors });
+                template.handleTemplateStatus("Validation Error: Validation errors in template \n"
+                        + " Root cause: " + errors, FailureStage.VALIDATION, null);
+
+                // Register template for periodic check so that jenkins can make template active if 
+                // validation errors are corrected
+                if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(template.getTemplateStatus())) {
+                    AzureTemplateMonitorTask.registerTemplate(template);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Azure Cloud: provision: Exception occured while validating template", e);
+            template.handleTemplateStatus("Validation Error: Exception occured while validating template "
+                    + e.getMessage(), FailureStage.VALIDATION, null);
+
+            // Register template for periodic check so that jenkins can make template active if validation errors 
+            // are corrected
+            if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(template.getTemplateStatus())) {
+                AzureTemplateMonitorTask.registerTemplate(template);
+            }
+            isVerified = false;
+        }
+
+        return isVerified;
+    }
+
+    private AzureSlave provisionedSlave(
+            final AzureSlaveTemplate template,
+            final String prefix,
+            final int index,
+            final int expectedVMs,
+            final Configuration config) throws Exception {
+        final ResourceManagementClient rmc = ResourceManagementService.create(config);
+
+        final String vmName = String.format("%s%s%d", template.getTemplateName(), prefix, index);
+
+        int completed = 0;
+
+        AzureSlave slave = null;
+
+        do {
             try {
-                LOGGER.info("Azure Cloud: provision: Verifying template " + slaveTemplate.getTemplateName());
-                List<String> errors = slaveTemplate.verifyTemplate();
-
-                if (errors.isEmpty()) {
-                    LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName()
-                            + " has no validation errors");
-                } else {
-                    LOGGER.info("Azure Cloud: provision: template " + slaveTemplate.getTemplateName()
-                            + " has validation errors , cannot"
-                            + " provision slaves with this configuration " + errors);
-                    slaveTemplate.handleTemplateStatus("Validation Error: Validation errors in template \n"
-                            + " Root cause: " + errors,
-                            FailureStage.VALIDATION, null);
-
-                    // Register template for periodic check so that jenkins can make template active if 
-                    // validation errors are corrected
-                    if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(slaveTemplate.getTemplateStatus())) {
-                        AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
-                    }
-                    break;
-                }
-            } catch (Exception e) {
-                LOGGER.severe("Azure Cloud: provision: Exception occured while validating template" + e);
-                slaveTemplate.handleTemplateStatus("Validation Error: Exception occured while validating template "
-                        + e.getMessage(), FailureStage.VALIDATION, null);
-
-                // Register template for periodic check so that jenkins can make template active if validation errors are corrected
-                if (!Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS.equals(slaveTemplate.getTemplateStatus())) {
-                    AzureTemplateMonitorTask.registerTemplate(slaveTemplate);
-                }
-                break;
+                Thread.sleep(30 * 1000);
+            } catch (InterruptedException ex) {
+                // ignore
             }
 
-            plannedNodes.add(new PlannedNode(slaveTemplate.getTemplateName(),
-                    Computer.threadPoolForRemoting.submit(new Callable<Node>() {
+            final List<DeploymentOperation> ops = rmc.getDeploymentOperationsOperations().
+                    list(Constants.RESOURCE_GROUP_NAME, prefix, null).getOperations();
 
-                        @Override
-                        public Node call() throws Exception {
-                            LOGGER.info("Azure Cloud: provision: inside call method");
+            completed = 0;
+            for (DeploymentOperation op : ops) {
+                final String resource = op.getProperties().getTargetResource().getResourceName();
+                final String type = op.getProperties().getTargetResource().getResourceType();
+                final String state = op.getProperties().getProvisioningState();
 
-                            // Verify if there are any shutdown(deallocated) nodes that can be reused.
-                            for (Computer slaveComputer : Jenkins.getInstance().getComputers()) {
-                                LOGGER.info("Azure Cloud: provision: got slave computer " + slaveComputer.getName());
-                                if (slaveComputer instanceof AzureComputer && slaveComputer.isOffline()) {
-                                    AzureComputer azureComputer = (AzureComputer) slaveComputer;
-                                    AzureSlave slaveNode = azureComputer.getNode();
+                if (ProvisioningState.CANCELED.equals(state)
+                        || ProvisioningState.FAILED.equals(state)
+                        || ProvisioningState.NOTSPECIFIED.equals(state)) {
+                    LOGGER.log(Level.INFO, "Failed({0}): {1}:{2}", new Object[] { state, type, resource });
 
-                                    LOGGER.info("Azure Cloud: provision: slave node " + slaveNode.getLabelString());
-                                    LOGGER.info("Azure Cloud: provision: slave template " + slaveTemplate.getLabels());
+                    slave = AzureManagementServiceDelegate.parseResponse(
+                            vmName, prefix, template, template.getOsType());
+                } else if (ProvisioningState.SUCCEEDED.equals(state)) {
+                    if (op.getProperties().getTargetResource().getResourceType().contains("virtualMachine")) {
+                        if (resource.equalsIgnoreCase(vmName)) {
+                            LOGGER.log(Level.INFO, "VM available: {0}", resource);
 
-                                    if (isNodeEligibleForReuse(slaveNode, slaveTemplate)) {
-                                        try {
-                                            if (AzureManagementServiceDelegate.isVirtualMachineExists(slaveNode)) {
-                                                LOGGER.info("Found existing node, starting VM " + slaveNode.
-                                                        getNodeName());
-                                                AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
-                                                // set virtual machine details again
-                                                Thread.sleep(30 * 1000); // wait for 30 seconds
-                                                AzureManagementServiceDelegate.setVirtualMachineDetails(slaveNode,
-                                                        slaveTemplate);
-                                                Jenkins.getInstance().addNode(slaveNode);
-                                                if (slaveNode.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
-                                                    slaveNode.toComputer().connect(false).get();
-                                                } else // Wait until node is online
-                                                {
-                                                    waitUntilOnline(slaveNode);
-                                                }
-                                                azureComputer.setAcceptingTasks(true);
-                                                return slaveNode;
-                                            } else {
-                                                slaveNode.setDeleteSlave(true);
-                                            }
-                                        } catch (Exception e) {
-                                            // ignore
-                                        }
-                                    }
-                                }
-                            }
+                            final VirtualMachineGetResponse vm
+                                    = ServiceDelegateHelper.getComputeManagementClient(config).
+                                    getVirtualMachinesOperations().
+                                    getWithInstanceView(Constants.RESOURCE_GROUP_NAME, resource);
 
-                            LOGGER.info("Azure Cloud: provision: Provisioning new slave for label " + slaveTemplate.
-                                    getLabels());
+                            final String osType = vm.getVirtualMachine().getStorageProfile().getOSDisk().
+                                    getOperatingSystemType();
 
-                            AzureSlave slave = slaveTemplate.provisionSlave(
-                                    new StreamTaskListener(System.out, Charset.defaultCharset()));
-                            // Get virtual machine properties
-                            LOGGER.info("Azure Cloud: provision: Getting virtual machine properties for slave "
-                                    + slave.getNodeName() + " with OS " + slave.getOsType());
-                            slaveTemplate.setVirtualMachineDetails(slave);
-                            try {
-                                if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
-                                    // slaveTemplate.waitForReadyRole(slave);
-                                    // LOGGER.info("Azure Cloud: provision: Waiting for ssh server to comeup");
-                                    // Thread.sleep(2 * 60 * 1000);
-                                    LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
-                                    Jenkins.getInstance().addNode(slave);
-                                    slave.toComputer().connect(false).get();
-                                } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
-                                    LOGGER.info("Azure Cloud: provision: Checking for slave status");
-                                    // slaveTemplate.waitForReadyRole(slave);
-                                    LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
-                                    Jenkins.getInstance().addNode(slave);
-
-                                    // Wait until node is online
-                                    waitUntilOnline(slave);
-                                }
-                            } catch (Exception e) {
-                                slaveTemplate.handleTemplateStatus(e.getMessage(),
-                                        FailureStage.POSTPROVISIONING, slave);
-                                throw e;
-                            }
-                            return slave;
+                            slave = AzureManagementServiceDelegate.parseResponse(vmName, prefix, template, osType);
                         }
-                    }), slaveTemplate.getNoOfParallelJobs()));
 
-            // Decrement workload
-            workLoad -= slaveTemplate.getNoOfParallelJobs();
+                        completed++;
+                    }
+                } else {
+                    LOGGER.log(Level.INFO, "To Be Completed({0}): {1}:{2}", new Object[] { state, type, resource });
+                }
+            }
+        } while (slave == null && completed < expectedVMs);
+
+        if (slave == null) {
+            throw new IllegalStateException(String.format("Slave machine '%s' not found into '%s'", vmName, prefix));
         }
+
+        return slave;
+    }
+
+    @Override
+    public Collection<PlannedNode> provision(final Label label, int workLoad) {
+        LOGGER.log(Level.INFO,
+                "Azure Cloud: provision: start for label {0} workLoad {1}", new Object[] { label, workLoad });
+
+        final AzureSlaveTemplate template = getAzureSlaveTemplate(label);
+
+        // verify template
+        if (!verifyTemplate(template)) {
+            return Collections.<PlannedNode>emptyList();
+        }
+
+        // round up the number of required machine
+        int numberOfSlaves = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
+        final List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>(numberOfSlaves);
+
+        // reuse existing nodes if available
+        for (Computer slaveComputer : Jenkins.getInstance().getComputers()) {
+            LOGGER.log(Level.INFO, "Azure Cloud: provision: got slave computer {0}", slaveComputer.getName());
+            if (slaveComputer instanceof AzureComputer && slaveComputer.isOffline()) {
+                final AzureComputer azureComputer = AzureComputer.class.cast(slaveComputer);
+                final AzureSlave slaveNode = azureComputer.getNode();
+
+                if (isNodeEligibleForReuse(slaveNode, template)) {
+
+                    LOGGER.log(Level.INFO,
+                            "Azure Cloud: provision: \n - slave node {0}\n - slave template {1}",
+                            new Object[] { slaveNode.getLabelString(), template.getLabels() });
+
+                    try {
+                        if (AzureManagementServiceDelegate.virtualMachineExists(slaveNode)) {
+                            numberOfSlaves--;
+                            plannedNodes.add(new PlannedNode(
+                                    template.getTemplateName(),
+                                    Computer.threadPoolForRemoting.submit(new Callable<Node>() {
+
+                                        @Override
+                                        public Node call() throws Exception {
+                                            LOGGER.log(Level.INFO, "Found existing node, starting VM {0}", slaveNode.
+                                                    getNodeName());
+                                            AzureManagementServiceDelegate.startVirtualMachine(slaveNode);
+                                            // set virtual machine details again
+                                            Thread.sleep(30 * 1000); // wait for 30 seconds
+                                            AzureManagementServiceDelegate.setVirtualMachineDetails(
+                                                    slaveNode, template);
+                                            Jenkins.getInstance().addNode(slaveNode);
+                                            if (slaveNode.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
+                                                slaveNode.toComputer().connect(false).get();
+                                            } else // Wait until node is online
+                                            {
+                                                waitUntilOnline(slaveNode);
+                                            }
+                                            azureComputer.setAcceptingTasks(true);
+                                            return slaveNode;
+                                        }
+                                    }), template.getNoOfParallelJobs()));
+                        } else {
+                            slaveNode.setDeleteSlave(true);
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        // provision new nodes if required
+        if (numberOfSlaves > 0) {
+            try {
+                final String deployment = template.provisionSlaves(
+                        new StreamTaskListener(System.out, Charset.defaultCharset()), numberOfSlaves);
+
+                final int count = numberOfSlaves;
+
+                for (int i = 0; i < numberOfSlaves; i++) {
+                    final int index = i;
+                    plannedNodes.add(new PlannedNode(
+                            template.getTemplateName(),
+                            Computer.threadPoolForRemoting.submit(new Callable<Node>() {
+
+                                @Override
+                                public Node call() throws Exception {
+                                    final AzureSlave slave = provisionedSlave(
+                                            template,
+                                            deployment,
+                                            index,
+                                            count,
+                                            ServiceDelegateHelper.getConfiguration(template));
+
+                                    // Get virtual machine properties
+                                    LOGGER.log(Level.INFO,
+                                            "Azure Cloud: provision: Getting slave {0} ({1}) properties",
+                                            new Object[] { slave.getNodeName(), slave.getOsType() });
+
+                                    try {
+                                        template.setVirtualMachineDetails(slave);
+                                        if (slave.getSlaveLaunchMethod().equalsIgnoreCase("SSH")) {
+                                            LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
+                                            Jenkins.getInstance().addNode(slave);
+                                            slave.toComputer().connect(false).get();
+                                        } else if (slave.getSlaveLaunchMethod().equalsIgnoreCase("JNLP")) {
+                                            LOGGER.info("Azure Cloud: provision: Checking for slave status");
+                                            // slaveTemplate.waitForReadyRole(slave);
+                                            LOGGER.info("Azure Cloud: provision: Adding slave to azure nodes ");
+                                            Jenkins.getInstance().addNode(slave);
+                                            // Wait until node is online
+                                            waitUntilOnline(slave);
+                                        }
+                                    } catch (Exception e) {
+                                        template.handleTemplateStatus(
+                                                e.getMessage(), FailureStage.POSTPROVISIONING, slave);
+                                        throw e;
+                                    }
+                                    return slave;
+                                }
+                            }), template.getNoOfParallelJobs()));
+                }
+                // wait for deployment completion ant than check for created nodes
+            } catch (Exception e) {
+                LOGGER.log(
+                        Level.SEVERE,
+                        String.format("Failure provisioning slaves about '%s'", template.getLabels()),
+                        e);
+            }
+        }
+
         return plannedNodes;
     }
 
     /** this methods wait for node to be available */
     private void waitUntilOnline(final AzureSlave slave) {
-        LOGGER.info("Azure Cloud: waitUntilOnline: for slave " + slave.getDisplayName());
+        LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: for slave {0}", slave.getDisplayName());
         ExecutorService executorService = Executors.newCachedThreadPool();
         Callable<String> callableTask = new Callable<String>() {
 
+            @Override
             public String call() {
                 try {
                     slave.toComputer().waitUntilOnline();
@@ -338,15 +466,9 @@ public class AzureCloud extends Cloud {
         try {
             // 30 minutes is decent time for the node to be alive
             String result = future.get(30, TimeUnit.MINUTES);
-            LOGGER.info("Azure Cloud: waitUntilOnline: node is alive , result " + result);
-        } catch (TimeoutException ex) {
-            LOGGER.info("Azure Cloud: waitUntilOnline: Got TimeoutException " + ex);
-            markSlaveForDeletion(slave, Constants.JNLP_POST_PROV_LAUNCH_FAIL);
-        } catch (InterruptedException ex) {
-            LOGGER.info("Azure Cloud: InterruptedException: Got TimeoutException " + ex);
-            markSlaveForDeletion(slave, Constants.JNLP_POST_PROV_LAUNCH_FAIL);
-        } catch (ExecutionException ex) {
-            LOGGER.info("Azure Cloud: ExecutionException: Got TimeoutException " + ex);
+            LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node is alive , result {0}", result);
+        } catch (Exception ex) {
+            LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: Failure waiting till online", ex);
             markSlaveForDeletion(slave, Constants.JNLP_POST_PROV_LAUNCH_FAIL);
         } finally {
             future.cancel(true);
@@ -402,33 +524,32 @@ public class AzureCloud extends Cloud {
 
         public FormValidation doVerifyConfiguration(
                 @QueryParameter String subscriptionId,
-                @QueryParameter String nativeClientId,
+                @QueryParameter String clientId,
+                @QueryParameter String clientSecret,
                 @QueryParameter String oauth2TokenEndpoint,
-                @QueryParameter String azureUsername,
-                @QueryParameter String azurePassword,
                 @QueryParameter String serviceManagementURL) {
 
             if (StringUtils.isBlank(subscriptionId)) {
                 return FormValidation.error("Error: Subscription ID is missing");
             }
-            if (StringUtils.isBlank(nativeClientId)) {
+            if (StringUtils.isBlank(clientId)) {
                 return FormValidation.error("Error: Native Client ID is missing");
+            }
+            if (StringUtils.isBlank(clientSecret)) {
+                return FormValidation.error("Error: Azure Password is missing");
             }
             if (StringUtils.isBlank(oauth2TokenEndpoint)) {
                 return FormValidation.error("Error: OAuth 2.0 Token Endpoint is missing");
-            }
-            if (StringUtils.isBlank(azureUsername)) {
-                return FormValidation.error("Error: Azure Username is missing");
-            }
-            if (StringUtils.isBlank(azurePassword)) {
-                return FormValidation.error("Error: Azure Password is missing");
             }
             if (StringUtils.isBlank(serviceManagementURL)) {
                 serviceManagementURL = Constants.DEFAULT_MANAGEMENT_URL;
             }
 
             String response = AzureManagementServiceDelegate.verifyConfiguration(
-                    subscriptionId, nativeClientId, oauth2TokenEndpoint, azureUsername, azurePassword,
+                    subscriptionId,
+                    clientId,
+                    clientSecret,
+                    oauth2TokenEndpoint,
                     serviceManagementURL);
 
             if (Constants.OP_SUCCESS.equalsIgnoreCase(response)) {

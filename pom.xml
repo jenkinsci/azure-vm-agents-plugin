@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.619</version>
+    <version>1.620</version>
   </parent>
 
   <artifactId>azure-slave-plugin</artifactId>
@@ -16,6 +16,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <jackson.version>2.5.4</jackson.version>
   </properties>
 
   <licenses>
@@ -58,12 +59,27 @@
     
     <dependency>
       <groupId>com.microsoft.azure</groupId>
+      <artifactId>azure-keyvault</artifactId>
+      <version>0.8.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-mgmt-resources</artifactId>
       <version>0.8.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-keyvault</artifactId>
+      <artifactId>azure-mgmt-network</artifactId>
+      <version>0.8.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>azure-mgmt-compute</artifactId>
+      <version>0.8.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>azure-mgmt-storage</artifactId>
       <version>0.8.0-SNAPSHOT</version>
     </dependency>
     <dependency>
@@ -71,26 +87,27 @@
       <artifactId>azure-svc-mgmt</artifactId>
       <version>0.8.0-SNAPSHOT</version>
     </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-svc-mgmt-network</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-svc-mgmt-compute</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-svc-mgmt-storage</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
-    </dependency>
 		
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
-      <version>0.1.52</version>
+      <version>0.1.53</version>
     </dependency>
   </dependencies>
 	

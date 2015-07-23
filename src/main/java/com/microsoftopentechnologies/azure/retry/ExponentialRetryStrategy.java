@@ -38,7 +38,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public void handleRetry(Exception e) throws AzureCloudException {
+    public void handleRetry(final Exception e) throws AzureCloudException {
         currentRetryCount++;
 
         if (canRetry(currentRetryCount, e)) {
@@ -50,7 +50,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public boolean canRetry(int currentRetryCount, Exception e)
+    public boolean canRetry(final int currentRetryCount, final Exception e)
             throws AzureCloudException {
         if (currentRetryCount >= maxRetries) {
             throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);

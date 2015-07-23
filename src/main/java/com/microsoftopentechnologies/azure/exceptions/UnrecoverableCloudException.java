@@ -15,21 +15,21 @@
  */
 package com.microsoftopentechnologies.azure.exceptions;
 
-public class AzureCloudException extends Exception {
+public class UnrecoverableCloudException extends AzureCloudException {
 
-    public AzureCloudException(final String message) {
+    public UnrecoverableCloudException(final String message) {
         super(message);
     }
 
-    public AzureCloudException() {
+    public UnrecoverableCloudException() {
         super();
     }
 
-    public AzureCloudException(final String msg, final Exception excep) {
+    public UnrecoverableCloudException(final String msg, final Exception excep) {
         super(msg, excep);
     }
 
-    public AzureCloudException(final Exception excep) {
+    public UnrecoverableCloudException(final Exception excep) {
         super(excep);
     }
 

@@ -96,20 +96,20 @@ public class Constants {
     public static final String OP_SUCCESS = "Success";
 
     /** Provisioning failure reasons */
-    public static final String JNLP_POST_PROV_LAUNCH_FAIL =
-            "Provisioning Failure: JNLP slave failed to connect. Make sure that "
+    public static final String JNLP_POST_PROV_LAUNCH_FAIL
+            = "Provisioning Failure: JNLP slave failed to connect. Make sure that "
             + "slave node is able to reach master and necessary firewall rules are configured";
 
-    public static final String SLAVE_POST_PROV_JAVA_NOT_FOUND =
-            "Post Provisioning Failure: Java runtime not found. At a minimum init script "
+    public static final String SLAVE_POST_PROV_JAVA_NOT_FOUND
+            = "Post Provisioning Failure: Java runtime not found. At a minimum init script "
             + " should ensure that java runtime is installed";
 
-    public static final String SLAVE_POST_PROV_AUTH_FAIL =
-            "Post Provisioning Failure: Not able to authenticate via username and "
+    public static final String SLAVE_POST_PROV_AUTH_FAIL
+            = "Post Provisioning Failure: Not able to authenticate via username and "
             + " Image may not be supporting password authentication , marking template has disabled";
 
-    public static final String SLAVE_POST_PROV_CONN_FAIL =
-            "Post Provisioning Failure: Not able to connect to slave machine. Ensure that ssh server is configured properly";
+    public static final String SLAVE_POST_PROV_CONN_FAIL
+            = "Post Provisioning Failure: Not able to connect to slave machine. Ensure that ssh server is configured properly";
 
     public static final String REG_EX_DIGIT = "\\d+";
 
@@ -125,5 +125,7 @@ public class Constants {
     public static final String STOPPING_ROLE_STATUS = "StoppingRole";
 
     public static final String STOPPED_DEALLOCATED_VM_STATUS = "StoppedDeallocated";
+
+    public static final String RESOURCE_GROUP_NAME = "jenkins";
 
 }

@@ -33,11 +33,12 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.ListBoxModel;
+import java.util.logging.Level;
 
 public class AzureSlavePostBuildAction extends Recorder {
 
     /** Windows Azure Storage Account Name. */
-    private String slavePostBuildAction;
+    private final String slavePostBuildAction;
 
     private static final Logger LOGGER = Logger.getLogger(AzureSlavePostBuildAction.class.getName());
 
@@ -51,8 +52,9 @@ public class AzureSlavePostBuildAction extends Recorder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) throws InterruptedException, IOException {
 
-        LOGGER.info("AzureSlavePostBuildAction: perform: build is not successful , taking post build action "
-                + slavePostBuildAction + "  for slave ");
+        LOGGER.log(Level.INFO,
+                "AzureSlavePostBuildAction: perform: build is not successful , taking post build action {0}  for slave ",
+                slavePostBuildAction);
         Node node = Computer.currentComputer().getNode();
 
         int retryCount = 0;
@@ -80,11 +82,9 @@ public class AzureSlavePostBuildAction extends Recorder {
                 successfull = true;
             } catch (Exception e) {
                 retryCount++;
-                LOGGER.info("AzureSlavePostBuildAction: perform: Exception occured while " + slavePostBuildAction
-                        + "\n"
-                        + "Will retry again after 30 seconds. Current retry count " + retryCount
-                        + "\n"
-                        + "Error code " + e.getMessage());
+                LOGGER.log(Level.INFO, "AzureSlavePostBuildAction: perform: Exception occured while {0}" + "\n"
+                        + "Will retry again after 30 seconds. Current retry count {1}"
+                        + "\n" + "Error code {2}", new Object[] { slavePostBuildAction, retryCount, e.getMessage() });
                 // We won't get exception for RNF , so for other exception types we can retry
                 try {
                     Thread.sleep(30 * 1000);

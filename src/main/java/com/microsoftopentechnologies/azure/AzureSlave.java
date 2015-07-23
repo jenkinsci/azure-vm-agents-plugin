@@ -37,55 +37,52 @@ import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.RetentionStrategy;
+import java.util.logging.Level;
 
 public class AzureSlave extends AbstractCloudSlave {
 
     private static final long serialVersionUID = -760014706860995556L;
 
-    private String cloudName;
+    private final String cloudName;
 
-    private String adminUserName;
+    private final String adminUserName;
 
-    private String sshPrivateKey;
+    private final String sshPrivateKey;
 
-    private String sshPassPhrase;
+    private final String sshPassPhrase;
 
-    private String adminPassword;
+    private final String adminPassword;
 
-    private String jvmOptions;
+    private final String jvmOptions;
 
     private boolean shutdownOnIdle;
 
-    private String cloudServiceName;
+    private final int retentionTimeInMin;
 
-    private int retentionTimeInMin;
+    private final String slaveLaunchMethod;
 
-    private String slaveLaunchMethod;
+    private final String initScript;
 
-    private String initScript;
+    private final String deploymentName;
 
-    private String deploymentName;
-
-    private String osType;
+    private final String osType;
 
     // set during post create step
     private String publicDNSName;
 
     private int sshPort;
 
-    private Mode mode;
+    private final Mode mode;
 
-    private String subscriptionId;
+    private final String subscriptionId;
 
-    private String nativeClientId;
+    private final String clientId;
 
-    private String oauth2TokenEndpoint;
+    private final String clientSecret;
 
-    private String azureUsername;
+    private final String oauth2TokenEndpoint;
 
-    private String azurePassword;
-
-    private String managementURL;
+    private final String managementURL;
 
     private String templateName;
 
@@ -94,20 +91,38 @@ public class AzureSlave extends AbstractCloudSlave {
     private static final Logger LOGGER = Logger.getLogger(AzureSlave.class.getName());
 
     @DataBoundConstructor
-    public AzureSlave(String name, String templateName, String nodeDescription, String osType, String remoteFS,
-            int numExecutors, Mode mode, String labelString,
-            ComputerLauncher launcher, RetentionStrategy<AzureComputer> retentionStrategy,
-            List<? extends NodeProperty<?>> nodeProperties,
-            String cloudName, String adminUserName, String sshPrivateKey, String sshPassPhrase, String adminPassword,
-            String jvmOptions,
-            boolean shutdownOnIdle, String cloudServiceName, String deploymentName, int retentionTimeInMin,
-            String initScript,
-            String subscriptionId, String nativeClientId, String oauth2TokenEndpoint, String azureUsername,
-            String azurePassword, String managementURL,
-            String slaveLaunchMethod, boolean deleteSlave) throws FormException, IOException {
+    public AzureSlave(
+            final String name,
+            final String templateName,
+            final String nodeDescription,
+            final String osType,
+            final String remoteFS,
+            final int numExecutors,
+            final Mode mode,
+            final String label,
+            final ComputerLauncher launcher,
+            final RetentionStrategy<AzureComputer> retentionStrategy,
+            final List<? extends NodeProperty<?>> nodeProperties,
+            final String cloudName,
+            final String adminUserName,
+            final String sshPrivateKey,
+            final String sshPassPhrase,
+            final String adminPassword,
+            final String jvmOptions,
+            final boolean shutdownOnIdle,
+            final String deploymentName,
+            final int retentionTimeInMin,
+            final String initScript,
+            final String subscriptionId,
+            final String clientId,
+            final String clientSecret,
+            final String oauth2TokenEndpoint,
+            final String managementURL,
+            final String slaveLaunchMethod,
+            final boolean deleteSlave) throws FormException, IOException {
 
-        super(name, nodeDescription, remoteFS, numExecutors, mode, labelString, launcher, retentionStrategy,
-                nodeProperties);
+        super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
+
         this.cloudName = cloudName;
         this.templateName = templateName;
         this.adminUserName = adminUserName;
@@ -116,63 +131,80 @@ public class AzureSlave extends AbstractCloudSlave {
         this.adminPassword = adminPassword;
         this.jvmOptions = jvmOptions;
         this.shutdownOnIdle = shutdownOnIdle;
-        this.cloudServiceName = cloudServiceName;
         this.deploymentName = deploymentName;
         this.retentionTimeInMin = retentionTimeInMin;
         this.initScript = initScript;
         this.osType = osType;
         this.mode = mode;
         this.subscriptionId = subscriptionId;
-        this.nativeClientId = nativeClientId;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
         this.oauth2TokenEndpoint = oauth2TokenEndpoint;
-        this.azureUsername = azureUsername;
-        this.azurePassword = azurePassword;
         this.managementURL = managementURL;
         this.slaveLaunchMethod = slaveLaunchMethod;
         this.deleteSlave = deleteSlave;
     }
 
-    public AzureSlave(String name, String templateName, String nodeDescription, String osType, String remoteFS,
-            int numExecutors, Mode mode, String labelString,
-            String cloudName, String adminUserName, String sshPrivateKey, String sshPassPhrase, String adminPassword,
-            String jvmOptions,
-            boolean shutdownOnIdle, String cloudServiceName, String deploymentName, int retentionTimeInMin,
-            String initScript,
-            String subscriptionId, String nativeClientId,
-            String oauth2TokenEndpoint, String azureUsername, String azurePassword, String managementURL,
-            String slaveLaunchMethod, boolean deleteSlave) throws FormException, IOException {
+    public AzureSlave(
+            final String name,
+            final String templateName,
+            final String nodeDescription,
+            final String osType,
+            final String remoteFS,
+            final int numExecutors,
+            final Mode mode,
+            final String label,
+            final String cloudName,
+            final String adminUserName,
+            final String sshPrivateKey,
+            final String sshPassPhrase,
+            final String adminPassword,
+            final String jvmOptions,
+            final boolean shutdownOnIdle,
+            final String deploymentName,
+            final int retentionTimeInMin,
+            final String initScript,
+            final String subscriptionId,
+            final String clientId,
+            final String clientSecret,
+            final String oauth2TokenEndpoint,
+            final String managementURL,
+            final String slaveLaunchMethod,
+            final boolean deleteSlave) throws FormException, IOException {
 
-        this(name, templateName, nodeDescription, osType, remoteFS, numExecutors, mode, labelString,
-                slaveLaunchMethod.equalsIgnoreCase("SSH") ? osType.equalsIgnoreCase("Windows") ? new AzureSSHLauncher()
-                                : new AzureSSHLauncher() : new JNLPLauncher(),
-                new AzureCloudRetensionStrategy(retentionTimeInMin), Collections.<NodeProperty<?>>emptyList(), cloudName,
+        this(name,
+                templateName,
+                nodeDescription,
+                osType,
+                remoteFS,
+                numExecutors,
+                mode,
+                label,
+                slaveLaunchMethod.equalsIgnoreCase("SSH")
+                        ? osType.equalsIgnoreCase("Windows")
+                                ? new AzureSSHLauncher()
+                                : new AzureSSHLauncher()
+                        : new JNLPLauncher(),
+                new AzureCloudRetensionStrategy(retentionTimeInMin),
+                Collections.<NodeProperty<?>>emptyList(),
+                cloudName,
                 adminUserName,
-                sshPrivateKey, sshPassPhrase, adminPassword, jvmOptions, shutdownOnIdle, cloudServiceName,
-                deploymentName, retentionTimeInMin, initScript,
-                subscriptionId, nativeClientId, oauth2TokenEndpoint, azureUsername, azurePassword, managementURL,
-                slaveLaunchMethod, deleteSlave);
-
-        this.cloudName = cloudName;
-        this.templateName = templateName;
-        this.adminUserName = adminUserName;
-        this.sshPrivateKey = sshPrivateKey;
-        this.sshPassPhrase = sshPassPhrase;
-        this.adminPassword = adminPassword;
-        this.jvmOptions = jvmOptions;
-        this.shutdownOnIdle = shutdownOnIdle;
-        this.cloudServiceName = cloudServiceName;
-        this.deploymentName = deploymentName;
-        this.retentionTimeInMin = retentionTimeInMin;
-        this.initScript = initScript;
-        this.osType = osType;
-        this.mode = mode;
-        this.subscriptionId = subscriptionId;
-        this.nativeClientId = nativeClientId;
-        this.oauth2TokenEndpoint = oauth2TokenEndpoint;
-        this.azureUsername = azureUsername;
-        this.azurePassword = azurePassword;
-        this.managementURL = managementURL;
-        this.deleteSlave = deleteSlave;
+                sshPrivateKey,
+                sshPassPhrase,
+                adminPassword,
+                jvmOptions,
+                shutdownOnIdle,
+                //                cloudServiceName,
+                deploymentName,
+                retentionTimeInMin,
+                initScript,
+                subscriptionId,
+                clientId,
+                clientSecret,
+                oauth2TokenEndpoint,
+                managementURL,
+                slaveLaunchMethod,
+                deleteSlave);
     }
 
     public String getCloudName() {
@@ -192,20 +224,16 @@ public class AzureSlave extends AbstractCloudSlave {
         return subscriptionId;
     }
 
-    public String getNativeClientId() {
-        return nativeClientId;
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
     }
 
     public String getOauth2TokenEndpoint() {
         return oauth2TokenEndpoint;
-    }
-
-    public String getAzureUsername() {
-        return azureUsername;
-    }
-
-    public String getAzurePassword() {
-        return azurePassword;
     }
 
     public String getManagementURL() {
@@ -222,10 +250,6 @@ public class AzureSlave extends AbstractCloudSlave {
 
     public String getSshPassPhrase() {
         return sshPassPhrase;
-    }
-
-    public String getCloudServiceName() {
-        return cloudServiceName;
     }
 
     public String getDeploymentName() {
@@ -292,13 +316,15 @@ public class AzureSlave extends AbstractCloudSlave {
         this.templateName = templateName;
     }
 
-    protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
+    @Override
+    protected void _terminate(final TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
-        LOGGER.info("AzureSlave: _terminate: called for slave " + getNodeName());
+        LOGGER.log(Level.INFO, "AzureSlave: _terminate: called for slave {0}", getNodeName());
     }
 
+    @Override
     public AbstractCloudComputer<AzureSlave> createComputer() {
-        LOGGER.info("AzureSlave: createComputer: start for slave " + this.getDisplayName());
+        LOGGER.log(Level.INFO, "AzureSlave: createComputer: start for slave {0}", this.getDisplayName());
         return new AzureComputer(this);
     }
 
@@ -306,13 +332,14 @@ public class AzureSlave extends AbstractCloudSlave {
         if (shutdownOnIdle) {
             // Call shutdown only if the slave is online
             if (this.getComputer().isOnline()) {
-                LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is true, shutting down slave " + this.
+                LOGGER.log(Level.INFO, "AzureSlave: idleTimeout: shutdownOnIdle is true, shutting down slave {0}", this.
                         getDisplayName());
                 AzureManagementServiceDelegate.shutdownVirtualMachine(this);
                 setDeleteSlave(false);
             }
         } else {
-            LOGGER.info("AzureSlave: idleTimeout: shutdownOnIdle is false, deleting slave " + this.getDisplayName());
+            LOGGER.log(Level.INFO,
+                    "AzureSlave: idleTimeout: shutdownOnIdle is false, deleting slave {0}", this.getDisplayName());
             setDeleteSlave(true);
             AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
             Jenkins.getInstance().removeNode(this);
@@ -324,8 +351,10 @@ public class AzureSlave extends AbstractCloudSlave {
     }
 
     public void deprovision() throws Exception {
-        LOGGER.info("AzureSlave: deprovision: Deprovision called for slave " + this.getDisplayName());
+        LOGGER.log(Level.INFO, "AzureSlave: deprovision: Deprovision called for slave {0}", this.getDisplayName());
         AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
+        LOGGER.log(Level.INFO, "AzureSlave: deprovision: {0} has been deprovisioned. Remove node ...",
+                this.getDisplayName());
         setDeleteSlave(true);
         Jenkins.getInstance().removeNode(this);
     }
@@ -343,16 +372,30 @@ public class AzureSlave extends AbstractCloudSlave {
 
     @Override
     public String toString() {
-        return "AzureSlave [" + "cloudName=" + cloudName + ", adminUserName=" + adminUserName + ", sshPrivateKey="
-                + sshPrivateKey + ", sshPassPhrase=" + sshPassPhrase + ", adminPassword=" + adminPassword
-                + ", jvmOptions=" + jvmOptions + ", shutdownOnIdle=" + shutdownOnIdle + ", cloudServiceName="
-                + cloudServiceName + ", retentionTimeInMin=" + retentionTimeInMin + ", slaveLaunchMethod="
-                + slaveLaunchMethod + ", initScript=" + initScript + ", deploymentName=" + deploymentName + ", osType="
-                + osType + ", publicDNSName=" + publicDNSName + ", sshPort=" + sshPort + ", mode=" + mode
-                + ", subscriptionId=" + subscriptionId + ", nativeClientId=" + nativeClientId + ", oauth2TokenEndpoint="
-                + oauth2TokenEndpoint + ", azureUsername=" + azureUsername + ", azurePassword=" + azurePassword
-                + ", managementURL=" + managementURL + ", templateName=" + templateName + ", deleteSlave=" + deleteSlave
-                + ']';
+        return "AzureSlave ["
+                + "\n\tcloudName=" + cloudName
+                + "\n\tadminUserName=" + adminUserName
+                + "\n\tsshPrivateKey=" + sshPrivateKey
+                + "\n\tsshPassPhrase=" + sshPassPhrase
+                + "\n\tadminPassword=" + adminPassword
+                + "\n\tjvmOptions=" + jvmOptions
+                + "\n\tshutdownOnIdle=" + shutdownOnIdle
+                + "\n\tretentionTimeInMin=" + retentionTimeInMin
+                + "\n\tslaveLaunchMethod=" + slaveLaunchMethod
+                + "\n\tinitScript=" + initScript
+                + "\n\tdeploymentName=" + deploymentName
+                + "\n\tosType=" + osType
+                + "\n\tpublicDNSName=" + publicDNSName
+                + "\n\tsshPort=" + sshPort
+                + "\n\tmode=" + mode
+                + "\n\tsubscriptionId=" + subscriptionId
+                + "\n\tclientId=" + clientId
+                + "\n\tclientSecret=" + clientSecret
+                + "\n\toauth2TokenEndpoint=" + oauth2TokenEndpoint
+                + "\n\tmanagementURL=" + managementURL
+                + "\n\ttemplateName=" + templateName
+                + "\n\tdeleteSlave=" + deleteSlave
+                + "\n]";
     }
 
     @Extension

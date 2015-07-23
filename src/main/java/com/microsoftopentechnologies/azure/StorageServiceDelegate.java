@@ -15,6 +15,9 @@
  */
 package com.microsoftopentechnologies.azure;
 
+import com.microsoft.azure.management.storage.StorageManagementClient;
+import com.microsoft.azure.management.storage.StorageManagementService;
+import com.microsoft.azure.management.storage.models.StorageAccountGetPropertiesResponse;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.StorageException;
@@ -38,13 +41,9 @@ import java.util.TimeZone;
 import java.util.logging.Logger;
 
 import com.microsoft.windowsazure.Configuration;
-import com.microsoft.windowsazure.management.storage.StorageManagementClient;
-import com.microsoft.windowsazure.management.storage.StorageManagementService;
-import com.microsoft.windowsazure.management.storage.models.StorageAccount;
-import com.microsoft.windowsazure.management.storage.models.StorageAccountGetResponse;
-import com.microsoft.windowsazure.management.storage.models.StorageAccountProperties;
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
 import com.microsoftopentechnologies.azure.util.Constants;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,17 +66,45 @@ public class StorageServiceDelegate {
      * @return list of storage account URIs
      * @throws Exception
      */
-    private static List<URI> getStorageAccountURIs(Configuration config, String storageAccountName) throws
+    private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName) throws
             AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config);
-        StorageAccountGetResponse response = null;
+        StorageAccountGetPropertiesResponse response;
+
         try {
-            response = client.getStorageAccountsOperations().get(storageAccountName);
+            response = client.getStorageAccountsOperations().
+                    getProperties(Constants.RESOURCE_GROUP_NAME, storageAccountName);
         } catch (Exception e) {
             throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "
                     + storageAccountName + " does not exist");
         }
-        return response.getStorageAccount().getProperties().getEndpoints();
+
+        final List<URI> res = new ArrayList<URI>();
+        if (response.getStorageAccount().getPrimaryEndpoints() != null) {
+            if (response.getStorageAccount().getPrimaryEndpoints().getBlob() != null) {
+                res.add(response.getStorageAccount().getPrimaryEndpoints().getBlob());
+            }
+            if (response.getStorageAccount().getPrimaryEndpoints().getTable() != null) {
+                res.add(response.getStorageAccount().getPrimaryEndpoints().getTable());
+            }
+            if (response.getStorageAccount().getPrimaryEndpoints().getQueue() != null) {
+                res.add(response.getStorageAccount().getPrimaryEndpoints().getQueue());
+            }
+        }
+
+        if (response.getStorageAccount().getSecondaryEndpoints() != null) {
+            if (response.getStorageAccount().getSecondaryEndpoints().getBlob() != null) {
+                res.add(response.getStorageAccount().getSecondaryEndpoints().getBlob());
+            }
+            if (response.getStorageAccount().getSecondaryEndpoints().getTable() != null) {
+                res.add(response.getStorageAccount().getSecondaryEndpoints().getTable());
+            }
+            if (response.getStorageAccount().getSecondaryEndpoints().getQueue() != null) {
+                res.add(response.getStorageAccount().getSecondaryEndpoints().getQueue());
+            }
+        }
+
+        return res;
     }
 
     /**
@@ -88,21 +115,20 @@ public class StorageServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static StorageAccountProperties getStorageAccountProps(Configuration config, String storageAccountName)
+    public static StorageAccountGetPropertiesResponse getStorageAccountProps(
+            final Configuration config, final String storageAccountName)
             throws AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config);
-        StorageAccountGetResponse response = null;
+        StorageAccountGetPropertiesResponse response = null;
         try {
-            response = client.getStorageAccountsOperations().get(storageAccountName);
+            response = client.getStorageAccountsOperations().getProperties(
+                    Constants.RESOURCE_GROUP_NAME, storageAccountName);
         } catch (Exception e) {
             throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "
                     + storageAccountName + " does not exist");
         }
 
-        StorageAccount sa = response.getStorageAccount();
-        StorageAccountProperties props = sa.getProperties();
-
-        return props;
+        return response;
     }
 
     /**
