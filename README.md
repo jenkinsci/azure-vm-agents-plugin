@@ -13,7 +13,9 @@ Supports creating
 
 ## Pre-requirements
 Register and authorize your client application.
+
 Retrieve and use Client ID and Client Secret to be sent to Azure AD during authentication.
+
 Refer to
   * [Adding, Updating, and Removing an Application](https://msdn.microsoft.com/en-us/library/azure/dn132599.aspx) 
   * [Register a client app](https://msdn.microsoft.com/en-us/dn877542.asp)
