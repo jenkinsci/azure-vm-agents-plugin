@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.microsoft.azure.management.compute.ComputeManagementClient;
 import com.microsoft.azure.management.compute.VirtualMachineImageOperations;
-import com.microsoft.azure.management.compute.models.ComputeLongRunningOperationResponse;
 import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
 import com.microsoft.azure.management.compute.models.InstanceViewStatus;
 import com.microsoft.azure.management.compute.models.ListParameters;
@@ -106,7 +105,7 @@ public class AzureManagementServiceDelegate {
                     "AzureManagementServiceDelegate: deployment: Initializing deployment for slaveTemaple {0}",
                     template.getTemplateName());
 
-            final ResourceManagementClient client = ServiceDelegateHelper.getResourceeManagementClient(
+            final ResourceManagementClient client = ServiceDelegateHelper.getResourceManagementClient(
                     ServiceDelegateHelper.getConfiguration(template));
 
             final long ts = System.currentTimeMillis();
@@ -736,8 +735,7 @@ public class AzureManagementServiceDelegate {
                     final ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(slave);
 
                     LOGGER.log(Level.INFO, "Remove virtual machine {0}", slave.getNodeName());
-                    final ComputeLongRunningOperationResponse res = client.getVirtualMachinesOperations().delete(
-                            Constants.RESOURCE_GROUP_NAME, slave.getNodeName());
+                    client.getVirtualMachinesOperations().delete(Constants.RESOURCE_GROUP_NAME, slave.getNodeName());
                 }
             } catch (ExecutionException ee) {
                 LOGGER.log(Level.INFO,

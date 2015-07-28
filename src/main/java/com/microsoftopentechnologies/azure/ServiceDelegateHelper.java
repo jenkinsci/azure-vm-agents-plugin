@@ -15,6 +15,8 @@
  */
 package com.microsoftopentechnologies.azure;
 
+import static com.microsoft.windowsazure.management.configuration.ManagementConfiguration.SUBSCRIPTION_CLOUD_CREDENTIALS;
+
 import com.microsoft.aad.adal4j.AuthenticationContext;
 import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
@@ -30,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.credentials.TokenCloudCredentials;
 import com.microsoft.windowsazure.management.ManagementClient;
 import com.microsoft.windowsazure.management.ManagementService;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
@@ -207,6 +210,9 @@ public class ServiceDelegateHelper {
         ClassLoader thread = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(AzureManagementServiceDelegate.class.getClassLoader());
 
+        // reset configuration instance: renew token
+        Configuration.setInstance(null);
+
         URI managementURI = null;
 
         final String url;
@@ -222,6 +228,7 @@ public class ServiceDelegateHelper {
             throw new AzureCloudException(
                     "The syntax of the Url in the publish settings file is incorrect.", e);
         }
+        
         try {
             AuthenticationResult authres = getAccessTokenFromServicePrincipalCredentials(
                     clientId,
@@ -231,24 +238,18 @@ public class ServiceDelegateHelper {
 
             LOGGER.log(Level.INFO,
                     "Authentication result:\n\taccess token: {0}\n\trefresh token: {1}\n\tExpires On: {2}",
-                    new Object[] { authres.getAccessToken(), authres.getRefreshToken(), authres.getExpiresOn() });
+                    new Object[] { authres.getAccessToken(), authres.getRefreshToken(), authres.getExpiresOnDate() });
 
-            if (authres.getRefreshToken() != null && authres.getExpiresOn() < System.currentTimeMillis()) {
-                LOGGER.log(Level.INFO, "Refreshing token by {0}", authres.getRefreshToken());
-                authres = getAccessTokenByRefreshToken(
-                        authres.getRefreshToken(),
-                        clientId,
-                        clientSecret,
-                        oauth2TokenEndpoint,
-                        serviceManagementURL);
-            }
-
-            return ManagementConfiguration.configure(
+            final Configuration config = ManagementConfiguration.configure(
                     null,
                     managementURI,
                     subscriptionId,
                     authres.getAccessToken());
 
+            LOGGER.log(Level.INFO, "Configuration token: {0}",
+                    TokenCloudCredentials.class.cast(config.getProperty(SUBSCRIPTION_CLOUD_CREDENTIALS)).getToken());
+
+            return config;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Loading connection configuration parameters", e);
             throw new AzureCloudException("Cannot obtain OAuth 2.0 access token", e);
@@ -263,7 +264,7 @@ public class ServiceDelegateHelper {
      * @param config
      * @return
      */
-    public static ResourceManagementClient getResourceeManagementClient(final Configuration config) {
+    public static ResourceManagementClient getResourceManagementClient(final Configuration config) {
         ClassLoader thread = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(AzureManagementServiceDelegate.class.getClassLoader());
 
