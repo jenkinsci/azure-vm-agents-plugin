@@ -29,7 +29,9 @@ import com.microsoft.azure.management.compute.models.VirtualMachineImageGetParam
 import com.microsoft.azure.management.network.NetworkResourceProviderClient;
 import com.microsoft.azure.management.network.NetworkResourceProviderService;
 import com.microsoft.azure.management.network.models.NetworkInterface;
+import com.microsoft.azure.management.network.models.NetworkInterfaceGetResponse;
 import com.microsoft.azure.management.network.models.PublicIpAddress;
+import com.microsoft.azure.management.network.models.PublicIpAddressGetResponse;
 import com.microsoft.azure.management.network.models.Subnet;
 import com.microsoft.azure.management.network.models.VirtualNetwork;
 import com.microsoft.azure.management.network.models.VirtualNetworkListResponse;
@@ -187,7 +189,7 @@ public class AzureManagementServiceDelegate {
             }
 
             // Deployment ....
-            properties.setMode(DeploymentMode.Incremental);
+            properties.setMode(DeploymentMode.INCREMENTAL);
             properties.setTemplate(tmp.toString());
 
             final String deploymentName = String.valueOf(ts);
@@ -779,7 +781,14 @@ public class AzureManagementServiceDelegate {
             final String nic = slave.getNodeName() + "NIC";
             try {
                 LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
-                client.getNetworkInterfacesOperations().delete(Constants.RESOURCE_GROUP_NAME, nic);
+                final NetworkInterfaceGetResponse obj
+                        = client.getNetworkInterfacesOperations().get(Constants.RESOURCE_GROUP_NAME, nic);
+
+                if (obj == null) {
+                    LOGGER.log(Level.INFO, "NIC {0} already deprovisioned", nic);
+                } else {
+                    client.getNetworkInterfacesOperations().delete(Constants.RESOURCE_GROUP_NAME, nic);
+                }
             } catch (Exception ignore) {
                 LOGGER.log(Level.INFO, "AzureManagementServiceDelegate: removeIPName: while deleting NIC", ignore);
             }
@@ -787,7 +796,13 @@ public class AzureManagementServiceDelegate {
             final String ip = slave.getNodeName() + "IPName";
             try {
                 LOGGER.log(Level.INFO, "Remove IP {0}", ip);
-                client.getPublicIpAddressesOperations().delete(Constants.RESOURCE_GROUP_NAME, ip);
+                final PublicIpAddressGetResponse obj
+                        = client.getPublicIpAddressesOperations().get(Constants.RESOURCE_GROUP_NAME, ip);
+                if (obj == null) {
+                    LOGGER.log(Level.INFO, "IP {0} already deprovisioned", ip);
+                } else {
+                    client.getPublicIpAddressesOperations().delete(Constants.RESOURCE_GROUP_NAME, ip);
+                }
             } catch (Exception ignore) {
                 LOGGER.log(Level.INFO, "AzureManagementServiceDelegate: removeIPName: while deleting IPName", ignore);
             }

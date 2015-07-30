@@ -38,7 +38,9 @@ import com.microsoft.windowsazure.management.ManagementService;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
 import com.microsoftopentechnologies.azure.exceptions.UnrecoverableCloudException;
+import com.microsoftopentechnologies.azure.util.AccessToken;
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.TokenCache;
 import hudson.slaves.Cloud;
 import java.net.MalformedURLException;
 import java.util.concurrent.ExecutionException;
@@ -60,6 +62,8 @@ import org.apache.commons.lang.StringUtils;
 public class ServiceDelegateHelper {
 
     private static final Logger LOGGER = Logger.getLogger(ServiceDelegateHelper.class.getName());
+
+    private static final TokenCache tokenCache = new TokenCache();
 
     public static Configuration getConfiguration(final AzureCloud cloud) throws AzureCloudException {
         try {
@@ -116,40 +120,6 @@ public class ServiceDelegateHelper {
                 azureCloud.getClientSecret(),
                 azureCloud.getOauth2TokenEndpoint(),
                 azureCloud.getServiceManagementURL());
-    }
-
-    private static AuthenticationResult getAccessTokenByRefreshToken(
-            final String refreshToken,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL)
-            throws MalformedURLException, ExecutionException, InterruptedException, ServiceUnavailableException {
-
-        final ExecutorService service = Executors.newFixedThreadPool(1);
-
-        AuthenticationResult result = null;
-
-        try {
-            LOGGER.log(Level.INFO, "Aquiring access token: \n\t{0}\n\t{1}\n\t{2}",
-                    new Object[] { oauth2TokenEndpoint, serviceManagementURL, clientId });
-
-            final ClientCredential credential = new ClientCredential(clientId, clientSecret);
-
-            final Future<AuthenticationResult> future = new AuthenticationContext(oauth2TokenEndpoint, false, service).
-                    acquireTokenByRefreshToken(refreshToken, credential, null);
-
-            result = future.get();
-            LOGGER.log(Level.INFO, "Aquired access token {0}", result.getAccessToken());
-        } finally {
-            service.shutdown();
-        }
-
-        if (result == null) {
-            throw new ServiceUnavailableException("authentication result was null");
-        }
-
-        return result;
     }
 
     private static AuthenticationResult getAccessTokenFromServicePrincipalCredentials(
@@ -210,46 +180,51 @@ public class ServiceDelegateHelper {
         ClassLoader thread = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(AzureManagementServiceDelegate.class.getClassLoader());
 
-        // reset configuration instance: renew token
-        Configuration.setInstance(null);
-
-        URI managementURI = null;
-
-        final String url;
-        if (StringUtils.isBlank(serviceManagementURL)) {
-            url = Constants.DEFAULT_MANAGEMENT_URL;
-        } else {
-            url = serviceManagementURL;
-        }
-
         try {
-            managementURI = new URI(url);
+            final String url;
+            if (StringUtils.isBlank(serviceManagementURL)) {
+                url = Constants.DEFAULT_MANAGEMENT_URL;
+            } else {
+                url = serviceManagementURL;
+            }
+
+            URI managementURI = new URI(url);
+
+            synchronized (tokenCache) {
+                AccessToken accessToken = tokenCache.get();
+                if (accessToken == null) {
+                    // reset configuration instance: renew token
+                    Configuration.setInstance(null);
+
+                    final AuthenticationResult authres = getAccessTokenFromServicePrincipalCredentials(
+                            clientId,
+                            clientSecret,
+                            oauth2TokenEndpoint,
+                            url);
+
+                    LOGGER.log(Level.INFO,
+                            "Authentication result:\n\taccess token: {0}\n\trefresh token: {1}\n\tExpires On: {2}",
+                            new Object[] {
+                                authres.getAccessToken(), authres.getRefreshToken(), authres.getExpiresOnDate() });
+
+                    accessToken = tokenCache.set(authres);
+                }
+
+                final Configuration config = ManagementConfiguration.configure(
+                        null,
+                        managementURI,
+                        subscriptionId,
+                        accessToken.toString());
+
+                LOGGER.log(Level.INFO, "Configuration token: {0}", TokenCloudCredentials.class.cast(
+                        config.getProperty(SUBSCRIPTION_CLOUD_CREDENTIALS)).getToken());
+
+                return config;
+            }
+
         } catch (URISyntaxException e) {
             throw new AzureCloudException(
                     "The syntax of the Url in the publish settings file is incorrect.", e);
-        }
-        
-        try {
-            AuthenticationResult authres = getAccessTokenFromServicePrincipalCredentials(
-                    clientId,
-                    clientSecret,
-                    oauth2TokenEndpoint,
-                    url);
-
-            LOGGER.log(Level.INFO,
-                    "Authentication result:\n\taccess token: {0}\n\trefresh token: {1}\n\tExpires On: {2}",
-                    new Object[] { authres.getAccessToken(), authres.getRefreshToken(), authres.getExpiresOnDate() });
-
-            final Configuration config = ManagementConfiguration.configure(
-                    null,
-                    managementURI,
-                    subscriptionId,
-                    authres.getAccessToken());
-
-            LOGGER.log(Level.INFO, "Configuration token: {0}",
-                    TokenCloudCredentials.class.cast(config.getProperty(SUBSCRIPTION_CLOUD_CREDENTIALS)).getToken());
-
-            return config;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Loading connection configuration parameters", e);
             throw new AzureCloudException("Cannot obtain OAuth 2.0 access token", e);

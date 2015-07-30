@@ -29,19 +29,22 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
 
     private static final Logger LOGGER = Logger.getLogger(AzureComputer.class.getName());
 
+    private boolean provisioned = false;
+
     public AzureComputer(final AzureSlave slave) {
         super(slave);
     }
 
     @Override
     public HttpResponse doDoDelete() throws IOException {
+        checkPermission(DELETE);
         AzureSlave slave = getNode();
 
         if (slave != null) {
             LOGGER.log(Level.INFO, "AzureComputer: doDoDelete called for slave {0}", slave.getNodeName());
             setTemporarilyOffline(true, OfflineCause.create(Messages._Delete_Slave()));
-
             slave.setDeleteSlave(true);
+
             try {
                 deleteSlave();
             } catch (Exception e) {
@@ -63,14 +66,28 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
             if (slave.getChannel() != null) {
                 slave.getChannel().close();
             }
+
             try {
                 slave.deprovision();
             } catch (Exception e) {
-
                 LOGGER.log(Level.SEVERE, "AzureComputer : Exception occurred while deleting  {0} slave", getName());
                 LOGGER.log(Level.SEVERE, "Root cause", e);
                 throw e;
             }
         }
+    }
+
+    public void setProvisioned(boolean provisioned) {
+        this.provisioned = provisioned;
+    }
+
+    public boolean isProvisioned() {
+        return this.provisioned;
+    }
+
+    @Override
+    public void waitUntilOnline() throws InterruptedException {
+        super.waitUntilOnline();
+        setProvisioned(true);
     }
 }

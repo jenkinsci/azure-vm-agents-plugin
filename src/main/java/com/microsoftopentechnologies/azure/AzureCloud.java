@@ -117,17 +117,10 @@ public class AzureCloud extends Cloud {
 
     @Override
     public boolean canProvision(final Label label) {
-        AzureSlaveTemplate template = getAzureSlaveTemplate(label);
-
+        final AzureSlaveTemplate template = getAzureSlaveTemplate(label);
         // return false if there is no template
         if (template == null) {
-            if (label != null) {
-                LOGGER.log(Level.INFO,
-                        "Azurecloud: canProvision: template not found for label {0}", label.getDisplayName());
-            } else {
-                LOGGER.info("Azurecloud: canProvision: template not found for empty label. "
-                        + "All templates exclusive to jobs that require that template.");
-            }
+            LOGGER.log(Level.INFO, "Azurecloud: canProvision: template not found for label {0}", label);
             return false;
         } else if (template.getTemplateStatus().equalsIgnoreCase(Constants.TEMPLATE_STATUS_DISBALED)) {
             LOGGER.log(Level.INFO,
@@ -170,13 +163,17 @@ public class AzureCloud extends Cloud {
      * @return
      */
     public AzureSlaveTemplate getAzureSlaveTemplate(final Label label) {
+        LOGGER.log(Level.INFO, "Retrieving slave template with label {0}", label);
         for (AzureSlaveTemplate slaveTemplate : instTemplates) {
+            LOGGER.log(Level.INFO, "Found slave template {0}", slaveTemplate.getTemplateName());
             if (slaveTemplate.getUseSlaveAlwaysIfAvail() == Node.Mode.NORMAL) {
                 if (label == null || label.matches(slaveTemplate.getLabelDataSet())) {
+                    LOGGER.log(Level.INFO, "{0} matches!", slaveTemplate.getTemplateName());
                     return slaveTemplate;
                 }
             } else if (slaveTemplate.getUseSlaveAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
                 if (label != null && label.matches(slaveTemplate.getLabelDataSet())) {
+                    LOGGER.log(Level.INFO, "{0} matches!", slaveTemplate.getTemplateName());
                     return slaveTemplate;
                 }
             }
