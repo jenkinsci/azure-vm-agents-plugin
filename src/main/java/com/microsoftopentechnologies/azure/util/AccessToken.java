@@ -16,33 +16,63 @@
 package com.microsoftopentechnologies.azure.util;
 
 import com.microsoft.aad.adal4j.AuthenticationResult;
+import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
+import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 
-public class AccessToken {
+public class AccessToken implements Serializable {
 
-    final String value;
+    private static final long serialVersionUID = 1L;
 
-    final Date expiration;
+    private final String subscriptionId;
 
-    public static AccessToken load(final AuthenticationResult authres) {
-        return new AccessToken(authres.getAccessToken(), authres.getExpiresOnDate());
+    private final String serviceManagementUrl;
+
+    private final String token;
+
+    private final Date expiration;
+
+    AccessToken(
+            final String subscriptionId, final String serviceManagementUrl, final AuthenticationResult authres) {
+        this.subscriptionId = subscriptionId;
+        this.serviceManagementUrl = serviceManagementUrl;
+        this.token = authres.getAccessToken();
+        this.expiration = authres.getExpiresOnDate();
     }
 
-    private AccessToken(final String value, final Date expiration) {
-        this.value = value;
-        this.expiration = expiration;
+    public Configuration getConfiguration() throws AzureCloudException {
+        try {
+            return ManagementConfiguration.configure(
+                    null,
+                    new URI(serviceManagementUrl),
+                    subscriptionId,
+                    token);
+        } catch (URISyntaxException e) {
+            throw new AzureCloudException("The syntax of the Url in the publish settings file is incorrect.", e);
+        } catch (IOException e) {
+            throw new AzureCloudException("Error updating authentication configuration", e);
+        }
+    }
+
+    public Date getExpirationDate() {
+        return expiration;
     }
 
     public boolean isExpiring() {
         final Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
-        cal.add(Calendar.MINUTE, 10);
+        cal.add(Calendar.MINUTE, 5);
         return expiration.before(cal.getTime());
     }
 
     @Override
     public String toString() {
-        return value;
+        return token;
     }
 }

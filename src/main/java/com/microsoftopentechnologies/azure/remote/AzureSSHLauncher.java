@@ -239,7 +239,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
     private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger) {
         ChannelExec channel = null;
-        LOGGER.info("AzureSSHLauncher: executeRemoteCommand: start");
+        LOGGER.info("AzureSSHLauncher: executeRemoteCommand: starts");
         try {
             channel = createExecChannel(jschSession, command);
             final InputStream inputStream = channel.getInputStream();
@@ -249,33 +249,37 @@ public class AzureSSHLauncher extends ComputerLauncher {
             try {
                 IOUtils.copy(inputStream, logger);
             } finally {
-                inputStream.close();
+                IOUtils.closeQuietly(inputStream);
             }
 
             // Read from error stream	
             try {
                 IOUtils.copy(errorStream, logger);
             } finally {
-                errorStream.close();
+                IOUtils.closeQuietly(errorStream);
             }
 
             if (!channel.isClosed()) {
                 try {
-                    LOGGER.warning("AzureSSHLauncher: executeRemoteCommand:"
-                            + " Channel is not yet closed , waiting for 10 seconds");
+                    LOGGER.log(Level.WARNING,
+                            "{0}: executeRemoteCommand: Channel is not yet closed, waiting for 10 seconds",
+                            this.getClass().getSimpleName());
                     Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
                     //ignore error
                 }
             }
 
+            LOGGER.info("AzureSSHLauncher: executeRemoteCommand: ends successfully");
             return channel.getExitStatus();
         } catch (JSchException jse) {
             LOGGER.log(Level.SEVERE,
                     "AzureSSHLauncher: executeRemoteCommand: got exception while executing remote command\n" + command,
                     jse);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "IO failure during running {0}", command);
+            LOGGER.log(Level.WARNING, "IO failure running {0}", command);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Unexpected exception running {0}", command);
         } finally {
             if (channel != null) {
                 channel.disconnect();
