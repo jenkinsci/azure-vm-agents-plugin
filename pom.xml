@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <jackson.version>2.5.4</jackson.version>
+    <azuresdk.version>0.8.0</azuresdk.version>
   </properties>
 
   <licenses>
@@ -60,32 +61,32 @@
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-keyvault</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-mgmt-resources</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-mgmt-network</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-mgmt-compute</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-mgmt-storage</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-svc-mgmt</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
+      <version>${azuresdk.version}</version>
     </dependency>
 		
     <dependency>
