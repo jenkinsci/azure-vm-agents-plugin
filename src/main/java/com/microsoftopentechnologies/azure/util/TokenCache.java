@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -119,7 +120,7 @@ public class TokenCache {
         synchronized (tsafe) {
             AccessToken token = readTokenFile();
             if (token == null || token.isExpiring()) {
-                LOGGER.log(Level.INFO, "Token is no longer valid ({0})", 
+                LOGGER.log(Level.INFO, "Token is no longer valid ({0})",
                         token == null ? null : token.getExpirationDate());
                 clear();
                 token = getNewToken();
@@ -221,7 +222,7 @@ public class TokenCache {
 
         LOGGER.log(Level.INFO,
                 "Authentication result:\n\taccess token: {0}\n\tExpires On: {1}",
-                new Object[] { authres.getAccessToken(), authres.getExpiresOnDate() });
+                new Object[] { authres.getAccessToken(), new Date(authres.getExpiresOn()) });
 
         final AccessToken token = new AccessToken(subscriptionId, serviceManagementURL, authres);
         writeTokenFile(token);

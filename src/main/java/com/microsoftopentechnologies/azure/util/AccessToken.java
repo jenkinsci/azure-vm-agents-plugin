@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Calendar;
 import java.util.Date;
 
 public class AccessToken implements Serializable {
@@ -36,14 +35,14 @@ public class AccessToken implements Serializable {
 
     private final String token;
 
-    private final Date expiration;
+    private final long expiration;
 
     AccessToken(
             final String subscriptionId, final String serviceManagementUrl, final AuthenticationResult authres) {
         this.subscriptionId = subscriptionId;
         this.serviceManagementUrl = serviceManagementUrl;
         this.token = authres.getAccessToken();
-        this.expiration = authres.getExpiresOnDate();
+        this.expiration = authres.getExpiresOn();
     }
 
     public Configuration getConfiguration() throws AzureCloudException {
@@ -61,14 +60,11 @@ public class AccessToken implements Serializable {
     }
 
     public Date getExpirationDate() {
-        return expiration;
+        return new Date(expiration);
     }
 
     public boolean isExpiring() {
-        final Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.add(Calendar.MINUTE, 5);
-        return expiration.before(cal.getTime());
+        return expiration < System.currentTimeMillis();
     }
 
     @Override
