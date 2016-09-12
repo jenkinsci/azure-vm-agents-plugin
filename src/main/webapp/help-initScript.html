@@ -1,19 +1,22 @@
 <div>
-<b>At a minimum, the init script needs to install a Java runtime</b>.<br></br>
+<b>At a minimum, the init script needs to install a Java runtime</b>.</br>
 	
 Custom prepared images are recommended if the initialization script is taking more than 20 minutes to execute.<br></br>
  
-Below are examples of initialization scripts: </br></br>	
+Below are examples of initialization scripts: </br></br>
 1)	<b>Ubuntu</b></br>
 		&nbsp;&nbsp;&nbsp;&nbsp;# Install Java</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update --fix-missing</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br></br>		
-2)	For Windows slaves with JNLP launch, if no init script is provided then Jenkins will execute the default PowerShell script,
-    which will work only if anonymous access is allowed for the master machine. </br></br>
-
-       If your master machine is configured with security options, refer to this script: 
-       <a href="https://gist.github.com/snallami/5aa9ea2c57836a3b3635" target="_blank">https://gist.github.com/snallami/5aa9ea2c57836a3b3635</a>
-       and edit it accordingly. </br>
+2)	<b>Windows w/JNLP</b></br>
+    For Windows slaves with JNLP launch, this script is a powershell script.</br>
+    Automatically passed to this script is:<br/>
+        First argument - Jenkins server URL<br/>
+        Second argument - VMName<br/>
+        Third argument - JNLP secret, required if the server has security enabled.<br/>
+    You need to install Java, download the slave jar file from: '[server url]jnlpJars/slave.jar'.<br/>
+    The server url should already have a trailing slash.  Then execute the following to connect:<br/>
+    java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp<br/>
 </div>

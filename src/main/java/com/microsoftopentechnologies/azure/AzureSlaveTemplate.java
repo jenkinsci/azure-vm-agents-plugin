@@ -17,11 +17,8 @@ package com.microsoftopentechnologies.azure;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -31,11 +28,6 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
-import com.microsoftopentechnologies.azure.retry.DefaultRetryStrategy;
-import com.microsoftopentechnologies.azure.retry.LinearRetryForAllExceptions;
-import com.microsoftopentechnologies.azure.util.ExecutionEngine;
-import com.microsoft.windowsazure.Configuration;
 import com.microsoftopentechnologies.azure.util.AzureUtil;
 import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.FailureStage;
@@ -50,6 +42,7 @@ import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.util.Map;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
 
@@ -115,13 +108,21 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 
     private final String jvmOptions;
 
-    private String templateStatus;
+    // Indicates whether the template is disabled.
+    // If disabled, will not attempt to verify or use
+    private boolean templateDisabled;
 
     private String templateStatusDetails;
 
     public transient AzureCloud azureCloud;
 
     private transient Set<LabelAtom> labelDataSet;
+    
+    private boolean templateVerified;
+    
+    private boolean executeInitScriptAsRoot;
+    
+    private boolean doNotUseMachineIfInitFails;
 
     @DataBoundConstructor
     public AzureSlaveTemplate(
@@ -151,8 +152,10 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
             final String jvmOptions,
             final String retentionTimeInMin,
             final boolean shutdownOnIdle,
-            final String templateStatus,
-            final String templateStatusDetails) {
+            final boolean templateDisabled,
+            final String templateStatusDetails,
+            final boolean executeInitScriptAsRoot,
+            final boolean doNotUseMachineIfInitFails) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -183,19 +186,19 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
         this.subnetName = subnetName;
         this.slaveWorkSpace = slaveWorkSpace;
         this.jvmOptions = jvmOptions;
+        this.executeInitScriptAsRoot = executeInitScriptAsRoot;
+        this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         if (StringUtils.isBlank(retentionTimeInMin) || !retentionTimeInMin.matches(Constants.REG_EX_DIGIT)) {
             this.retentionTimeInMin = Constants.DEFAULT_IDLE_TIME;
         } else {
             this.retentionTimeInMin = Integer.parseInt(retentionTimeInMin);
         }
-        this.templateStatus = templateStatus;
+        this.templateDisabled = templateDisabled;
+        this.templateStatusDetails = "";
 
-        if (templateStatus.equalsIgnoreCase(Constants.TEMPLATE_STATUS_ACTIVE)) {
-            this.templateStatusDetails = "";
-        } else {
-            this.templateStatusDetails = templateStatusDetails;
-        }
-
+        // Reset the template verification status.
+        this.templateVerified = false;
+        
         // Forms data which is not persisted
         readResolve();
     }
@@ -325,12 +328,29 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
         return slaveLaunchMethod;
     }
 
-    public void setTemplateStatus(String templateStatus) {
-        this.templateStatus = templateStatus;
+    /**
+     * Returns true if this template is disabled and cannot be used,
+     * false otherwise.
+     * @return True/false
+     */
+    public boolean isTemplateDisabled() {
+        return this.templateDisabled;
     }
-
-    public String getTemplateStatus() {
-        return templateStatus;
+    
+    /**
+     * Is the template set up and verified?
+     * @return True if the template is set up and verified, false otherwise.
+     */
+    public boolean isTemplateVerified() {
+        return templateVerified;
+    }
+    
+    /**
+     * Set the template verification status
+     * @param isValid True for verified + valid, false otherwise.
+     */
+    public void setTemplateVerified(boolean isValid) {
+        templateVerified = isValid;
     }
 
     public String getTemplateStatusDetails() {
@@ -339,6 +359,27 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 
     public void setTemplateStatusDetails(String templateStatusDetails) {
         this.templateStatusDetails = templateStatusDetails;
+    }
+    
+    public String getResourceGroupName() {
+        // Allow overriding?
+        return getAzureCloud().getResourceGroupName();
+    }
+    
+    public boolean getExecuteInitScriptAsRoot() {
+        return executeInitScriptAsRoot;
+    }
+    
+    public void setExecuteInitScriptAsRoot(boolean executeAsRoot) {
+        executeInitScriptAsRoot = executeAsRoot;
+    }
+
+    public boolean getDoNotUseMachineIfInitFails() {
+        return doNotUseMachineIfInitFails;
+    }
+
+    public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
+        this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
     @Override
@@ -351,97 +392,36 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
         return labelDataSet;
     }
 
-    public String provisionSlaves(final TaskListener listener, int numberOfSlaves) throws Exception {
-        // TODO: Get nodes with label and see if we can use existing slave 
-        return AzureManagementServiceDelegate.deployment(this, numberOfSlaves);
+    /**
+     * Provision new slaves using this template.
+     * @param listener
+     * @param numberOfSlaves Number of slaves to provision
+     * @return New deployment info if the provisioning was successful.
+     * @throws Exception May throw if provisioning was not successful.
+     */
+    public AzureDeploymentInfo provisionSlaves(final TaskListener listener, int numberOfSlaves) throws Exception {
+        return AzureManagementServiceDelegate.createDeployment(this, numberOfSlaves);
     }
-
-    public void waitForReadyRole(final AzureSlave slave) throws Exception {
-        Callable<Void> task = new Callable<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                String status = "NA";
-                while (!status.equalsIgnoreCase(Constants.READY_ROLE_STATUS)) {
-                    LOGGER.log(Level.INFO,
-                            "AzureSlaveTemplate: waitForReadyRole: Current status of virtual machine {0} is {1}",
-                            new Object[] { slave.getNodeName(), status });
-                    Thread.sleep(30 * 1000);
-                    status = AzureManagementServiceDelegate.getVirtualMachineStatus(
-                            ServiceDelegateHelper.getConfiguration(azureCloud), slave.getNodeName());
-                    LOGGER.info("AzureSlaveTemplate: waitForReadyRole: "
-                            + "Waiting for 30 more seconds for role to be provisioned");
-                }
-                return null;
-            }
-        };
-
-        try {
-            ExecutionEngine.executeWithRetry(task,
-                    new DefaultRetryStrategy(10 /* max retries */, 10 /* Default
-                             * backoff */,
-                            45 * 60 /* Max. timeout in seconds */));
-            LOGGER.log(Level.INFO,
-                    "AzureSlaveTemplate: waitForReadyRole: virtual machine {0} is in ready state", slave.getNodeName());
-        } catch (AzureCloudException exception) {
-            handleTemplateStatus("Got exception while checking for role availability " + exception,
-                    FailureStage.PROVISIONING, slave);
-            LOGGER.log(Level.INFO,
-                    "AzureSlaveTemplate: waitForReadyRole: Got exception while checking for role availability",
-                    exception);
-            throw exception;
-        }
-    }
-
-    public void handleTemplateStatus(final String message, final FailureStage failureStep, final AzureSlave slave) {
-        // Delete slave in azure
-        if (slave != null) {
-            Callable<Void> task = new Callable<Void>() {
-
-                @Override
-                public Void call() throws Exception {
-                    AzureManagementServiceDelegate.terminateVirtualMachine(slave, false);
-                    return null;
-                }
-            };
-
-            try {
-                ExecutionEngine.executeWithRetry(task, new LinearRetryForAllExceptions(
-                        3, // maxRetries
-                        30, // waitinterval
-                        2 * 60 // timeout
-                ));
-            } catch (AzureCloudException e) {
-                LOGGER.log(Level.INFO, "AzureSlaveTemplate: handleTemplateStatus: could not terminate or shutdown {0}",
-                        slave.getNodeName());
-            }
-        }
-
-        // Disable template if applicable
-        if (!templateStatus.equals(Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS)) {
-            setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED);
-            // Register template for periodic check so that jenkins can make template active if validation errors
-            // are corrected
-            AzureTemplateMonitorTask.registerTemplate(this);
-        } else {
-            // Wait for a while before retry
-            // Failure might be during Provisioning or post provisioning. back off for 5 minutes before retry.
-            LOGGER.log(Level.INFO,
-                    "AzureSlaveTemplate: handleTemplateStatus: Got {0} error, waiting for 5 minutes before retry",
-                    failureStep);
-            try {
-                Thread.sleep(5 * 60 * 1000);
-            } catch (InterruptedException e) {
-            }
-        }
+    
+    /**
+     * If provisioning failed, handle the status and queue the template for verification.
+     * @param message Failure message
+     * @param failureStep Stage that failure occurred
+     */
+    public void handleTemplateProvisioningFailure(final String message, final FailureStage failureStep) {
+        // The template is bad.  It should have already been verified, but
+        // perhaps something changed (VHD gone, etc.).  Queue for verification.
+        setTemplateVerified(false);
+        AzureVerificationTask.registerTemplate(this);
+        // Set the details so that it's easier to see what's going on from the configuration UI.
         setTemplateStatusDetails(message);
     }
 
-    public int getVirtualMachineCount() throws Exception {
-        return AzureManagementServiceDelegate.getVirtualMachineCount(
-                ServiceDelegateHelper.getComputeManagementClient(ServiceDelegateHelper.getConfiguration(azureCloud)));
-    }
-
+    /**
+     * Verify that this template is correct and can be allocated.
+     * @return Empty list if this template is valid, list of errors otherwise
+     * @throws Exception 
+     */
     public List<String> verifyTemplate() throws Exception {
         return AzureManagementServiceDelegate.verifyTemplate(
                 azureCloud.getSubscriptionId(),
@@ -449,7 +429,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                 azureCloud.getClientSecret(),
                 azureCloud.getOauth2TokenEndpoint(),
                 azureCloud.getServiceManagementURL(),
-                azureCloud.getMaxVirtualMachinesLimit() + "",
                 templateName,
                 labels,
                 location,
@@ -469,8 +448,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                 virtualNetworkName,
                 subnetName,
                 retentionTimeInMin + "",
-                templateStatus,
                 jvmOptions,
+                getResourceGroupName(),
                 true);
     }
 
@@ -501,8 +480,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
 
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            model.add("Linux");
-            model.add("Windows");
+            model.add(Constants.OS_TYPE_LINUX);
+            model.add(Constants.OS_TYPE_WINDOWS);
             return model;
         }
 
@@ -511,9 +490,13 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                 throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             
-            List<String> locations = AzureManagementServiceDelegate.getVirtualMachineLocations(serviceManagementURL);
+            Map<String, String> locations = AzureManagementServiceDelegate.getVirtualMachineLocations(serviceManagementURL);
             
-            for (String location : locations) {
+            // This map contains display name -> actual location name.  We
+            // need the actual location name later, but just grab the keys of
+            // the map for the model.
+            
+            for (String location : locations.keySet()) {
                 model.add(location);
             }
 
@@ -525,14 +508,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
             model.add(Constants.LAUNCH_METHOD_SSH);
             model.add(Constants.LAUNCH_METHOD_JNLP);
 
-            return model;
-        }
-
-        public ListBoxModel doFillTemplateStatusItems() {
-            ListBoxModel model = new ListBoxModel();
-            model.add(Constants.TEMPLATE_STATUS_ACTIVE);
-            model.add(Constants.TEMPLATE_STATUS_ACTIVE_ALWAYS);
-            model.add(Constants.TEMPLATE_STATUS_DISBALED);
             return model;
         }
 
@@ -559,11 +534,40 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
             return FormValidation.ok();
         }
 
+        /**
+         * Check the template's name.  Name must conform to restrictions on VM
+         * naming
+         * @param value Current name
+         * @param templateDisabled Is the template disabled
+         * @param osType OS type
+         * @return 
+         */
         public FormValidation doCheckTemplateName(
-                @QueryParameter final String value, @QueryParameter final String templateStatus) {
-            if (templateStatus.equals(Constants.TEMPLATE_STATUS_DISBALED)) {
-                return FormValidation.error(Messages.Azure_GC_TemplateStatus_Warn_Msg());
+                @QueryParameter final String value, @QueryParameter final boolean templateDisabled,
+                @QueryParameter final String osType) {
+            List<FormValidation> errors = new ArrayList<FormValidation>();
+            // Check whether the template name is valid, and then check
+            // whether it would be shortened on VM creation.
+            if (!AzureUtil.isValidTemplateName(value)) {
+                errors.add(FormValidation.error(Messages.Azure_GC_Template_Name_Not_Valid()));
             }
+            else {
+                // Check whether it would be shortened.  We could just append characters,
+                // in which case don't error.
+                String shortenedName = AzureUtil.getVMBaseName(value, osType, 1);
+                if (!shortenedName.startsWith(value)) {
+                    errors.add(FormValidation.warning(Messages.Azure_GC_Template_Name_Shortened(shortenedName)));
+                }
+            }
+            
+            if (templateDisabled) {
+                errors.add(FormValidation.warning(Messages.Azure_GC_TemplateStatus_Warn_Msg()));
+            }
+            
+            if (errors.size() > 0) {
+                return FormValidation.aggregate(errors);
+            }
+            
             return FormValidation.ok();
         }
 
@@ -632,7 +636,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                 @RelativePath("..") @QueryParameter String clientSecret,
                 @RelativePath("..") @QueryParameter String oauth2TokenEndpoint,
                 @RelativePath("..") @QueryParameter String serviceManagementURL,
-                @RelativePath("..") @QueryParameter String maxVirtualMachinesLimit,
+                @RelativePath("..") @QueryParameter String resourceGroupName,
                 @QueryParameter String templateName,
                 @QueryParameter String labels,
                 @QueryParameter String location,
@@ -652,7 +656,6 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                 @QueryParameter String virtualNetworkName,
                 @QueryParameter String subnetName,
                 @QueryParameter String retentionTimeInMin,
-                @QueryParameter String templateStatus,
                 @QueryParameter String jvmOptions) {
 
             LOGGER.log(Level.INFO,
@@ -662,7 +665,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                     + "clientSecret: {2};\n\t"
                     + "oauth2TokenEndpoint: {3};\n\t"
                     + "serviceManagementURL: {4};\n\t"
-                    + "maxVirtualMachinesLimit: {5};\n\t"
+                    + "resourceGroupName: {5};\n\t."
                     + "templateName: {6};\n\t"
                     + "labels: {7};\n\t"
                     + "location: {8};\n\t"
@@ -682,15 +685,14 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                     + "virtualNetworkName: {22};\n\t"
                     + "subnetName: {23};\n\t"
                     + "retentionTimeInMin: {24};\n\t"
-                    + "templateStatus: {25};\n\t"
-                    + "jvmOptions: {26}.",
+                    + "jvmOptions: {25};",
                     new Object[] {
                         subscriptionId,
                         clientId,
                         (StringUtils.isNotBlank(clientSecret) ? "********" : null),
                         oauth2TokenEndpoint,
                         serviceManagementURL,
-                        maxVirtualMachinesLimit,
+                        resourceGroupName,
                         templateName,
                         labels,
                         location,
@@ -710,16 +712,23 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                         virtualNetworkName,
                         subnetName,
                         retentionTimeInMin,
-                        templateStatus,
-                        jvmOptions });
+                        jvmOptions});
 
+            // First validate the subscription info.  If it is not correct,
+            // then we can't validate the 
+            
+            String result = AzureManagementServiceDelegate.verifyConfiguration(
+                    subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL, resourceGroupName);
+            if (!result.equals(Constants.OP_SUCCESS)) {
+                return FormValidation.error(result);
+            }
+            
             final List<String> errors = AzureManagementServiceDelegate.verifyTemplate(
                     subscriptionId,
                     clientId,
                     clientSecret,
                     oauth2TokenEndpoint,
                     serviceManagementURL,
-                    maxVirtualMachinesLimit,
                     templateName,
                     labels,
                     location,
@@ -739,8 +748,8 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
                     virtualNetworkName,
                     subnetName,
                     retentionTimeInMin,
-                    templateStatus,
                     jvmOptions,
+                    resourceGroupName,
                     false);
 
             if (errors.size() > 0) {
@@ -758,7 +767,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
         }
 
         public String getDefaultNoOfExecutors() {
-            return 1 + "";
+            return "1";
         }
     }
 

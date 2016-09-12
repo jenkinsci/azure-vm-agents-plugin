@@ -15,6 +15,10 @@
  */
 package com.microsoftopentechnologies.azure;
 
+import com.microsoftopentechnologies.azure.exceptions.AzureCloudException;
+import com.microsoftopentechnologies.azure.retry.NoRetryStrategy;
+import com.microsoftopentechnologies.azure.util.CleanUpAction;
+import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -23,13 +27,14 @@ import org.kohsuke.stapler.HttpResponse;
 
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.OfflineCause;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
 
     private static final Logger LOGGER = Logger.getLogger(AzureComputer.class.getName());
 
-    private boolean provisioned = false;
+    private boolean setOfflineByUser = false;
 
     public AzureComputer(final AzureSlave slave) {
         super(slave);
@@ -38,56 +43,80 @@ public class AzureComputer extends AbstractCloudComputer<AzureSlave> {
     @Override
     public HttpResponse doDoDelete() throws IOException {
         checkPermission(DELETE);
-        AzureSlave slave = getNode();
-
+        this.setAcceptingTasks(false);
+        final AzureSlave slave = getNode();
+        
         if (slave != null) {
-            LOGGER.log(Level.INFO, "AzureComputer: doDoDelete called for slave {0}", slave.getNodeName());
-            setTemporarilyOffline(true, OfflineCause.create(Messages._Delete_Slave()));
-            slave.setDeleteSlave(true);
+            Callable<Void> task = new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    LOGGER.log(Level.INFO, "AzureComputer: doDoDelete called for slave {0}", slave.getNodeName());
+                    try {
+                        // Deprovision
+                        slave.deprovision(Messages._User_Delete());
+                    } catch (Exception e) {
+                        LOGGER.log(Level.INFO, "AzureComputer: doDoDelete: Exception occurred while deleting slave", e);
+                        throw new AzureCloudException("AzureComputer: doDoDelete: Exception occurred while deleting slave", e);
+                    }
+                    return null;
+                }
+            };
 
             try {
-                deleteSlave();
-            } catch (Exception e) {
-                LOGGER.log(Level.INFO, "AzureComputer: doDoDelete: Exception occurred while deleting slave", e);
-
-                throw new IOException(
-                        "Error deleting node, jenkins will try to clean up node automatically after some time. ", e);
+                ExecutionEngine.executeAsync(task, new NoRetryStrategy());
+            } catch (AzureCloudException exception) {
+                // No need to throw exception back, just log and move on. 
+                LOGGER.log(Level.INFO,
+                        "AzureSlaveCleanUpTask: execute: failed to shutdown/delete " + slave.getDisplayName(),
+                        exception);
             }
         }
+        
         return new HttpRedirect("..");
     }
 
-    public void deleteSlave() throws Exception, InterruptedException {
-        LOGGER.log(Level.INFO, "AzureComputer : deleteSlave: Deleting {0} slave", getName());
-
-        AzureSlave slave = getNode();
-
-        if (slave != null) {
-            if (slave.getChannel() != null) {
-                slave.getChannel().close();
-            }
-
-            try {
-                slave.deprovision();
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "AzureComputer : Exception occurred while deleting  {0} slave", getName());
-                LOGGER.log(Level.SEVERE, "Root cause", e);
-                throw e;
-            }
-        }
+    public boolean isSetOfflineByUser() {
+        return setOfflineByUser;
     }
 
-    public void setProvisioned(boolean provisioned) {
-        this.provisioned = provisioned;
+    public void setSetOfflineByUser(boolean setOfflineByUser) {
+        this.setOfflineByUser = setOfflineByUser;
     }
-
-    public boolean isProvisioned() {
-        return this.provisioned;
-    }
-
+    
+    /**
+     * Wait until the node is online
+     * @throws InterruptedException 
+     */
     @Override
     public void waitUntilOnline() throws InterruptedException {
         super.waitUntilOnline();
-        setProvisioned(true);
+    }
+
+    /**
+     * We use temporary offline settings to do investigation of machines.
+     * To avoid deletion, we assume this came through a user call and set a bit.  Where
+     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
+     * after calling setTemporarilyOffline
+     * @param setOffline
+     * @param oc 
+     */
+    @Override
+    public void setTemporarilyOffline(boolean setOffline, OfflineCause oc) {
+        setSetOfflineByUser(setOffline);
+        super.setTemporarilyOffline(setOffline, oc);
+    }
+
+    /**
+     * We use temporary offline settings to do investigation of machines.
+     * To avoid deletion, we assume this came through a user call and set a bit.  Where
+     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
+     * after calling setTemporarilyOffline
+     * @param setOffline
+     * @param oc 
+     */
+    @Override
+    public void setTemporarilyOffline(boolean setOffline) {
+        setSetOfflineByUser(setOffline);
+        super.setTemporarilyOffline(setOffline);
     }
 }

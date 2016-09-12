@@ -1,8 +1,8 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 	<f:section title="${%PostBuild_Action_Azure_Slave}">
-		<f:entry title="${%Failover_Action_Slave}" field="slavePostBuildAction" help="/plugin/azure-slave-plugin/help-slavePostBuildAction.html">
-					<f:select />
+		<f:entry title="${%Perform_The_Following_On_Completion}" field="slavePostBuildAction" help="/plugin/azure-slave-plugin/help-slavePostBuildAction.html">
+            <f:select />
 		</f:entry>
 	</f:section>
 </j:jelly>

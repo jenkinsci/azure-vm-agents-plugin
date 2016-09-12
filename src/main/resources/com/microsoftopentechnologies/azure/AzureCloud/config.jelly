@@ -25,6 +25,10 @@
     <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit" help="/plugin/azure-slave-plugin/help-maxVirtualMachinesLimit.html">
       <f:textbox default="${descriptor.getDefaultMaxVMLimit()}" />
     </f:entry>
+    
+    <f:entry title="${%Resource_Group_Name}" field="resourceGroupName" help="/plugin/azure-slave-plugin/help-resourceGroupName.html">
+      <f:textbox default="${descriptor.getDefaultResourceGroupName()}" />
+    </f:entry>
 		
     <f:advanced>
       <f:entry title="${%Service_Management_URL}" field="serviceManagementURL" help="/plugin/azure-slave-plugin/help-serviceManagementURL.html">
@@ -33,7 +37,7 @@
     </f:advanced>
 		 		 
     <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration" 
-          with="subscriptionId,clientId,clientSecret,oauth2TokenEndpoint,serviceManagementURL" />
+          with="subscriptionId,clientId,clientSecret,oauth2TokenEndpoint,serviceManagementURL,resourceGroupName" />
   </f:section>
 	
   <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">

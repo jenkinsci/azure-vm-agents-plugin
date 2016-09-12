@@ -25,6 +25,7 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.CleanUpAction;
 import com.microsoftopentechnologies.azure.util.FailureStage;
 import com.microsoftopentechnologies.azure.remote.AzureSSHLauncher;
 
@@ -39,6 +40,7 @@ import hudson.slaves.ComputerLauncher;
 import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import java.util.logging.Level;
+import org.jvnet.localizer.Localizable;
 
 public class AzureSlave extends AbstractCloudSlave {
 
@@ -87,9 +89,19 @@ public class AzureSlave extends AbstractCloudSlave {
 
     private String templateName;
 
-    private boolean deleteSlave;
+    private CleanUpAction cleanUpAction;
+    
+    private Localizable cleanUpReason;
+    
+    private String resourceGroupName;
 
     private static final Logger LOGGER = Logger.getLogger(AzureSlave.class.getName());
+
+    private final boolean executeInitScriptAsRoot;
+    
+    private final boolean doNotUseMachineIfInitFails;
+    
+    private boolean eligibleForReuse;
 
     @DataBoundConstructor
     public AzureSlave(
@@ -111,6 +123,7 @@ public class AzureSlave extends AbstractCloudSlave {
             final String adminPassword,
             final String jvmOptions,
             final boolean shutdownOnIdle,
+            final boolean eligibleForReuse,
             final String deploymentName,
             final int retentionTimeInMin,
             final String initScript,
@@ -120,7 +133,11 @@ public class AzureSlave extends AbstractCloudSlave {
             final String oauth2TokenEndpoint,
             final String managementURL,
             final String slaveLaunchMethod,
-            final boolean deleteSlave) throws FormException, IOException {
+            final CleanUpAction cleanUpAction,
+            final Localizable cleanUpReason,
+            final String resourceGroupName,
+            final boolean executeInitScriptAsRoot,
+            final boolean doNotUseMachineIfInitFails) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
 
@@ -132,6 +149,7 @@ public class AzureSlave extends AbstractCloudSlave {
         this.adminPassword = adminPassword;
         this.jvmOptions = jvmOptions;
         this.shutdownOnIdle = shutdownOnIdle;
+        this.eligibleForReuse = eligibleForReuse;
         this.deploymentName = deploymentName;
         this.retentionTimeInMin = retentionTimeInMin;
         this.initScript = initScript;
@@ -143,7 +161,11 @@ public class AzureSlave extends AbstractCloudSlave {
         this.oauth2TokenEndpoint = oauth2TokenEndpoint;
         this.managementURL = managementURL;
         this.slaveLaunchMethod = slaveLaunchMethod;
-        this.deleteSlave = deleteSlave;
+        this.setCleanUpAction(cleanUpAction);
+        this.setCleanupReason(cleanUpReason);
+        this.resourceGroupName = resourceGroupName;
+        this.executeInitScriptAsRoot = executeInitScriptAsRoot;
+        this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
     public AzureSlave(
@@ -162,6 +184,7 @@ public class AzureSlave extends AbstractCloudSlave {
             final String adminPassword,
             final String jvmOptions,
             final boolean shutdownOnIdle,
+            final boolean eligibleForReuse,
             final String deploymentName,
             final int retentionTimeInMin,
             final String initScript,
@@ -171,7 +194,11 @@ public class AzureSlave extends AbstractCloudSlave {
             final String oauth2TokenEndpoint,
             final String managementURL,
             final String slaveLaunchMethod,
-            final boolean deleteSlave) throws FormException, IOException {
+            final CleanUpAction cleanUpAction,
+            final Localizable cleanUpReason,
+            final String resourceGroupName,
+            final boolean executeInitScriptAsRoot,
+            final boolean doNotUseMachineIfInitFails) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -181,11 +208,8 @@ public class AzureSlave extends AbstractCloudSlave {
                 numExecutors,
                 mode,
                 label,
-                slaveLaunchMethod.equalsIgnoreCase("SSH")
-                        ? osType.equalsIgnoreCase("Windows")
-                                ? new AzureSSHLauncher()
-                                : new AzureSSHLauncher()
-                        : new JNLPLauncher(),
+                slaveLaunchMethod.equalsIgnoreCase("SSH") ? 
+                    new AzureSSHLauncher() : new JNLPLauncher(),
                 new AzureCloudRetensionStrategy(retentionTimeInMin),
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
@@ -195,7 +219,7 @@ public class AzureSlave extends AbstractCloudSlave {
                 adminPassword,
                 jvmOptions,
                 shutdownOnIdle,
-                //                cloudServiceName,
+                eligibleForReuse,
                 deploymentName,
                 retentionTimeInMin,
                 initScript,
@@ -205,7 +229,11 @@ public class AzureSlave extends AbstractCloudSlave {
                 oauth2TokenEndpoint,
                 managementURL,
                 slaveLaunchMethod,
-                deleteSlave);
+                cleanUpAction,
+                cleanUpReason,
+                resourceGroupName,
+                executeInitScriptAsRoot,
+                doNotUseMachineIfInitFails);
     }
 
     public String getCloudName() {
@@ -261,12 +289,71 @@ public class AzureSlave extends AbstractCloudSlave {
         return adminPassword;
     }
 
-    public boolean isDeleteSlave() {
-        return deleteSlave;
+    public CleanUpAction getCleanUpAction() {
+        return cleanUpAction;
+    }
+    
+    public Localizable getCleanUpReason() {
+        return cleanUpReason;
+    }
+    
+    /**
+     * @param cleanUpReason 
+     */
+    private void setCleanUpAction(CleanUpAction cleanUpAction) {
+        // Translate a default cleanup action into what we want for a particular
+        // node
+        if (cleanUpAction == CleanUpAction.DEFAULT) {
+            if (isShutdownOnIdle()) {
+                cleanUpAction = CleanUpAction.SHUTDOWN;
+            }
+            else {
+                cleanUpAction = CleanUpAction.DELETE;
+            }
+        }
+        this.cleanUpAction = cleanUpAction;
+    }
+    
+    /**
+     * @param cleanUpReason 
+     */
+    private void setCleanupReason(Localizable cleanUpReason) {
+        this.cleanUpReason = cleanUpReason;
+    }
+    
+    /**
+     * Clear the cleanup action and reset to the default behavior
+     */
+    public void clearCleanUpAction() {
+        setCleanUpAction(CleanUpAction.DEFAULT);
+        setCleanupReason(null);
+    }
+    
+    /**
+     * Block any cleanup from happening
+     */
+    public void blockCleanUpAction() {
+        setCleanUpAction(CleanUpAction.BLOCK);
+        setCleanupReason(null);
+    }
+    
+    public boolean isCleanUpBlocked() {
+        return getCleanUpAction() == CleanUpAction.BLOCK;
     }
 
-    public void setDeleteSlave(boolean deleteSlave) {
-        this.deleteSlave = deleteSlave;
+    public void setCleanUpAction(CleanUpAction cleanUpAction, Localizable cleanUpReason) {
+        if (cleanUpAction != CleanUpAction.DELETE && cleanUpAction != CleanUpAction.SHUTDOWN) {
+            throw new IllegalStateException("Only use this method to set explicit cleanup operations");
+        }
+        if (this.toComputer()!= null) {
+            AzureComputer computer = (AzureComputer)this.toComputer();
+            // Set the machine temporarily offline machine with an offline reason.
+            computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
+            // Reset the "by user" bit.
+            computer.setSetOfflineByUser(false);
+        }
+        setCleanUpAction(cleanUpAction);
+        setCleanupReason(cleanUpReason);
     }
 
     public String getJvmOptions() {
@@ -279,6 +366,14 @@ public class AzureSlave extends AbstractCloudSlave {
 
     public void setShutdownOnIdle(boolean shutdownOnIdle) {
         this.shutdownOnIdle = shutdownOnIdle;
+    }
+
+    public boolean isEligibleForReuse() {
+        return eligibleForReuse;
+    }
+
+    public void setEligibleForReuse(boolean eligibleForReuse) {
+        this.eligibleForReuse = eligibleForReuse;
     }
 
     public String getPublicDNSName() {
@@ -316,6 +411,18 @@ public class AzureSlave extends AbstractCloudSlave {
     public void setTemplateName(String templateName) {
         this.templateName = templateName;
     }
+    
+    public String getResourceGroupName() {
+        return resourceGroupName;
+    }
+    
+    public boolean getExecuteInitScriptAsRoot() {
+        return executeInitScriptAsRoot;
+    }
+
+    public boolean getDoNotUseMachineIfInitFails() {
+        return doNotUseMachineIfInitFails;
+    }
 
     @Override
     protected void _terminate(final TaskListener arg0) throws IOException, InterruptedException {
@@ -329,47 +436,42 @@ public class AzureSlave extends AbstractCloudSlave {
         return new AzureComputer(this);
     }
 
-    public void idleTimeout() throws Exception {
-        if (shutdownOnIdle) {
-            // Call shutdown only if the slave is online
-            if (this.getComputer().isOnline()) {
-                LOGGER.log(Level.INFO, "AzureSlave: idleTimeout: shutdownOnIdle is true, shutting down slave {0}", this.
-                        getDisplayName());
-                this.getComputer().disconnect(OfflineCause.create(Messages._IDLE_TIMEOUT_SHUTDOWN()));
-                AzureManagementServiceDelegate.shutdownVirtualMachine(this);
-                setDeleteSlave(false);
-            }
-        } else {
-            LOGGER.log(Level.INFO,
-                    "AzureSlave: idleTimeout: shutdownOnIdle is false, deleting slave {0}", this.getDisplayName());
-            setDeleteSlave(true);
-            AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
-            Jenkins.getInstance().removeNode(this);
-        }
-    }
-
     public AzureCloud getCloud() {
         return (AzureCloud) Jenkins.getInstance().getCloud(cloudName);
     }
+    
+    public void shutdown(Localizable reason) {
+        LOGGER.log(Level.INFO, "AzureSlave: shutdown: shutting down slave {0}", this.
+                getDisplayName());
+        this.getComputer().setAcceptingTasks(false);
+        this.getComputer().disconnect(OfflineCause.create(reason));
+        AzureManagementServiceDelegate.shutdownVirtualMachine(this);
+        // After shutting down succesfully, set the node as eligible for
+        // reuse.
+        setEligibleForReuse(true);
+    }
 
-    public void deprovision() throws Exception {
+    /**
+     * Delete node in Azure and in Jenkins
+     * @throws Exception 
+     */
+    public void deprovision(Localizable reason) throws Exception {
         LOGGER.log(Level.INFO, "AzureSlave: deprovision: Deprovision called for slave {0}", this.getDisplayName());
-        AzureManagementServiceDelegate.terminateVirtualMachine(this, true);
+        this.getComputer().setAcceptingTasks(false);
+        this.getComputer().disconnect(OfflineCause.create(reason));
+        AzureManagementServiceDelegate.terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureSlave: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
-        setDeleteSlave(true);
+        // Adjust parent VM count up by one.
+        AzureCloud parentCloud = getCloud();
+        if (parentCloud != null) {
+            parentCloud.adjustVirtualMachineCount(1);
+        }
         Jenkins.getInstance().removeNode(this);
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
         return AzureManagementServiceDelegate.isVMAliveOrHealthy(this);
-    }
-
-    public void setTemplateStatus(String templateStatus, String templateStatusDetails) {
-        AzureCloud azureCloud = getCloud();
-        AzureSlaveTemplate slaveTemplate = azureCloud.getAzureSlaveTemplate(templateName);
-
-        slaveTemplate.handleTemplateStatus(templateStatusDetails, FailureStage.POSTPROVISIONING, this);
     }
 
     @Override
@@ -396,7 +498,7 @@ public class AzureSlave extends AbstractCloudSlave {
                 + "\n\toauth2TokenEndpoint=" + oauth2TokenEndpoint
                 + "\n\tmanagementURL=" + managementURL
                 + "\n\ttemplateName=" + templateName
-                + "\n\tdeleteSlave=" + deleteSlave
+                + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";
     }
 

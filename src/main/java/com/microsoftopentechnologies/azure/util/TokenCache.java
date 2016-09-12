@@ -91,7 +91,7 @@ public class TokenCache {
             final String clientSecret,
             final String oauth2TokenEndpoint,
             final String serviceManagementURL) {
-        LOGGER.info("Instantiate new cache manager");
+        LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Instantiate new cache manager");
 
         this.subscriptionId = subscriptionId;
         this.clientId = clientId;
@@ -106,21 +106,21 @@ public class TokenCache {
 
         final String home = Jenkins.getInstance().root.getPath();
 
-        LOGGER.log(Level.INFO, "Cache home \"{0}\"", home);
+        LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Cache home \"{0}\"", home);
 
         final StringBuilder builder = new StringBuilder(home);
         builder.append(File.separatorChar).append("azuretoken.txt");
         this.path = builder.toString();
 
-        LOGGER.log(Level.INFO, "Cache file path \"{0}\"", path);
+        LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Cache file path \"{0}\"", path);
     }
 
     public AccessToken get() throws AzureCloudException {
-        LOGGER.log(Level.INFO, "Get token from cache");
+        LOGGER.log(Level.FINEST, "TokenCache: get: Get token from cache");
         synchronized (tsafe) {
             AccessToken token = readTokenFile();
             if (token == null || token.isExpiring()) {
-                LOGGER.log(Level.INFO, "Token is no longer valid ({0})",
+                LOGGER.log(Level.FINEST, "TokenCache: get: Token is no longer valid ({0})",
                         token == null ? null : token.getExpirationDate());
                 clear();
                 token = getNewToken();
@@ -130,12 +130,12 @@ public class TokenCache {
     }
 
     public final void clear() {
-        LOGGER.log(Level.INFO, "Remove cache file {0}", path);
+        LOGGER.log(Level.FINEST, "TokenCache: clear: Remove cache file {0}", path);
         FileUtils.deleteQuietly(new File(path));
     }
 
     private AccessToken readTokenFile() {
-        LOGGER.log(Level.INFO, "Read token from file {0}", path);
+        LOGGER.log(Level.FINEST, "TokenCache: readTokenFile: Read token from file {0}", path);
         FileInputStream is = null;
         ObjectInputStream objectIS = null;
 
@@ -146,14 +146,14 @@ public class TokenCache {
                 objectIS = new ObjectInputStream(is);
                 return AccessToken.class.cast(objectIS.readObject());
             } else {
-                LOGGER.log(Level.INFO, "File {0} does not exist", path);
+                LOGGER.log(Level.FINEST, "TokenCache: readTokenFile: File {0} does not exist", path);
             }
         } catch (FileNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "Cache file not found", e);
+            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Cache file not found", e);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error reading serialized object", e);
+            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Error reading serialized object", e);
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "Error deserializing object", e);
+            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Error deserializing object", e);
         } finally {
             IOUtils.closeQuietly(is);
             IOUtils.closeQuietly(objectIS);
@@ -163,7 +163,7 @@ public class TokenCache {
     }
 
     private boolean writeTokenFile(final AccessToken token) {
-        LOGGER.log(Level.INFO, "Write token into file {0}", path);
+        LOGGER.log(Level.FINEST, "TokenCache: writeTokenFile: Write token into file {0}", path);
 
         FileOutputStream fout = null;
         ObjectOutputStream oos = null;
@@ -176,9 +176,9 @@ public class TokenCache {
             oos.writeObject(token);
             res = true;
         } catch (FileNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "Cache file not found", e);
+            LOGGER.log(Level.SEVERE, "TokenCache: writeTokenFile: Cache file not found", e);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error serializing object", e);
+            LOGGER.log(Level.SEVERE, "TokenCache: writeTokenFile: Error serializing object", e);
         } finally {
             IOUtils.closeQuietly(fout);
             IOUtils.closeQuietly(oos);
@@ -188,14 +188,14 @@ public class TokenCache {
     }
 
     private AccessToken getNewToken() throws AzureCloudException {
-        LOGGER.log(Level.INFO, "Retrieve new access token");
+        LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Retrieve new access token");
 
         final ExecutorService service = Executors.newFixedThreadPool(1);
 
         AuthenticationResult authres = null;
 
         try {
-            LOGGER.log(Level.INFO, "Aquiring access token: \n\t{0}\n\t{1}\n\t{2}",
+            LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Aquiring access token: \n\t{0}\n\t{1}\n\t{2}",
                     new Object[] { oauth2TokenEndpoint, serviceManagementURL, clientId });
 
             final ClientCredential credential = new ClientCredential(clientId, clientSecret);
@@ -219,10 +219,6 @@ public class TokenCache {
         }
 
         final AccessToken token = new AccessToken(subscriptionId, serviceManagementURL, authres);
-
-        LOGGER.log(Level.INFO,
-                "Authentication result:\n\taccess token: {0}\n\tExpires In: {1}{2}",
-                new Object[] { token.getToken(), token.getExpirationDate()});
 
         writeTokenFile(token);
         return token;

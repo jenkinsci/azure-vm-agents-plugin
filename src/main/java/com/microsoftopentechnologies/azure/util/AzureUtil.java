@@ -15,6 +15,9 @@
  */
 package com.microsoftopentechnologies.azure.util;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.apache.commons.lang.StringUtils;
 
 public class AzureUtil {
@@ -38,6 +41,8 @@ public class AzureUtil {
     public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z!@#\\$%\\^&\\*\\.]*{8,123})";
 
     public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
+    
+    public static final String VAL_TEMPLATE = "^[a-z][a-z0-9-]*[a-z0-9]$";
 
     // Although ugly to maintain this is best way for now.
     public static String DEFAULT_INIT_SCRIPT = "Set-ExecutionPolicy Unrestricted" + "\n"
@@ -261,5 +266,110 @@ public class AzureUtil {
         }
 
         return errorMessage.contains("The specified deployment slot Production is occupied");
+    }
+    
+    /**
+     * Retrieves the name of the cloud for registering with Jenkins
+     * @param subscriptionId Subscription id
+     * @return Name of the cloud
+     */
+    public static String getCloudName(String subscriptionId) {
+        return Constants.AZURE_CLOUD_PREFIX + subscriptionId;
+    }
+    
+    /**
+     * Returns a template name that can be used for the base of a VM name
+     * @return A shortened template name if required, the full name otherwise
+     */
+    private static String getShortenedTemplateName(String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
+        // We'll be adding on 10 characters for the deployment ID (which is a formatted date)
+        // Plus an index of the 
+        // The template name should already be valid at least, so check that first
+        if (!isValidTemplateName(templateName)) {
+            throw new IllegalArgumentException("Template name is not valid");
+        }
+        // If the template name ends in a number, we add a dash
+        // to split up the name
+        
+        int maxLength;
+        if (usageType.equals(Constants.OS_TYPE_LINUX)) {
+            // Linux, length <= 63 characters, 10 characters for the date
+            maxLength = 63;
+        }
+        else if (usageType.equals(Constants.OS_TYPE_WINDOWS)) {
+            // Windows, length is 15 characters.  10 characters for the date
+            maxLength = 15;
+        }
+        else if (usageType.equals(Constants.USAGE_TYPE_DEPLOYMENT)) {
+            // Maximum is 64 characters
+            maxLength = 64;
+        }
+        else {
+            throw new IllegalArgumentException("Unknown OS/Usage type");
+        }
+        
+        // Chop of what we need for date digits
+        maxLength -= dateDigits;
+        // Chop off extra if needed for suffix digits
+        maxLength -= extraSuffixDigits;
+        
+        // Shorten the name
+        String shortenedName = templateName.substring(0,Math.min(templateName.length(), maxLength));
+        
+        // If the name ends in a digit, either append or replace the last char with a - so it's
+        // not confusing
+        if (StringUtils.isNumeric(shortenedName.substring(shortenedName.length()-1))) {
+            shortenedName = shortenedName.substring(0, Math.min(templateName.length(), maxLength-1));
+            shortenedName += '-';
+        }
+        
+        return shortenedName;
+    }
+    
+    /**
+     * Returns true if the template name is valid, false otherwise
+     * @param templateName Template name to validate
+     * @return True if the template is valid, false otherwise
+     */
+    public static boolean isValidTemplateName(String templateName) {
+        return templateName.matches(VAL_TEMPLATE);
+    }
+    
+    /**
+     * Creates a deployment given a template name and OS type
+     * @param templateName Valid template name
+     * @param osType Valid os type
+     * @return Valid deployment name to use for a new deployment
+     */
+    public static String getDeploymentName(String templateName) {
+        if (!isValidTemplateName(templateName)) {
+            throw new IllegalArgumentException("Invalid template name");
+        }
+        
+        Format formatter = new SimpleDateFormat(Constants.DEPLOYMENT_NAME_DATE_FORMAT);
+        return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT, 
+            Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0), 
+                formatter.format(new Date(System.currentTimeMillis())));
+    }
+    
+    /**
+     * Creates a new VM base name given the input parameters.
+     * @param templateName Template name
+     * @param osType Type of OS
+     * @param numberOfVmsToCreate Number of VMs that will be created
+     *       (which is added to the suffix of the VM name by azure)
+     * @return 
+     */
+    public static String getVMBaseName(String templateName, String osType, int numberOfVMs) {
+        if (!isValidTemplateName(templateName)) {
+            throw new IllegalArgumentException("Invalid template name");
+        }
+        
+        // For VM names, we use a simpler form.  VM names are pretty short 
+        Format formatter = new SimpleDateFormat(Constants.VM_NAME_DATE_FORMAT);
+        int numberOfDigits = (int)Math.floor(Math.log10((double)numberOfVMs))+1;
+        return String.format("%s%s", getShortenedTemplateName(templateName, osType, 
+            Constants.VM_NAME_DATE_FORMAT.length(), numberOfDigits), 
+                formatter.format(new Date(System.currentTimeMillis())));
     }
 }

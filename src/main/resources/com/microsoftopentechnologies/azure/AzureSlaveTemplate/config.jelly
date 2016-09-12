@@ -32,7 +32,7 @@
 				
       <f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"  help="/plugin/azure-slave-plugin/help-shutdownOnIdle.html">
         <f:checkbox/>
-      </f:entry>				
+      </f:entry>
 				
       <f:slave-mode name="useSlaveAlwaysIfAvail" node="${instance}" help="/plugin/azure-slave-plugin/help-slaveMode.html" default="EXCLUSIVE"/>
     </f:section>
@@ -41,9 +41,6 @@
       <f:radioBlock name="imageReferenceType" value="custom" title="${%Custom_Image}" checked="${instance.isType('custom')}" help="/plugin/azure-slave-plugin/help-image.html" inline="true">
         <f:entry title="${%Image}" field="image" help="/plugin/azure-slave-plugin/help-image.html">
           <f:textbox />
-        </f:entry>
-        <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-slave-plugin/help-osType.html">
-          <f:select />
         </f:entry>
       </f:radioBlock>
 
@@ -57,23 +54,37 @@
         <f:entry title="${%Image_Sku}" field="imageSku" help="/plugin/azure-slave-plugin/help-imageReference.html">
           <f:textbox />
         </f:entry>
-        <f:entry title="${%Image_version}" field="imageVersion" help="/plugin/azure-slave-plugin/help-imageReference.html">
+        <f:entry title="${%Image_Version}" field="imageVersion" help="/plugin/azure-slave-plugin/help-imageReference.html">
           <f:textbox default="latest"/>
         </f:entry>
       </f:radioBlock>
 			
+
+      <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-slave-plugin/help-osType.html">
+        <f:select />
+      </f:entry>
       <f:entry title="${%Launch_Method}" field="slaveLaunchMethod" help="/plugin/azure-slave-plugin/help-slaveLaunchMethod.html">
         <f:select />
       </f:entry>
-		  	 	
-      <f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-slave-plugin/help-initScript.html">
-        <f:textarea />
-      </f:entry>
-		 	 
+      
+      <f:section title="${%Initialization_Configuration}">
+        <f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-slave-plugin/help-initScript.html">
+          <f:textarea />
+        </f:entry>
+
+        <f:entry title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot" help="/plugin/azure-slave-plugin/help-executeInitScriptAsRoot.html">
+          <f:checkbox default="true"/>
+        </f:entry>
+        
+        <f:entry title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails" help="/plugin/azure-slave-plugin/help-doNotUseMachineIfInitFails.html">
+          <f:checkbox default="true"/>
+        </f:entry>
+      </f:section>
+
       <f:entry title="${%Username}" field="adminUserName" help="/plugin/azure-slave-plugin/help-adminUserName.html">
         <f:textbox />
       </f:entry>
-				
+
       <f:entry title="${%Password}" field="adminPassword" help="/plugin/azure-slave-plugin/help-adminPassword.html">
         <f:password />
       </f:entry>
@@ -100,8 +111,8 @@
         <f:textbox default="${descriptor.getDefaultNoOfExecutors()}" />
       </f:entry>
 				
-      <f:entry title="${%Template_Status}" field="templateStatus" help="/plugin/azure-slave-plugin/help-templateStatus.html">
-        <f:select />
+      <f:entry title="${%Template_Is_Disabled}" field="templateDisabled"  help="/plugin/azure-slave-plugin/help-templateDisabled.html">
+        <f:checkbox/>
       </f:entry>
 		  	 	
       <f:entry title="${%Template_Status_Details}" field="templateStatusDetails" help="/plugin/azure-slave-plugin/help-templateStatusDetails.html">
@@ -114,7 +125,6 @@
       </div>
     </f:entry>
     <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration" 
-          with="subscriptionId,clientId,clientSecret,oauth2TokenEndpoint,serviceManagementURL,maxVirtualMachinesLimit,templateName,labels,location,virtualMachineSize,storageAccountName,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,slaveLaunchMethod,initScript,adminUserName,adminPassword,virtualNetworkName,subnetName,retentionTimeInMin,templateStatus,jvmOptions" />
-			
+          with="subscriptionId,clientId,clientSecret,oauth2TokenEndpoint,serviceManagementURL,resourceGroupName,templateName,labels,location,virtualMachineSize,storageAccountName,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,slaveLaunchMethod,initScript,adminUserName,adminPassword,virtualNetworkName,subnetName,retentionTimeInMin,jvmOptions" />
   </table>
 </j:jelly>

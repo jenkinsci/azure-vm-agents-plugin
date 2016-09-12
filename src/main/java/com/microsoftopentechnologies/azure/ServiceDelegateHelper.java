@@ -135,9 +135,6 @@ public class ServiceDelegateHelper {
                     subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL).get().
                     getConfiguration();
 
-            LOGGER.log(Level.INFO, "Configuration token: {0}", TokenCloudCredentials.class.cast(
-                    config.getProperty(SUBSCRIPTION_CLOUD_CREDENTIALS)).getToken());
-
             return config;
         } finally {
             Thread.currentThread().setContextClassLoader(thread);

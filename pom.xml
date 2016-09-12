@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.620</version>
+    <version>1.642.1</version>
   </parent>
 
   <artifactId>azure-slave-plugin</artifactId>
@@ -108,7 +108,7 @@
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
-      <version>0.1.53</version>
+      <version>0.1.54</version>
     </dependency>
   </dependencies>
 	

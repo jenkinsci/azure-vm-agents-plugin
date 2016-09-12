@@ -74,8 +74,59 @@ Refer to
 12. For the Init script, provide a script to install at least a Java runtime if the image does not have Java   
       pre-installed.
 
-      For the JNLP launch method, the init script must be in PowerShell.
-      If the init script is expected to take a long time to execute, it is recommended to prepare custom images with the            necessary software pre-installed.<br>
+    For the Windows JNLP launch method, the init script must be in PowerShell.
+        Automatically passed to this script is:
+            First argument - Jenkins server URL
+            Second argument - VMName
+            Third argument - JNLP secret, required if the server has security enabled.
+    You need to install Java, download the slave jar file from: '[server url]jnlpJars/slave.jar'.
+    The server url should already have a trailing slash.  Then execute the following to connect:
+    `java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp`
+    
+    Example script
+    ```
+    Set-ExecutionPolicy Unrestricted
+    $jenkinsServerUrl = $args[0]
+    $vmName = $args[1]
+    $secret = $args[2]
+
+    $baseDir = 'C:\Jenkins'
+    mkdir $baseDir
+    # Download the JDK
+    $source = "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-windows-x64.exe"
+    $destination = "$baseDir\jdk.exe"
+    $client = new-object System.Net.WebClient 
+    $cookie = "oraclelicense=accept-securebackup-cookie"
+    $client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie) 
+    $client.downloadFile([string]$source, [string]$destination)
+
+    # Execute the unattended install
+    $jdkInstallDir=$baseDir + '\jdk\'
+    $jreInstallDir=$baseDir + '\jre\'
+    C:\Jenkins\jdk.exe /s INSTALLDIR=$jdkInstallDir /INSTALLDIRPUBJRE=$jdkInstallDir
+
+    $javaExe=$jdkInstallDir + '\bin\java.exe'
+    $jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/slave.jar"
+    $destinationSlaveJarPath = $baseDir + '\slave.jar'
+
+    # Download the jar file
+    $client = new-object System.Net.WebClient
+    $client.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)
+
+    # Calculate the jnlpURL
+    $jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/slave-agent.jnlp'
+
+    while ($true) {
+        try {
+            # Launch
+            & $javaExe -jar $destinationSlaveJarPath -secret $secret -jnlpUrl $jnlpUrl -noReconnect
+        }
+        catch [System.Exception] {
+            Write-Output $_.Exception.ToString()
+        }
+        sleep 10
+    }
+    ```
      
       For more details about how to prepare custom images, refer to the below links:
       * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
@@ -89,22 +140,12 @@ Refer to
 1. Configure an Azure profile and Template as per the above instructions.
 2. If the init script is expected to take a long time to complete, it is recommended to use a custom-prepared Ubuntu 
    image that has the required software pre-installed, including a Java runtime 
-3. For platform images, you may specify an Init script as below to install Java, Git and Ant:
+3. For platform images, you may specify an Init script as below to install Java (may vary based on OS):
 
 ```
       #Install Java
       sudo apt-get -y update
-      sudo apt-get install -y openjdk-7-jdk
-      sudo apt-get -y update --fix-missing
-      sudo apt-get install -y openjdk-7-jdk
-      
-      # Install Git
-      sudo apt-get install -y git
-      
-      #Install Ant
-      sudo apt-get install -y ant
-      sudo apt-get -y update --fix-missing
-      sudo apt-get install -y ant
+      sudo apt-get install -y openjdk-8-jre
 ```
 
 ## Template configuration for Windows images with launch method JNLP.
