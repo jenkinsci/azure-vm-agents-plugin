@@ -189,8 +189,6 @@ public class TokenCache {
 
     private AccessToken getNewToken() throws AzureCloudException {
         LOGGER.log(Level.INFO, "Retrieve new access token");
-        // reset configuration instance: renew token
-        Configuration.setInstance(null);
 
         final ExecutorService service = Executors.newFixedThreadPool(1);
 
@@ -220,11 +218,12 @@ public class TokenCache {
             throw new AzureCloudException("Authentication result was null");
         }
 
-        LOGGER.log(Level.INFO,
-                "Authentication result:\n\taccess token: {0}\n\tExpires On: {1}",
-                new Object[] { authres.getAccessToken(), new Date(authres.getExpiresOn()) });
-
         final AccessToken token = new AccessToken(subscriptionId, serviceManagementURL, authres);
+
+        LOGGER.log(Level.INFO,
+                "Authentication result:\n\taccess token: {0}\n\tExpires In: {1}{2}",
+                new Object[] { token.getToken(), token.getExpirationDate()});
+
         writeTokenFile(token);
         return token;
     }

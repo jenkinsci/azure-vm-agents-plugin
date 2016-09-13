@@ -42,7 +42,8 @@ public class AccessToken implements Serializable {
         this.subscriptionId = subscriptionId;
         this.serviceManagementUrl = serviceManagementUrl;
         this.token = authres.getAccessToken();
-        this.expiration = authres.getExpiresOn();
+        // In the 0.9.4 version of the SDK, expiresOn is the number of ms till expire
+        this.expiration = System.currentTimeMillis() + authres.getExpiresOn();
     }
 
     public Configuration getConfiguration() throws AzureCloudException {
@@ -65,6 +66,10 @@ public class AccessToken implements Serializable {
 
     public boolean isExpiring() {
         return expiration < System.currentTimeMillis();
+    }
+
+    public String getToken() {
+        return token;
     }
 
     @Override
