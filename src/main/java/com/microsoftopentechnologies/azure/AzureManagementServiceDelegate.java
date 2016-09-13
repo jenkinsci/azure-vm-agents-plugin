@@ -189,7 +189,7 @@ public class AzureManagementServiceDelegate {
             }
 
             // Deployment ....
-            properties.setMode(DeploymentMode.INCREMENTAL);
+            properties.setMode(DeploymentMode.Incremental);
             properties.setTemplate(tmp.toString());
 
             final String deploymentName = String.valueOf(ts);
