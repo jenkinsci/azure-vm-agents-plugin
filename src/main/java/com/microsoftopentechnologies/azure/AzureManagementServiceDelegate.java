@@ -49,6 +49,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -80,6 +82,7 @@ import com.microsoftopentechnologies.azure.util.Constants;
 import com.microsoftopentechnologies.azure.util.ExecutionEngine;
 import com.microsoftopentechnologies.azure.util.FailureStage;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 import org.apache.commons.lang.StringUtils;
@@ -100,6 +103,12 @@ public class AzureManagementServiceDelegate {
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
+    private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
+
+    private static final List<String> AVAILABLE_LOCATIONS_STD = getAvailableLocations();
+
+    private static final List<String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
+    
     public static String deployment(final AzureSlaveTemplate template, final int numberOfslaves)
             throws AzureCloudException {
         try {
@@ -448,64 +457,6 @@ public class AzureManagementServiceDelegate {
         }
     }
 
-    /**
-     * Gets list of Azure datacenter locations which supports Persistent VM role.
-     *
-     * @param subscriptionId
-     * @param clientId
-     * @param oauth2TokenEndpoint
-     * @param clientSecret
-     * @param serviceManagementURL
-     * @return
-     * @throws IOException
-     * @throws AzureCloudException
-     * @throws ServiceException
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     */
-    public static List<String> getVirtualMachineLocations(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL)
-            throws IOException, AzureCloudException, ServiceException, ParserConfigurationException, SAXException {
-        final Configuration config = ServiceDelegateHelper.loadConfiguration(
-                subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-
-        return getVirtualMachineLocations(config);
-    }
-
-    /**
-     * Gets list of Azure datacenter locations which supports Persistent VM role.
-     *
-     * @param config
-     * @return
-     * @throws IOException
-     * @throws AzureCloudException
-     * @throws ServiceException
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     */
-    public static List<String> getVirtualMachineLocations(final Configuration config)
-            throws IOException, AzureCloudException, ServiceException, ParserConfigurationException, SAXException {
-        List<String> locations = new ArrayList<String>();
-        ManagementClient managementClient = ServiceDelegateHelper.getManagementClient(config);
-        LocationsListResponse listResponse = managementClient.getLocationsOperations().list();
-
-        for (Location location : listResponse) {
-            for (String availServices : location.getAvailableServices()) {
-                // check for PersistentVMRole
-                if ("PersistentVMRole".equalsIgnoreCase(availServices)) {
-                    locations.add(location.getName());
-                    // break inner for loop
-                    break;
-                }
-            }
-        }
-        return locations;
-    }
-
     public static List<String> getStorageAccountsInfo(final Configuration config) throws Exception {
         List<String> storageAccounts = new ArrayList<String>();
         StorageManagementClient client = StorageManagementService.create(config);
@@ -517,58 +468,68 @@ public class AzureManagementServiceDelegate {
         return storageAccounts;
     }
 
-    /**
-     * Gets list of virtual machine sizes.
-     *
-     * @param subscriptionId
-     * @param clientId
-     * @param oauth2TokenEndpoint
-     * @param clientSecret
-     * @param serviceManagementURL
-     * @return
-     * @throws IOException
-     * @throws AzureCloudException
-     * @throws ServiceException
-     * @throws ParserConfigurationException
-     * @throws SAXException
-     */
-    public static List<String> getVMSizes(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL)
-            throws IOException, AzureCloudException, ServiceException, ParserConfigurationException, SAXException {
-        final Configuration config = ServiceDelegateHelper.loadConfiguration(
-                subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-
-        return getVMSizes(config);
+    private static List<String> getAvailableLocations() {
+        return Arrays.asList(new String[] { "East US","West US","South Central US","Central US","North Central US","East US 2","North Europe","West Europe","Southeast Asia","East Asia","Japan West","Japan East","Brazil South","Australia Southeast","Australia East","Central India","South India","West India" });
     }
+    
+    private static List<String> getAvailableLocationsChina() {
+        return Arrays.asList(new String[] { "China North","China East" });
+    }
+    
+    /**
+     * Creates a map containing location -> vm role size list.
+     * This is hard coded and should be removed eventually once a transition to
+     * the 1.0.0 SDK is made
+     * @return New map 
+     */
+    private static Map<String, List<String>> getAvailableRoleSizes() {
+        final Map<String, List<String>> sizes = new HashMap<String, List<String>>();
+        sizes.put("East US", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("West US", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("South Central US", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("Central US", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("North Central US", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1_v2","Standard_DS11_v2","Standard_DS12_v2","Standard_DS13_v2","Standard_DS14_v2","Standard_DS2_v2","Standard_DS3_v2","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("East US 2", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("North Europe", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("West Europe", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("Southeast Asia", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("East Asia", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS11","Standard_DS12","Standard_DS13","Standard_DS14","Standard_DS2","Standard_DS3","Standard_DS4","Standard_F1","Standard_F16","Standard_F2","Standard_F4","Standard_F8"}));
+        sizes.put("Japan West", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("Japan East", Arrays.asList(new String[] {"A10","A11","A5","A6","A7","A8","A9","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("Brazil South", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1_v2","Standard_DS11_v2","Standard_DS12_v2","Standard_DS13_v2","Standard_DS14_v2","Standard_DS2_v2","Standard_DS3_v2","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("Australia Southeast", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("Australia East", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("Central India", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1_v2","Standard_D11_v2","Standard_D12_v2","Standard_D13_v2","Standard_D14_v2","Standard_D2_v2","Standard_D3_v2","Standard_D4_v2","Standard_D5_v2","Standard_DS1_v2","Standard_DS11_v2","Standard_DS12_v2","Standard_DS13_v2","Standard_DS14_v2","Standard_DS2_v2","Standard_DS3_v2","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("South India", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1_v2","Standard_D11_v2","Standard_D12_v2","Standard_D13_v2","Standard_D14_v2","Standard_D2_v2","Standard_D3_v2","Standard_D4_v2","Standard_D5_v2","Standard_DS1_v2","Standard_DS11_v2","Standard_DS12_v2","Standard_DS13_v2","Standard_DS14_v2","Standard_DS2_v2","Standard_DS3_v2","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s"}));
+        sizes.put("West India", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1_v2","Standard_D11_v2","Standard_D12_v2","Standard_D13_v2","Standard_D14_v2","Standard_D2_v2","Standard_D3_v2","Standard_D4_v2","Standard_D5_v2","Standard_F1","Standard_F16","Standard_F2","Standard_F4","Standard_F8"}));
 
+        // China sizes, may not be exact
+        sizes.put("China North", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS1_v2","Standard_DS11","Standard_DS11_v2","Standard_DS12","Standard_DS12_v2","Standard_DS13","Standard_DS13_v2","Standard_DS14","Standard_DS14_v2","Standard_DS2","Standard_DS2_v2","Standard_DS3","Standard_DS3_v2","Standard_DS4","Standard_DS4_v2","Standard_DS5_v2","Standard_F1","Standard_F16","Standard_F16s","Standard_F1s","Standard_F2","Standard_F2s","Standard_F4","Standard_F4s","Standard_F8","Standard_F8s","Standard_G1","Standard_G2","Standard_G3","Standard_G4","Standard_G5","Standard_GS1","Standard_GS2","Standard_GS3","Standard_GS4","Standard_GS5"}));
+        sizes.put("China East", Arrays.asList(new String[] {"A5","A6","A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","ExtraLarge","ExtraSmall","Large","Medium","Small","Standard_D1","Standard_D1_v2","Standard_D11","Standard_D11_v2","Standard_D12","Standard_D12_v2","Standard_D13","Standard_D13_v2","Standard_D14","Standard_D14_v2","Standard_D2","Standard_D2_v2","Standard_D3","Standard_D3_v2","Standard_D4","Standard_D4_v2","Standard_D5_v2","Standard_DS1","Standard_DS11","Standard_DS12","Standard_DS13","Standard_DS14","Standard_DS2","Standard_DS3","Standard_DS4","Standard_F1","Standard_F16","Standard_F2","Standard_F4","Standard_F8"}));
+        
+        return sizes;
+    }
+    
+    /**
+     * Gets list of Azure datacenter locations which supports Persistent VM role.
+     * Today this is hardcoded pulling from the array, because the old form of
+     * certificate based auth appears to be required.
+     */
+    public static List<String> getVirtualMachineLocations(String serviceManagementUrl) {
+        if (serviceManagementUrl != null && serviceManagementUrl.toLowerCase().contains("china")) {
+            return AVAILABLE_LOCATIONS_CHINA;
+        }
+        return AVAILABLE_LOCATIONS_STD;
+    }
+    
     /**
      * Gets list of virtual machine sizes.
-     *
-     * @param config
-     * @return
-     * @throws IOException
-     * @throws AzureCloudException
-     * @throws ServiceException
-     * @throws ParserConfigurationException
-     * @throws SAXException
+     * Currently hardcoded because the old vm size API does not support 
+     * the new  method of authentication
+     * @param location Location to obtain VM sizes for
      */
-    public static List<String> getVMSizes(final Configuration config)
-            throws IOException, AzureCloudException, ServiceException, ParserConfigurationException, SAXException {
-        List<String> vmSizes = new ArrayList<String>();
-        ManagementClient managementClient = ServiceDelegateHelper.getManagementClient(config);
-        RoleSizeListResponse roleSizeListResponse = managementClient.getRoleSizesOperations().list();
-
-        for (RoleSize roleSize : roleSizeListResponse.getRoleSizes()) {
-            if (roleSize.isSupportedByVirtualMachines()) {
-                vmSizes.add(roleSize.getName());
-            }
-        }
-
-        return vmSizes;
+    public static List<String> getVMSizes(final String location) {
+        return AVAILABLE_ROLE_SIZES.get(location);
     }
 
     /**

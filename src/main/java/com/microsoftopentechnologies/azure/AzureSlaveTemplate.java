@@ -482,149 +482,15 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
             return null;
         }
 
-        private final transient Map<String, List<String>> vmSizesMap = new HashMap<String, List<String>>();
-
-        private final transient Map<String, List<String>> locationsMap = new HashMap<String, List<String>>();
-
-        private final transient Map<String, Configuration> configObjectsMap = new HashMap<String, Configuration>();
-
-        private synchronized List<String> getVMSizes(
-                final String subscriptionId,
-                final String clientId,
-                final String clientSecret,
-                final String oauth2TokenEndpoint,
-                final String serviceManagementURL) {
-            // check if there is entry already in map
-            List<String> vmSizes = vmSizesMap.get(subscriptionId + clientId);
-
-            try {
-                if (vmSizes != null) {
-                    return vmSizes;
-                } else {
-                    Configuration config = getConfiguration(
-                            subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-                    vmSizes = AzureManagementServiceDelegate.getVMSizes(config);
-                    vmSizesMap.put(subscriptionId + clientId, vmSizes);
-                }
-            } catch (Exception e) {
-                //
-            }
-
-            if (vmSizes == null) {
-                vmSizes = getDefaultVMSizes();
-            }
-
-            return vmSizes;
+        private synchronized List<String> getVMSizes(final String location) {
+            return AzureManagementServiceDelegate.getVMSizes(location);
         }
 
-        private List<String> getDefaultVMSizes() {
-            List<String> vmSizes = new ArrayList<String>();
-            vmSizes.add("Basic_A0");
-            vmSizes.add("Basic_A1");
-            vmSizes.add("Basic_A2");
-            vmSizes.add("Basic_A3");
-            vmSizes.add("Basic_A4");
-            vmSizes.add("A5");
-            vmSizes.add("A6");
-            vmSizes.add("A7");
-            vmSizes.add("A8");
-            vmSizes.add("A9");
-
-            return vmSizes;
-        }
-
-        private synchronized List<String> getVMLocations(
-                final String subscriptionId,
-                final String clientId,
-                final String clientSecret,
-                final String oauth2TokenEndpoint,
-                final String serviceManagementURL) {
-            // check if there is entry already in map
-            List<String> locations = locationsMap.get(subscriptionId + clientId);
-
-            try {
-                if (locations != null) {
-                    return locations;
-                } else {
-                    Configuration config = getConfiguration(
-                            subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-                    locations = AzureManagementServiceDelegate.getVirtualMachineLocations(config);
-                    locationsMap.put(subscriptionId + clientId, locations);
-                }
-            } catch (Exception e) {
-                // ignore
-            }
-
-            if (locations == null) {
-                locations = getDefaultLocations(serviceManagementURL);
-            }
-
-            return locations;
-        }
-
-        private List<String> getDefaultLocations(String serviceManagementURL) {
-            List<String> locations = new ArrayList<String>();
-
-            if (serviceManagementURL != null && serviceManagementURL.toLowerCase().equalsIgnoreCase("china")) {
-                locations.add("China North");
-                locations.add("China East");
-            } else {
-                locations.add("East US");
-                locations.add("West US");
-                locations.add("North Central US");
-                locations.add("South Central US");
-                locations.add("North Europe");
-                locations.add("West Europe");
-                locations.add("East Asia");
-                locations.add("Southeast Asia");
-                locations.add("Japan East");
-                locations.add("Japan West");
-                locations.add("Brazil South");
-            }
-
-            return locations;
-        }
-
-        private Configuration getConfiguration(
-                final String subscriptionId,
-                final String clientId,
-                final String clientSecret,
-                final String oauth2TokenEndpoint,
-                final String serviceManagementURL)
-                throws AzureCloudException {
-
-            // check if there is an entry already in a map
-            Configuration config = configObjectsMap.get(subscriptionId + clientId);
-            if (config != null) {
-                return config;
-            } else {
-                config = ServiceDelegateHelper.loadConfiguration(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-                configObjectsMap.put(subscriptionId + clientId, config);
-                return config;
-            }
-        }
-
-        public ListBoxModel doFillVirtualMachineSizeItems(
-                @RelativePath("..") @QueryParameter final String subscriptionId,
-                @RelativePath("..") @QueryParameter final String clientId,
-                @RelativePath("..") @QueryParameter final String clientSecret,
-                @RelativePath("..") @QueryParameter final String oauth2TokenEndpoint,
-                @RelativePath("..") @QueryParameter final String serviceManagementURL)
+        public ListBoxModel doFillVirtualMachineSizeItems(@QueryParameter final String location)
                 throws IOException, ServletException {
 
             ListBoxModel model = new ListBoxModel();
-            // Validate data
-            if (StringUtils.isBlank(subscriptionId) || StringUtils.isBlank(clientId)) {
-                return model;
-            }
-
-            List<String> vmSizes = vmSizesMap.get(subscriptionId + clientId);
-
-            if (vmSizes == null) {
-                vmSizes = getVMSizes(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-            }
+            List<String> vmSizes = AzureManagementServiceDelegate.getVMSizes(location);
 
             for (String vmSize : vmSizes) {
                 model.add(vmSize);
@@ -633,13 +499,7 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
             return model;
         }
 
-        public ListBoxModel doFillOsTypeItems(
-                @RelativePath("..") @QueryParameter final String subscriptionId,
-                @RelativePath("..") @QueryParameter final String clientId,
-                @RelativePath("..") @QueryParameter final String clientSecret,
-                @RelativePath("..") @QueryParameter final String oauth2TokenEndpoint,
-                @RelativePath("..") @QueryParameter final String serviceManagementURL)
-                throws IOException, ServletException {
+        public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             model.add("Linux");
             model.add("Windows");
@@ -647,25 +507,12 @@ public class AzureSlaveTemplate implements Describable<AzureSlaveTemplate> {
         }
 
         public ListBoxModel doFillLocationItems(
-                @RelativePath("..") @QueryParameter final String subscriptionId,
-                @RelativePath("..") @QueryParameter final String clientId,
-                @RelativePath("..") @QueryParameter final String clientSecret,
-                @RelativePath("..") @QueryParameter final String oauth2TokenEndpoint,
                 @RelativePath("..") @QueryParameter final String serviceManagementURL)
                 throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            // validate
-            if (StringUtils.isBlank(subscriptionId) || StringUtils.isBlank(clientId)) {
-                return model;
-            }
-
-            List<String> locations = locationsMap.get(subscriptionId + clientId);
-
-            if (locations == null) {
-                locations = getVMLocations(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-            }
-
+            
+            List<String> locations = AzureManagementServiceDelegate.getVirtualMachineLocations(serviceManagementURL);
+            
             for (String location : locations) {
                 model.add(location);
             }
