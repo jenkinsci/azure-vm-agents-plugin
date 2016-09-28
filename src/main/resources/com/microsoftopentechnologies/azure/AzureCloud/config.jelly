@@ -5,12 +5,12 @@
   <f:section title="${%Azure_Profile_Configuration}">
     <f:entry title="${%Subscription_ID}" field="subscriptionId" 
              help="/plugin/azure-slave-plugin/help-subscriptionId.html">
-      <f:textbox />
+      <f:password />
     </f:entry>
 		 
     <f:entry title="${%Client_Id}" field="clientId" 
              help="/plugin/azure-slave-plugin/help-clientId.html">
-      <f:textbox />
+      <f:password />
     </f:entry>
     <f:entry title="${%Client_Secret}" field="clientSecret" 
              help="/plugin/azure-slave-plugin/help-clientSecret.html">
@@ -19,7 +19,7 @@
 
     <f:entry title="${%OAuth2_Token_Endpoint}" field="oauth2TokenEndpoint" 
              help="/plugin/azure-slave-plugin/help-oauth2TokenEndpoint.html">
-      <f:textbox />
+      <f:password />
     </f:entry>
   
     <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit" help="/plugin/azure-slave-plugin/help-maxVirtualMachinesLimit.html">
