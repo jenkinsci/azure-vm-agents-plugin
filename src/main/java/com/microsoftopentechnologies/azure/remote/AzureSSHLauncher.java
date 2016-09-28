@@ -241,9 +241,13 @@ public class AzureSSHLauncher extends ComputerLauncher {
         ChannelExec channel = null;
         LOGGER.info("AzureSSHLauncher: executeRemoteCommand: starts");
         try {
-            channel = createExecChannel(jschSession, command);
+            channel = (ChannelExec) jschSession.openChannel("exec");
+            channel.setCommand(command);
+            channel.setInputStream(null);
+            channel.setErrStream(System.err);
             final InputStream inputStream = channel.getInputStream();
             final InputStream errorStream = channel.getErrStream();
+            channel.connect(60 * 1000);
 
             // Read from input stream
             try {
@@ -287,15 +291,6 @@ public class AzureSSHLauncher extends ComputerLauncher {
         }
         // If control reached here then it indicates error
         return -1;
-    }
-
-    private ChannelExec createExecChannel(final Session jschSession, final String command) throws JSchException {
-        final ChannelExec echannel = (ChannelExec) jschSession.openChannel("exec");
-        echannel.setCommand(command);
-        echannel.setInputStream(null);
-        echannel.setErrStream(System.err);
-        echannel.connect(60 * 1000);
-        return echannel;
     }
 
     private Session connectToSsh(final AzureSlave slave) throws Exception {
