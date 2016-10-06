@@ -1,0 +1,15 @@
+<div>
+	Windows agents can be launched using SSH or JNLP. Linux agents can be launched using SSH or JNLP (though machine will need to connect using pre-arranged credentials).
+	For Windows agents, if you want to use SSH then the image needs to be custom-prepared with an SSH server preinstalled.</br></br>
+
+	When using JNLP launch, ensure following</br>
+	1)	Jenkins URL (Manage Jenkins --> configure system --> Jenkins Location) </br>
+   		&nbsp;&nbsp;&nbsp;&nbsp;This URL needs to be reachable by the agent, so make sure to configure the firewall rules accordingly. </br>
+	2)	TCP port for JNLP agent agents (Manage Jenkins --> configure global security --> Enable security --> TCP port for JNLP agents). </br></br>
+	  
+		&nbsp;&nbsp;&nbsp;&nbsp;This port needs to be reachable from the agent launched using JNLP. It is recommended to use a fixed port 
+		so that the necessary firewall exceptions can be specified. </br></br>
+	   
+	   	&nbsp;&nbsp;&nbsp;&nbsp;If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP agents"
+   	   	and add the necessary firewall rules (Run --> firewall.cpl) inside the virtual machine. </br>		 
+</div>
