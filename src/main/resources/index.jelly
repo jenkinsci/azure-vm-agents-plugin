@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <div>
  	Azure plugin to provision and deprovision slaves
 </div>
