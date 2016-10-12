@@ -15,6 +15,8 @@
  */
 package com.microsoftopentechnologies.azure;
 
+import static com.microsoftopentechnologies.azure.Messages._Build_Action_Shutdown_Slave;
+import com.microsoftopentechnologies.azure.util.CleanUpAction;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -28,6 +30,7 @@ import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.BuildListener;
 import hudson.model.Result;
+import hudson.slaves.OfflineCause;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -51,49 +54,46 @@ public class AzureSlavePostBuildAction extends Recorder {
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) throws InterruptedException, IOException {
+        Computer computer = Computer.currentComputer();
+        Node node = computer.getNode();
 
-        LOGGER.log(Level.INFO,
-                "AzureSlavePostBuildAction: perform: build is not successful , taking post build action {0}  for slave ",
-                slavePostBuildAction);
-        Node node = Computer.currentComputer().getNode();
-
-        int retryCount = 0;
-        boolean successfull = false;
-        // Retrying for 30 times with 30 seconds wait time between each retry
-        while (retryCount < 30 && !successfull) {
-            try {
-                //check if node is instance of azure slave
-                if (node instanceof AzureSlave) {
-                    AzureSlave slave = (AzureSlave) node;
-                    if (slave.getChannel() != null) {
-                        slave.getChannel().close();
-                    }
-
-                    if (Messages.Build_Action_Shutdown_Slave().equalsIgnoreCase(slavePostBuildAction)) {
-                        slave.setShutdownOnIdle(true);
-                        slave.idleTimeout();
-                    } else if (Messages.Build_Action_Delete_Slave().equalsIgnoreCase(slavePostBuildAction)
-                            || (Messages.Build_Action_Delete_Slave_If_Not_Success().equalsIgnoreCase(
-                                    slavePostBuildAction) && build.getResult() != Result.SUCCESS)) {
-                        slave.setShutdownOnIdle(false);
-                        slave.idleTimeout();
-                    }
-                }
-                successfull = true;
-            } catch (Exception e) {
-                retryCount++;
-                LOGGER.log(Level.INFO, "AzureSlavePostBuildAction: perform: Exception occured while {0}" + "\n"
-                        + "Will retry again after 30 seconds. Current retry count {1}"
-                        + "\n" + "Error code {2}", new Object[] { slavePostBuildAction, retryCount, e.getMessage() });
-                // We won't get exception for RNF , so for other exception types we can retry
-                try {
-                    Thread.sleep(30 * 1000);
-                } catch (InterruptedException e1) {
-                    // ignore
-                }
-            }
+        if (!(node instanceof AzureSlave)) {
+            // We don't own this node.  Nothing to do.
+            return true;
         }
-
+        
+        AzureSlave slave = (AzureSlave)node;
+        AzureComputer azureComputer = (AzureComputer)computer;
+        LOGGER.log(Level.INFO,
+                "AzureSlavePostBuildAction: perform: build action {0} for slave {1}",
+                new Object [] { slavePostBuildAction, slave.getNodeName() });
+        
+        // If the node has been taken offline by the user, skip the postbuild task.
+        if (azureComputer.isSetOfflineByUser()) {
+            LOGGER.log(Level.INFO,
+                "AzureSlavePostBuildAction: perform: slave {0} was taken offline by user, skipping postbuild",
+                slave.getNodeName());
+            return true;
+        }
+        
+        azureComputer.setAcceptingTasks(false);
+        
+        // The post build action cannot immediately delete the node
+        // Doing so would cause the post build action to show some wacky errors
+        // and potentially fail.  We also don't want to delete the machine if
+        // other stuff was running at the moment.  The cleanup action will set the machine
+        // offline and it will 
+        if (Messages.Build_Action_Shutdown_Slave().equalsIgnoreCase(slavePostBuildAction)) {
+            slave.setCleanUpAction(CleanUpAction.SHUTDOWN, Messages._Build_Action_Shutdown_Slave());
+        } 
+        else if (Messages.Build_Action_Delete_Slave_If_Not_Success().equalsIgnoreCase(
+                        slavePostBuildAction) && (build.getResult() != Result.SUCCESS)) {
+            slave.setCleanUpAction(CleanUpAction.DELETE, Messages._Build_Action_Delete_Slave_If_Not_Success());
+        }
+        else if (Messages.Build_Action_Delete_Slave().equalsIgnoreCase(slavePostBuildAction)) {
+            slave.setCleanUpAction(CleanUpAction.DELETE, Messages._Build_Action_Delete_Slave());
+        }
+        
         return true;
     }
 

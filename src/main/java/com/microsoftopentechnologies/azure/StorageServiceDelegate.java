@@ -66,14 +66,15 @@ public class StorageServiceDelegate {
      * @return list of storage account URIs
      * @throws Exception
      */
-    private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName) throws
+    private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName, 
+            final String resourceGroupName) throws
             AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config);
         StorageAccountGetPropertiesResponse response;
 
         try {
             response = client.getStorageAccountsOperations().
-                    getProperties(Constants.RESOURCE_GROUP_NAME, storageAccountName);
+                    getProperties(resourceGroupName, storageAccountName);
         } catch (Exception e) {
             throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "
                     + storageAccountName + " does not exist");
@@ -116,13 +117,13 @@ public class StorageServiceDelegate {
      * @throws AzureCloudException
      */
     public static StorageAccountGetPropertiesResponse getStorageAccountProps(
-            final Configuration config, final String storageAccountName)
+            final Configuration config, final String storageAccountName, final String resourceGroupName)
             throws AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config);
         StorageAccountGetPropertiesResponse response = null;
         try {
             response = client.getStorageAccountsOperations().getProperties(
-                    Constants.RESOURCE_GROUP_NAME, storageAccountName);
+                    resourceGroupName, storageAccountName);
         } catch (Exception e) {
             throw new AzureCloudException("StorageServiceDelegate: getStorageAccountURIs: storage account with name "
                     + storageAccountName + " does not exist");
@@ -141,14 +142,15 @@ public class StorageServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static String getStorageAccountURI(Configuration config, String storageAccountName, String type) throws
+    public static String getStorageAccountURI(Configuration config, String storageAccountName, String type, 
+            String resourceGroupName) throws
             AzureCloudException {
         String serviceURI = null;
         String defaultURL = Constants.HTTP_PROTOCOL_PREFIX + storageAccountName + DOT_CHAR + type
                 + Constants.BASE_URI_SUFFIX;
 
         // Get service URLS
-        List<URI> storageAccountURLs = getStorageAccountURIs(config, storageAccountName);
+        List<URI> storageAccountURLs = getStorageAccountURIs(config, storageAccountName, resourceGroupName);
 
         if (storageAccountURLs == null || storageAccountURLs.isEmpty()) {
             LOGGER.info("StorageServiceDelegate: getStorageAccountURI: storageAccountURLs is null, returning default");
@@ -181,32 +183,32 @@ public class StorageServiceDelegate {
      * @param storageAccountName Azure storage account name
      * @param key Azure storage account key
      * @param baseURI Azure storage account blob url.
-     * @param fileName blob file name
-     * @param initScript contents of file to be uploaded
+     * @param blobName blob file name
+     * @param fileContents contents of file to be uploaded
      * @return blob url
      * @throws AzureCloudException
      * @throws URISyntaxException
      * @throws StorageException
      * @throws IOException
      */
-    public static String uploadConfigFileToStorage(Configuration config, String storageAccountName, String key,
-            String baseURI,
-            String fileName, String initScript) throws AzureCloudException, URISyntaxException, StorageException,
+    public static String uploadFileToStorage(Configuration config, String storageAccountName, String key,
+            String baseURI, String resourceGroupName, String containerName,
+            String blobName, byte[] fileContents) throws AzureCloudException, URISyntaxException, StorageException,
             IOException {
         CloudBlockBlob blob = null;
-        String storageURI = getStorageAccountURI(config, storageAccountName, Constants.BLOB);
+        String storageURI = getStorageAccountURI(config, storageAccountName, Constants.BLOB, resourceGroupName);
         CloudBlobContainer container = getBlobContainerReference(storageAccountName, key, storageURI,
-                Constants.CONFIG_CONTAINER_NAME);
-        blob = container.getBlockBlobReference(fileName);
-        InputStream is = new ByteArrayInputStream(initScript.getBytes("UTF-8"));
+                containerName);
+        blob = container.getBlockBlobReference(blobName);
+        InputStream is = new ByteArrayInputStream(fileContents);
 
         try {
-            blob.upload(is, initScript.length());
+            blob.upload(is, fileContents.length);
         } finally {
             is.close();
         }
 
-        return storageURI + Constants.CONFIG_CONTAINER_NAME + "/" + fileName;
+        return storageURI + Constants.CONFIG_CONTAINER_NAME + "/" + blobName;
     }
 
     /**
@@ -220,7 +222,7 @@ public class StorageServiceDelegate {
      * @throws URISyntaxException
      * @throws StorageException
      */
-    private static CloudBlobContainer getBlobContainerReference(String storageAccountName, String key, String blobURL,
+    public static CloudBlobContainer getBlobContainerReference(String storageAccountName, String key, String blobURL,
             String containerName) throws URISyntaxException, StorageException {
         CloudStorageAccount cloudStorageAccount;
         CloudBlobClient serviceClient;
@@ -247,7 +249,6 @@ public class StorageServiceDelegate {
         } else {
             return null;
         }
-
     }
 
     /**

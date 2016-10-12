@@ -20,10 +20,14 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import com.microsoftopentechnologies.azure.AzureCloud;
 import com.microsoftopentechnologies.azure.AzureSlave;
 import com.microsoftopentechnologies.azure.AzureComputer;
+import com.microsoftopentechnologies.azure.AzureSlaveTemplate;
 import com.microsoftopentechnologies.azure.Messages;
+import com.microsoftopentechnologies.azure.util.CleanUpAction;
 import com.microsoftopentechnologies.azure.util.Constants;
+import com.microsoftopentechnologies.azure.util.FailureStage;
 
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
@@ -36,6 +40,7 @@ import hudson.slaves.SlaveComputer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
@@ -45,6 +50,7 @@ import jenkins.model.Jenkins;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jvnet.localizer.Localizable;
 
 /**
  * SSH Launcher class
@@ -60,19 +66,25 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
     @Override
     public void launch(final SlaveComputer slaveComputer, final TaskListener listener) {
-        LOGGER.info("AzureSSHLauncher: launch: launch method called for slave ");
         AzureComputer computer = (AzureComputer) slaveComputer;
         AzureSlave slave = computer.getNode();
+        
+        LOGGER.log(Level.INFO,"AzureSSHLauncher: launch: launch method called for slave {0}", slaveComputer.getName());
 
-        //check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
-        //Added this check - since after restarting jenkins master, jenkins is trying to connect to all the slaves although slaves are suspended.
+        // Check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
+        // Added this check - since after restarting jenkins master, jenkins is trying to connect to all the slaves although slaves are suspended.
+        // This still means that a delete slave will eventually get cleaned up.
         try {
             if (!slave.isVMAliveOrHealthy()) {
+                LOGGER.log(Level.INFO,"AzureSSHLauncher: launch: Slave {0} is shut down, deleted, etc.  Not attempting to connect", slaveComputer.getName());
                 return;
             }
         } catch (Exception e1) {
             // ignoring exception purposefully
         }
+        
+        // Block cleanup while we attempt to start.
+        slave.blockCleanUpAction();
 
         PrintStream logger = listener.getLogger();
         boolean successful = false;
@@ -83,28 +95,32 @@ public class AzureSSHLauncher extends ComputerLauncher {
         } catch (UnknownHostException e) {
             LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: "
                     + "Got unknown host exception. Virtual machine might have been deleted already", e);
-            slave.setDeleteSlave(true);
         } catch (ConnectException e) {
             LOGGER.log(Level.SEVERE,
                     "AzureSSHLauncher: launch: Got connect exception. Might be due to firewall rules", e);
-            markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL);
+            handleLaunchFailure(slave, Constants.SLAVE_POST_PROV_CONN_FAIL);
         } catch (Exception e) {
             // Checking if we need to mark template as disabled. Need to re-visit this logic based on tests.
             if (e.getMessage() != null && e.getMessage().equalsIgnoreCase("Auth fail")) {
                 LOGGER.log(Level.SEVERE,
                         "AzureSSHLauncher: launch: "
                         + "Authentication failure. Image may not be supporting password authentication", e);
-                markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_AUTH_FAIL);
+                handleLaunchFailure(slave, Constants.SLAVE_POST_PROV_AUTH_FAIL);
             } else {
                 LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: Got  exception", e);
-                markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_CONN_FAIL + e.getMessage());
+                handleLaunchFailure(slave, Constants.SLAVE_POST_PROV_CONN_FAIL + e.getMessage());
+            }
+        }
+        finally {
+            if (session == null) {
+                slave.getComputer().setAcceptingTasks(false);
+                slave.setCleanUpAction(CleanUpAction.DELETE, Messages._Slave_Failed_To_Connect());
+                return;
             }
         }
 
-        if (session == null) {
-            return;
-        }
-
+        Localizable cleanUpReason = null;
+        
         try {
             final Session cleanupSession = session;
             String initScript = slave.getInitScript();
@@ -117,10 +133,18 @@ public class AzureSSHLauncher extends ComputerLauncher {
 
                 // Execute initialization script
                 // Make sure to change file permission for execute if needed. TODO: need to test
-                int exitStatus = executeRemoteCommand(session, "sh " + remoteInitFileName, logger);
+
+                String command = "sh " + remoteInitFileName;
+                int exitStatus = executeRemoteCommand(session, command, logger, slave.getExecuteInitScriptAsRoot(), slave.getAdminPassword());
                 if (exitStatus != 0) {
-                    LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: init script failed: exit code={0}", exitStatus);
-                    //TODO: Do we need to expose flag and act accordingly?? For now ignoring init script failures
+                    if (slave.getDoNotUseMachineIfInitFails()) {
+                        LOGGER.log(Level.SEVERE, "AzureSSHLauncher: launch: init script failed: exit code={0} (marking slave for deletion)", exitStatus);
+                        cleanUpReason = Messages._Slave_Failed_Init_Script();
+                        return;
+                    }
+                    else {
+                        LOGGER.log(Level.INFO, "AzureSSHLauncher: launch: init script failed: exit code={0} (ignoring)", exitStatus);
+                    }
                 } else {
                     LOGGER.info("AzureSSHLauncher: launch: init script got executed successfully");
                 }
@@ -133,7 +157,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
             if (executeRemoteCommand(session, "java -fullversion", logger) != 0) {
                 LOGGER.info("AzureSSHLauncher: launch: Java not found. "
                         + "At a minimum init script should ensure that java runtime is installed");
-                markSlaveForDeletion(slave, Constants.SLAVE_POST_PROV_JAVA_NOT_FOUND);
+                handleLaunchFailure(slave, Constants.SLAVE_POST_PROV_JAVA_NOT_FOUND);
                 return;
             }
 
@@ -166,6 +190,10 @@ public class AzureSSHLauncher extends ComputerLauncher {
             });
 
             LOGGER.info("AzureSSHLauncher: launch: launched slave successfully");
+            // There's a chance that it was marked as delete (for instance, if the node
+            // was unreachable and then someone hit connect and it worked.  Reset the node cleanup
+            // state to the default for the node.
+            slave.clearCleanUpAction();
             successful = true;
         } catch (Exception e) {
             LOGGER.log(Level.INFO, "AzureSSHLauncher: launch: got exception ", e);
@@ -174,6 +202,12 @@ public class AzureSSHLauncher extends ComputerLauncher {
                 if (session != null) {
                     session.disconnect();
                 }
+                if (cleanUpReason == null) {
+                    cleanUpReason = Messages._Slave_Failed_To_Connect();
+                }
+                slave.getComputer().setAcceptingTasks(false);
+                // Set the machine to be deleted by the cleanup task
+                slave.setCleanUpAction(CleanUpAction.DELETE, cleanUpReason);
             }
         }
     }
@@ -200,6 +234,8 @@ public class AzureSSHLauncher extends ComputerLauncher {
                     new Object[] { dnsName, sshPort, e.getMessage() });
             throw e;
         }
+        
+        
     }
 
     private void copyFileToRemote(Session jschSession, InputStream stream, String remotePath) throws Exception {
@@ -236,18 +272,54 @@ public class AzureSSHLauncher extends ComputerLauncher {
             }
         }
     }
-
+    
+    /**
+     * Helper method for most common call (without root)
+     * @param jschSession
+     * @param command
+     * @param logger
+     * @return 
+     */
     private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger) {
+        return executeRemoteCommand(jschSession, command, logger, false, null);
+    }
+
+    /**
+     * Executes a remote command, as root if desired
+     * @param jschSession
+     * @param command
+     * @param logger
+     * @param executeAsRoot
+     * @param passwordIfRoot
+     * @return
+     */
+    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger, boolean executeAsRoot, String passwordIfRoot) {
         ChannelExec channel = null;
-        LOGGER.info("AzureSSHLauncher: executeRemoteCommand: starts");
         try {
+            // If root, modify the command to set up sudo -S
+            String finalCommand = null;
+            if (executeAsRoot) {
+                finalCommand = "sudo -S -p '' " + command;
+            }
+            else {
+                finalCommand = command;
+            }
+            LOGGER.log(Level.INFO, "AzureSSHLauncher: executeRemoteCommand: starting {0}", command);
+
             channel = (ChannelExec) jschSession.openChannel("exec");
-            channel.setCommand(command);
+            channel.setCommand(finalCommand);
             channel.setInputStream(null);
             channel.setErrStream(System.err);
             final InputStream inputStream = channel.getInputStream();
             final InputStream errorStream = channel.getErrStream();
+            final OutputStream outputStream = channel.getOutputStream();
             channel.connect(60 * 1000);
+
+            // If as root, push the password
+            if (executeAsRoot) {
+                outputStream.write((passwordIfRoot + "\n").getBytes());
+                outputStream.flush();
+            }
 
             // Read from input stream
             try {
@@ -274,7 +346,7 @@ public class AzureSSHLauncher extends ComputerLauncher {
                 }
             }
 
-            LOGGER.info("AzureSSHLauncher: executeRemoteCommand: ends successfully");
+            LOGGER.info("AzureSSHLauncher: executeRemoteCommand: executed successfully");
             return channel.getExitStatus();
         } catch (JSchException jse) {
             LOGGER.log(Level.SEVERE,
@@ -322,12 +394,20 @@ public class AzureSSHLauncher extends ComputerLauncher {
         }
     }
 
-    private static void markSlaveForDeletion(AzureSlave slave, String message) {
-        slave.setTemplateStatus(Constants.TEMPLATE_STATUS_DISBALED, message);
-        if (slave.toComputer() != null) {
-            slave.toComputer().setTemporarilyOffline(true, OfflineCause.create(Messages._Slave_Failed_To_Connect()));
+    /**
+     * Mark the slave for deletion and queue the corresponding template for verification
+     * @param slave
+     * @param message 
+     */
+    private void handleLaunchFailure(AzureSlave slave, String message) {
+        // Queue the template for verification in case something happened there.
+        AzureCloud azureCloud = slave.getCloud();
+        if (azureCloud != null) {
+            AzureSlaveTemplate slaveTemplate = azureCloud.getAzureSlaveTemplate(slave.getTemplateName());
+            if (slaveTemplate != null) {
+                slaveTemplate.handleTemplateProvisioningFailure(message, FailureStage.POSTPROVISIONING);
+            }
         }
-        slave.setDeleteSlave(true);
     }
 
     @Override

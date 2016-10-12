@@ -37,8 +37,6 @@ public class Constants {
 
     public static final String FWD_SLASH = "/";
 
-    public static final String VM_NAME_PREFIX = "Azure";
-
     public static final int DEFAULT_MAX_VM_LIMIT = 10;
 
     public static final int DEFAULT_IDLE_TIME = 60;
@@ -57,18 +55,18 @@ public class Constants {
     public static final String OS_TYPE_WINDOWS = "Windows";
 
     public static final String OS_TYPE_LINUX = "Linux";
+    
+    /** Usage types for template names **/
+    public static final String USAGE_TYPE_DEPLOYMENT = "Deployment";
+    
+    /** VM/Deployment name date formats **/
+    public static final String VM_NAME_DATE_FORMAT = "HHmmss";
+    public static final String DEPLOYMENT_NAME_DATE_FORMAT = "MMddHHmmss";
 
     /** Slaves launch method */
     public static final String LAUNCH_METHOD_JNLP = "JNLP";
 
     public static final String LAUNCH_METHOD_SSH = "SSH";
-
-    /** Template Status */
-    public static final String TEMPLATE_STATUS_ACTIVE = "Active until first failure";
-
-    public static final String TEMPLATE_STATUS_ACTIVE_ALWAYS = "Active always";
-
-    public static final String TEMPLATE_STATUS_DISBALED = "Disabled";
 
     public static final int MAX_PROV_RETRIES = 20;
 
@@ -114,18 +112,19 @@ public class Constants {
     public static final String REG_EX_DIGIT = "\\d+";
 
     /** Role Status */
-    public static final String READY_ROLE_STATUS = "ReadyRole";
 
-    public static final String DELETING_VM_STATUS = "DeletingVM";
+    public static final String STOPPED_VM_STATUS = "STOPPED";
 
-    public static final String STOPPED_VM_STATUS = "StoppedVM";
+    public static final String STOPPING_VM_STATUS = "STOPPING";
+    
+    public static final String STARTING_VM_STATUS = "STARTING";
+    
+    public static final String RUNNING_VM_STATUS = "RUNNING";
+    
+    public static final String DEALLOCATED_VM_STATUS = "DEALLOCATED";
+    
+    public static final String PROVISIONING_OR_DEPROVISIONING_VM_STATUS = "PROVISIONING_OR_DEPROVISIONING";
 
-    public static final String STOPPING_VM_STATUS = "StoppingVM";
-
-    public static final String STOPPING_ROLE_STATUS = "StoppingRole";
-
-    public static final String STOPPED_DEALLOCATED_VM_STATUS = "StoppedDeallocated";
-
-    public static final String RESOURCE_GROUP_NAME = "jenkins";
+    public static final String DEFAULT_RESOURCE_GROUP_NAME = "jenkins";
 
 }
