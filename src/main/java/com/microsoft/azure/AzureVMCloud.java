@@ -81,12 +81,7 @@ public class AzureVMCloud extends Cloud {
     
     // True if the subscription has been verified.
     // False otherwise.
-    private boolean configurationValid;
-    
-    // True if initial verification was queued for this cloud.
-    // Set on either: construction or initial canProvision if
-    // not already set.
-    private transient boolean initialVerificationQueued;
+    private transient boolean configurationValid;
     
     // Approximate virtual machine count.  Updated periodically.
     private int approximateVirtualMachineCount;
@@ -129,14 +124,14 @@ public class AzureVMCloud extends Cloud {
         
         readResolve();
         
-        registerInitialVerificationIfNeeded();
+        registerVerificationIfNeeded();
     }
     
     /**
      * Register the initial verification if required
      */
-    private void registerInitialVerificationIfNeeded() {
-        if (this.initialVerificationQueued) {
+    private void registerVerificationIfNeeded() {
+        if (this.isConfigurationValid()) {
             return;
         }
         // Register the cloud and the templates for verification
@@ -148,8 +143,6 @@ public class AzureVMCloud extends Cloud {
         // Note that early in startup this could return null
         if (AzureVMCloudVerificationTask.get() != null) {
             AzureVMCloudVerificationTask.get().doRun();
-            // Set the initial verification as being queued and ready to go.
-            this.initialVerificationQueued = true;
         }
     }
 
@@ -162,12 +155,10 @@ public class AzureVMCloud extends Cloud {
 
     @Override
     public boolean canProvision(final Label label) {
-        if (!configurationValid) {
-            // The subscription is not verified or is not valid,
-            // so we can't provision any nodes.
+        registerVerificationIfNeeded();
+
+        if (!this.isConfigurationValid()) {
             LOGGER.log(Level.INFO, "AzureVMCloud: canProvision: Subscription not verified, or is invalid, cannot provision");
-            registerInitialVerificationIfNeeded();
-            return false;
         }
         
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
@@ -356,11 +347,9 @@ public class AzureVMCloud extends Cloud {
     private AzureVMAgent createProvisionedAgent(
             final AzureVMAgentTemplate template,
             final String vmName,
-            final String deploymentName,
-            final Configuration config) throws Exception {
-        final ResourceManagementClient rmc = ResourceManagementService.create(config);
+            final String deploymentName) throws Exception {
 
-        LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Waiting for deployment to be completed");
+        LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed", deploymentName);
         
         int triesLeft = 20;
         do {
@@ -370,6 +359,11 @@ public class AzureVMCloud extends Cloud {
             } catch (InterruptedException ex) {
                 // ignore
             }
+            
+            // Create a new RM client each time because the config may expire while
+            // in this long running operation
+            Configuration config = ServiceDelegateHelper.getConfiguration(template);
+            final ResourceManagementClient rmc = ResourceManagementService.create(config);
         
             final List<DeploymentOperation> ops = rmc.getDeploymentOperationsOperations().
                     list(resourceGroupName, deploymentName, null).getOperations();
@@ -532,8 +526,7 @@ public class AzureVMCloud extends Cloud {
                                         agent = createProvisionedAgent(
                                             template,
                                             vmName,
-                                            deploymentName,
-                                            ServiceDelegateHelper.getConfiguration(template));
+                                            deploymentName);
                                     }
                                     catch (Exception e) {
                                         LOGGER.log(

@@ -67,130 +67,124 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     public void execute(final TaskListener arg0) throws IOException, InterruptedException {
         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: start");
         
-        if (cloudNames == null || cloudNames.isEmpty()) {
-            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: No clouds, exiting");
-            return;
-        }
-        
-        // Walk the list of clouds and verify the configuration. If an element
-        // is not found (perhaps a removed cloud, removes from the list)
-        synchronized (cloudNamesLock) {
-            List<String> toRemove = new ArrayList<String>();
-            for (String cloudName : cloudNames) {
-                LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying cloud {0}", cloudName);
-                
-                AzureVMCloud cloud = getCloud(cloudName);
-                
-                // Unknown cloud.  Maybe the name changed since the cloud name
-                // was registered.  Remove from the list
-                if (cloud == null) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: subscription {0} not found, skipping", cloudName);
-                    // Remove 
-                    toRemove.add(cloudName);
-                    continue;
-                }
-                
-                // If already verified, skip
-                if (cloud.isConfigurationValid()) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: subscription {0} already verifed", cloudName);
-                    // Update the count.
-                    cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
-                    continue;
-                }
-                
-                // Verify.  Update the VM count before setting to valid
-                if (verifyConfiguration(cloud)) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified", cloudName);
-                    // Update the count
-                    cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
-                    // We grab the current VM count and 
-                    cloud.setConfigurationValid(true);
-                    continue;
-                }
-                
-                // Not valid!  Remains in list.
-                LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} not verified, has errors", cloudName);
-            }
-            
-            // Remove items as necessary
-            for (String cloudName : toRemove) {
-                cloudNames.remove(cloudName);
-            }
-        }
-        
-        if (cloudTemplates == null || cloudTemplates.isEmpty()) {
-            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: No templates to verify, exiting");
-            return;
-        }
-        
-        // Now walk the templates and verify.
-        // Unlike the clouds, verified templates are removed from the list upon
-        // verification (or left if they do not verify)
-        synchronized (templatesLock) {
-            List<String> toRemove = new ArrayList<String>();
-            
-            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying {0} template(s)", cloudTemplates.size());
-            for (Map.Entry<String, String> entry : cloudTemplates.entrySet()) {
-                String templateName = entry.getKey();
-                String cloudName = entry.getValue();
-                LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying {0} in {1}", 
-                        new Object[] { templateName, cloudName });
+        if (cloudNames != null && !cloudNames.isEmpty()) {
+            // Walk the list of clouds and verify the configuration. If an element
+            // is not found (perhaps a removed cloud, removes from the list)
+            synchronized (cloudNamesLock) {
+                List<String> toRemove = new ArrayList<String>();
+                for (String cloudName : cloudNames) {
+                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying cloud {0}", cloudName);
 
-                AzureVMCloud cloud = getCloud(cloudName);
-                // If the cloud is null, could mean that the cloud details changed
-                // between the last time we ran this task
-                if (cloud == null) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: parent cloud not found for {0} in {1}", 
-                        new Object[] { templateName, cloudName });
-                    toRemove.add(templateName);
-                    continue;
-                }
+                    AzureVMCloud cloud = getCloud(cloudName);
 
-                AzureVMAgentTemplate agentTemplate = cloud.getAzureAgentTemplate(templateName);
-                // Template could have been removed since the last time we ran verification
-                if (agentTemplate == null) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: could not retrieve slave template named {0} in {1}", 
-                        new Object[] { templateName, cloudName });
-                    toRemove.add(templateName);
-                    continue;
-                }
-
-                // Determine whether we need to verify the template
-                if (agentTemplate.isTemplateVerified()) {
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: template {0} in {1} already verified", 
-                        new Object[] { templateName, cloudName });
-                    // Good to go, nothing more to check here.  Add to removal list.
-                    toRemove.add(templateName);
-                    continue;
-                }
-                // The template is not yet verified.  Do so now
-                try {
-                    List<String> errors = agentTemplate.verifyTemplate();
-                    if (errors.isEmpty()) {
-                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified succesfully", templateName);
-                        // Verified, set the template to verified.
-                        agentTemplate.setTemplateVerified(true);
-                        // Reset the status details
-                        agentTemplate.setTemplateStatusDetails("");
+                    // Unknown cloud.  Maybe the name changed since the cloud name
+                    // was registered.  Remove from the list
+                    if (cloud == null) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: subscription {0} not found, skipping", cloudName);
+                        // Remove 
+                        toRemove.add(cloudName);
+                        continue;
                     }
-                    else {
-                        String details = String.join("\n", errors);
-                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} could not be verified:\n{1}",
-                                new Object [] { templateName, details });
-                        // Set the status details to the set of messages
-                        agentTemplate.setTemplateStatusDetails(details);
+
+                    // If already verified, skip
+                    if (cloud.isConfigurationValid()) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: subscription {0} already verifed", cloudName);
+                        // Update the count.
+                        cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                        continue;
                     }
+
+                    // Verify.  Update the VM count before setting to valid
+                    if (verifyConfiguration(cloud)) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified", cloudName);
+                        // Update the count
+                        cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                        // We grab the current VM count and 
+                        cloud.setConfigurationValid(true);
+                        continue;
+                    }
+
+                    // Not valid!  Remains in list.
+                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} not verified, has errors", cloudName);
                 }
-                catch (Exception e) {
-                    // Log, but ignore overall
-                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: got exception while verifying {0}:\n{1}",
-                        new Object [] { templateName, e.toString() });
+
+                // Remove items as necessary
+                for (String cloudName : toRemove) {
+                    cloudNames.remove(cloudName);
                 }
             }
+        }
+        
+        if (cloudTemplates != null && !cloudTemplates.isEmpty()) {
+            // Now walk the templates and verify.
+            // Unlike the clouds, verified templates are removed from the list upon
+            // verification (or left if they do not verify)
+            synchronized (templatesLock) {
+                List<String> toRemove = new ArrayList<String>();
 
-            // Remove items as necessary
-            for (String templateName : toRemove) {
-                cloudTemplates.remove(templateName);
+                LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying {0} template(s)", cloudTemplates.size());
+                for (Map.Entry<String, String> entry : cloudTemplates.entrySet()) {
+                    String templateName = entry.getKey();
+                    String cloudName = entry.getValue();
+                    LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: verifying {0} in {1}", 
+                            new Object[] { templateName, cloudName });
+
+                    AzureVMCloud cloud = getCloud(cloudName);
+                    // If the cloud is null, could mean that the cloud details changed
+                    // between the last time we ran this task
+                    if (cloud == null) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: parent cloud not found for {0} in {1}", 
+                            new Object[] { templateName, cloudName });
+                        toRemove.add(templateName);
+                        continue;
+                    }
+
+                    AzureVMAgentTemplate agentTemplate = cloud.getAzureAgentTemplate(templateName);
+                    // Template could have been removed since the last time we ran verification
+                    if (agentTemplate == null) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: could not retrieve slave template named {0} in {1}", 
+                            new Object[] { templateName, cloudName });
+                        toRemove.add(templateName);
+                        continue;
+                    }
+
+                    // Determine whether we need to verify the template
+                    if (agentTemplate.isTemplateVerified()) {
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: template {0} in {1} already verified", 
+                            new Object[] { templateName, cloudName });
+                        // Good to go, nothing more to check here.  Add to removal list.
+                        toRemove.add(templateName);
+                        continue;
+                    }
+                    // The template is not yet verified.  Do so now
+                    try {
+                        List<String> errors = agentTemplate.verifyTemplate();
+                        if (errors.isEmpty()) {
+                            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified succesfully", templateName);
+                            // Verified, set the template to verified.
+                            agentTemplate.setTemplateVerified(true);
+                            // Reset the status details
+                            agentTemplate.setTemplateStatusDetails("");
+                        }
+                        else {
+                            String details = String.join("\n", errors);
+                            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} could not be verified:\n{1}",
+                                    new Object [] { templateName, details });
+                            // Set the status details to the set of messages
+                            agentTemplate.setTemplateStatusDetails(details);
+                        }
+                    }
+                    catch (Exception e) {
+                        // Log, but ignore overall
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: got exception while verifying {0}:\n{1}",
+                            new Object [] { templateName, e.toString() });
+                    }
+                }
+
+                // Remove items as necessary
+                for (String templateName : toRemove) {
+                    cloudTemplates.remove(templateName);
+                }
             }
         }
         
