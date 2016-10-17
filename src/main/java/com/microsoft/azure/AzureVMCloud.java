@@ -351,11 +351,13 @@ public class AzureVMCloud extends Cloud {
 
         LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed", deploymentName);
         
-        int triesLeft = 20;
+        final int maxMinutes = 20;
+        final int sleepTime = 30;
+        int triesLeft = (maxMinutes * 60) / sleepTime;
         do {
             triesLeft--;
             try {
-                Thread.sleep(30 * 1000);
+                Thread.sleep(sleepTime * 1000);
             } catch (InterruptedException ex) {
                 // ignore
             }
