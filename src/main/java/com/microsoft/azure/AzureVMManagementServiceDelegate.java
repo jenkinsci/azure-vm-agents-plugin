@@ -684,8 +684,13 @@ public class AzureVMManagementServiceDelegate {
             ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
             VirtualMachineOperations vmOperations = client.getVirtualMachinesOperations();
             VirtualMachineListResponse response = vmOperations.listAll(new ListParameters());
-            List<VirtualMachine> virtualMachines = response.getVirtualMachines();
-            return virtualMachines.size();
+            int totalVms = response.getVirtualMachines().size();
+            while (response.getNextLink() != null) {
+                response = vmOperations.listNext(response.getNextLink());
+                totalVms += response.getVirtualMachines().size();
+            }
+            
+            return totalVms;
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
