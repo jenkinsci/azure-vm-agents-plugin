@@ -15,30 +15,137 @@
  */
 package com.microsoft.azure;
 
-import com.microsoft.azure.Messages;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import com.microsoft.azure.exceptions.AzureCloudException;
+import com.microsoft.azure.management.resources.ResourceManagementClient;
+import com.microsoft.azure.management.resources.ResourceManagementService;
+import com.microsoft.azure.management.resources.models.DeploymentGetResult;
+import com.microsoft.azure.management.resources.models.ProvisioningState;
 import com.microsoft.azure.retry.DefaultRetryStrategy;
 import com.microsoft.azure.util.ExecutionEngine;
 import com.microsoft.azure.util.CleanUpAction;
+import com.microsoft.windowsazure.Configuration;
 
 import jenkins.model.Jenkins;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.model.Computer;
+import java.util.Calendar;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 
 @Extension
 public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
-    private static final Logger LOGGER = Logger.getLogger(AzureVMAgentCleanUpTask.class.getName());
+    private static class DeploymentInfo {
+        public DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName) {
+            this.cloudName = cloudName;
+            this.deploymentName = deploymentName;
+            this.resourceGroupName = resourceGroupName;
+        }
 
+        public String getCloudName() {
+            return cloudName;
+        }
+
+        public String getDeploymentName() {
+            return deploymentName;
+        }
+
+        public String getResourceGroupName() {
+            return resourceGroupName;
+        }
+        
+        private String cloudName;
+        private String deploymentName;
+        private String resourceGroupName;
+    }
+    
+    private static final long succesfullDeploymentTimeoutInMinutes = 60 * 1;
+    private static final long failingDeploymentTimeoutInMinutes = 60 * 8;
+    private static final Logger LOGGER = Logger.getLogger(AzureVMAgentCleanUpTask.class.getName());
+    private static final ConcurrentLinkedQueue<DeploymentInfo> deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
+            
     public AzureVMAgentCleanUpTask() {
         super("Azure VM Agents Clean Task");
+    }
+    
+    public static void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
+        DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName);
+        deploymentsToClean.add(newDeploymentToClean);
+    }
+    
+    public void cleanDeployments() {
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Cleaning deployments");
+        // Walk the queue, popping and pushing until we reach an item that we've already
+        // dealt with or the queue is empty.
+        DeploymentInfo firstBackInQueue = null;
+        while(!deploymentsToClean.isEmpty() && firstBackInQueue != deploymentsToClean.peek()) {
+            DeploymentInfo info = deploymentsToClean.remove();
+            
+            LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Checking deployment {0}", info.getDeploymentName());
+            
+            AzureVMCloud cloud = getCloud(info.getCloudName());
+            
+            if (cloud == null) {
+                // Cloud could have been deleted, skip
+                continue;
+            }
+            
+            try {
+                final Configuration config = ServiceDelegateHelper.getConfiguration(cloud);
+                final ResourceManagementClient rmc = ResourceManagementService.create(config);
+
+                DeploymentGetResult deployment = 
+                    rmc.getDeploymentsOperations().get(info.getResourceGroupName(), info.getDeploymentName());
+                if (deployment.getDeployment() == null) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment not found, skipping");
+                    continue;
+                }
+                
+                Calendar deploymentTime = deployment.getDeployment().getProperties().getTimestamp();
+                
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment created on {0}", deploymentTime.toString());
+                long deploymentTimeInMillis = deploymentTime.getTimeInMillis();
+                
+                // Compare to now
+                Calendar nowTime = Calendar.getInstance(deploymentTime.getTimeZone());
+                long nowTimeInMillis = nowTime.getTimeInMillis();
+                
+                long diffTime = nowTimeInMillis - deploymentTimeInMillis;
+                long diffTimeInMinutes = (diffTime / 1000) / 60;
+                
+                String state = deployment.getDeployment().getProperties().getProvisioningState();
+                
+                if ((!state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > failingDeploymentTimeoutInMinutes) ||
+                    (state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > succesfullDeploymentTimeoutInMinutes)) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment older than timeout, deleting");
+                    // Delete the deployment
+                    rmc.getDeploymentsOperations().delete(info.getResourceGroupName(), info.getDeploymentName());
+                }
+                else {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment newer than timeout, keeping");
+                    
+                    if (firstBackInQueue == null) {
+                        firstBackInQueue = info;
+                    }
+                    // Put it back
+                    deploymentsToClean.add(info);
+                }
+            }
+            catch (Exception e) {
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Failed to delete deployment: {0}", e.toString());
+            }
+        }
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Done cleaning deployments");
+    }
+    
+    public AzureVMCloud getCloud(final String cloudName) {
+        return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
     @Override

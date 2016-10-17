@@ -261,6 +261,9 @@ public class AzureVMManagementServiceDelegate {
             properties.setMode(DeploymentMode.Incremental);
             properties.setTemplate(tmp.toString());
 
+            // Register the deployment for cleanup
+            AzureVMAgentCleanUpTask.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
+            // Create the deployment
             client.getDeploymentsOperations().createOrUpdate(template.getResourceGroupName(), deploymentName, deployment);
             
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
