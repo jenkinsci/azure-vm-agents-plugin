@@ -352,12 +352,14 @@ public class AzureVMCloud extends Cloud {
         LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed", deploymentName);
         
         final int maxMinutes = 20;
-        final int sleepTime = 30;
-        int triesLeft = (maxMinutes * 60) / sleepTime;
+        final int sleepTimeInSeconds = 30;
+        final int timeoutInSeconds = maxMinutes * 60;
+        final int maxTries = timeoutInSeconds / sleepTimeInSeconds;
+        int triesLeft = maxTries;
         do {
             triesLeft--;
             try {
-                Thread.sleep(sleepTime * 1000);
+                Thread.sleep(sleepTimeInSeconds * 1000);
             } catch (InterruptedException ex) {
                 // ignore
             }
@@ -405,14 +407,16 @@ public class AzureVMCloud extends Cloud {
                             return newAgent;
                         }
                         else {
-                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment not yet finished ({0}): {1}:{2}", new Object[] { state, type, resource });
+                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds", 
+                                    new Object[] { deploymentName, state, type, resource, 
+                                        (maxTries - triesLeft) * sleepTimeInSeconds });
                         }
                     }
                 }
             }
         } while (triesLeft > 0);
 
-        throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment failed, max tries reached for %s", deploymentName));
+        throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)", deploymentName, sleepTimeInSeconds));
     }
 
     @Override
