@@ -682,11 +682,11 @@ public class AzureVMManagementServiceDelegate {
      * @return Total VM count
      * @throws Exception
      */
-    public static int getVirtualMachineCount(final Configuration config) throws Exception {
+    public static int getVirtualMachineCount(final Configuration config, final String resourceGroupName) throws Exception {
         try {
             ComputeManagementClient client = ServiceDelegateHelper.getComputeManagementClient(config);
             VirtualMachineOperations vmOperations = client.getVirtualMachinesOperations();
-            VirtualMachineListResponse response = vmOperations.listAll(new ListParameters());
+            VirtualMachineListResponse response = vmOperations.list(resourceGroupName);
             int totalVms = response.getVirtualMachines().size();
             String nextLink = response.getNextLink();
             while (nextLink != null) {

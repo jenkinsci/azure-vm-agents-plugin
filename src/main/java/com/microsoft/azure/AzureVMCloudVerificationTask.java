@@ -222,7 +222,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
             Configuration config = ServiceDelegateHelper.getConfiguration(cloud);
-            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(config);
+            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(config, cloud.getResourceGroupName());
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: getVirtualMachineCount: end, currently {0} vms", vmCount);
             return vmCount;
         }
