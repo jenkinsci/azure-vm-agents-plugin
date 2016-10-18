@@ -9,7 +9,7 @@
     "variables": {
         "virtualNetworkName": "jenkinsarm-vnet",
         "subnetName": "jenkinsarm-snet",
-        "storageAccountName": "jenkinsarmst",
+        "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
         "addressPrefix": "10.0.0.0/16",
