@@ -142,7 +142,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                     AzureVMAgentTemplate agentTemplate = cloud.getAzureAgentTemplate(templateName);
                     // Template could have been removed since the last time we ran verification
                     if (agentTemplate == null) {
-                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: could not retrieve slave template named {0} in {1}", 
+                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: could not retrieve agent template named {0} in {1}", 
                             new Object[] { templateName, cloudName });
                         toRemove.add(templateName);
                         continue;

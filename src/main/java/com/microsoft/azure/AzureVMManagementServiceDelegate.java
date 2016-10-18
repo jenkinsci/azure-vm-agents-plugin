@@ -688,11 +688,12 @@ public class AzureVMManagementServiceDelegate {
             VirtualMachineOperations vmOperations = client.getVirtualMachinesOperations();
             VirtualMachineListResponse response = vmOperations.listAll(new ListParameters());
             int totalVms = response.getVirtualMachines().size();
-            while (response.getNextLink() != null) {
-                response = vmOperations.listNext(response.getNextLink());
+            String nextLink = response.getNextLink();
+            while (nextLink != null) {
+                response = vmOperations.listNext(nextLink);
                 totalVms += response.getVirtualMachines().size();
+                nextLink = response.getNextLink();
             }
-            
             return totalVms;
         } catch (Exception e) {
             LOGGER.log(Level.INFO,

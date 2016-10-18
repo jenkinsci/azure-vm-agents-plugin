@@ -75,19 +75,21 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
     
     public static void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
+            new Object [] { deploymentName, resourceGroupName } );
         DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName);
         deploymentsToClean.add(newDeploymentToClean);
     }
     
     public void cleanDeployments() {
-        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Cleaning deployments");
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Cleaning deployments");
         // Walk the queue, popping and pushing until we reach an item that we've already
         // dealt with or the queue is empty.
         DeploymentInfo firstBackInQueue = null;
         while(!deploymentsToClean.isEmpty() && firstBackInQueue != deploymentsToClean.peek()) {
             DeploymentInfo info = deploymentsToClean.remove();
             
-            LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Checking deployment {0}", info.getDeploymentName());
+            LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Checking deployment {0}", info.getDeploymentName());
             
             AzureVMCloud cloud = getCloud(info.getCloudName());
             
@@ -103,13 +105,13 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 DeploymentGetResult deployment = 
                     rmc.getDeploymentsOperations().get(info.getResourceGroupName(), info.getDeploymentName());
                 if (deployment.getDeployment() == null) {
-                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment not found, skipping");
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
                     continue;
                 }
                 
                 Calendar deploymentTime = deployment.getDeployment().getProperties().getTimestamp();
                 
-                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment created on {0}", deploymentTime.toString());
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment created on {0}", deploymentTime.getTime());
                 long deploymentTimeInMillis = deploymentTime.getTimeInMillis();
                 
                 // Compare to now
@@ -121,14 +123,20 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 
                 String state = deployment.getDeployment().getProperties().getProvisioningState();
                 
-                if ((!state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > failingDeploymentTimeoutInMinutes) ||
-                    (state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > succesfullDeploymentTimeoutInMinutes)) {
-                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment older than timeout, deleting");
+                if (!state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > failingDeploymentTimeoutInMinutes) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed deployment older than {0} minutes, deleting",
+                       failingDeploymentTimeoutInMinutes);
+                    // Delete the deployment
+                    rmc.getDeploymentsOperations().delete(info.getResourceGroupName(), info.getDeploymentName());
+                }
+                else if(state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > succesfullDeploymentTimeoutInMinutes) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Succesfull deployment older than {0} minutes, deleting",
+                       succesfullDeploymentTimeoutInMinutes);
                     // Delete the deployment
                     rmc.getDeploymentsOperations().delete(info.getResourceGroupName(), info.getDeploymentName());
                 }
                 else {
-                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Deployment newer than timeout, keeping");
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");
                     
                     if (firstBackInQueue == null) {
                         firstBackInQueue = info;
@@ -138,18 +146,13 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
             catch (Exception e) {
-                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Failed to delete deployment: {0}", e.toString());
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed to delete deployment: {0}", e.toString());
             }
         }
-        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: Done cleaning deployments");
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Done cleaning deployments");
     }
     
-    public AzureVMCloud getCloud(final String cloudName) {
-        return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
-    }
-
-    @Override
-    public void execute(TaskListener arg0) throws IOException, InterruptedException {
+    private void cleanVMs() {
         for (Computer computer : Jenkins.getInstance().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
@@ -171,14 +174,14 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 // should stay (this could be for investigation).
                 if (azureComputer.isSetOfflineByUser()) {
                     LOGGER.log(Level.INFO,
-                        "AzureVMAgentCleanUpTask: execute: node {0} was set offline by user, skipping", agentNode.getDisplayName());
+                        "AzureVMAgentCleanUpTask: cleanVMs: node {0} was set offline by user, skipping", agentNode.getDisplayName());
                     continue;
                 }
                 
                 // If the machine is in "keep" state, skip
                 if (agentNode.isCleanUpBlocked()) {
                     LOGGER.log(Level.INFO,
-                        "AzureVMAgentCleanUpTask: execute: node {0} blocked to cleanup", agentNode.getDisplayName());
+                        "AzureVMAgentCleanUpTask: cleanVMs: node {0} blocked to cleanup", agentNode.getDisplayName());
                     continue;
                 }
                     
@@ -186,8 +189,15 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 // deleted in the background.  Remove from Jenkins if that is the case.
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                     LOGGER.log(Level.INFO,
-                        "AzureVMAgentCleanUpTask: execute: node {0} doesn't exist, removing", agentNode.getDisplayName());
-                    Jenkins.getInstance().removeNode(agentNode);
+                        "AzureVMAgentCleanUpTask: cleanVMs: node {0} doesn't exist, removing", agentNode.getDisplayName());
+                    try {
+                        Jenkins.getInstance().removeNode(agentNode);
+                    }
+                    catch (IOException e) {
+                        LOGGER.log(Level.INFO,
+                            "AzureVMAgentCleanUpTask: cleanVMs: node {0} could not be removed: {1}", 
+                            new Object [] { agentNode.getDisplayName(), e.getMessage() } );
+                    }
                     continue;
                 }
                 
@@ -199,12 +209,12 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         // Depending on the cleanup action, run the appropriate
                         if (agentNode.getCleanUpAction() == CleanUpAction.DELETE) {
                             LOGGER.log(Level.INFO,
-                                "AzureVMAgentCleanUpTask: execute: deleting {0}", agentNode.getDisplayName());
+                                "AzureVMAgentCleanUpTask: cleanVMs: deleting {0}", agentNode.getDisplayName());
                             agentNode.deprovision(agentNode.getCleanUpReason());
                         }
                         else if(agentNode.getCleanUpAction() == CleanUpAction.SHUTDOWN) {
                             LOGGER.log(Level.INFO,
-                                "AzureVMAgentCleanUpTask: execute: shutting down {0}", agentNode.getDisplayName());
+                                "AzureVMAgentCleanUpTask: cleanVMs: shutting down {0}", agentNode.getDisplayName());
                             agentNode.shutdown(agentNode.getCleanUpReason());
                             // We shut down the agent properly.  Mark the agent
                             // as "KEEP" so that it doesn't get deleted.
@@ -226,7 +236,7 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 } catch (AzureCloudException exception) {
                     // No need to throw exception back, just log and move on. 
                     LOGGER.log(Level.INFO,
-                            "AzureVMAgentCleanUpTask: execute: failed to shutdown/delete " + agentNode.getDisplayName(),
+                            "AzureVMAgentCleanUpTask: cleanVMs: failed to shutdown/delete " + agentNode.getDisplayName(),
                             exception);
                     // In case the node had a non-delete cleanup action before,
                     // set the cleanup action to delete
@@ -234,6 +244,17 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
         }
+    }
+    
+    public AzureVMCloud getCloud(final String cloudName) {
+        return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+    }
+
+    @Override
+    public void execute(TaskListener arg0) throws InterruptedException {
+        cleanVMs();
+        // Clean up the deployments
+        cleanDeployments();
     }
 
     @Override
