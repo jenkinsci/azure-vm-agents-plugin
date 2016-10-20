@@ -60,8 +60,8 @@ public class Constants {
     public static final String USAGE_TYPE_DEPLOYMENT = "Deployment";
     
     /** VM/Deployment name date formats **/
-    public static final String VM_NAME_DATE_FORMAT = "HHmmss";
-    public static final String DEPLOYMENT_NAME_DATE_FORMAT = "MMddHHmmss";
+    public static final int VM_NAME_HASH_LENGTH = 6;
+    public static final String DEPLOYMENT_NAME_DATE_FORMAT = "MMddHHmmssSSS";
 
     /** Agent launch methods */
     public static final String LAUNCH_METHOD_JNLP = "JNLP";
@@ -127,4 +127,11 @@ public class Constants {
 
     public static final String DEFAULT_RESOURCE_GROUP_NAME = "jenkins";
 
+    public static final String DEFAULT_VNET_ADDRESS_MASK = "10.0.0.0/16";
+    
+    public static final String DEFAULT_SUBNET_ADDRESS_MASK = "10.0.0.0/24";
+    
+    public static final String DEFAULT_VNET_NAME = "jenkinsarm-vnet";
+    
+    public static final String DEFAULT_SUBNET_NAME = "jenkinsarm-snet";
 }

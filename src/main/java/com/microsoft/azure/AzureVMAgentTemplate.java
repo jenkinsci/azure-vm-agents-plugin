@@ -43,6 +43,7 @@ import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
@@ -550,14 +551,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             // whether it would be shortened on VM creation.
             if (!AzureUtil.isValidTemplateName(value)) {
                 errors.add(FormValidation.error(Messages.Azure_GC_Template_Name_Not_Valid()));
-            }
-            else {
-                // Check whether it would be shortened.  We could just append characters,
-                // in which case don't error.
-                String shortenedName = AzureUtil.getVMBaseName(value, osType, 1);
-                if (!shortenedName.startsWith(value)) {
-                    errors.add(FormValidation.warning(Messages.Azure_GC_Template_Name_Shortened(shortenedName)));
-                }
             }
             
             if (templateDisabled) {

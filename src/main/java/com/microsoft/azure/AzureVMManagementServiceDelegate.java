@@ -26,9 +26,7 @@ import com.microsoft.azure.management.compute.VirtualMachineImageOperations;
 import com.microsoft.azure.management.compute.VirtualMachineOperations;
 import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
 import com.microsoft.azure.management.compute.models.InstanceViewStatus;
-import com.microsoft.azure.management.compute.models.ListParameters;
 import com.microsoft.azure.management.compute.models.StorageProfile;
-import com.microsoft.azure.management.compute.models.VirtualMachine;
 import com.microsoft.azure.management.compute.models.VirtualMachineImageGetParameters;
 import com.microsoft.azure.management.compute.models.VirtualMachineListResponse;
 import com.microsoft.azure.management.network.NetworkResourceProviderClient;
@@ -71,7 +69,6 @@ import java.util.logging.Logger;
 
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.exception.ServiceException;
-import com.microsoft.azure.Messages;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.retry.ExponentialRetryStrategy;
@@ -84,6 +81,8 @@ import com.microsoft.azure.util.FailureStage;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.logging.Level;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
@@ -107,6 +106,8 @@ public class AzureVMManagementServiceDelegate {
     private static final String EMBEDDED_TEMPLATE_IMAGE_FILENAME = "/customImageTemplate.json";
     
     private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME = "/customImageTemplateWithScript.json";
+    
+    private static final String VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME = "/virtualNetworkFragment.json";
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
@@ -135,18 +136,20 @@ public class AzureVMManagementServiceDelegate {
             Configuration config = ServiceDelegateHelper.getConfiguration(template);
             final ResourceManagementClient client = ServiceDelegateHelper.getResourceManagementClient(config);
 
-            final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName());
-            final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), template.getOsType(), numberOfAgents);
+            final Date timestamp = new Date(System.currentTimeMillis());
+            final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
+            final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
             final String locationName = getLocationName(template.getLocation());
+            final String resourceGroupName = template.getResourceGroupName();
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment: Creating a new deployment {0} with VM base name {1}",
                     new Object[] { deploymentName, vmBaseName} );
             
             
             client.getResourceGroupsOperations().createOrUpdate(
-                    template.getResourceGroupName(),
+                    resourceGroupName,
                     new ResourceGroup(locationName));
-
+            
             final Deployment deployment = new Deployment();
             final DeploymentProperties properties = new DeploymentProperties();
             deployment.setProperties(properties);
@@ -249,12 +252,45 @@ public class AzureVMManagementServiceDelegate {
                 ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", template.getStorageAccountName());
             }
 
+            // Network properties.  If the vnet name isn't blank then
+            // then subnet name can't be either (based on verification rules)
             if (StringUtils.isNotBlank(template.getVirtualNetworkName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
-            }
-
-            if (StringUtils.isNotBlank(template.getSubnetName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
+            }
+            else {
+                // Add the definition of the vnet and subnet into the template
+                final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
+                final String subnetName = Constants.DEFAULT_SUBNET_NAME;
+                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", virtualNetworkName);
+                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", subnetName);
+                
+                // Read the vnet fragment
+                InputStream fragmentStream =
+                    AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
+                
+                final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
+                // Add the virtual network fragment
+                ArrayNode.class.cast(tmp.get("resources")).add(virtualNetworkFragment);
+                
+                // Because we created/updated this in the template, we need to add the appropriate
+                // dependsOn node to the networkInterface
+                // Microsoft.Network/virtualNetworks/<vnet name>
+                // Find the network interfaces node
+                ArrayNode resourcesNodes = ArrayNode.class.cast(tmp.get("resources"));
+                Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
+                while(resourcesNodesIter.hasNext()) {
+                    JsonNode resourcesNode = resourcesNodesIter.next();
+                    JsonNode typeNode = resourcesNode.get("type");
+                    if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
+                        continue;
+                    }
+                    // Find the dependsOn node
+                    ArrayNode dependsOnNode = ArrayNode.class.cast(resourcesNode.get("dependsOn"));
+                    // Add to the depends on node.
+                    dependsOnNode.add("[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]");
+                    break;
+                }
             }
 
             // Deployment ....

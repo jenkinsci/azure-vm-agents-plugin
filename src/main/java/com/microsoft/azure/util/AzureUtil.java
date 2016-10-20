@@ -307,7 +307,7 @@ public class AzureUtil {
      * @param osType Valid os type
      * @return Valid deployment name to use for a new deployment
      */
-    public static String getDeploymentName(String templateName) {
+    public static String getDeploymentName(String templateName, Date timestamp) {
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Invalid template name");
         }
@@ -315,7 +315,7 @@ public class AzureUtil {
         Format formatter = new SimpleDateFormat(Constants.DEPLOYMENT_NAME_DATE_FORMAT);
         return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT, 
             Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0), 
-                formatter.format(new Date(System.currentTimeMillis())));
+                formatter.format(timestamp));
     }
     
     /**
@@ -326,16 +326,20 @@ public class AzureUtil {
      *       (which is added to the suffix of the VM name by azure)
      * @return 
      */
-    public static String getVMBaseName(String templateName, String osType, int numberOfVMs) {
+    public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Invalid template name");
         }
         
         // For VM names, we use a simpler form.  VM names are pretty short 
-        Format formatter = new SimpleDateFormat(Constants.VM_NAME_DATE_FORMAT);
         int numberOfDigits = (int)Math.floor(Math.log10((double)numberOfVMs))+1;
+        // Get the hash of the deployment name
+        Integer deploymentHashCode = deploymentName.hashCode();
+        // Convert the int into a hex string and do a substring
+        String shortenedDeploymentHash = 
+            Integer.toHexString(deploymentHashCode).substring(0, Constants.VM_NAME_HASH_LENGTH - 1);
         return String.format("%s%s", getShortenedTemplateName(templateName, osType, 
-            Constants.VM_NAME_DATE_FORMAT.length(), numberOfDigits), 
-                formatter.format(new Date(System.currentTimeMillis())));
+            Constants.VM_NAME_HASH_LENGTH, numberOfDigits), 
+                shortenedDeploymentHash);
     }
 }

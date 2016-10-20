@@ -7,13 +7,11 @@
         }
     },
     "variables": {
-        "virtualNetworkName": "jenkinsarm-vnet",
-        "subnetName": "jenkinsarm-snet",
+        "virtualNetworkName": "",
+        "subnetName": "",
         "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
-        "addressPrefix": "10.0.0.0/16",
-        "subnetPrefix": "10.0.0.0/24",
         "publicIPAddressType": "Dynamic",
         "storageAccountContainerName": "vhds",
         "storageAccountType": "Standard_LRS",
@@ -30,26 +28,6 @@
             "location": "[variables('location')]",
             "properties": {
                 "accountType": "[variables('storageAccountType')]"
-            }
-        },
-        {
-            "apiVersion": "2015-05-01-preview",
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('virtualNetworkName')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[variables('addressPrefix')]"
-                    ]
-                },
-                "subnets": [{
-                        "name": "[variables('subnetName')]",
-                        "properties": {
-                            "addressPrefix": "[variables('subnetPrefix')]"
-                        }
-                    }
-                ]
             }
         },
         {
@@ -78,8 +56,7 @@
                 "count": "[parameters('count')]"
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]",
-                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]"
             ],
             "properties": {
                 "ipConfigurations": [{
