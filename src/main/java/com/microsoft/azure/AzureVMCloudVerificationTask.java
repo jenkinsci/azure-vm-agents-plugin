@@ -167,7 +167,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                             agentTemplate.setTemplateStatusDetails("");
                         }
                         else {
-                            String details = String.join("\n", errors);
+                            String details = StringUtils.join(errors, "\n"); 
                             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} could not be verified:\n{1}",
                                     new Object [] { templateName, details });
                             // Set the status details to the set of messages
