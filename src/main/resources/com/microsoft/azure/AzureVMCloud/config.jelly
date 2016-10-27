@@ -26,6 +26,10 @@
       <f:textbox default="${descriptor.getDefaultMaxVMLimit()}" />
     </f:entry>
     
+    <f:entry title="${%Deployment_Timeout}" field="deploymentTimeout" help="/plugin/azure-vm-agents-plugin/help-deploymentTimeout.html">
+      <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}" />
+    </f:entry>
+    
     <f:entry title="${%Resource_Group_Name}" field="resourceGroupName" help="/plugin/azure-vm-agents-plugin/help-resourceGroupName.html">
       <f:textbox default="${descriptor.getDefaultResourceGroupName()}" />
     </f:entry>

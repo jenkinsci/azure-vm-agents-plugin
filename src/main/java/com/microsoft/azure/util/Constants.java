@@ -38,6 +38,8 @@ public class Constants {
     public static final String FWD_SLASH = "/";
 
     public static final int DEFAULT_MAX_VM_LIMIT = 10;
+    
+    public static final int DEFAULT_DEPLOYMENT_TIMEOUT_SEC = 1200;
 
     public static final int DEFAULT_IDLE_TIME = 60;
 

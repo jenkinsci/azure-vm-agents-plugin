@@ -18,11 +18,9 @@ package com.microsoft.azure;
 import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
 import com.microsoft.azure.management.resources.ResourceManagementClient;
 import com.microsoft.azure.management.resources.ResourceManagementService;
-import com.microsoft.azure.management.resources.models.DeploymentGetResult;
 import com.microsoft.azure.management.resources.models.DeploymentOperation;
 import com.microsoft.azure.management.resources.models.ProvisioningState;
 import com.microsoft.windowsazure.Configuration;
-import com.microsoft.azure.Messages;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
@@ -49,7 +47,6 @@ import hudson.model.Label;
 import hudson.model.Node;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
-import hudson.slaves.OfflineCause;
 import hudson.util.FormValidation;
 import hudson.util.StreamTaskListener;
 
@@ -79,6 +76,8 @@ public class AzureVMCloud extends Cloud {
 
     private final List<AzureVMAgentTemplate> instTemplates;
     
+    private final int deploymentTimeout;
+    
     // True if the subscription has been verified.
     // False otherwise.
     private transient boolean configurationValid;
@@ -95,6 +94,7 @@ public class AzureVMCloud extends Cloud {
             final String oauth2TokenEndpoint,
             final String serviceManagementURL,
             final String maxVirtualMachinesLimit,
+            final String deploymentTimeout,
             final String resourceGroupName,
             final List<AzureVMAgentTemplate> instTemplates) {
 
@@ -114,6 +114,12 @@ public class AzureVMCloud extends Cloud {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
         } else {
             this.maxVirtualMachinesLimit = Integer.parseInt(maxVirtualMachinesLimit);
+        }
+        
+        if (StringUtils.isBlank(deploymentTimeout) || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)) {
+            this.deploymentTimeout = Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC;
+        } else {
+            this.deploymentTimeout = Integer.parseInt(deploymentTimeout);
         }
         
         this.configurationValid = false;
@@ -211,6 +217,10 @@ public class AzureVMCloud extends Cloud {
     
     public String getResourceGroupName() {
         return resourceGroupName;
+    }
+
+    public int getDeploymentTimeout() {
+        return deploymentTimeout;
     }
     
     /**
@@ -351,9 +361,8 @@ public class AzureVMCloud extends Cloud {
 
         LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed", deploymentName);
         
-        final int maxMinutes = 20;
         final int sleepTimeInSeconds = 30;
-        final int timeoutInSeconds = maxMinutes * 60;
+        final int timeoutInSeconds = getDeploymentTimeout();
         final int maxTries = timeoutInSeconds / sleepTimeInSeconds;
         int triesLeft = maxTries;
         do {
@@ -670,6 +679,10 @@ public class AzureVMCloud extends Cloud {
 
         public int getDefaultMaxVMLimit() {
             return Constants.DEFAULT_MAX_VM_LIMIT;
+        }
+        
+        public int getDefaultDeploymentTimeout() {
+            return Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC;
         }
         
         public String getDefaultResourceGroupName() {
