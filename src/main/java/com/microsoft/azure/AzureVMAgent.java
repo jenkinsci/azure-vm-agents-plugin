@@ -479,9 +479,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return "AzureVMAgent ["
                 + "\n\tcloudName=" + cloudName
                 + "\n\tadminUserName=" + adminUserName
-                + "\n\tsshPrivateKey=" + sshPrivateKey
-                + "\n\tsshPassPhrase=" + sshPassPhrase
-                + "\n\tadminPassword=" + adminPassword
                 + "\n\tjvmOptions=" + jvmOptions
                 + "\n\tshutdownOnIdle=" + shutdownOnIdle
                 + "\n\tretentionTimeInMin=" + retentionTimeInMin
@@ -492,10 +489,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tsubscriptionId=" + subscriptionId
-                + "\n\tclientId=" + clientId
-                + "\n\tclientSecret=" + clientSecret
-                + "\n\toauth2TokenEndpoint=" + oauth2TokenEndpoint
                 + "\n\tmanagementURL=" + managementURL
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
