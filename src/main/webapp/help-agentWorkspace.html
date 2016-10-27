@@ -1,0 +1,10 @@
+<div>
+	An agent needs to have a directory dedicated to Jenkins. Specify the absolute path of this work directory on the agent, 
+	such as '/var/jenkins' or 'c:\jenkins'. This should be a path local to the agent machine.
+	
+	Typically, there's no need for this path to be visible from the master.</br></br>
+
+	Agents do not maintain important data (other than active workspaces of projects last built on them), so you can possibly 
+	set the agent workspace to a temporary directory if it is ok to lose the latest workspace 
+	when the agent is turned off.
+</div>

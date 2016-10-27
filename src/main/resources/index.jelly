@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
- 	Azure plugin to provision and deprovision slaves
+ 	Azure plugin to provision and deprovision agents
 </div>

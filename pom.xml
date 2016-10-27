@@ -6,12 +6,12 @@
     <version>1.642.1</version>
   </parent>
 
-  <artifactId>azure-slave-plugin</artifactId>
+  <artifactId>azure-vm-agents-plugin</artifactId>
   <version>0.4.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
-  <name>Azure Slave Plugin</name>
-  <description>Provisions slave on Azure cloud</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/Azure+Slave+Plugin</url>
+  <name>Azure VM Agents Plugin</name>
+  <description>Provisions agents on Azure cloud</description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Azure+VM+Agents+Plugin</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -119,9 +119,9 @@
   </dependencies>
 	
   <scm>
-    <connection>scm:git:ssh://git@github.com/jenkinsci/azure-slave-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-slave-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/azure-slave-plugin</url>
+    <connection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/azure-vm-agents-plugin</url>
     <tag>HEAD</tag>
   </scm>
 
