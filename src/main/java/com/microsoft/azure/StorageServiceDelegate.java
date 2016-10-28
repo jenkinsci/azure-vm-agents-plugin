@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.azure.exceptions.AzureCloudException;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.Constants;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +70,8 @@ public class StorageServiceDelegate {
     private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName, 
             final String resourceGroupName) throws
             AzureCloudException {
-        StorageManagementClient client = StorageManagementService.create(config);
+        StorageManagementClient client = StorageManagementService.create(config)
+            .withRequestFilterFirst(new AzureUserAgentFilter());
         StorageAccountGetPropertiesResponse response;
 
         try {
@@ -119,7 +121,8 @@ public class StorageServiceDelegate {
     public static StorageAccountGetPropertiesResponse getStorageAccountProps(
             final Configuration config, final String storageAccountName, final String resourceGroupName)
             throws AzureCloudException {
-        StorageManagementClient client = StorageManagementService.create(config);
+        StorageManagementClient client = StorageManagementService.create(config)
+            .withRequestFilterFirst(new AzureUserAgentFilter());
         StorageAccountGetPropertiesResponse response = null;
         try {
             response = client.getStorageAccountsOperations().getProperties(

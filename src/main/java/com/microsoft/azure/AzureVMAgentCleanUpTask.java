@@ -25,6 +25,7 @@ import com.microsoft.azure.management.resources.ResourceManagementService;
 import com.microsoft.azure.management.resources.models.DeploymentGetResult;
 import com.microsoft.azure.management.resources.models.ProvisioningState;
 import com.microsoft.azure.retry.DefaultRetryStrategy;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.ExecutionEngine;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.windowsazure.Configuration;
@@ -100,7 +101,8 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             
             try {
                 final Configuration config = ServiceDelegateHelper.getConfiguration(cloud);
-                final ResourceManagementClient rmc = ResourceManagementService.create(config);
+                final ResourceManagementClient rmc = ResourceManagementService.create(config)
+                    .withRequestFilterFirst(new AzureUserAgentFilter());
 
                 DeploymentGetResult deployment = 
                     rmc.getDeploymentsOperations().get(info.getResourceGroupName(), info.getDeploymentName());
