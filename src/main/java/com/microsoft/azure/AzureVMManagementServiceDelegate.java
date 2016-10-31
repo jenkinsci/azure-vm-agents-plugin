@@ -73,6 +73,7 @@ import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.retry.NoRetryStrategy;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.Constants;
@@ -353,16 +354,18 @@ public class AzureVMManagementServiceDelegate {
         final String ipRef = vm.getVirtualMachine().getNetworkProfile().getNetworkInterfaces().get(0).
                 getReferenceUri();
 
-        final NetworkInterface netIF = NetworkResourceProviderService.create(config).
-                getNetworkInterfacesOperations().get(
+        final NetworkInterface netIF = NetworkResourceProviderService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter())
+                .getNetworkInterfacesOperations().get(
                         template.getResourceGroupName(),
                         ipRef.substring(ipRef.lastIndexOf("/") + 1, ipRef.length())).
                 getNetworkInterface();
 
         final String nicRef = netIF.getIpConfigurations().get(0).getPublicIpAddress().getId();
 
-        final PublicIpAddress pubIP = NetworkResourceProviderService.create(config).
-                getPublicIpAddressesOperations().get(
+        final PublicIpAddress pubIP = NetworkResourceProviderService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter())
+                .getPublicIpAddressesOperations().get(
                         template.getResourceGroupName(),
                         nicRef.substring(nicRef.lastIndexOf("/") + 1, nicRef.length())).
                 getPublicIpAddress();
@@ -488,7 +491,8 @@ public class AzureVMManagementServiceDelegate {
 
     public static List<String> getStorageAccountsInfo(final Configuration config) throws Exception {
         List<String> storageAccounts = new ArrayList<String>();
-        StorageManagementClient client = StorageManagementService.create(config);
+        StorageManagementClient client = StorageManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
 
         StorageAccountListResponse response = client.getStorageAccountsOperations().list();
         for (StorageAccount sa : response.getStorageAccounts()) {

@@ -32,6 +32,7 @@ import com.microsoft.windowsazure.management.ManagementClient;
 import com.microsoft.windowsazure.management.ManagementService;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.TokenCache;
 import hudson.slaves.Cloud;
 import java.util.logging.Level;
@@ -152,7 +153,8 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            return ResourceManagementService.create(config);
+            return ResourceManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         } finally {
             Thread.currentThread().setContextClassLoader(thread);
         }
@@ -169,7 +171,8 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            return ComputeManagementService.create(config);
+            return ComputeManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         } finally {
             Thread.currentThread().setContextClassLoader(thread);
         }
@@ -187,7 +190,8 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            return StorageManagementService.create(config);
+            return StorageManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         } finally {
             Thread.currentThread().setContextClassLoader(thread);
         }
@@ -199,7 +203,8 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            return ManagementService.create(config);
+            return ManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         } finally {
             Thread.currentThread().setContextClassLoader(thread);
         }
@@ -211,7 +216,8 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            return NetworkResourceProviderService.create(config);
+            return NetworkResourceProviderService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         } finally {
             Thread.currentThread().setContextClassLoader(thread);
         }

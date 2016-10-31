@@ -6,3 +6,5 @@
 *.settings
 *.project
 *.classpath
+
+nbactions-jenkins.xml

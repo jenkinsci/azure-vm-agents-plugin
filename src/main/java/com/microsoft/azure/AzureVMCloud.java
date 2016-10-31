@@ -24,6 +24,7 @@ import com.microsoft.windowsazure.Configuration;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -376,7 +377,8 @@ public class AzureVMCloud extends Cloud {
             // Create a new RM client each time because the config may expire while
             // in this long running operation
             Configuration config = ServiceDelegateHelper.getConfiguration(template);
-            final ResourceManagementClient rmc = ResourceManagementService.create(config);
+            final ResourceManagementClient rmc = ResourceManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
         
             final List<DeploymentOperation> ops = rmc.getDeploymentOperationsOperations().
                     list(resourceGroupName, deploymentName, null).getOperations();
