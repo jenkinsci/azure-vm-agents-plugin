@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>azure-vm-agents-plugin</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.4.0</version>
   <packaging>hpi</packaging>
   <name>Azure VM Agents Plugin</name>
   <description>Provisions agents on Azure cloud</description>
