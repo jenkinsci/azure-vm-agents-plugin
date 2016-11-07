@@ -15,6 +15,14 @@
  */
 package com.microsoft.azure;
 
+import com.cloudbees.plugins.credentials.CredentialsMatcher;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.microsoft.azure.Messages;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,15 +46,21 @@ import hudson.RelativePath;
 import hudson.model.Describable;
 import hudson.model.TaskListener;
 import hudson.model.Descriptor;
+import hudson.model.Item;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
+import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.AncestorInPath;
 
 /**
  * This class defines the configuration of Azure instance templates
@@ -96,9 +110,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String initScript;
 
-    private final String adminUserName;
-
-    private final String adminPassword;
+    private final String credentialsId;
 
     private final String agentWorkspace;
 
@@ -146,8 +158,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String imageVersion,
             final String agentLaunchMethod,
             final String initScript,
-            final String adminUserName,
-            final String adminPassword,
+            final String credentialsId,
             final String virtualNetworkName,
             final String subnetName,
             final String agentWorkspace,
@@ -182,8 +193,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
-        this.adminUserName = adminUserName;
-        this.adminPassword = adminPassword;
+        this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.subnetName = subnetName;
         this.agentWorkspace = agentWorkspace;
@@ -274,12 +284,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return initScript;
     }
 
-    public String getAdminUserName() {
-        return adminUserName;
-    }
-
-    public String getAdminPassword() {
-        return adminPassword;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
     public String getVirtualNetworkName() {
@@ -444,8 +450,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 imageVersion,
                 agentLaunchMethod,
                 initScript,
-                adminUserName,
-                adminPassword,
+                credentialsId,
                 virtualNetworkName,
                 subnetName,
                 retentionTimeInMin + "",
@@ -477,6 +482,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
 
             return model;
+        }
+        
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item owner) {
+            // when configuring the job, you only want those credentials that are available to ACL.SYSTEM selectable
+            // as we cannot select from a user's credentials unless they are the only user submitting the build
+            // (which we cannot assume) thus ACL.SYSTEM is correct here.
+            return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
         }
 
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
@@ -564,17 +576,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckAdminUserName(@QueryParameter final String value) {
-            if (StringUtils.isNotBlank(value)) {
-                if (AzureUtil.isValidUserName(value)) {
-                    return FormValidation.ok();
-                } else {
-                    return FormValidation.error(Messages.Azure_GC_UserName_Err());
-                }
-            }
-            return FormValidation.ok();
-        }
-
         public FormValidation doCheckNoOfParallelJobs(@QueryParameter final String value) {
             if (StringUtils.isNotBlank(value)) {
                 String result = AzureVMManagementServiceDelegate.verifyNoOfExecutors(value);
@@ -644,8 +645,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String imageVersion,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
-                @QueryParameter String adminUserName,
-                @QueryParameter String adminPassword,
+                @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
                 @QueryParameter String subnetName,
                 @QueryParameter String retentionTimeInMin,
@@ -673,12 +673,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     + "imageVersion: {17};\n\t"
                     + "agentLaunchMethod: {18};\n\t"
                     + "initScript: {19};\n\t"
-                    + "adminUserName: {20};\n\t"
-                    + "adminPassword: {21};\n\t"
-                    + "virtualNetworkName: {22};\n\t"
-                    + "subnetName: {23};\n\t"
-                    + "retentionTimeInMin: {24};\n\t"
-                    + "jvmOptions: {25};",
+                    + "credentialsId: {20};\n\t"
+                    + "virtualNetworkName: {21};\n\t"
+                    + "subnetName: {22};\n\t"
+                    + "retentionTimeInMin: {23};\n\t"
+                    + "jvmOptions: {24};",
                     new Object[] {
                         subscriptionId,
                         clientId,
@@ -700,8 +699,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                         imageVersion,
                         agentLaunchMethod,
                         initScript,
-                        adminUserName,
-                        (StringUtils.isNotBlank(adminPassword) ? "********" : null),
+                        credentialsId,
                         virtualNetworkName,
                         subnetName,
                         retentionTimeInMin,
@@ -736,8 +734,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     imageVersion,
                     agentLaunchMethod,
                     initScript,
-                    adminUserName,
-                    adminPassword,
+                    credentialsId,
                     virtualNetworkName,
                     subnetName,
                     retentionTimeInMin,

@@ -15,6 +15,10 @@
  */
 package com.microsoft.azure;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.fasterxml.jackson.databind.JsonNode;
 import hudson.model.Descriptor.FormException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -79,9 +83,11 @@ import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.ExecutionEngine;
 import com.microsoft.azure.util.FailureStage;
+import hudson.security.ACL;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -246,8 +252,11 @@ public class AzureVMManagementServiceDelegate {
             }
 
             ObjectNode.class.cast(tmp.get("variables")).put("vmSize", template.getVirtualMachineSize());
-            ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", template.getAdminUserName());
-            ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", template.getAdminPassword());
+            // Grab the username/pass
+            StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(template.getCredentialsId());
+            
+            ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", creds.getUsername());
+            ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", creds.getPassword().getPlainText());
 
             if (StringUtils.isNotBlank(template.getStorageAccountName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", template.getStorageAccountName());
@@ -375,7 +384,7 @@ public class AzureVMManagementServiceDelegate {
         azureAgent.setSshPort(Constants.DEFAULT_SSH_PORT);
 
         LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}", 
-            new Object[] { azureAgent.getNodeName(), azureAgent.getAdminUserName(), azureAgent.isShutdownOnIdle(),
+            new Object[] { azureAgent.getNodeName(), azureAgent.getCredentialsId(), azureAgent.isShutdownOnIdle(),
                 azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
     }
     
@@ -459,10 +468,9 @@ public class AzureVMManagementServiceDelegate {
                     template.getUseAgentAlwaysIfAvail(),
                     template.getLabels(),
                     template.getAzureCloud().getDisplayName(),
-                    template.getAdminUserName(),
+                    template.getCredentialsId(),
                     null,
                     null,
-                    template.getAdminPassword(),
                     template.getJvmOptions(),
                     template.isShutdownOnIdle(),
                     false,
@@ -1005,8 +1013,7 @@ public class AzureVMManagementServiceDelegate {
      * @param imageVersion
      * @param agentLaunchMethod
      * @param initScript
-     * @param adminUserName
-     * @param adminPassword
+     * @param credentialsId
      * @param virtualNetworkName
      * @param subnetName
      * @param retentionTimeInMin
@@ -1036,8 +1043,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageVersion,
             final String agentLaunchMethod,
             final String initScript,
-            final String adminUserName,
-            final String adminPassword,
+            final String credentialsId,
             final String virtualNetworkName,
             final String subnetName,
             final String retentionTimeInMin,
@@ -1064,13 +1070,6 @@ public class AzureVMManagementServiceDelegate {
             }
             
             validationResult = verifyRetentionTime(retentionTimeInMin);
-            addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
-                return errors;
-            }
-
-            //verify password
-            validationResult = verifyAdminPassword(adminPassword);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -1309,18 +1308,6 @@ public class AzureVMManagementServiceDelegate {
                 return Messages.Azure_GC_Template_ImageReference_Not_Valid(e.getMessage());
             }
             return Constants.OP_SUCCESS;
-        }
-    }
-
-    private static String verifyAdminPassword(final String adminPassword) {
-        if (StringUtils.isBlank(adminPassword)) {
-            return Messages.Azure_GC_Template_PWD_Null_Or_Empty();
-        }
-
-        if (AzureUtil.isValidPassword(adminPassword)) {
-            return Constants.OP_SUCCESS;
-        } else {
-            return Messages.Azure_GC_Template_PWD_Not_Valid();
         }
     }
 

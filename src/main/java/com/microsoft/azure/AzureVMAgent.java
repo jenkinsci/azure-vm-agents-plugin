@@ -48,13 +48,11 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
     private final String cloudName;
 
-    private final String adminUserName;
+    private final String credentialsId;
 
     private final String sshPrivateKey;
 
     private final String sshPassPhrase;
-
-    private final String adminPassword;
 
     private final String jvmOptions;
 
@@ -117,10 +115,9 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final RetentionStrategy<AzureVMComputer> retentionStrategy,
             final List<? extends NodeProperty<?>> nodeProperties,
             final String cloudName,
-            final String adminUserName,
+            final String credentialsId,
             final String sshPrivateKey,
             final String sshPassPhrase,
-            final String adminPassword,
             final String jvmOptions,
             final boolean shutdownOnIdle,
             final boolean eligibleForReuse,
@@ -143,10 +140,9 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
         this.cloudName = cloudName;
         this.templateName = templateName;
-        this.adminUserName = adminUserName;
+        this.credentialsId = credentialsId;
         this.sshPrivateKey = sshPrivateKey;
         this.sshPassPhrase = sshPassPhrase;
-        this.adminPassword = adminPassword;
         this.jvmOptions = jvmOptions;
         this.shutdownOnIdle = shutdownOnIdle;
         this.eligibleForReuse = eligibleForReuse;
@@ -178,10 +174,9 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final Mode mode,
             final String label,
             final String cloudName,
-            final String adminUserName,
+            final String credentialsId,
             final String sshPrivateKey,
             final String sshPassPhrase,
-            final String adminPassword,
             final String jvmOptions,
             final boolean shutdownOnIdle,
             final boolean eligibleForReuse,
@@ -213,10 +208,9 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 new AzureVMCloudRetensionStrategy(retentionTimeInMin),
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
-                adminUserName,
+                credentialsId,
                 sshPrivateKey,
                 sshPassPhrase,
-                adminPassword,
                 jvmOptions,
                 shutdownOnIdle,
                 eligibleForReuse,
@@ -245,8 +239,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return mode;
     }
 
-    public String getAdminUserName() {
-        return adminUserName;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
     public String getSubscriptionId() {
@@ -283,10 +277,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
     public String getDeploymentName() {
         return deploymentName;
-    }
-
-    public String getAdminPassword() {
-        return adminPassword;
     }
 
     public CleanUpAction getCleanUpAction() {
@@ -478,7 +468,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
     public String toString() {
         return "AzureVMAgent ["
                 + "\n\tcloudName=" + cloudName
-                + "\n\tadminUserName=" + adminUserName
+                + "\n\tcredentialsId=" + credentialsId
                 + "\n\tjvmOptions=" + jvmOptions
                 + "\n\tshutdownOnIdle=" + shutdownOnIdle
                 + "\n\tretentionTimeInMin=" + retentionTimeInMin

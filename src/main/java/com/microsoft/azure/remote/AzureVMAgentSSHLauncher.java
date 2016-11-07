@@ -15,6 +15,10 @@
  */
 package com.microsoft.azure.remote;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -25,6 +29,8 @@ import com.microsoft.azure.AzureVMAgent;
 import com.microsoft.azure.AzureVMComputer;
 import com.microsoft.azure.AzureVMAgentTemplate;
 import com.microsoft.azure.Messages;
+import com.microsoft.azure.exceptions.AzureCloudException;
+import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.FailureStage;
@@ -33,6 +39,7 @@ import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.remoting.Channel.Listener;
+import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.OfflineCause;
 import hudson.slaves.SlaveComputer;
@@ -44,6 +51,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -134,8 +142,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 // Execute initialization script
                 // Make sure to change file permission for execute if needed. TODO: need to test
 
+                // Grab the username/pass
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getCredentialsId());
+            
                 String command = "sh " + remoteInitFileName;
-                int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), agent.getAdminPassword());
+                int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
                 if (exitStatus != 0) {
                     if (agent.getDoNotUseMachineIfInitFails()) {
                         LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: init script failed: exit code={0} (marking agent for deletion)", exitStatus);
@@ -234,8 +245,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                     new Object[] { dnsName, sshPort, e.getMessage() });
             throw e;
         }
-        
-        
     }
 
     private void copyFileToRemote(Session jschSession, InputStream stream, String remotePath) throws Exception {
@@ -374,7 +383,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         while (true) {
             currRetryCount++;
             try {
-                session = getRemoteSession(agent.getAdminUserName(), agent.getAdminPassword(), agent.getPublicDNSName(),
+                // Grab the username/pass
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getCredentialsId());
+                
+                session = getRemoteSession(creds.getUsername(), creds.getPassword().getPlainText(), agent.getPublicDNSName(),
                         agent.getSshPort());
                 LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: Got remote connection");
             } catch (Exception e) {
