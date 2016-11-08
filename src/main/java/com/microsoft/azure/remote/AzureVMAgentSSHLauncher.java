@@ -143,7 +143,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 // Make sure to change file permission for execute if needed. TODO: need to test
 
                 // Grab the username/pass
-                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getCredentialsId());
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
             
                 String command = "sh " + remoteInitFileName;
                 int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
@@ -384,7 +384,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             currRetryCount++;
             try {
                 // Grab the username/pass
-                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getCredentialsId());
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
                 
                 session = getRemoteSession(creds.getUsername(), creds.getPassword().getPlainText(), agent.getPublicDNSName(),
                         agent.getSshPort());

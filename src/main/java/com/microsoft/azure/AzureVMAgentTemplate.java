@@ -24,6 +24,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.microsoft.azure.Messages;
+import com.microsoft.azure.util.AzureCredentials;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -431,11 +432,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * @throws Exception 
      */
     public List<String> verifyTemplate() throws Exception {
-        return AzureVMManagementServiceDelegate.verifyTemplate(azureCloud.getSubscriptionId(),
-                azureCloud.getClientId(),
-                azureCloud.getClientSecret(),
-                azureCloud.getOauth2TokenEndpoint(),
-                azureCloud.getServiceManagementURL(),
+        return AzureVMManagementServiceDelegate.verifyTemplate(
+                azureCloud.getServicePrincipal(),
                 templateName,
                 labels,
                 location,
@@ -625,11 +623,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public FormValidation doVerifyConfiguration(
-                @RelativePath("..") @QueryParameter String subscriptionId,
-                @RelativePath("..") @QueryParameter String clientId,
-                @RelativePath("..") @QueryParameter String clientSecret,
-                @RelativePath("..") @QueryParameter String oauth2TokenEndpoint,
-                @RelativePath("..") @QueryParameter String serviceManagementURL,
+                @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupName,
                 @QueryParameter String templateName,
                 @QueryParameter String labels,
@@ -651,12 +645,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions) {
 
+            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t"
                     + "subscriptionId: {0};\n\t"
                     + "clientId: {1};\n\t"
                     + "clientSecret: {2};\n\t"
-                    + "oauth2TokenEndpoint: {3};\n\t"
                     + "serviceManagementURL: {4};\n\t"
                     + "resourceGroupName: {5};\n\t."
                     + "templateName: {6};\n\t"
@@ -679,11 +673,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     + "retentionTimeInMin: {23};\n\t"
                     + "jvmOptions: {24};",
                     new Object[] {
-                        subscriptionId,
-                        clientId,
-                        (StringUtils.isNotBlank(clientSecret) ? "********" : null),
-                        oauth2TokenEndpoint,
-                        serviceManagementURL,
+                        servicePrincipal.subscriptionId.getPlainText(),
+                        (StringUtils.isNotBlank(servicePrincipal.clientId.getPlainText()) ? "********" : null),
+                        (StringUtils.isNotBlank(servicePrincipal.clientSecret.getPlainText()) ? "********" : null),
+                        servicePrincipal.serviceManagementURL,
                         resourceGroupName,
                         templateName,
                         labels,
@@ -708,18 +701,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the 
             
-            String result = AzureVMManagementServiceDelegate.verifyConfiguration(
-                    subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL, resourceGroupName);
+            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }
             
             final List<String> errors = AzureVMManagementServiceDelegate.verifyTemplate(
-                    subscriptionId,
-                    clientId,
-                    clientSecret,
-                    oauth2TokenEndpoint,
-                    serviceManagementURL,
+                    servicePrincipal,
                     templateName,
                     labels,
                     location,

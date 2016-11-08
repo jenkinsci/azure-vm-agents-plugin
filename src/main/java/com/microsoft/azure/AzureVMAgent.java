@@ -28,6 +28,7 @@ import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.FailureStage;
 import com.microsoft.azure.remote.AzureVMAgentSSHLauncher;
+import com.microsoft.azure.util.AzureCredentials;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
@@ -44,11 +45,15 @@ import org.jvnet.localizer.Localizable;
 
 public class AzureVMAgent extends AbstractCloudSlave {
 
-    private static final long serialVersionUID = -760014706860995556L;
+    private static final long serialVersionUID = -760014706860995557L;
 
     private final String cloudName;
 
-    private final String credentialsId;
+    private final String vmCredentialsId;
+
+    private final String azureCredentialsId;
+
+    private transient final AzureCredentials.ServicePrincipal credentials;
 
     private final String sshPrivateKey;
 
@@ -74,16 +79,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
     private int sshPort;
 
     private final Mode mode;
-
-    private final String subscriptionId;
-
-    private final String clientId;
-
-    private final String clientSecret;
-
-    private final String oauth2TokenEndpoint;
-
-    private final String managementURL;
 
     private String templateName;
 
@@ -115,7 +110,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final RetentionStrategy<AzureVMComputer> retentionStrategy,
             final List<? extends NodeProperty<?>> nodeProperties,
             final String cloudName,
-            final String credentialsId,
+            final String vmCredentialsId,
             final String sshPrivateKey,
             final String sshPassPhrase,
             final String jvmOptions,
@@ -124,11 +119,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final String deploymentName,
             final int retentionTimeInMin,
             final String initScript,
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String managementURL,
+            final String azureCredentialsId,
+            final AzureCredentials.ServicePrincipal servicePrincipal,
             final String agentLaunchMethod,
             final CleanUpAction cleanUpAction,
             final Localizable cleanUpReason,
@@ -140,7 +132,9 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
         this.cloudName = cloudName;
         this.templateName = templateName;
-        this.credentialsId = credentialsId;
+        this.vmCredentialsId = vmCredentialsId;
+        this.azureCredentialsId = azureCredentialsId;
+        this.credentials = servicePrincipal;
         this.sshPrivateKey = sshPrivateKey;
         this.sshPassPhrase = sshPassPhrase;
         this.jvmOptions = jvmOptions;
@@ -151,11 +145,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
         this.initScript = initScript;
         this.osType = osType;
         this.mode = mode;
-        this.subscriptionId = subscriptionId;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.oauth2TokenEndpoint = oauth2TokenEndpoint;
-        this.managementURL = managementURL;
         this.agentLaunchMethod = agentLaunchMethod;
         this.setCleanUpAction(cleanUpAction);
         this.setCleanupReason(cleanUpReason);
@@ -174,7 +163,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final Mode mode,
             final String label,
             final String cloudName,
-            final String credentialsId,
+            final String vmCredentialsId,
             final String sshPrivateKey,
             final String sshPassPhrase,
             final String jvmOptions,
@@ -183,11 +172,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final String deploymentName,
             final int retentionTimeInMin,
             final String initScript,
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String managementURL,
+            final String azureCredentialsId,
+            final AzureCredentials.ServicePrincipal servicePrincipal,
             final String agentLaunchMethod,
             final CleanUpAction cleanUpAction,
             final Localizable cleanUpReason,
@@ -208,7 +194,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 new AzureVMCloudRetensionStrategy(retentionTimeInMin),
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
-                credentialsId,
+                vmCredentialsId,
                 sshPrivateKey,
                 sshPassPhrase,
                 jvmOptions,
@@ -217,11 +203,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 deploymentName,
                 retentionTimeInMin,
                 initScript,
-                subscriptionId,
-                clientId,
-                clientSecret,
-                oauth2TokenEndpoint,
-                managementURL,
+                azureCredentialsId,
+                servicePrincipal,
                 agentLaunchMethod,
                 cleanUpAction,
                 cleanUpReason,
@@ -239,28 +222,15 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return mode;
     }
 
-    public String getCredentialsId() {
-        return credentialsId;
+    public String getVMCredentialsId() {
+        return vmCredentialsId;
     }
 
-    public String getSubscriptionId() {
-        return subscriptionId;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    public String getOauth2TokenEndpoint() {
-        return oauth2TokenEndpoint;
-    }
-
-    public String getManagementURL() {
-        return managementURL;
+    public AzureCredentials.ServicePrincipal getServicePrincipal()
+    {
+        if(credentials == null && azureCredentialsId != null)
+            return AzureCredentials.getServicePrincipal(azureCredentialsId);
+        return credentials;
     }
 
     public String getSshPrivateKey() {
@@ -468,7 +438,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
     public String toString() {
         return "AzureVMAgent ["
                 + "\n\tcloudName=" + cloudName
-                + "\n\tcredentialsId=" + credentialsId
+                + "\n\tVMCredentialsId=" + vmCredentialsId
                 + "\n\tjvmOptions=" + jvmOptions
                 + "\n\tshutdownOnIdle=" + shutdownOnIdle
                 + "\n\tretentionTimeInMin=" + retentionTimeInMin
@@ -479,7 +449,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tmanagementURL=" + managementURL
+                + "\n\tmanagementURL=" + credentials.serviceManagementURL == null ? "<none>" : credentials.serviceManagementURL
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";
