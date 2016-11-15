@@ -1049,6 +1049,21 @@ public class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
+            //verify password
+            String adminPassword="";
+            try {
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(credentialsId);
+                adminPassword = creds.getPassword().getPlainText();
+            } catch(AzureCloudException e) {
+                LOGGER.log(Level.SEVERE, "Could not load the VM credentials", e);
+            }
+        
+            validationResult = verifyAdminPassword(adminPassword);
+            addValidationResultIfFailed(validationResult, errors);
+            if (returnOnSingleError && errors.size() > 0) {
+                return errors;
+            }
+
             //verify JVM Options
             validationResult = verifyJvmOptions(jvmOptions);
             addValidationResultIfFailed(validationResult, errors);
@@ -1282,6 +1297,18 @@ public class AzureVMManagementServiceDelegate {
                 return Messages.Azure_GC_Template_ImageReference_Not_Valid(e.getMessage());
             }
             return Constants.OP_SUCCESS;
+        }
+    }
+
+    private static String verifyAdminPassword(final String adminPassword) {
+        if (StringUtils.isBlank(adminPassword)) {
+            return Messages.Azure_GC_Template_PWD_Null_Or_Empty();
+        }
+
+        if (AzureUtil.isValidPassword(adminPassword)) {
+            return Constants.OP_SUCCESS;
+        } else {
+            return Messages.Azure_GC_Template_PWD_Not_Valid();
         }
     }
 
