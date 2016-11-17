@@ -15,6 +15,7 @@
  */
 package com.microsoft.azure;
 
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.azure.util.AzureUtil;
 import java.io.IOException;
@@ -203,8 +204,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         LOGGER.info("AzureVMCloudVerificationTask: verifyConfiguration: start");
         
         // Check the sub and off we go
-        String result = AzureVMManagementServiceDelegate.verifyConfiguration(cloud.getSubscriptionId(), 
-            cloud.getClientId(), cloud.getClientSecret(), cloud.getOauth2TokenEndpoint(), cloud.getServiceManagementURL(), cloud.getResourceGroupName());
+        String result = AzureVMManagementServiceDelegate.verifyConfiguration(cloud.getServicePrincipal(), cloud.getResourceGroupName());
         if (result != Constants.OP_SUCCESS) {
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationValid(false);
@@ -263,7 +263,10 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      * @param template Template to register
      */
     private static void registerTemplateHelper(final AzureVMAgentTemplate template) {
-        String cloudName = AzureUtil.getCloudName(template.getAzureCloud().getSubscriptionId());
+        String cloudName = "<unknown>";
+        AzureCredentials.ServicePrincipal sp = template.getAzureCloud().getServicePrincipal();
+        if(sp != null)
+            cloudName = AzureUtil.getCloudName(sp.subscriptionId.getPlainText());
         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: registerTemplateHelper: Registering template {0} on {1} for verification",
                 new Object [] { template.getTemplateName(), cloudName });
         if (cloudTemplates == null) {

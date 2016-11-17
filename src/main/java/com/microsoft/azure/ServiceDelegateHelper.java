@@ -32,6 +32,7 @@ import com.microsoft.windowsazure.management.ManagementClient;
 import com.microsoft.windowsazure.management.ManagementService;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.TokenCache;
 import hudson.slaves.Cloud;
@@ -51,12 +52,7 @@ public class ServiceDelegateHelper {
 
     public static Configuration getConfiguration(final AzureVMCloud cloud) throws AzureCloudException {
         try {
-            return loadConfiguration(
-                    cloud.getSubscriptionId(),
-                    cloud.getClientId(),
-                    cloud.getClientSecret(),
-                    cloud.getOauth2TokenEndpoint(),
-                    cloud.getServiceManagementURL());
+            return loadConfiguration(cloud.getServicePrincipal());
         } catch (AzureCloudException e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: getConfiguration: Failure loading configuration", e);
@@ -66,12 +62,7 @@ public class ServiceDelegateHelper {
 
     public static Configuration getConfiguration(final AzureVMAgent agent) throws AzureCloudException {
         try {
-            return loadConfiguration(
-                    agent.getSubscriptionId(),
-                    agent.getClientId(),
-                    agent.getClientSecret(),
-                    agent.getOauth2TokenEndpoint(),
-                    agent.getManagementURL());
+            return loadConfiguration(agent.getServicePrincipal());
         } catch (AzureCloudException e) {
             // let's assume no updated information into the agent instance
             LOGGER.log(Level.INFO, "Missing connection with agent {0}", agent.getNodeName());
@@ -98,31 +89,18 @@ public class ServiceDelegateHelper {
     public static Configuration getConfiguration(final AzureVMAgentTemplate template) throws AzureCloudException {
         final AzureVMCloud azureCloud = template.getAzureCloud();
 
-        return loadConfiguration(
-                azureCloud.getSubscriptionId(),
-                azureCloud.getClientId(),
-                azureCloud.getClientSecret(),
-                azureCloud.getOauth2TokenEndpoint(),
-                azureCloud.getServiceManagementURL());
+        return loadConfiguration(azureCloud.getServicePrincipal());
     }
 
     /**
      * Loads configuration object..
      *
-     * @param subscriptionId
-     * @param clientId
-     * @param clientSecret
-     * @param oauth2TokenEndpoint
-     * @param serviceManagementURL
+     * @param servicePrincipal
      * @return
      * @throws AzureCloudException
      */
     public static Configuration loadConfiguration(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL)
+            final AzureCredentials.ServicePrincipal servicePrincipal)
             throws AzureCloudException {
 
         // Azure libraries are internally using ServiceLoader.load(...) method which uses context classloader and
@@ -132,9 +110,7 @@ public class ServiceDelegateHelper {
         Thread.currentThread().setContextClassLoader(AzureVMManagementServiceDelegate.class.getClassLoader());
 
         try {
-            final Configuration config = TokenCache.getInstance(
-                    subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL).get().
-                    getConfiguration();
+            final Configuration config = TokenCache.getInstance(servicePrincipal).get().getConfiguration();
 
             return config;
         } finally {

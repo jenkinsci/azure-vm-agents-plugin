@@ -47,64 +47,37 @@ public class TokenCache {
     private static final Object tsafe = new Object();
 
     private static TokenCache cache = null;
-
-    protected final String subscriptionId;
-
-    protected final String clientId;
-
-    protected final String clientSecret;
-
-    protected final String oauth2TokenEndpoint;
-
-    protected final String serviceManagementURL;
+    
+    protected final AzureCredentials.ServicePrincipal credentials;
 
     private final String path;
 
-    public static TokenCache getInstance(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL) {
+    public static TokenCache getInstance(final AzureCredentials.ServicePrincipal servicePrincipal) {
         synchronized (tsafe) {
             if (cache == null) {
-                cache = new TokenCache(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
-            } else if (cache.subscriptionId == null || !cache.subscriptionId.equals(subscriptionId)
-                    || cache.clientId == null || !cache.clientId.equals(clientId)
-                    || cache.clientSecret == null || !cache.clientSecret.equals(clientSecret)
-                    || cache.oauth2TokenEndpoint == null || !cache.oauth2TokenEndpoint.equals(oauth2TokenEndpoint)
-                    || cache.serviceManagementURL == null || !cache.serviceManagementURL.equals(serviceManagementURL)) {
+                cache = new TokenCache(servicePrincipal);
+            } else if (cache.credentials == null
+                    || cache.credentials.subscriptionId == null || !cache.credentials.subscriptionId.equals(servicePrincipal.subscriptionId)
+                    || cache.credentials.clientId == null || !cache.credentials.clientId.equals(servicePrincipal.clientId)
+                    || cache.credentials.clientSecret == null || !cache.credentials.clientSecret.equals(servicePrincipal.clientSecret)
+                    || cache.credentials.oauth2TokenEndpoint == null || !cache.credentials.oauth2TokenEndpoint.equals(servicePrincipal.oauth2TokenEndpoint)
+                    || cache.credentials.serviceManagementURL == null || !cache.credentials.serviceManagementURL.equals(servicePrincipal.serviceManagementURL)) {
                 cache.clear();
-                cache = new TokenCache(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
+                cache = new TokenCache(servicePrincipal);
             }
         }
 
         return cache;
     }
 
-    private TokenCache(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL) {
+    private TokenCache(final AzureCredentials.ServicePrincipal servicePrincipal) {
         LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Instantiate new cache manager");
-
-        this.subscriptionId = subscriptionId;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.oauth2TokenEndpoint = oauth2TokenEndpoint;
+        this.credentials = servicePrincipal;
         
         // Compute the cloud name
-        String cloudName = AzureUtil.getCloudName(subscriptionId);
-
-        if (StringUtils.isBlank(serviceManagementURL)) {
-            this.serviceManagementURL = Constants.DEFAULT_MANAGEMENT_URL;
-        } else {
-            this.serviceManagementURL = serviceManagementURL;
-        }
+        String cloudName = "<unknown";
+        if(credentials != null)
+            cloudName =AzureUtil.getCloudName(credentials.subscriptionId.getPlainText());
 
         final String home = Jenkins.getInstance().root.getPath();
 
@@ -199,13 +172,12 @@ public class TokenCache {
         AuthenticationResult authres = null;
 
         try {
-            LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Aquiring access token: \n\t{0}\n\t{1}\n\t{2}",
-                    new Object[] { oauth2TokenEndpoint, serviceManagementURL, clientId });
+            LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Aquiring access token:");
 
-            final ClientCredential credential = new ClientCredential(clientId, clientSecret);
+            final ClientCredential credential = new ClientCredential(credentials.clientId.getPlainText(), credentials.clientSecret.getPlainText());
 
-            final Future<AuthenticationResult> future = new AuthenticationContext(oauth2TokenEndpoint, false, service).
-                    acquireToken(serviceManagementURL, credential, null);
+            final Future<AuthenticationResult> future = new AuthenticationContext(credentials.oauth2TokenEndpoint.getPlainText(), false, service).
+                    acquireToken(credentials.serviceManagementURL, credential, null);
 
             authres = future.get();
         } catch (MalformedURLException e) {
@@ -222,7 +194,7 @@ public class TokenCache {
             throw new AzureCloudException("Authentication result was null");
         }
 
-        final AccessToken token = new AccessToken(subscriptionId, serviceManagementURL, authres);
+        final AccessToken token = new AccessToken(credentials.subscriptionId.getPlainText(), credentials.serviceManagementURL, authres);
 
         writeTokenFile(token);
         return token;
