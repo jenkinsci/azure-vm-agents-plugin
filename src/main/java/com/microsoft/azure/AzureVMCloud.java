@@ -156,7 +156,7 @@ public class AzureVMCloud extends Cloud {
 
     private Object readResolve() {
         for (AzureVMAgentTemplate template : instTemplates) {
-            template.azureCloud = this;
+            template.setAzureCloud(this);
         }
         return this;
     }
