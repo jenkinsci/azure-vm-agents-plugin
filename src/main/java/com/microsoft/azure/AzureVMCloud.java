@@ -81,6 +81,8 @@ public class AzureVMCloud extends Cloud {
     private final List<AzureVMAgentTemplate> instTemplates;
 
     private final int deploymentTimeout;
+    
+    private static ExecutorService threadPool;
 
     // True if the subscription has been verified.
     // False otherwise.
@@ -193,6 +195,13 @@ public class AzureVMCloud extends Cloud {
         }
     }
 
+    public synchronized static ExecutorService getThreadPool() {
+        if (AzureVMCloud.threadPool == null) {
+            AzureVMCloud.threadPool = Executors.newCachedThreadPool();
+        }
+        return AzureVMCloud.threadPool;
+    }
+    
     public int getMaxVirtualMachinesLimit() {
         return maxVirtualMachinesLimit;
     }
@@ -516,7 +525,7 @@ public class AzureVMCloud extends Cloud {
                         return template.provisionAgents(new StreamTaskListener(System.out, Charset.defaultCharset()), numberOfNewAgents);
                     }
                 };
-                final Future<AzureVMDeploymentInfo> deploymentFuture = executorService.submit(callableTask);
+                final Future<AzureVMDeploymentInfo> deploymentFuture = getThreadPool().submit(callableTask);
 
                 for (int i = 0; i < numberOfAgents; i++) {
                     final int index = i;
@@ -617,7 +626,6 @@ public class AzureVMCloud extends Cloud {
      */
     private void waitUntilJNLPNodeIsOnline(final AzureVMAgent agent) throws Exception {
         LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: for agent {0}", agent.getDisplayName());
-        ExecutorService executorService = Executors.newCachedThreadPool();
         Callable<String> callableTask = new Callable<String>() {
 
             @Override
@@ -630,7 +638,7 @@ public class AzureVMCloud extends Cloud {
                 return "success";
             }
         };
-        Future<String> future = executorService.submit(callableTask);
+        Future<String> future = getThreadPool().submit(callableTask);
 
         try {
             // 30 minutes is decent time for the node to be alive
@@ -640,7 +648,6 @@ public class AzureVMCloud extends Cloud {
             throw new AzureCloudException("Azure Cloud: waitUntilOnline: Failure waiting till online", ex);
         } finally {
             future.cancel(true);
-            executorService.shutdown();
         }
     }
 

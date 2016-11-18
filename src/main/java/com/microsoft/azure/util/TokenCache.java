@@ -18,6 +18,7 @@ package com.microsoft.azure.util;
 import com.microsoft.aad.adal4j.AuthenticationContext;
 import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
+import com.microsoft.azure.AzureVMCloud;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import java.io.File;
 import java.nio.file.Path;
@@ -30,8 +31,6 @@ import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -167,8 +166,6 @@ public class TokenCache {
     private AccessToken getNewToken() throws AzureCloudException {
         LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Retrieve new access token");
 
-        final ExecutorService service = Executors.newFixedThreadPool(1);
-
         AuthenticationResult authres = null;
 
         try {
@@ -176,7 +173,7 @@ public class TokenCache {
 
             final ClientCredential credential = new ClientCredential(credentials.clientId.getPlainText(), credentials.clientSecret.getPlainText());
 
-            final Future<AuthenticationResult> future = new AuthenticationContext(credentials.oauth2TokenEndpoint.getPlainText(), false, service).
+            final Future<AuthenticationResult> future = new AuthenticationContext(credentials.oauth2TokenEndpoint.getPlainText(), false, AzureVMCloud.getThreadPool()).
                     acquireToken(credentials.serviceManagementURL, credential, null);
 
             authres = future.get();
@@ -186,8 +183,6 @@ public class TokenCache {
             throw new AzureCloudException("Authentication interrupted", e);
         } catch (ExecutionException e) {
             throw new AzureCloudException("Authentication execution failed", e);
-        } finally {
-            service.shutdown();
         }
 
         if (authres == null) {
