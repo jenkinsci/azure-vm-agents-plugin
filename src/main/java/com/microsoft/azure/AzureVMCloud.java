@@ -695,6 +695,8 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String clientSecret,
                 @QueryParameter String oauth2TokenEndpoint,
                 @QueryParameter String serviceManagementURL,
+                @QueryParameter String maxVirtualMachinesLimit,
+                @QueryParameter String deploymentTimeout,
                 @QueryParameter String resourceGroupName) {
 
             if (StringUtils.isBlank(subscriptionId)) {
@@ -714,6 +716,17 @@ public class AzureVMCloud extends Cloud {
             }
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
+            }
+            if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
+                maxVirtualMachinesLimit = Integer.toString(Constants.DEFAULT_MAX_VM_LIMIT);
+            } else {
+                maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+            }
+
+            if (StringUtils.isBlank(deploymentTimeout) || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)) {
+                deploymentTimeout = Integer.toString(Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC);
+            } else {
+                deploymentTimeout = deploymentTimeout;
             }
 
             String response = AzureVMManagementServiceDelegate.verifyConfiguration(
