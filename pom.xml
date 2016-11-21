@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>azure-vm-agents-plugin</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.4.0</version>
   <packaging>hpi</packaging>
   <name>Azure VM Agents Plugin</name>
   <description>Provisions agents on Azure cloud</description>
@@ -115,6 +115,17 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>4.5</version>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>credentials</artifactId>
+        <version>1.21</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>plain-credentials</artifactId>
+      <version>1.3</version>
     </dependency>
   </dependencies>
 	

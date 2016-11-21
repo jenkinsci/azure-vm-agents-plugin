@@ -15,6 +15,10 @@
  */
 package com.microsoft.azure;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.fasterxml.jackson.databind.JsonNode;
 import hudson.model.Descriptor.FormException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,14 +75,18 @@ import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.retry.NoRetryStrategy;
+import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.ExecutionEngine;
 import com.microsoft.azure.util.FailureStage;
+import hudson.security.ACL;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -247,8 +255,11 @@ public class AzureVMManagementServiceDelegate {
             }
 
             ObjectNode.class.cast(tmp.get("variables")).put("vmSize", template.getVirtualMachineSize());
-            ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", template.getAdminUserName());
-            ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", template.getAdminPassword());
+            // Grab the username/pass
+            StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(template.getCredentialsId());
+            
+            ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", creds.getUsername());
+            ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", creds.getPassword().getPlainText());
 
             if (StringUtils.isNotBlank(template.getStorageAccountName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", template.getStorageAccountName());
@@ -355,16 +366,18 @@ public class AzureVMManagementServiceDelegate {
         final String ipRef = vm.getVirtualMachine().getNetworkProfile().getNetworkInterfaces().get(0).
                 getReferenceUri();
 
-        final NetworkInterface netIF = NetworkResourceProviderService.create(config).
-                getNetworkInterfacesOperations().get(
+        final NetworkInterface netIF = NetworkResourceProviderService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter())
+                .getNetworkInterfacesOperations().get(
                         template.getResourceGroupName(),
                         ipRef.substring(ipRef.lastIndexOf("/") + 1, ipRef.length())).
                 getNetworkInterface();
 
         final String nicRef = netIF.getIpConfigurations().get(0).getPublicIpAddress().getId();
 
-        final PublicIpAddress pubIP = NetworkResourceProviderService.create(config).
-                getPublicIpAddressesOperations().get(
+        final PublicIpAddress pubIP = NetworkResourceProviderService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter())
+                .getPublicIpAddressesOperations().get(
                         template.getResourceGroupName(),
                         nicRef.substring(nicRef.lastIndexOf("/") + 1, nicRef.length())).
                 getPublicIpAddress();
@@ -373,9 +386,9 @@ public class AzureVMManagementServiceDelegate {
         azureAgent.setPublicDNSName(pubIP.getDnsSettings().getFqdn());
         azureAgent.setSshPort(Constants.DEFAULT_SSH_PORT);
 
-        LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}",
-                new Object[]{azureAgent.getNodeName(), azureAgent.getAdminUserName(), azureAgent.isShutdownOnIdle(),
-                    azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
+        LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}", 
+            new Object[] { azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
+                azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
     }
 
     /**
@@ -459,21 +472,17 @@ public class AzureVMManagementServiceDelegate {
                     template.getUseAgentAlwaysIfAvail(),
                     template.getLabels(),
                     template.getAzureCloud().getDisplayName(),
-                    template.getAdminUserName(),
+                    template.getCredentialsId(),
                     null,
                     null,
-                    template.getAdminPassword(),
                     template.getJvmOptions(),
                     template.isShutdownOnIdle(),
                     false,
                     deploymentName,
                     template.getRetentionTimeInMin(),
                     template.getInitScript(),
-                    azureCloud.getSubscriptionId(),
-                    azureCloud.getClientId(),
-                    azureCloud.getClientSecret(),
-                    azureCloud.getOauth2TokenEndpoint(),
-                    azureCloud.getServiceManagementURL(),
+                    azureCloud.getAzureCredentialsId(),
+                    azureCloud.getServicePrincipal(),
                     template.getAgentLaunchMethod(),
                     CleanUpAction.DEFAULT,
                     null,
@@ -491,7 +500,8 @@ public class AzureVMManagementServiceDelegate {
 
     public static List<String> getStorageAccountsInfo(final Configuration config) throws Exception {
         List<String> storageAccounts = new ArrayList<String>();
-        StorageManagementClient client = StorageManagementService.create(config);
+        StorageManagementClient client = StorageManagementService.create(config)
+                .withRequestFilterFirst(new AzureUserAgentFilter());
 
         StorageAccountListResponse response = client.getStorageAccountsOperations().list();
         for (StorageAccount sa : response.getStorageAccounts()) {
@@ -602,36 +612,22 @@ public class AzureVMManagementServiceDelegate {
     /**
      * Validates certificate configuration.
      *
-     * @param subscriptionId
-     * @param clientId
-     * @param oauth2TokenEndpoint
-     * @param clientSecret
-     * @param serviceManagementURL
+     * @param servicePrincipal
      * @param resourceGroupName
      * @return
      */
     public static String verifyConfiguration(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL,
+            final AzureCredentials.ServicePrincipal servicePrincipal,
             final String resourceGroupName) {
-        if (StringUtils.isBlank(subscriptionId)
-                || StringUtils.isBlank(clientId)
-                || StringUtils.isBlank(oauth2TokenEndpoint)
-                || StringUtils.isBlank(clientSecret)
-                || StringUtils.isBlank(resourceGroupName)) {
-
+        if (servicePrincipal.isBlank() || StringUtils.isBlank(resourceGroupName)) {
             return Messages.Azure_GC_Template_Val_Profile_Missing();
         } else {
             try {
-                // Load up the configuration now and do a live verification            
-                Configuration config = ServiceDelegateHelper.loadConfiguration(
-                        subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
                 if (!resourceGroupName.matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                     return Messages.Azure_GC_Template_ResourceGroupName_Err();
                 }
+                // Load up the configuration now and do a live verification
+                Configuration config = ServiceDelegateHelper.loadConfiguration(servicePrincipal);
 
                 if (!verifyConfiguration(config, resourceGroupName).equals(Constants.OP_SUCCESS)) {
                     return Messages.Azure_GC_Template_Val_Profile_Err();
@@ -993,11 +989,7 @@ public class AzureVMManagementServiceDelegate {
     /**
      * Verifies template configuration by making server calls if needed.
      *
-     * @param subscriptionId
-     * @param clientId
-     * @param clientSecret
-     * @param oauth2TokenEndpoint
-     * @param serviceManagementURL
+     * @param servicePrincipal
      * @param templateName
      * @param labels
      * @param location
@@ -1012,23 +1004,17 @@ public class AzureVMManagementServiceDelegate {
      * @param imageVersion
      * @param agentLaunchMethod
      * @param initScript
-     * @param adminUserName
-     * @param adminPassword
+     * @param credentialsId
      * @param virtualNetworkName
      * @param subnetName
      * @param retentionTimeInMin
-     * @param templateStatus
      * @param jvmOptions
      * @param returnOnSingleError
      * @param resourceGroupName
      * @return
      */
     public static List<String> verifyTemplate(
-            final String subscriptionId,
-            final String clientId,
-            final String clientSecret,
-            final String oauth2TokenEndpoint,
-            final String serviceManagementURL,
+            final AzureCredentials.ServicePrincipal servicePrincipal,
             final String templateName,
             final String labels,
             final String location,
@@ -1043,8 +1029,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageVersion,
             final String agentLaunchMethod,
             final String initScript,
-            final String adminUserName,
-            final String adminPassword,
+            final String credentialsId,
             final String virtualNetworkName,
             final String subnetName,
             final String retentionTimeInMin,
@@ -1057,8 +1042,7 @@ public class AzureVMManagementServiceDelegate {
 
         // Load configuration
         try {
-            config = ServiceDelegateHelper.loadConfiguration(
-                    subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
+            config = ServiceDelegateHelper.loadConfiguration(servicePrincipal);
             String validationResult;
             
             // Verify basic info about the template
@@ -1076,6 +1060,14 @@ public class AzureVMManagementServiceDelegate {
             }
 
             //verify password
+            String adminPassword="";
+            try {
+                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(credentialsId);
+                adminPassword = creds.getPassword().getPlainText();
+            } catch(AzureCloudException e) {
+                LOGGER.log(Level.SEVERE, "Could not load the VM credentials", e);
+            }
+        
             validationResult = verifyAdminPassword(adminPassword);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
@@ -1094,8 +1086,8 @@ public class AzureVMManagementServiceDelegate {
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
             }
-
-            validationResult = verifyLocation(location, serviceManagementURL);
+            
+            validationResult = verifyLocation(location, servicePrincipal.serviceManagementURL);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
