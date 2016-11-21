@@ -75,6 +75,9 @@ import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
+import com.microsoft.azure.management.resources.models.ResourceGroupCreateOrUpdateResult;
+import com.microsoft.azure.management.storage.models.AccountType;
+import com.microsoft.azure.management.storage.models.StorageAccountCreateParameters;
 import com.microsoft.azure.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.retry.NoRetryStrategy;
 import com.microsoft.azure.util.AzureCredentials;
@@ -329,18 +332,30 @@ public class AzureVMManagementServiceDelegate {
      */
     private static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName) throws Exception {
         Configuration config = ServiceDelegateHelper.getConfiguration(template);
-        StorageManagementClient client = ServiceDelegateHelper.getStorageManagementClient(config);
-        
-        // Get the storage account name and key
+
         String targetStorageAccount = template.getStorageAccountName();
         String resourceGroupName = template.getResourceGroupName();
-        String storageAccountKey = client.getStorageAccountsOperations().listKeys(resourceGroupName, targetStorageAccount)
+        String location = template.getLocation();
+
+        //make sure the resource group and storage account exist
+        final ResourceManagementClient rmClient = ServiceDelegateHelper.getResourceManagementClient(config);
+        final StorageManagementClient storageClient = ServiceDelegateHelper.getStorageManagementClient(config);
+
+        rmClient.getResourceGroupsOperations().createOrUpdate(resourceGroupName, new ResourceGroup(location));
+        
+        StorageAccountCreateParameters createParams = new StorageAccountCreateParameters();
+        createParams.setLocation(location);
+        createParams.setAccountType(AccountType.StandardLRS);
+        storageClient.getStorageAccountsOperations().create(resourceGroupName, targetStorageAccount, createParams);
+
+        // Get the storage account name and key
+        String storageAccountKey = storageClient.getStorageAccountsOperations().listKeys(resourceGroupName, targetStorageAccount)
                 .getStorageAccountKeys().getKey1();
         String scriptText = template.getInitScript();
                 
         String blobURL = StorageServiceDelegate.uploadFileToStorage(
                 config, targetStorageAccount, storageAccountKey,
-                client.getBaseUri().toString(), resourceGroupName, Constants.CONFIG_CONTAINER_NAME, 
+                storageClient.getBaseUri().toString(), resourceGroupName, Constants.CONFIG_CONTAINER_NAME, 
                 targetScriptName, scriptText.getBytes("UTF-8"));
         return blobURL;
     }
