@@ -203,7 +203,8 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         LOGGER.info("AzureVMCloudVerificationTask: verifyConfiguration: start");
 
         // Check the sub and off we go
-        String result = AzureVMManagementServiceDelegate.verifyConfiguration(cloud.getServicePrincipal(), cloud.getResourceGroupName());
+        String result = AzureVMManagementServiceDelegate.verifyConfiguration(cloud.getServicePrincipal(), cloud.getResourceGroupName(),
+                        Integer.toString(cloud.getMaxVirtualMachinesLimit()), Integer.toString(cloud.getDeploymentTimeout()));
         if (result != Constants.OP_SUCCESS) {
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationValid(false);

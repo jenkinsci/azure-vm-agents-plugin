@@ -260,7 +260,7 @@ public class AzureVMManagementServiceDelegate {
             ObjectNode.class.cast(tmp.get("variables")).put("vmSize", template.getVirtualMachineSize());
             // Grab the username/pass
             StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(template.getCredentialsId());
-            
+
             ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", creds.getUsername());
             ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", creds.getPassword().getPlainText());
 
@@ -344,7 +344,7 @@ public class AzureVMManagementServiceDelegate {
         final StorageManagementClient storageClient = ServiceDelegateHelper.getStorageManagementClient(config);
 
         rmClient.getResourceGroupsOperations().createOrUpdate(resourceGroupName, new ResourceGroup(location));
-        
+
         StorageAccountCreateParameters createParams = new StorageAccountCreateParameters();
         createParams.setLocation(location);
         createParams.setAccountType(AccountType.StandardLRS);
@@ -357,7 +357,7 @@ public class AzureVMManagementServiceDelegate {
 
         String blobURL = StorageServiceDelegate.uploadFileToStorage(
                 config, targetStorageAccount, storageAccountKey,
-                storageClient.getBaseUri().toString(), resourceGroupName, Constants.CONFIG_CONTAINER_NAME, 
+                storageClient.getBaseUri().toString(), resourceGroupName, Constants.CONFIG_CONTAINER_NAME,
                 targetScriptName, scriptText.getBytes("UTF-8"));
         return blobURL;
     }
@@ -401,9 +401,9 @@ public class AzureVMManagementServiceDelegate {
         azureAgent.setPublicDNSName(pubIP.getDnsSettings().getFqdn());
         azureAgent.setSshPort(Constants.DEFAULT_SSH_PORT);
 
-        LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}", 
-            new Object[] { azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
-                azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
+        LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}",
+                new Object[]{azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
+                    azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
     }
 
     /**
@@ -629,28 +629,35 @@ public class AzureVMManagementServiceDelegate {
      *
      * @param servicePrincipal
      * @param resourceGroupName
+     * @param maxVMLimit
+     * @param timeout
      * @return
      */
     public static String verifyConfiguration(
             final AzureCredentials.ServicePrincipal servicePrincipal,
-            final String resourceGroupName) {
-        if (servicePrincipal.isBlank() || StringUtils.isBlank(resourceGroupName)) {
-            return Messages.Azure_GC_Template_Val_Profile_Missing();
-        } else {
-            try {
-                if (!resourceGroupName.matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
-                    return Messages.Azure_GC_Template_ResourceGroupName_Err();
-                }
-                // Load up the configuration now and do a live verification
-                Configuration config = ServiceDelegateHelper.loadConfiguration(servicePrincipal);
-
-                if (!verifyConfiguration(config, resourceGroupName).equals(Constants.OP_SUCCESS)) {
+            final String resourceGroupName, final String maxVMLimit, final String timeOut) {
+        try {
+            Configuration config = ServiceDelegateHelper.loadConfiguration(servicePrincipal);
+            
+            if(!AzureUtil.isValidTimeOut(timeOut))
+                return "Invalid Timeout, Should be a positive number, minimum value "+Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC;
+            
+            if(!AzureUtil.isValidResourceGroupName(resourceGroupName))
+                return "Error: "+Messages.Azure_GC_Template_ResourceGroupName_Err();
+            
+            if(!AzureUtil.isValidMAxVMLimit(maxVMLimit))
+                return "Invalid Limit, Should be a positive number, e.g. "+Constants.DEFAULT_MAX_VM_LIMIT;
+            
+            if (AzureUtil.isValidTimeOut(timeOut) && AzureUtil.isValidMAxVMLimit(maxVMLimit) 
+                    && AzureUtil.isValidResourceGroupName(resourceGroupName)) {
+                
+                String result = verifyConfiguration(config, resourceGroupName);
+                if (!result.matches(Constants.OP_SUCCESS))
                     return Messages.Azure_GC_Template_Val_Profile_Err();
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error validating profile", e);
-                return Messages.Azure_GC_Template_Val_Profile_Err();
             }
+        }catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error validating profile", e);
+            return Messages.Azure_GC_Template_Val_Profile_Err();
         }
         return Constants.OP_SUCCESS;
     }
@@ -1059,7 +1066,7 @@ public class AzureVMManagementServiceDelegate {
         try {
             config = ServiceDelegateHelper.loadConfiguration(servicePrincipal);
             String validationResult;
-            
+
             // Verify basic info about the template
             //Verify number of parallel jobs
             validationResult = verifyNoOfExecutors(noOfParallelJobs);
@@ -1075,14 +1082,14 @@ public class AzureVMManagementServiceDelegate {
             }
 
             //verify password
-            String adminPassword="";
+            String adminPassword = "";
             try {
                 StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(credentialsId);
                 adminPassword = creds.getPassword().getPlainText();
-            } catch(AzureCloudException e) {
+            } catch (AzureCloudException e) {
                 LOGGER.log(Level.SEVERE, "Could not load the VM credentials", e);
             }
-        
+
             validationResult = verifyAdminPassword(adminPassword);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
@@ -1101,7 +1108,7 @@ public class AzureVMManagementServiceDelegate {
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
             }
-            
+
             validationResult = verifyLocation(location, servicePrincipal.serviceManagementURL);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
@@ -1346,6 +1353,7 @@ public class AzureVMManagementServiceDelegate {
 
     /**
      * Check the location. This location is the display name.
+     *
      * @param location
      * @return
      */

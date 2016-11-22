@@ -364,4 +364,36 @@ public class AzureUtil {
         
         return creds;
     }
+    
+    /**
+     * Checks if the ResourceGroup Name is valid with Azure Standards
+     * @param resourceGroupName Resource Group Name
+     * @return true if the name is valid else return false
+     */
+    public static boolean isValidResourceGroupName(String resourceGroupName) {
+        if (resourceGroupName.matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN))
+            return true;
+        return false;
+    }
+    /**
+     * Checks if the maximum virtual machines limit is valid
+     * @param maxVMLimit Maximum Virtual Limit
+     * @return true if it is valid else return false
+     */
+    public static boolean isValidMAxVMLimit(String maxVMLimit) {
+        if (StringUtils.isBlank(maxVMLimit) || !maxVMLimit.matches(Constants.REG_EX_DIGIT))
+            return false;
+        return true;
+    }
+    /**
+     * Checks if the deployment Timeout is valid
+     * @param deploymentTimeout Deployment Timeout
+     * @return true if it is valid else return false
+     */
+    public static boolean isValidTimeOut(String deploymentTimeout) {
+        if ((StringUtils.isBlank(deploymentTimeout) || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)
+                || Integer.parseInt(deploymentTimeout) < Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC))
+            return false;
+        return true;
+    }
 }

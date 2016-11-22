@@ -642,6 +642,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         public FormValidation doVerifyConfiguration(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupName,
+                @RelativePath("..") @QueryParameter String maxVirtualMachinesLimit,
+                @RelativePath("..") @QueryParameter String deploymentTimeout,
                 @QueryParameter String templateName,
                 @QueryParameter String labels,
                 @QueryParameter String location,
@@ -717,7 +719,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the 
-            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName);
+            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName, 
+                    maxVirtualMachinesLimit, deploymentTimeout);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }

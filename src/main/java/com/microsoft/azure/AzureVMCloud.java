@@ -690,24 +690,17 @@ public class AzureVMCloud extends Cloud {
         }
 
         public FormValidation doVerifyConfiguration(
-                @QueryParameter String subscriptionId,
-                @QueryParameter String clientId,
-                @QueryParameter String clientSecret,
-                @QueryParameter String oauth2TokenEndpoint,
-                @QueryParameter String serviceManagementURL,
+                @QueryParameter String azureCredentialsId,
                 @QueryParameter String maxVirtualMachinesLimit,
                 @QueryParameter String deploymentTimeout,
-                @QueryParameter String azureCredentialsId,
                 @QueryParameter String resourceGroupName) {
 
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
-            }
-
-            
+            }      
             AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
             try {
-                credentials.Validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
+                boolean validationResult = credentials.Validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
             } catch (AzureCredentialsValidationException e) {
                 return FormValidation.error(e.getMessage());
             }
