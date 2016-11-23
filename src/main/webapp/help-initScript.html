@@ -1,17 +1,18 @@
 <div>
 <b>At a minimum, the init script needs to install a Java runtime</b>.</br>
-	
+
 Custom prepared images are recommended if the initialization script is taking more than 20 minutes to execute.<br></br>
- 
+
 Below are examples of initialization scripts: </br></br>
 1)	<b>Ubuntu</b></br>
 		&nbsp;&nbsp;&nbsp;&nbsp;# Install Java</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br>
 		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get -y update --fix-missing</br>
-		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br></br>		
+		&nbsp;&nbsp;&nbsp;&nbsp;sudo apt-get install -y openjdk-7-jdk</br></br>
 2)	<b>Windows w/JNLP</b></br>
     For Windows agents with JNLP launch, this script is a powershell script.</br>
+    You can use this <a target="_blank" href="https://gist.githubusercontent.com/snallami/5aa9ea2c57836a3b3635/raw/68551fc60df4b05546f9b86d6fd05903bceed0c2/Windows%2520Slaves%2520setup">sample</a> (update "username:apitoken" with your credentials)<br />
     Automatically passed to this script is:<br/>
         First argument - Jenkins server URL<br/>
         Second argument - VMName<br/>
