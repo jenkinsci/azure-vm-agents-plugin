@@ -76,8 +76,8 @@ public class AzureCredentials extends BaseStandardCredentials {
                     || StringUtils.isBlank(oauth2TokenEndpoint.getPlainText())
                     || StringUtils.isBlank(clientSecret.getPlainText());
         }
-        
-        public void Validate(String resourceGroupName) throws AzureCredentialsValidationException {
+
+        public boolean Validate(String resourceGroupName, String maxVMLimit, String deploymentTimeout) throws AzureCredentialsValidationException {
             if (StringUtils.isBlank(subscriptionId.getPlainText())) {
                 throw new AzureCredentialsValidationException("Error: Subscription ID is missing");
             }
@@ -91,9 +91,12 @@ public class AzureCredentials extends BaseStandardCredentials {
                 throw new AzureCredentialsValidationException("Error: OAuth 2.0 Token Endpoint is missing");
             }
 
-            String response = AzureVMManagementServiceDelegate.verifyConfiguration(this,resourceGroupName);
-            if (!Constants.OP_SUCCESS.equalsIgnoreCase(response))
+            String response = AzureVMManagementServiceDelegate.verifyConfiguration(this, resourceGroupName, maxVMLimit, deploymentTimeout);
+            if (!Constants.OP_SUCCESS.equalsIgnoreCase(response)) {
                 throw new AzureCredentialsValidationException(response);
+            }
+            
+            return true;
         }
 
     }
@@ -163,9 +166,11 @@ public class AzureCredentials extends BaseStandardCredentials {
                 @QueryParameter String oauth2TokenEndpoint,
                 @QueryParameter String serviceManagementURL) {
 
-            AzureCredentials.ServicePrincipal servicePrincipal = new AzureCredentials.ServicePrincipal(subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, serviceManagementURL);
+            AzureCredentials.ServicePrincipal servicePrincipal = new AzureCredentials.ServicePrincipal(subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, 
+                                                                serviceManagementURL);
             try {
-                servicePrincipal.Validate(Constants.DEFAULT_RESOURCE_GROUP_NAME);
+                boolean result = servicePrincipal.Validate(Constants.DEFAULT_RESOURCE_GROUP_NAME, Integer.toString(Constants.DEFAULT_MAX_VM_LIMIT), 
+                        Integer.toString(Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC));
             } catch (AzureCredentialsValidationException e) {
                 return FormValidation.error(e.getMessage());
             }

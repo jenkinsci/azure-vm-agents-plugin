@@ -136,4 +136,6 @@ public class Constants {
     public static final String DEFAULT_VNET_NAME = "jenkinsarm-vnet";
     
     public static final String DEFAULT_SUBNET_NAME = "jenkinsarm-snet";
+    
+    public static final String DEFAULT_RESOURCE_GROUP_PATTERN = "^[a-zA-Z0-9][a-zA-Z\\-_0-9]{0,62}[a-zA-Z0-9]$";
 }

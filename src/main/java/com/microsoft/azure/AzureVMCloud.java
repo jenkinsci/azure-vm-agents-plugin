@@ -691,15 +691,16 @@ public class AzureVMCloud extends Cloud {
 
         public FormValidation doVerifyConfiguration(
                 @QueryParameter String azureCredentialsId,
+                @QueryParameter String maxVirtualMachinesLimit,
+                @QueryParameter String deploymentTimeout,
                 @QueryParameter String resourceGroupName) {
 
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
-            }
-
+            }      
             AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
             try {
-                credentials.Validate(resourceGroupName);
+                boolean validationResult = credentials.Validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
             } catch (AzureCredentialsValidationException e) {
                 return FormValidation.error(e.getMessage());
             }

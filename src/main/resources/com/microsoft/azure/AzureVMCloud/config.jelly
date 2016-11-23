@@ -18,7 +18,7 @@
       <f:textbox default="${descriptor.getDefaultResourceGroupName()}" />
     </f:entry>
     <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration" 
-          with="azureCredentialsId,resourceGroupName" />
+          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupName" />
   </f:section>
 	
   <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">
