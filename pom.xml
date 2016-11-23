@@ -6,10 +6,10 @@
     <version>1.642.1</version>
   </parent>
 
-  <artifactId>azure-vm-agents-plugin</artifactId>
+  <artifactId>azure-vm-agents</artifactId>
   <version>0.4.0</version>
   <packaging>hpi</packaging>
-  <name>Azure VM Agents Plugin</name>
+  <name>Azure VM Agents</name>
   <description>Provisions agents on Azure cloud</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Azure+VM+Agents+Plugin</url>
 
@@ -30,24 +30,19 @@
 
   <developers>
     <developer>
-      <id>martinsawicki</id>
-      <name>Martin Sawicki</name>
-      <email>marcins@microsoft.com</email>
+      <id>arroyc_microsoft</id>
+      <name>Arjun Roy Chaudhuri</name>
+      <email>arroyc@microsoft.com</email>
     </developer>
     <developer>
-      <id>snallami</id>
-      <name>Suresh Nallamilli</name>
-      <email>snallami@gmail.com</email>
+      <id>antifun</id>
+      <name>Matt Mitchell</name>
+      <email>mmitche@microsoft.com</email>
     </developer>
     <developer>
-      <id>ilgrosso</id>
-      <name>Francesco Chicchiriccò</name>
-      <email>ilgrosso@apache.org</email>
-    </developer>
-    <developer>
-      <id>fmartelli</id>
-      <name>Fabio Martelli</name>
-      <email>fmartelli@apache.org</email>
+      <id>clguiman</id>
+      <name>Claudiu Guiman</name>
+      <email>clguiman@microsoft.com</email>
     </developer>
   </developers>
 	
