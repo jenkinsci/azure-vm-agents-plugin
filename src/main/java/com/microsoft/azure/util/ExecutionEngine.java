@@ -15,9 +15,8 @@
  */
 package com.microsoft.azure.util;
 
+import com.microsoft.azure.AzureVMCloud;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,8 +34,7 @@ public class ExecutionEngine {
 
     public static <T> T executeWithRetry(final Callable<T> task, final RetryStrategy retryStrategy)
             throws AzureCloudException {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<T> result = executorService.submit(new RetryTask<T>(task, retryStrategy));
+        Future<T> result = AzureVMCloud.getThreadPool().submit(new RetryTask<T>(task, retryStrategy));
 
         try {
             if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
@@ -48,16 +46,11 @@ public class ExecutionEngine {
             throw new AzureCloudException("Operation timed out: ", timeoutException);
         } catch (Exception ex) {
             throw new AzureCloudException(ex);
-        } finally {
-            executorService.shutdown();
         }
     }
 
     public static <T> Future<T> executeAsync(final Callable<T> task, final RetryStrategy retryStrategy)
             throws AzureCloudException {
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
-        final Future<T> res = executorService.submit(new RetryTask<T>(task, retryStrategy));
-        executorService.shutdown();
-        return res;
+        return AzureVMCloud.getThreadPool().submit(new RetryTask<T>(task, retryStrategy));
     }
 }

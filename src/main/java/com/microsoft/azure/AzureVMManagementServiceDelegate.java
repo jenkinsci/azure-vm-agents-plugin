@@ -62,8 +62,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -1175,10 +1173,8 @@ public class AzureVMManagementServiceDelegate {
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(verificationTaskList.size());
-
         try {
-            for (Future<String> validationResult : executorService.invokeAll(verificationTaskList)) {
+            for (Future<String> validationResult : AzureVMCloud.getThreadPool().invokeAll(verificationTaskList)) {
                 try {
                     // Get will block until time expires or until task completes
                     String result = validationResult.get(60, TimeUnit.SECONDS);
