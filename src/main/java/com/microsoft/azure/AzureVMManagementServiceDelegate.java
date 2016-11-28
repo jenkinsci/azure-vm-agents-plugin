@@ -342,12 +342,21 @@ public class AzureVMManagementServiceDelegate {
         final StorageManagementClient storageClient = ServiceDelegateHelper.getStorageManagementClient(config);
 
         rmClient.getResourceGroupsOperations().createOrUpdate(resourceGroupName, new ResourceGroup(location));
+<<<<<<< HEAD
 
+=======
+        
+        try
+        {
+>>>>>>> 17b8539365c3ff9c006753579036ecd4440ea752
         StorageAccountCreateParameters createParams = new StorageAccountCreateParameters();
         createParams.setLocation(location);
         createParams.setAccountType(AccountType.StandardLRS);
         storageClient.getStorageAccountsOperations().create(resourceGroupName, targetStorageAccount, createParams);
-
+        }catch (Exception e)
+        {
+            LOGGER.log(Level.INFO, e.getMessage());
+        }
         // Get the storage account name and key
         String storageAccountKey = storageClient.getStorageAccountsOperations().listKeys(resourceGroupName, targetStorageAccount)
                 .getStorageAccountKeys().getKey1();
