@@ -128,6 +128,8 @@ Refer to
     }
     ```
 
+      If you hit the [storage scalability limits](https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets) for your custom images on one storage account you should consider using the agent [temporary storage](https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines) or creating multiple storage accounts and spread your agents across multiple templates with the same label.
+
       For more details about how to prepare custom images, refer to the below links:
       * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
       * [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)

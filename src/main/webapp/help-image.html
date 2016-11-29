@@ -3,4 +3,5 @@
     Your custom image has to be available into the same storage account in which you are going to create agent nodes.<br />
     <br />
     e.g. https://jenkinsarm.blob.core.windows.net/system/Microsoft.Compute/Images/vhds/jenkinsvm5-osDisk.c68efe70-4b40-450e-a8b6-3d10b7d1665f.vhd<br /><br />
+    If you hit the <a target="_blank" href="https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets">storage scalability limits</a> for your custom images on one storage account you should consider using the agents <a target="_blank" href="https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines/">temporary storage</a> or creating multiple storage accounts and spread your agents across multiple templates with the same label.
 </div>
