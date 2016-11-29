@@ -1,4 +1,4 @@
-# azure-vm-agents-plugin
+# azure-vm-agents
 
 
 Jenkins Plugin to create Azure VM agents (on Azure ARM).
