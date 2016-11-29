@@ -1,4 +1,4 @@
-# azure-vm-agents-plugin
+# azure-vm-agents
 
 
 Jenkins Plugin to create Azure VM agents (on Azure ARM).
@@ -127,6 +127,8 @@ Refer to
         sleep 10
     }
     ```
+
+      If you hit the [storage scalability limits](https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets) for your custom images on the storage account where the VHD resides, you should consider using the agent's [temporary storage](https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines) or copy your custom image in multiple storage accounts and use multiple VM templates with the same label within the same agent cloud.
 
       For more details about how to prepare custom images, refer to the below links:
       * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
