@@ -17,6 +17,8 @@ Register and authorize your client application.
 Retrieve and use Client ID and Client Secret to be sent to Azure AD during authentication.
 
 Refer to
+  * [Bash Script for creating a service principal](https://github.com/Azure/azure-devops-utils/blob/master/bash/create-service-principal.sh)
+  * [Further guidance on creating a service principal](https://github.com/Azure/azure-devops-utils#user-content-create-service-principal)
   * [Adding, Updating, and Removing an Application](https://msdn.microsoft.com/en-us/library/azure/dn132599.aspx)
   * [Register a client app](https://msdn.microsoft.com/en-us/dn877542.asp)
 
@@ -155,14 +157,14 @@ Refer to
 2. If the Jenkins master does not have a security configuration, leave the Init script blank for the default
    script to execute on the agent.
 3. If the Jenkins master has a security configuration, then refer to the script at
-   https://gist.github.com/snallami/5aa9ea2c57836a3b3635 and modify the script with the proper
+   https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script.ps1 and modify the script with the proper
    Jenkins credentials.
 
    At a minimum, the script needs to be modified with the Jenkins user name and API token.
    To get the API token, click on your username --> configure --> show api token<br>
 
    The below statement in the script needs to be modified:
-   $credentails="username:apitoken"
+   $credentials="username:apitoken"
 
 ## Create a Jenkins job that runs on a Linux agent node on Azure
 1. In the Jenkins dashboard, click New Item/Job.
