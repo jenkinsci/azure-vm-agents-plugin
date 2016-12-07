@@ -457,7 +457,7 @@ public class AzureVMCloud extends Cloud {
                 final AzureVMComputer azureComputer = AzureVMComputer.class.cast(agentComputer);
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
-                if (isNodeEligibleForReuse(agentNode, template)) {
+                if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
                     LOGGER.log(Level.INFO, "AzureVMCloud: provision: agent computer eligible for reuse {0}", agentComputer.getName());
                     try {
                         if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
@@ -476,8 +476,9 @@ public class AzureVMCloud extends Cloud {
                                             AzureVMManagementServiceDelegate.setVirtualMachineDetails(
                                                     agentNode, template);
                                             Jenkins.getInstance().addNode(agentNode);
-                                            if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
-                                                agentNode.toComputer().connect(false).get();
+                                            Computer computer = agentNode.toComputer();
+                                            if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH") && computer != null) {
+                                                computer.connect(false).get();
                                             } else { // Wait until node is online
                                                 waitUntilJNLPNodeIsOnline(agentNode);
                                             }
@@ -518,7 +519,6 @@ public class AzureVMCloud extends Cloud {
                 // Negative to reduce number available.
                 this.adjustVirtualMachineCount(-adjustedNumberOfAgents);
 
-                ExecutorService executorService = Executors.newCachedThreadPool();
                 Callable<AzureVMDeploymentInfo> callableTask = new Callable<AzureVMDeploymentInfo>() {
                     @Override
                     public AzureVMDeploymentInfo call() throws Exception {
@@ -570,8 +570,9 @@ public class AzureVMCloud extends Cloud {
                                         // Place the node in blocked state while it starts.
                                         agent.blockCleanUpAction();
                                         Jenkins.getInstance().addNode(agent);
-                                        if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
-                                            agent.toComputer().connect(false).get();
+                                        Computer computer = agent.toComputer();
+                                        if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH") && computer != null) {
+                                            computer.connect(false).get();
                                         } else if (agent.getAgentLaunchMethod().equalsIgnoreCase("JNLP")) {
                                             // Wait until node is online
                                             waitUntilJNLPNodeIsOnline(agent);
@@ -631,7 +632,9 @@ public class AzureVMCloud extends Cloud {
             @Override
             public String call() {
                 try {
-                    agent.toComputer().waitUntilOnline();
+                    Computer computer = agent.toComputer();
+                    if (computer != null)
+                        computer.waitUntilOnline();
                 } catch (InterruptedException e) {
                     // just ignore
                 }
@@ -707,7 +710,7 @@ public class AzureVMCloud extends Cloud {
             }      
             AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
             try {
-                boolean validationResult = credentials.Validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
+                credentials.validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
             } catch (AzureCredentialsValidationException e) {
                 return FormValidation.error(e.getMessage());
             }

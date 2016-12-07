@@ -133,9 +133,13 @@ public class AzureVMManagementServiceDelegate {
      * @param numberOfAgents Number of agents to create
      * @return The base name for the VMs that were created
      * @throws AzureCloudException
+     * @throws java.io.IOException
      */
     public static AzureVMDeploymentInfo createDeployment(final AzureVMAgentTemplate template, final int numberOfAgents)
-            throws AzureCloudException {
+            throws AzureCloudException, IOException {
+
+        InputStream embeddedTemplate = null;
+        InputStream fragmentStream = null;
         try {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
@@ -167,7 +171,6 @@ public class AzureVMManagementServiceDelegate {
             final DeploymentProperties properties = new DeploymentProperties();
             deployment.setProperties(properties);
 
-            final InputStream embeddedTemplate;
             final boolean useCustomScriptExtension
                     = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(template.getInitScript())
                     && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
@@ -279,8 +282,7 @@ public class AzureVMManagementServiceDelegate {
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", subnetName);
 
                 // Read the vnet fragment
-                InputStream fragmentStream
-                        = AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
+                fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
 
                 final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
                 // Add the virtual network fragment
@@ -321,6 +323,12 @@ public class AzureVMManagementServiceDelegate {
             // Pass the info off to the template so that it can be queued for update.
             template.handleTemplateProvisioningFailure(e.getMessage(), FailureStage.PROVISIONING);
             throw new AzureCloudException(e);
+        }
+        finally {
+            if (embeddedTemplate != null)
+                embeddedTemplate.close();
+            if (fragmentStream != null)
+                fragmentStream.close();
         }
     }
 
@@ -1389,7 +1397,7 @@ public class AzureVMManagementServiceDelegate {
             // a URI
             final URI u;
             try {
-                u = URI.create(image);
+                URI.create(image);
             } catch (Exception e) {
                 Messages.Azure_GC_Template_ImageURI_Not_Valid();
             }
