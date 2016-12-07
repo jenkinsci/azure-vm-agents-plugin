@@ -25,6 +25,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.microsoft.azure.Messages;
 import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -327,7 +328,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public void setAzureCloud(AzureVMCloud cloud) {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
-            storageAccountName = AzureVMAgentTemplate.GenerateUniqueStorageAccountName(azureCloud.getResourceGroupName());
+            storageAccountName = AzureVMAgentTemplate.GenerateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
+            
         }
     }
 
@@ -772,10 +774,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         AzureVMManagementServiceDelegate.setVirtualMachineDetails(agent, this);
     }
 
-    public static String GenerateUniqueStorageAccountName(final String resourceGroupName) {
+    public static String GenerateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            String uid = Base64.encode(md.digest(resourceGroupName.getBytes()));
+            if (null != servicePrincipal && null != servicePrincipal.subscriptionId)
+                md.update(servicePrincipal.subscriptionId.getPlainText().getBytes());
+            if (null != resourceGroupName)
+                md.update(resourceGroupName.getBytes());
+            String uid = Base64.encode(md.digest());
             uid = uid.substring(0, 22);
             uid = uid.toLowerCase();
             uid = uid.replaceAll("[^a-z0-9]","a");
