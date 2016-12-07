@@ -18,9 +18,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <jackson.version>2.5.4</jackson.version>
     <azuresdk.version>0.9.4</azuresdk.version>
-    <jenkins.version>1.642.1</jenkins.version>
+    <jenkins.version>1.653</jenkins.version>
     <java.level>7</java.level>
-    <findbugs.failOnError>false</findbugs.failOnError>
+    <findbugs.failOnError>true</findbugs.failOnError>
+    <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
     <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 

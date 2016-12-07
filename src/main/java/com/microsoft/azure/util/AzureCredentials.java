@@ -39,7 +39,7 @@ import org.kohsuke.stapler.QueryParameter;
  */
 public class AzureCredentials extends BaseStandardCredentials {
 
-    public static class ServicePrincipal {
+    public static class ServicePrincipal implements java.io.Serializable {
 
         public final Secret subscriptionId;
         public final Secret clientId;
@@ -77,7 +77,7 @@ public class AzureCredentials extends BaseStandardCredentials {
                     || StringUtils.isBlank(clientSecret.getPlainText());
         }
 
-        public boolean Validate(String resourceGroupName, String maxVMLimit, String deploymentTimeout) throws AzureCredentialsValidationException {
+        public boolean validate(String resourceGroupName, String maxVMLimit, String deploymentTimeout) throws AzureCredentialsValidationException {
             if (StringUtils.isBlank(subscriptionId.getPlainText())) {
                 throw new AzureCredentialsValidationException("Error: Subscription ID is missing");
             }
@@ -169,7 +169,7 @@ public class AzureCredentials extends BaseStandardCredentials {
             AzureCredentials.ServicePrincipal servicePrincipal = new AzureCredentials.ServicePrincipal(subscriptionId, clientId, clientSecret, oauth2TokenEndpoint, 
                                                                 serviceManagementURL);
             try {
-                boolean result = servicePrincipal.Validate(Constants.DEFAULT_RESOURCE_GROUP_NAME, Integer.toString(Constants.DEFAULT_MAX_VM_LIMIT), 
+                servicePrincipal.validate(Constants.DEFAULT_RESOURCE_GROUP_NAME, Integer.toString(Constants.DEFAULT_MAX_VM_LIMIT), 
                         Integer.toString(Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC));
             } catch (AzureCredentialsValidationException e) {
                 return FormValidation.error(e.getMessage());

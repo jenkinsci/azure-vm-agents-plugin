@@ -15,10 +15,7 @@
  */
 package com.microsoft.azure.remote;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -29,7 +26,6 @@ import com.microsoft.azure.AzureVMAgent;
 import com.microsoft.azure.AzureVMComputer;
 import com.microsoft.azure.AzureVMAgentTemplate;
 import com.microsoft.azure.Messages;
-import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.Constants;
@@ -39,9 +35,7 @@ import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.remoting.Channel.Listener;
-import hudson.security.ACL;
 import hudson.slaves.ComputerLauncher;
-import hudson.slaves.OfflineCause;
 import hudson.slaves.SlaveComputer;
 
 import java.io.ByteArrayInputStream;
@@ -51,7 +45,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -74,9 +67,16 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     @Override
     public void launch(final SlaveComputer agentComputer, final TaskListener listener) {
+        if (agentComputer == null || !( agentComputer instanceof AzureVMComputer )) {
+            LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}", agentComputer);
+            return;
+        }
         AzureVMComputer computer = (AzureVMComputer) agentComputer;
         AzureVMAgent agent = computer.getNode();
-        
+        if(agent == null) {
+            LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: Agent Node is null");
+            return;
+        }
         LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: launch method called for agent {0}", computer.getName());
 
         // Check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
@@ -219,9 +219,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: got exception ", e);
         } finally {
             if (!successful) {
-                if (session != null) {
-                    session.disconnect();
-                }
+                session.disconnect();
                 if (cleanUpReason == null) {
                     cleanUpReason = Messages._Agent_Failed_To_Connect();
                 }
@@ -335,7 +333,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             // If as root, push the password
             if (executeAsRoot) {
-                outputStream.write((passwordIfRoot + "\n").getBytes());
+                outputStream.write((passwordIfRoot + "\n").getBytes("UTF-8"));
                 outputStream.flush();
             }
 

@@ -57,6 +57,7 @@ import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.Date;
@@ -328,7 +329,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public void setAzureCloud(AzureVMCloud cloud) {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
-            storageAccountName = AzureVMAgentTemplate.GenerateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
+            storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
             
         }
     }
@@ -481,7 +482,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         @Override
         public String getDisplayName() {
-            return null;
+            return "";
         }
 
         private synchronized List<String> getVMSizes(final String location) {
@@ -777,13 +778,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         AzureVMManagementServiceDelegate.setVirtualMachineDetails(agent, this);
     }
 
-    public static String GenerateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
+    public static String generateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             if (null != servicePrincipal && null != servicePrincipal.subscriptionId)
-                md.update(servicePrincipal.subscriptionId.getPlainText().getBytes());
+                md.update(servicePrincipal.subscriptionId.getPlainText().getBytes("UTF-8"));
             if (null != resourceGroupName)
-                md.update(resourceGroupName.getBytes());
+                md.update(resourceGroupName.getBytes("UTF-8"));
             String uid = Base64.encode(md.digest());
             uid = uid.substring(0, 22);
             uid = uid.toLowerCase();

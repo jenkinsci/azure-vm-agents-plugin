@@ -26,7 +26,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.CleanUpAction;
-import com.microsoft.azure.util.FailureStage;
 import com.microsoft.azure.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.util.AzureCredentials;
 
@@ -307,10 +306,13 @@ public class AzureVMAgent extends AbstractCloudSlave {
         }
         if (this.toComputer()!= null) {
             AzureVMComputer computer = (AzureVMComputer)this.toComputer();
-            // Set the machine temporarily offline machine with an offline reason.
-            computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
-            // Reset the "by user" bit.
-            computer.setSetOfflineByUser(false);
+            if(computer != null) //findbugs was complaining about not checking here. Just doing it to please the gods
+            {
+                // Set the machine temporarily offline machine with an offline reason.
+                computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
+                // Reset the "by user" bit.
+                computer.setSetOfflineByUser(false);
+            }
         }
         setCleanUpAction(cleanUpAction);
         setCleanupReason(cleanUpReason);
@@ -427,6 +429,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         if (parentCloud != null) {
             parentCloud.adjustVirtualMachineCount(1);
         }
+        
         Jenkins.getInstance().removeNode(this);
     }
 
@@ -449,7 +452,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tmanagementURL=" + credentials.serviceManagementURL == null ? "<none>" : credentials.serviceManagementURL
+                + "\n\tmanagementURL=" + credentials.serviceManagementURL
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";

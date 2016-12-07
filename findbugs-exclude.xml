@@ -1,0 +1,29 @@
+<FindBugsFilter>
+    <Match>
+        <!--
+        Transient field that isn't set by deserialization. 
+        This class contains a field that is updated at multiple places in the class, thus it seems to be part of the state of the class.
+        However, since the field is marked as transient and not set in readObject or readResolve, it will contain the default value in any deserialized instance of the class. 
+        Bug kind and pattern: Se - SE_TRANSIENT_FIELD_NOT_RESTORED
+        -->
+        <Class name="com.microsoft.azure.AzureVMAgent" />
+        <Field name="credentials" />
+        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
+    </Match>
+    <Match>
+        <!--
+        Method may fail to clean up stream or resource on checked exception
+        This method may fail to clean up (close, dispose of) a stream, database object, or other resource requiring an explicit cleanup operation.
+        In general, if a method opens a stream or other resource, the method should use a try/finally block to ensure that the stream or resource is cleaned up before the method returns.
+        This bug pattern is essentially the same as the OS_OPEN_STREAM and ODR_OPEN_DATABASE_RESOURCE bug patterns, but is based on a different (and hopefully better) static analysis technique. We are interested is getting feedback about the usefulness of this bug pattern. To send feedback, either:
+        send email to findbugs@cs.umd.edu
+        file a bug report: http://findbugs.sourceforge.net/reportingBugs.html
+        In particular, the false-positive suppression heuristics for this bug pattern have not been extensively tuned, so reports about false positives are helpful to us.
+        See Weimer and Necula, Finding and Preventing Run-Time Error Handling Mistakes, for a description of the analysis technique.
+        -->
+        <!-- The issue was fixed, but the error is still there -->
+        <Class name="com.microsoft.azure.AzureVMManagementServiceDelegate" />
+        <Method name="createDeployment"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE" />
+    </Match>
+</FindBugsFilter>
