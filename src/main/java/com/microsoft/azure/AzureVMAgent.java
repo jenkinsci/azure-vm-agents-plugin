@@ -304,15 +304,12 @@ public class AzureVMAgent extends AbstractCloudSlave {
         if (cleanUpAction != CleanUpAction.DELETE && cleanUpAction != CleanUpAction.SHUTDOWN) {
             throw new IllegalStateException("Only use this method to set explicit cleanup operations");
         }
-        if (this.toComputer()!= null) {
-            AzureVMComputer computer = (AzureVMComputer)this.toComputer();
-            if(computer != null) //findbugs was complaining about not checking here. Just doing it to please the gods
-            {
-                // Set the machine temporarily offline machine with an offline reason.
-                computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
-                // Reset the "by user" bit.
-                computer.setSetOfflineByUser(false);
-            }
+        AzureVMComputer computer = (AzureVMComputer)this.toComputer();
+        if (computer!= null) {
+            // Set the machine temporarily offline machine with an offline reason.
+            computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
+            // Reset the "by user" bit.
+            computer.setSetOfflineByUser(false);
         }
         setCleanUpAction(cleanUpAction);
         setCleanupReason(cleanUpReason);

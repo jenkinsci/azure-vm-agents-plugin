@@ -19,6 +19,8 @@ public class Constants {
 
     public static final String CI_SYSTEM = "jenkinsagents";
 
+    public static final String PLUGIN_NAME = "AzureJenkinsVMAgent";
+
     public static final int DEFAULT_SSH_PORT = 22;
 
     public static final int DEFAULT_RDP_PORT = 3389;

@@ -19,7 +19,6 @@ import com.microsoft.windowsazure.core.pipeline.filter.ServiceRequestContext;
 import com.microsoft.windowsazure.core.pipeline.filter.ServiceRequestFilter;
 
 public class AzureUserAgentFilter implements ServiceRequestFilter {
-    private static String PLUGIN_NAME = "AzureJenkinsVMAgent";
 
     public void filter(ServiceRequestContext request) {
         String version = null;
@@ -35,10 +34,10 @@ public class AzureUserAgentFilter implements ServiceRequestFilter {
         String userAgent;
         if (request.getHeader("User-Agent") != null) {
             String currentUserAgent = request.getHeader("User-Agent");
-            userAgent = PLUGIN_NAME + "/" + version + " " + currentUserAgent;
+            userAgent = Constants.PLUGIN_NAME + "/" + version + " " + currentUserAgent;
             request.removeHeader("User-Agent");
         } else {
-            userAgent = PLUGIN_NAME + "/" + version;
+            userAgent = Constants.PLUGIN_NAME + "/" + version;
         }
         request.setHeader("User-Agent", userAgent);
     }

@@ -267,8 +267,9 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         synchronized (templatesLock) {
             String cloudName = "<unknown>";
             AzureCredentials.ServicePrincipal sp = template.getAzureCloud().getServicePrincipal();
-            if(sp != null)
+            if(sp != null) {
                 cloudName = AzureUtil.getCloudName(sp.subscriptionId.getPlainText());
+            }
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: registerTemplateHelper: Registering template {0} on {1} for verification",
                     new Object[]{template.getTemplateName(), cloudName});
             if (cloudTemplates == null) {
