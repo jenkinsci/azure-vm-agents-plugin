@@ -106,8 +106,9 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
                         new Object [] { agentNode.getName(), ae });
                 // If we have an exception, set the agent for deletion.  It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
-                if(node != null)
+                if(node != null) {
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
+                }
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
                     "AzureVMCloudRetensionStrategy: check: Exception occured while calling timeout on node {0}: {1}",
