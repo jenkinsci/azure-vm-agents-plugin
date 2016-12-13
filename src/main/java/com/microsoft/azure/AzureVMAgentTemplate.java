@@ -669,7 +669,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             if(storageAccountName.trim().isEmpty())
-                storageAccountName = AzureVMAgentTemplate.GenerateUniqueStorageAccountName(resourceGroupName, servicePrincipal);
+                storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(resourceGroupName, servicePrincipal);
 
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t"
