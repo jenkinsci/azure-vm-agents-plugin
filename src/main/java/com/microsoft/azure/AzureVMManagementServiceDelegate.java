@@ -73,7 +73,9 @@ import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.management.resources.models.ResourceGroupCreateOrUpdateResult;
 import com.microsoft.azure.management.storage.models.AccountType;
+import com.microsoft.azure.management.storage.models.CheckNameAvailabilityResponse;
 import com.microsoft.azure.management.storage.models.StorageAccountCreateParameters;
+import com.microsoft.azure.management.storage.models.StorageAccountGetPropertiesResponse;
 import com.microsoft.azure.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.retry.NoRetryStrategy;
 import com.microsoft.azure.util.AzureCredentials;
@@ -1176,6 +1178,16 @@ public class AzureVMManagementServiceDelegate {
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
 
+        // Callable for storage account virtual network.
+        Callable<String> callVerifyStorageAccountName = new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return verifyStorageAccountName(config, resourceGroupName, storageAccountName);
+            }
+        };
+        verificationTaskList.add(callVerifyStorageAccountName);
+        
         try {
             for (Future<String> validationResult : AzureVMCloud.getThreadPool().invokeAll(verificationTaskList)) {
                 try {
@@ -1328,6 +1340,33 @@ public class AzureVMManagementServiceDelegate {
             }
             return Constants.OP_SUCCESS;
         }
+    }
+
+    private static String verifyStorageAccountName(
+            final Configuration config,
+            final String resourceGroupName,
+            final String storageAccountName) {
+
+        final StorageManagementClient storageClient = ServiceDelegateHelper.getStorageManagementClient(config);
+
+        try {
+            CheckNameAvailabilityResponse response = storageClient.getStorageAccountsOperations().checkNameAvailability(storageAccountName);
+            if(!response.isNameAvailable()) {
+                // The storage account already exists. We need to check it's not in the resource group we want to use
+                try {
+                    StorageAccountGetPropertiesResponse rgResponse = storageClient.getStorageAccountsOperations().getProperties(resourceGroupName, storageAccountName);
+                    if(rgResponse.getStatusCode() == 200)
+                        return Constants.OP_SUCCESS;
+                } catch (ServiceException e) {
+                    return Messages.Azure_GC_Template_SA_Already_Exists();
+                }
+                return Messages.Azure_GC_Template_SA_Already_Exists();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO, e.getMessage());
+            return Messages.Azure_GC_Template_SA_Cant_Validate();
+        }
+        return Constants.OP_SUCCESS;
     }
 
     private static String verifyAdminPassword(final String adminPassword) {
