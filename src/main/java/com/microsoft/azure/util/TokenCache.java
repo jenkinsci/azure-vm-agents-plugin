@@ -15,28 +15,13 @@
  */
 package com.microsoft.azure.util;
 
-import com.microsoft.aad.adal4j.AuthenticationContext;
-import com.microsoft.aad.adal4j.AuthenticationResult;
-import com.microsoft.aad.adal4j.ClientCredential;
-import com.microsoft.azure.AzureVMCloud;
-import com.microsoft.azure.exceptions.AzureCloudException;
-import java.io.File;
-import java.nio.file.Path;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Paths;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import com.microsoft.azure.AzureEnvironment;
+import com.microsoft.azure.credentials.ApplicationTokenCredentials;
+import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.util.AzureCredentials;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
 public class TokenCache {
@@ -49,19 +34,16 @@ public class TokenCache {
     
     protected final AzureCredentials.ServicePrincipal credentials;
 
-    private final String path;
-
     public static TokenCache getInstance(final AzureCredentials.ServicePrincipal servicePrincipal) {
         synchronized (tsafe) {
             if (cache == null) {
                 cache = new TokenCache(servicePrincipal);
             } else if (cache.credentials == null
-                    || cache.credentials.subscriptionId == null || !cache.credentials.subscriptionId.equals(servicePrincipal.subscriptionId)
-                    || cache.credentials.clientId == null || !cache.credentials.clientId.equals(servicePrincipal.clientId)
-                    || cache.credentials.clientSecret == null || !cache.credentials.clientSecret.equals(servicePrincipal.clientSecret)
-                    || cache.credentials.oauth2TokenEndpoint == null || !cache.credentials.oauth2TokenEndpoint.equals(servicePrincipal.oauth2TokenEndpoint)
-                    || cache.credentials.serviceManagementURL == null || !cache.credentials.serviceManagementURL.equals(servicePrincipal.serviceManagementURL)) {
-                cache.clear();
+                    || !StringUtils.isEmpty(cache.credentials.getSubscriptionId()) || !cache.credentials.getSubscriptionId().equals(servicePrincipal.getSubscriptionId())
+                    || !StringUtils.isEmpty(cache.credentials.getClientId()) || !cache.credentials.getClientId().equals(servicePrincipal.getClientId())
+                    || !StringUtils.isEmpty(cache.credentials.getClientSecret()) || !cache.credentials.getClientSecret().equals(servicePrincipal.getClientSecret())
+                    || !StringUtils.isEmpty(cache.credentials.getTenant())|| !cache.credentials.getTenant().equals(servicePrincipal.getTenant())
+                    || !StringUtils.isEmpty(cache.credentials.getServiceManagementURL()) || !cache.credentials.getServiceManagementURL().equals(servicePrincipal.getServiceManagementURL())) {
                 cache = new TokenCache(servicePrincipal);
             }
         }
@@ -69,129 +51,44 @@ public class TokenCache {
         return cache;
     }
 
-    private TokenCache(final AzureCredentials.ServicePrincipal servicePrincipal) {
+    protected TokenCache(final AzureCredentials.ServicePrincipal servicePrincipal) {
         LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Instantiate new cache manager");
         this.credentials = servicePrincipal;
-        
-        // Compute the cloud name
-        String cloudName = "<unknown";
-        if(credentials != null)
-            cloudName =AzureUtil.getCloudName(credentials.subscriptionId.getPlainText());
-
-        final String home = Jenkins.getInstance().root.getPath();
-
-        LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Cache home \"{0}\"", home);
-
-        // Present the cloud name to the token file (rather than just simply the
-        // subscription id because the same subscription id could be used between
-        // classic and v2 plugins.
-        Path homePath = Paths.get(home, String.format("%s-%s", cloudName, "azuretoken.txt"));
-        this.path = homePath.toString();
-
-        LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Cache file path \"{0}\"", path);
     }
 
-    public AccessToken get() throws AzureCloudException {
-        LOGGER.log(Level.FINEST, "TokenCache: get: Get token from cache");
-        synchronized (tsafe) {
-            AccessToken token = readTokenFile();
-            if (token == null || token.isExpiring()) {
-                LOGGER.log(Level.FINEST, "TokenCache: get: Token is no longer valid ({0})",
-                        token == null ? null : token.getExpirationDate());
-                clear();
-                token = getNewToken();
-            }
-            return token;
-        }
-    }
-
-    public final void clear() {
-        LOGGER.log(Level.FINEST, "TokenCache: clear: Remove cache file {0}", path);
-        FileUtils.deleteQuietly(new File(path));
-    }
-
-    private AccessToken readTokenFile() {
-        LOGGER.log(Level.FINEST, "TokenCache: readTokenFile: Read token from file {0}", path);
-        FileInputStream is = null;
-        ObjectInputStream objectIS = null;
-
+    public static String getUserAgent() {
+        String version = null;
         try {
-            final File fileCache = new File(path);
-            if (fileCache.exists()) {
-                is = new FileInputStream(fileCache);
-                objectIS = new ObjectInputStream(is);
-                return AccessToken.class.cast(objectIS.readObject());
-            } else {
-                LOGGER.log(Level.FINEST, "TokenCache: readTokenFile: File {0} does not exist", path);
-            }
-        } catch (FileNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Cache file not found", e);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Error reading serialized object", e);
-        } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "TokenCache: readTokenFile: Error deserializing object", e);
-        } finally {
-            IOUtils.closeQuietly(is);
-            IOUtils.closeQuietly(objectIS);
+            version = TokenCache.class.getPackage().getImplementationVersion();
+        } catch (Exception e) {
         }
 
-        return null;
+        if(version == null) {
+            version = "local";
+        }
+        return Constants.PLUGIN_NAME + "/" + version;
     }
 
-    private boolean writeTokenFile(final AccessToken token) {
-        LOGGER.log(Level.FINEST, "TokenCache: writeTokenFile: Write token into file {0}", path);
-
-        FileOutputStream fout = null;
-        ObjectOutputStream oos = null;
-
-        boolean res = false;
-
-        try {
-            fout = new FileOutputStream(path, false);
-            oos = new ObjectOutputStream(fout);
-            oos.writeObject(token);
-            res = true;
-        } catch (FileNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "TokenCache: writeTokenFile: Cache file not found", e);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "TokenCache: writeTokenFile: Error serializing object", e);
-        } finally {
-            IOUtils.closeQuietly(fout);
-            IOUtils.closeQuietly(oos);
-        }
-
-        return res;
+    public static ApplicationTokenCredentials get(AzureCredentials.ServicePrincipal servicePrincipal) {
+        return new ApplicationTokenCredentials(
+                servicePrincipal.getClientId(),
+                servicePrincipal.getTenant(),
+                servicePrincipal.getClientSecret(),
+                new AzureEnvironment(
+                        servicePrincipal.getAuthenticationEndpoint(),
+                        servicePrincipal.getServiceManagementURL(),
+                        servicePrincipal.getResourceManagerEndpoint(),
+                        servicePrincipal.getGraphEndpoint()
+                )
+        );
     }
 
-    private AccessToken getNewToken() throws AzureCloudException {
-        LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Retrieve new access token");
-
-        AuthenticationResult authres = null;
-
-        try {
-            LOGGER.log(Level.FINEST, "TokenCache: getNewToken: Aquiring access token:");
-
-            final ClientCredential credential = new ClientCredential(credentials.clientId.getPlainText(), credentials.clientSecret.getPlainText());
-
-            final Future<AuthenticationResult> future = new AuthenticationContext(credentials.oauth2TokenEndpoint.getPlainText(), false, AzureVMCloud.getThreadPool()).
-                    acquireToken(credentials.serviceManagementURL, credential, null);
-
-            authres = future.get();
-        } catch (MalformedURLException e) {
-            throw new AzureCloudException("Authentication error", e);
-        } catch (InterruptedException e) {
-            throw new AzureCloudException("Authentication interrupted", e);
-        } catch (ExecutionException e) {
-            throw new AzureCloudException("Authentication execution failed", e);
-        }
-
-        if (authres == null) {
-            throw new AzureCloudException("Authentication result was null");
-        }
-
-        final AccessToken token = new AccessToken(credentials.subscriptionId.getPlainText(), credentials.serviceManagementURL, authres);
-
-        writeTokenFile(token);
-        return token;
+    public Azure getAzureClient() {
+        return Azure
+            .configure()
+            .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+            .withUserAgent(getUserAgent())
+            .authenticate(get(credentials))
+            .withSubscription(credentials.getSubscriptionId());
     }
 }

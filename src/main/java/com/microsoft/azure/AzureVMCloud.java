@@ -18,18 +18,16 @@ package com.microsoft.azure;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
-import com.microsoft.azure.management.resources.ResourceManagementClient;
-import com.microsoft.azure.management.resources.ResourceManagementService;
-import com.microsoft.azure.management.resources.models.DeploymentOperation;
-import com.microsoft.azure.management.resources.models.ProvisioningState;
-import com.microsoft.windowsazure.Configuration;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.exceptions.AzureCredentialsValidationException;
+import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.compute.OperatingSystemTypes;
+import com.microsoft.azure.management.compute.VirtualMachine;
+import com.microsoft.azure.management.resources.Deployment;
+import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.CleanUpAction;
-import com.microsoft.azure.util.AzureUserAgentFilter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,6 +56,7 @@ import hudson.util.StreamTaskListener;
 
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.FailureStage;
+import com.microsoft.azure.util.TokenCache;
 import hudson.model.Item;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
@@ -102,7 +101,7 @@ public class AzureVMCloud extends Cloud {
         this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit, deploymentTimeout, resourceGroupName, instTemplates);
     }
 
-    private AzureVMCloud(
+    public AzureVMCloud(
             AzureCredentials.ServicePrincipal credentials,
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
@@ -358,11 +357,10 @@ public class AzureVMCloud extends Cloud {
      * @param template Template used to create the new agent
      * @param vmName Name of the created VM
      * @param deploymentName Name of the deployment containing the VM
-     * @param config Azure configuration.
      * @return New agent. Throws otherwise.
      * @throws Exception
      */
-    private AzureVMAgent createProvisionedAgent(
+    public AzureVMAgent createProvisionedAgent(
             final AzureVMAgentTemplate template,
             final String vmName,
             final String deploymentName) throws Exception {
@@ -383,53 +381,49 @@ public class AzureVMCloud extends Cloud {
 
             // Create a new RM client each time because the config may expire while
             // in this long running operation
-            Configuration config = ServiceDelegateHelper.getConfiguration(template);
-            final ResourceManagementClient rmc = ResourceManagementService.create(config)
-                    .withRequestFilterFirst(new AzureUserAgentFilter());
+            final Azure azureClient = Azure.configure()
+                .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                .withUserAgent(TokenCache.getUserAgent())
+                .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
+                .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+            PagedList<Deployment> deployments= azureClient.deployments().listByGroup(resourceGroupName);
+            for (Deployment dep : deployments) {
+                PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
+                for (DeploymentOperation op : ops) {
+                    final String resource = op.targetResource().resourceName();
+                    final String type = op.targetResource().resourceType();
+                    final String state = op.provisioningState();
+                    if (op.targetResource().resourceType().contains("virtualMachine")) {
+                        if(resource.equalsIgnoreCase(vmName)) {
 
-            final List<DeploymentOperation> ops = rmc.getDeploymentOperationsOperations().
-                    list(resourceGroupName, deploymentName, null).getOperations();
-
-            for (DeploymentOperation op : ops) {
-                final String resource = op.getProperties().getTargetResource().getResourceName();
-                final String type = op.getProperties().getTargetResource().getResourceType();
-                final String state = op.getProperties().getProvisioningState();
-
-                if (op.getProperties().getTargetResource().getResourceType().contains("virtualMachine")) {
-                    if (resource.equalsIgnoreCase(vmName)) {
-                        if (ProvisioningState.CANCELED.equals(state)
-                                || ProvisioningState.FAILED.equals(state)
-                                || ProvisioningState.NOTSPECIFIED.equals(state)) {
-                            final String statusCode = op.getProperties().getStatusCode();
-                            final String statusMessage = op.getProperties().getStatusMessage();
-                            String finalStatusMessage = statusCode;
-                            if (statusMessage != null) {
-                                finalStatusMessage += " - " + statusMessage;
+                            if (!state.equalsIgnoreCase("creating")
+                                && !state.equalsIgnoreCase("succeeded")){
+                                final String statusCode = op.statusCode();
+                                final Object statusMessage = op.statusMessage();
+                                String finalStatusMessage = statusCode;
+                                if (statusMessage != null) {
+                                    finalStatusMessage += " - " + statusMessage.toString();
+                                }
+                                throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
                             }
+                            else if (state.equalsIgnoreCase("succeeded")) {
+                                LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
 
-                            throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
-                        } else if (ProvisioningState.SUCCEEDED.equals(state)) {
-                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
-
-                            final VirtualMachineGetResponse vm
-                                    = ServiceDelegateHelper.getComputeManagementClient(config).
-                                            getVirtualMachinesOperations().
-                                            getWithInstanceView(resourceGroupName, resource);
-
-                            final String osType = vm.getVirtualMachine().getStorageProfile().getOSDisk().
-                                    getOperatingSystemType();
-
-                            AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(vmName, deploymentName, template, osType);
-                            // Set the virtual machine details
-                            AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
-                            return newAgent;
-                        } else {
-                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
+                                final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
+                                final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
+                                
+                                AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(vmName, deploymentName, template, osType);
+                                AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
+                                return newAgent;
+                            } else {
+                                LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
                                     new Object[]{deploymentName, state, type, resource,
                                         (maxTries - triesLeft) * sleepTimeInSeconds});
+                            }
                         }
                     }
                 }
+                
             }
         } while (triesLeft > 0);
 
@@ -556,7 +550,7 @@ public class AzureVMCloud extends Cloud {
 
                                         // Attempt to terminate whatever was created
                                         AzureVMManagementServiceDelegate.terminateVirtualMachine(
-                                                ServiceDelegateHelper.getConfiguration(template), vmName,
+                                                template.getAzureCloud().getServicePrincipal(), vmName,
                                                 template.getResourceGroupName());
                                         template.getAzureCloud().adjustVirtualMachineCount(1);
                                         // Update the template status given this new issue.
@@ -587,7 +581,7 @@ public class AzureVMCloud extends Cloud {
 
                                         // Attempt to terminate whatever was created
                                         AzureVMManagementServiceDelegate.terminateVirtualMachine(
-                                                ServiceDelegateHelper.getConfiguration(template), vmName,
+                                                template.getAzureCloud().getServicePrincipal(), vmName,
                                                 template.getResourceGroupName());
                                         template.getAzureCloud().adjustVirtualMachineCount(1);
 

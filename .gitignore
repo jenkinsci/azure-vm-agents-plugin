@@ -8,3 +8,4 @@
 *.classpath
 
 nbactions-jenkins.xml
+nb-configuration.xml

@@ -15,15 +15,10 @@
  */
 package com.microsoft.azure;
 
-import com.cloudbees.plugins.credentials.CredentialsMatcher;
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
-import com.microsoft.azure.Messages;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import java.io.IOException;
@@ -42,7 +37,6 @@ import org.kohsuke.stapler.QueryParameter;
 import com.microsoft.azure.util.AzureUtil;
 import com.microsoft.azure.util.Constants;
 import com.microsoft.azure.util.FailureStage;
-import com.microsoft.windowsazure.core.utils.Base64;
 
 import hudson.Extension;
 import hudson.RelativePath;
@@ -56,15 +50,12 @@ import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
+import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 
 /**
@@ -785,7 +776,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 md.update(servicePrincipal.subscriptionId.getPlainText().getBytes("UTF-8"));
             if (null != resourceGroupName)
                 md.update(resourceGroupName.getBytes("UTF-8"));
-            String uid = Base64.encode(md.digest());
+
+            String uid = DatatypeConverter.printBase64Binary(md.digest());
             uid = uid.substring(0, 22);
             uid = uid.toLowerCase();
             uid = uid.replaceAll("[^a-z0-9]","a");

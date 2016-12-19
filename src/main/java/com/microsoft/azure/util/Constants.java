@@ -15,6 +15,8 @@
  */
 package com.microsoft.azure.util;
 
+import okhttp3.logging.HttpLoggingInterceptor;
+
 public class Constants {
 
     public static final String CI_SYSTEM = "jenkinsagents";
@@ -116,17 +118,6 @@ public class Constants {
     public static final String REG_EX_DIGIT = "\\d+";
 
     /** Role Status */
-
-    public static final String STOPPED_VM_STATUS = "STOPPED";
-
-    public static final String STOPPING_VM_STATUS = "STOPPING";
-    
-    public static final String STARTING_VM_STATUS = "STARTING";
-    
-    public static final String RUNNING_VM_STATUS = "RUNNING";
-    
-    public static final String DEALLOCATED_VM_STATUS = "DEALLOCATED";
-    
     public static final String PROVISIONING_OR_DEPROVISIONING_VM_STATUS = "PROVISIONING_OR_DEPROVISIONING";
 
     public static final String DEFAULT_RESOURCE_GROUP_NAME = "jenkins";
@@ -140,4 +131,6 @@ public class Constants {
     public static final String DEFAULT_SUBNET_NAME = "jenkinsarm-snet";
     
     public static final String DEFAULT_RESOURCE_GROUP_PATTERN = "^[a-zA-Z0-9][a-zA-Z\\-_0-9]{0,62}[a-zA-Z0-9]$";
+    
+    public static final HttpLoggingInterceptor.Level DEFAULT_AZURE_SDK_LOGGING_LEVEL = HttpLoggingInterceptor.Level.NONE;
 }
