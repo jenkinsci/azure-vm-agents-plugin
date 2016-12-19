@@ -20,15 +20,12 @@ import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import com.microsoft.azure.exceptions.AzureCloudException;
-import com.microsoft.azure.management.resources.ResourceManagementClient;
-import com.microsoft.azure.management.resources.ResourceManagementService;
-import com.microsoft.azure.management.resources.models.DeploymentGetResult;
-import com.microsoft.azure.management.resources.models.ProvisioningState;
+import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.retry.DefaultRetryStrategy;
-import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.ExecutionEngine;
 import com.microsoft.azure.util.CleanUpAction;
-import com.microsoft.windowsazure.Configuration;
+import com.microsoft.azure.util.TokenCache;
 
 import jenkins.model.Jenkins;
 import hudson.Extension;
@@ -38,6 +35,7 @@ import hudson.model.Computer;
 import java.util.Calendar;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
+import org.joda.time.DateTime;
 
 @Extension
 public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
@@ -111,9 +109,7 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             }
             
             try {
-                final Configuration config = ServiceDelegateHelper.getConfiguration(cloud);
-                final ResourceManagementClient rmc = ResourceManagementService.create(config)
-                    .withRequestFilterFirst(new AzureUserAgentFilter());
+                final Azure azureClient  = TokenCache.getInstance(cloud.getServicePrincipal()).getAzureClient();
 
                 // This will throw if the deployment can't be found.  This could happen in a couple instances
                 // 1) The deployment has already been deleted
@@ -121,34 +117,37 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //    being accepted by Azure.
                 // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
                 // of retries.  If we hit 0, we remove the deployment from our list.
-                DeploymentGetResult deployment = 
-                    rmc.getDeploymentsOperations().get(info.getResourceGroupName(), info.getDeploymentName());
-                
-                Calendar deploymentTime = deployment.getDeployment().getProperties().getTimestamp();
-                
-                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment created on {0}", deploymentTime.getTime());
-                long deploymentTimeInMillis = deploymentTime.getTimeInMillis();
+                Deployment deployment = azureClient.deployments().getByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                if (deployment == null) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
+                    continue;
+                }
+
+                DateTime deploymentTime = deployment.timestamp();
+
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment created on {0}", deploymentTime.toDate());
+                long deploymentTimeInMillis = deploymentTime.getMillis();
                 
                 // Compare to now
-                Calendar nowTime = Calendar.getInstance(deploymentTime.getTimeZone());
+                Calendar nowTime = Calendar.getInstance (deploymentTime.getZone().toTimeZone());
                 long nowTimeInMillis = nowTime.getTimeInMillis();
                 
                 long diffTime = nowTimeInMillis - deploymentTimeInMillis;
                 long diffTimeInMinutes = (diffTime / 1000) / 60;
                 
-                String state = deployment.getDeployment().getProperties().getProvisioningState();
-                
-                if (!state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > failingDeploymentTimeoutInMinutes) {
+                String state = deployment.provisioningState();
+
+                if (!state.equalsIgnoreCase("succeeded") && diffTimeInMinutes > failTimeoutInMinutes) {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed deployment older than {0} minutes, deleting",
-                       failingDeploymentTimeoutInMinutes);
+                       failTimeoutInMinutes);
                     // Delete the deployment
-                    rmc.getDeploymentsOperations().delete(info.getResourceGroupName(), info.getDeploymentName());
+                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
                 }
-                else if(state.equals(ProvisioningState.SUCCEEDED) && diffTimeInMinutes > succesfullDeploymentTimeoutInMinutes) {
+                else if(state.equalsIgnoreCase("succeeded") && diffTimeInMinutes > successTimeoutInMinutes) {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Succesfull deployment older than {0} minutes, deleting",
-                       succesfullDeploymentTimeoutInMinutes);
+                       successTimeoutInMinutes);
                     // Delete the deployment
-                    rmc.getDeploymentsOperations().delete(info.getResourceGroupName(), info.getDeploymentName());
+                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
                 }
                 else {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");

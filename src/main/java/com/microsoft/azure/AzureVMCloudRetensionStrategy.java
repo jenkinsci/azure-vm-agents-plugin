@@ -15,7 +15,6 @@
  */
 package com.microsoft.azure;
 
-import com.microsoft.azure.Messages;
 import java.util.logging.Logger;
 
 import org.kohsuke.stapler.DataBoundConstructor;

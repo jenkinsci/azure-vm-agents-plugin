@@ -15,6 +15,7 @@
  */
 package com.microsoft.azure;
 
+import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +71,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
     private final String deploymentName;
 
-    private final String osType;
+    private final OperatingSystemTypes osType;
 
     // set during post create step
     private String publicDNSName;
@@ -100,7 +101,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final String name,
             final String templateName,
             final String nodeDescription,
-            final String osType,
+            final OperatingSystemTypes osType,
             final String remoteFS,
             final int numExecutors,
             final Mode mode,
@@ -156,7 +157,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
             final String name,
             final String templateName,
             final String nodeDescription,
-            final String osType,
+            final OperatingSystemTypes osType,
             final String remoteFS,
             final int numExecutors,
             final Mode mode,
@@ -236,7 +237,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return sshPrivateKey;
     }
 
-    public String getOsType() {
+    public OperatingSystemTypes getOsType() {
         return osType;
     }
 

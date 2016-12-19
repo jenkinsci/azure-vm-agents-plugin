@@ -16,7 +16,6 @@
 package com.microsoft.azure;
 
 import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.windowsazure.Configuration;
 import com.microsoft.azure.util.AzureUtil;
 import java.io.IOException;
 import java.util.HashMap;
@@ -222,8 +221,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     public int getVirtualMachineCount(AzureVMCloud cloud) {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
-            Configuration config = ServiceDelegateHelper.getConfiguration(cloud);
-            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(config, cloud.getResourceGroupName());
+            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(cloud.getServicePrincipal(), cloud.getResourceGroupName());
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: getVirtualMachineCount: end, currently {0} vms", vmCount);
             return vmCount;
         } catch (Exception e) {

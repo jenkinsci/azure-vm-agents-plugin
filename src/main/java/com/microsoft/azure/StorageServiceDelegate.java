@@ -15,21 +15,14 @@
  */
 package com.microsoft.azure;
 
-import com.microsoft.azure.management.storage.StorageManagementClient;
-import com.microsoft.azure.management.storage.StorageManagementService;
-import com.microsoft.azure.management.storage.models.StorageAccountGetPropertiesResponse;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobContainerPermissions;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.SharedAccessBlobPermissions;
 import com.microsoft.azure.storage.blob.SharedAccessBlobPolicy;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -40,12 +33,9 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.logging.Logger;
 
-import com.microsoft.windowsazure.Configuration;
+
 import com.microsoft.azure.exceptions.AzureCloudException;
-import com.microsoft.azure.util.AzureUserAgentFilter;
 import com.microsoft.azure.util.Constants;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Business delegate class which handles storage service calls
@@ -67,7 +57,7 @@ public class StorageServiceDelegate {
      * @return list of storage account URIs
      * @throws Exception
      */
-    private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName, 
+ /*   private static List<URI> getStorageAccountURIs(final Configuration config, final String storageAccountName, 
             final String resourceGroupName) throws
             AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config)
@@ -108,7 +98,7 @@ public class StorageServiceDelegate {
         }
 
         return res;
-    }
+    }*/
 
     /**
      * Returns Storage Account Properties
@@ -118,7 +108,7 @@ public class StorageServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static StorageAccountGetPropertiesResponse getStorageAccountProps(
+    /*public static StorageAccountGetPropertiesResponse getStorageAccountProps(
             final Configuration config, final String storageAccountName, final String resourceGroupName)
             throws AzureCloudException {
         StorageManagementClient client = StorageManagementService.create(config)
@@ -133,7 +123,7 @@ public class StorageServiceDelegate {
         }
 
         return response;
-    }
+    }*/
 
     /**
      * This methods checks if service type URI present in the list and returns
@@ -145,7 +135,7 @@ public class StorageServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static String getStorageAccountURI(Configuration config, String storageAccountName, String type, 
+    /*public static String getStorageAccountURI(Configuration config, String storageAccountName, String type, 
             String resourceGroupName) throws
             AzureCloudException {
         String serviceURI = null;
@@ -178,7 +168,7 @@ public class StorageServiceDelegate {
         // Most weird thing
         serviceURI = serviceURI.replace("http://", "https://");
         return serviceURI;
-    }
+    }*/
 
     /**
      * Uploads init script to storage account and returns blob url
@@ -194,7 +184,7 @@ public class StorageServiceDelegate {
      * @throws StorageException
      * @throws IOException
      */
-    public static String uploadFileToStorage(Configuration config, String storageAccountName, String key,
+    /*public static String uploadFileToStorage(Configuration config, String storageAccountName, String key,
             String baseURI, String resourceGroupName, String containerName,
             String blobName, byte[] fileContents) throws AzureCloudException, URISyntaxException, StorageException,
             IOException {
@@ -212,7 +202,7 @@ public class StorageServiceDelegate {
         }
 
         return storageURI + Constants.CONFIG_CONTAINER_NAME + "/" + blobName;
-    }
+    }*/
 
     /**
      * Gets Blob containers reference

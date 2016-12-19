@@ -15,10 +15,8 @@
  */
 package com.microsoft.azure;
 
-import com.microsoft.azure.Messages;
 import com.microsoft.azure.exceptions.AzureCloudException;
 import com.microsoft.azure.retry.NoRetryStrategy;
-import com.microsoft.azure.util.CleanUpAction;
 import com.microsoft.azure.util.ExecutionEngine;
 import java.io.IOException;
 import java.util.logging.Logger;

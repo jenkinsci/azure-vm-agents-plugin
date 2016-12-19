@@ -15,7 +15,6 @@
  */
 package com.microsoft.azure;
 
-import com.microsoft.azure.Messages;
 import com.microsoft.azure.util.CleanUpAction;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -30,7 +29,6 @@ import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.BuildListener;
 import hudson.model.Result;
-import hudson.slaves.OfflineCause;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
