@@ -41,6 +41,10 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> {
 
     @Override
     public HttpResponse doDoDelete() throws IOException {
+        return doDoDelete(new ExecutionEngine());
+    }
+
+    protected HttpResponse doDoDelete(ExecutionEngine executionEngine) throws IOException {
         checkPermission(DELETE);
         this.setAcceptingTasks(false);
         final AzureVMAgent agent = getNode();
@@ -62,7 +66,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> {
             };
 
             try {
-                ExecutionEngine.executeAsync(task, new NoRetryStrategy());
+                executionEngine.executeAsync(task, new NoRetryStrategy());
             } catch (AzureCloudException exception) {
                 // No need to throw exception back, just log and move on. 
                 LOGGER.log(Level.INFO,

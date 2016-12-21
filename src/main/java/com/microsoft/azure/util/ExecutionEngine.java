@@ -49,7 +49,7 @@ public class ExecutionEngine {
         }
     }
 
-    public static <T> Future<T> executeAsync(final Callable<T> task, final RetryStrategy retryStrategy)
+    public <T> Future<T> executeAsync(final Callable<T> task, final RetryStrategy retryStrategy)
             throws AzureCloudException {
         return AzureVMCloud.getThreadPool().submit(new RetryTask<T>(task, retryStrategy));
     }

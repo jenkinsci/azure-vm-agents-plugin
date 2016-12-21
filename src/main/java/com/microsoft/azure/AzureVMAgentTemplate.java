@@ -21,6 +21,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.exceptions.AzureCloudException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,9 @@ import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
@@ -120,7 +123,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     // Indicates whether the template is disabled.
     // If disabled, will not attempt to verify or use
-    private boolean templateDisabled;
+    private final boolean templateDisabled;
 
     private String templateStatusDetails;
 
@@ -233,6 +236,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return virtualMachineSize;
     }
 
+
     public String getStorageAccountName() {
         return storageAccountName;
     }
@@ -283,6 +287,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public StandardUsernamePasswordCredentials getVMCredentials() throws AzureCloudException {
+        return AzureUtil.getCredentials(credentialsId);
     }
 
     public String getVirtualNetworkName() {
@@ -398,7 +406,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
         return Jenkins.getInstance().getDescriptor(getClass());
@@ -567,7 +574,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         public FormValidation doCheckTemplateName(
                 @QueryParameter final String value, @QueryParameter final boolean templateDisabled,
                 @QueryParameter final String osType) {
-            List<FormValidation> errors = new ArrayList<FormValidation>();
+            List<FormValidation> errors = new ArrayList<>();
             // Check whether the template name is valid, and then check
             // whether it would be shortened on VM creation.
             if (!AzureUtil.isValidTemplateName(value)) {
@@ -782,7 +789,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             uid = uid.toLowerCase();
             uid = uid.replaceAll("[^a-z0-9]","a");
             return "jn" + uid;
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             LOGGER.log(Level.WARNING, "Could not genetare UID from the resource group name. Will fallback on using the resource group name.", e);
             return "";
         }
