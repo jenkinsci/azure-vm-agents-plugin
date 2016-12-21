@@ -50,6 +50,10 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
      */
     @Override
     public long check(final AzureVMComputer agentNode) {
+        return check(agentNode, new ExecutionEngine());
+    }
+
+    protected long check(final AzureVMComputer agentNode, ExecutionEngine executionEngine) {
         // Determine whether we can recycle this machine.
         // The CRS is the way that nodes that are currently operating "correctly"
         // can be retained/reclaimed.  Any failure modes need to be dealt with through
@@ -94,7 +98,7 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
             };
 
             try {
-                ExecutionEngine.executeAsync(task,
+                executionEngine.executeAsync(task,
                         new LinearRetryForAllExceptions(
                                 30, // maxRetries
                                 30, // waitinterval

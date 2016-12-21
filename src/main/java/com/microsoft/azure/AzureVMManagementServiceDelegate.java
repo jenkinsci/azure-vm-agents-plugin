@@ -120,6 +120,16 @@ public class AzureVMManagementServiceDelegate {
      */
     public static AzureVMDeploymentInfo createDeployment(final AzureVMAgentTemplate template, final int numberOfAgents)
             throws AzureCloudException, IOException {
+        return AzureVMManagementServiceDelegate.createDeployment(
+                template,
+                numberOfAgents,
+                TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()),
+                new AzureVMAgentCleanUpTask.DeploymentRegistrar()
+                );
+    }
+
+    public static AzureVMDeploymentInfo createDeployment(final AzureVMAgentTemplate template, final int numberOfAgents, TokenCache tokenCache, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws AzureCloudException, IOException {
 
         InputStream embeddedTemplate = null;
         InputStream fragmentStream = null;
@@ -128,7 +138,7 @@ public class AzureVMManagementServiceDelegate {
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
                     template.getTemplateName());
 
-            final Azure azureClient = TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()).getAzureClient();
+            final Azure azureClient = tokenCache.getAzureClient();
 
             final Date timestamp = new Date(System.currentTimeMillis());
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
@@ -221,7 +231,7 @@ public class AzureVMManagementServiceDelegate {
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
-                String scriptUri = uploadCustomScript(template, scriptName);
+                String scriptUri = uploadCustomScript(template, scriptName, tokenCache);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptURI", scriptUri);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
@@ -244,7 +254,7 @@ public class AzureVMManagementServiceDelegate {
 
             ObjectNode.class.cast(tmp.get("variables")).put("vmSize", template.getVirtualMachineSize());
             // Grab the username/pass
-            StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(template.getCredentialsId());
+            StandardUsernamePasswordCredentials creds = template.getVMCredentials();
 
             ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", creds.getUsername());
             ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", creds.getPassword().getPlainText());
@@ -293,7 +303,7 @@ public class AzureVMManagementServiceDelegate {
             }
 
             // Register the deployment for cleanup
-            AzureVMAgentCleanUpTask.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
+            deploymentRegistrar.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
             // Create the deployment
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
@@ -320,13 +330,16 @@ public class AzureVMManagementServiceDelegate {
      * Uploads the custom script for a template to blob storage
      *
      * @param template Template containing script to upload
+     * @param targetScriptName Script to upload
+     * @param tokenCache TokenCache
      * @return URI of script
+     * @throws java.lang.Exception
      */
-    private static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName) throws Exception {
+    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
         String targetStorageAccount = template.getStorageAccountName();
         String resourceGroupName = template.getResourceGroupName();
         String location = template.getLocation();
-        final Azure azureClient = TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()).getAzureClient();
+        final Azure azureClient = tokenCache.getAzureClient();
 
         //make sure the resource group and storage account exist
         azureClient.resourceGroups()
@@ -738,7 +751,7 @@ public class AzureVMManagementServiceDelegate {
      * @throws Exception
      */
     public static void terminateVirtualMachine(final AzureVMAgent agent) throws Exception {
-        terminateVirtualMachine(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+        terminateVirtualMachine(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
     }
 
     /**
@@ -749,8 +762,27 @@ public class AzureVMManagementServiceDelegate {
      * @param resourceGroupName Resource group containing the VM
      * @throws Exception
      */
-    public static void terminateVirtualMachine(final ServicePrincipal servicePrincipal, final String vmName,
+    public static void terminateVirtualMachine(
+            final ServicePrincipal servicePrincipal,
+            final String vmName,
             final String resourceGroupName) throws Exception {
+        terminateVirtualMachine(servicePrincipal, vmName, resourceGroupName, new ExecutionEngine());
+    }
+
+    /**
+     * Terminates a virtual machine
+     *
+     * @param servicePrincipal Azure ServicePrincipal
+     * @param vmName VM name
+     * @param resourceGroupName Resource group containing the VM
+     * @param executionEngine
+     * @throws Exception
+     */
+    public static void terminateVirtualMachine(
+            final ServicePrincipal servicePrincipal,
+            final String vmName,
+            final String resourceGroupName,
+            ExecutionEngine executionEngine) throws Exception {
         try {
             try {
                 if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
@@ -796,7 +828,7 @@ public class AzureVMManagementServiceDelegate {
             }
             } finally {
                 LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
-                ExecutionEngine.executeAsync(new Callable<Void>() {
+                executionEngine.executeAsync(new Callable<Void>() {
 
                     @Override
                     public Void call() throws Exception {

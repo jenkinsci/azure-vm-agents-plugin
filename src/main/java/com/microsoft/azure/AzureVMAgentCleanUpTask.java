@@ -38,7 +38,7 @@ import java.util.logging.Level;
 import org.joda.time.DateTime;
 
 @Extension
-public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
+public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
     private static class DeploymentInfo {
         public DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName, int deleteAttempts) {
@@ -83,15 +83,22 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     public AzureVMAgentCleanUpTask() {
         super("Azure VM Agents Clean Task");
     }
-    
-    public static void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
-        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
-            new Object [] { deploymentName, resourceGroupName } );
-        DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName, maxDeleteAttempts);
-        deploymentsToClean.add(newDeploymentToClean);
+
+    public static class DeploymentRegistrar {
+
+        public void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
+            LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
+                new Object [] { deploymentName, resourceGroupName } );
+            DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName, maxDeleteAttempts);
+            deploymentsToClean.add(newDeploymentToClean);
+        }
     }
-    
+
     public void cleanDeployments() {
+        cleanDeployments(succesfullDeploymentTimeoutInMinutes, failingDeploymentTimeoutInMinutes);
+    }
+
+    public void cleanDeployments(final long successTimeoutInMinutes, final long failTimeoutInMinutes) {
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Cleaning deployments");
         // Walk the queue, popping and pushing until we reach an item that we've already
         // dealt with or the queue is empty.
@@ -179,6 +186,10 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
     
     private void cleanVMs() {
+        cleanVMs(new ExecutionEngine());
+    }
+
+    private void cleanVMs(ExecutionEngine executionEngine) {
         for (Computer computer : Jenkins.getInstance().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
@@ -254,7 +265,7 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 };
 
                 try {
-                    ExecutionEngine.executeAsync(task, new DefaultRetryStrategy(
+                    executionEngine.executeAsync(task, new DefaultRetryStrategy(
                             3, // max retries
                             10, // Default backoff in seconds 
                             30 * 60 // Max timeout in seconds
