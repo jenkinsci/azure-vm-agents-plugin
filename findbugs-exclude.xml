@@ -1,12 +1,12 @@
 <FindBugsFilter>
     <Match>
         <!--
-        Transient field that isn't set by deserialization. 
+        Transient field that isn't set by deserialization.
         This class contains a field that is updated at multiple places in the class, thus it seems to be part of the state of the class.
-        However, since the field is marked as transient and not set in readObject or readResolve, it will contain the default value in any deserialized instance of the class. 
+        However, since the field is marked as transient and not set in readObject or readResolve, it will contain the default value in any deserialized instance of the class.
         Bug kind and pattern: Se - SE_TRANSIENT_FIELD_NOT_RESTORED
         -->
-        <Class name="com.microsoft.azure.AzureVMAgent" />
+        <Class name="com.microsoft.azure.vmagent.AzureVMAgent" />
         <Field name="credentials" />
         <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
     </Match>
@@ -22,7 +22,7 @@
         See Weimer and Necula, Finding and Preventing Run-Time Error Handling Mistakes, for a description of the analysis technique.
         -->
         <!-- The issue was fixed, but the error is still there -->
-        <Class name="com.microsoft.azure.AzureVMManagementServiceDelegate" />
+        <Class name="com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate" />
         <Method name="createDeployment"/>
         <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE" />
     </Match>
