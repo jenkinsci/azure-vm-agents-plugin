@@ -60,8 +60,8 @@ import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
-import com.microsoft.azure.vmagent.util.AzureCredentials;
-import com.microsoft.azure.vmagent.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -1051,7 +1051,7 @@ public class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyLocation(location, servicePrincipal.serviceManagementURL);
+            validationResult = verifyLocation(location, servicePrincipal.getServiceManagementURL());
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;

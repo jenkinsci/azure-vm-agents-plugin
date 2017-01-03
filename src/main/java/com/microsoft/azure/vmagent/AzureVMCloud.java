@@ -27,7 +27,7 @@ import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
-import com.microsoft.azure.vmagent.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
@@ -114,7 +114,7 @@ public class AzureVMCloud extends Cloud {
             final String deploymentTimeout,
             final String resourceGroupName,
             final List<AzureVMAgentTemplate> instTemplates) {
-        super(AzureUtil.getCloudName(credentials.subscriptionId.getPlainText()));
+        super(AzureUtil.getCloudName(credentials.getSubscriptionId()));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
         this.resourceGroupName = resourceGroupName;

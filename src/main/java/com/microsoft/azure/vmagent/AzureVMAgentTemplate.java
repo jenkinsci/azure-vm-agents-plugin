@@ -20,8 +20,8 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.vmagent.Messages;
-import com.microsoft.azure.vmagent.util.AzureCredentials;
-import com.microsoft.azure.vmagent.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -697,10 +697,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     + "retentionTimeInMin: {22};\n\t"
                     + "jvmOptions: {23};",
                     new Object[]{
-                        servicePrincipal.subscriptionId.getPlainText(),
-                        (StringUtils.isNotBlank(servicePrincipal.clientId.getPlainText()) ? "********" : null),
-                        (StringUtils.isNotBlank(servicePrincipal.clientSecret.getPlainText()) ? "********" : null),
-                        servicePrincipal.serviceManagementURL,
+                        servicePrincipal.getSubscriptionId(),
+                        (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
+                        (StringUtils.isNotBlank(servicePrincipal.getClientSecret()) ? "********" : null),
+                        servicePrincipal.getServiceManagementURL(),
                         resourceGroupName,
                         templateName,
                         labels,
@@ -780,8 +780,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public static String generateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (null != servicePrincipal && null != servicePrincipal.subscriptionId)
-                md.update(servicePrincipal.subscriptionId.getPlainText().getBytes("UTF-8"));
+            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId()))
+                md.update(servicePrincipal.getSubscriptionId().getBytes("UTF-8"));
             if (null != resourceGroupName)
                 md.update(resourceGroupName.getBytes("UTF-8"));
 
