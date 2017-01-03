@@ -28,7 +28,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.vmagent.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
@@ -450,7 +450,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tmanagementURL=" + credentials.serviceManagementURL
+                + "\n\tmanagementURL=" + credentials.getServiceManagementURL()
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";

@@ -15,7 +15,7 @@
  */
 package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.vmagent.util.AzureCredentials;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import java.io.IOException;
 import java.util.HashMap;
@@ -266,7 +266,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             String cloudName = "<unknown>";
             AzureCredentials.ServicePrincipal sp = template.getAzureCloud().getServicePrincipal();
             if(sp != null) {
-                cloudName = AzureUtil.getCloudName(sp.subscriptionId.getPlainText());
+                cloudName = AzureUtil.getCloudName(sp.getSubscriptionId());
             }
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: registerTemplateHelper: Registering template {0} on {1} for verification",
                     new Object[]{template.getTemplateName(), cloudName});
