@@ -526,7 +526,7 @@ public class AzureVMCloud extends Cloud {
                 };
                 final Future<AzureVMDeploymentInfo> deploymentFuture = getThreadPool().submit(callableTask);
 
-                for (int i = 0; i < numberOfAgents; i++) {
+                for (int i = 0; i < numberOfNewAgents; i++) {
                     final int index = i;
                     plannedNodes.add(new PlannedNode(
                             template.getTemplateName(),
