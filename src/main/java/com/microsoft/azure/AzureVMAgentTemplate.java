@@ -122,6 +122,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     private final int retentionTimeInMin;
 
     private String virtualNetworkName;
+    
+    private String virtualNetworkResourceGroupName;
 
     private String subnetName;
 
@@ -165,6 +167,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String initScript,
             final String credentialsId,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final String agentWorkspace,
             final String jvmOptions,
@@ -201,6 +204,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.agentLaunchMethod = agentLaunchMethod;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
+        this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
         this.subnetName = subnetName;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
@@ -301,7 +305,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public void setVirtualNetworkName(String virtualNetworkName) {
         this.virtualNetworkName = virtualNetworkName;
     }
+    
+    public String getVirtualNetworkResourceGroupName() {
+        return this.virtualNetworkResourceGroupName;
+    }
 
+    public void setVirtualNetworkResourceGroupName(String virtualNetworkResourceGroupName) {
+        this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
+    }
+    
     public String getSubnetName() {
         return subnetName;
     }
@@ -470,6 +482,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 initScript,
                 credentialsId,
                 virtualNetworkName,
+                virtualNetworkResourceGroupName,
                 subnetName,
                 retentionTimeInMin + "",
                 jvmOptions,
@@ -663,6 +676,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
+                @QueryParameter String virtualNetworkResourceGroupName,
                 @QueryParameter String subnetName,
                 @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions) {
@@ -694,9 +708,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     + "initScript: {18};\n\t"
                     + "credentialsId: {19};\n\t"
                     + "virtualNetworkName: {20};\n\t"
-                    + "subnetName: {21};\n\t"
-                    + "retentionTimeInMin: {22};\n\t"
-                    + "jvmOptions: {23};",
+                    + "virtualNetworkResourceGroupName: {21};\n\t"
+                    + "subnetName: {22};\n\t"
+                    + "retentionTimeInMin: {23};\n\t"
+                    + "jvmOptions: {24};",
                     new Object[]{
                         servicePrincipal.subscriptionId.getPlainText(),
                         (StringUtils.isNotBlank(servicePrincipal.clientId.getPlainText()) ? "********" : null),
@@ -719,6 +734,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                         initScript,
                         credentialsId,
                         virtualNetworkName,
+                        virtualNetworkResourceGroupName,
                         subnetName,
                         retentionTimeInMin,
                         jvmOptions});
@@ -749,6 +765,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     initScript,
                     credentialsId,
                     virtualNetworkName,
+                    virtualNetworkResourceGroupName,
                     subnetName,
                     retentionTimeInMin,
                     jvmOptions,
