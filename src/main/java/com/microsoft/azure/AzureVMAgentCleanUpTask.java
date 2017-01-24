@@ -43,10 +43,11 @@ import java.util.logging.Level;
 public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
     private static class DeploymentInfo {
-        public DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName) {
+        public DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName, int deleteAttempts) {
             this.cloudName = cloudName;
             this.deploymentName = deploymentName;
             this.resourceGroupName = resourceGroupName;
+            this.attemptsRemaining = deleteAttempts;
         }
 
         public String getCloudName() {
@@ -61,16 +62,26 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             return resourceGroupName;
         }
         
+        public boolean hasAttemptsRemaining() {
+            return attemptsRemaining > 0;
+        }
+
+        public void decrementAttemptsRemaining() {
+            attemptsRemaining--;
+        }
+
         private String cloudName;
         private String deploymentName;
         private String resourceGroupName;
+        private int attemptsRemaining;
     }
     
     private static final long succesfullDeploymentTimeoutInMinutes = 60 * 1;
     private static final long failingDeploymentTimeoutInMinutes = 60 * 8;
+    private static final int maxDeleteAttempts = 3;
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentCleanUpTask.class.getName());
     private static final ConcurrentLinkedQueue<DeploymentInfo> deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
-            
+    
     public AzureVMAgentCleanUpTask() {
         super("Azure VM Agents Clean Task");
     }
@@ -78,7 +89,7 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     public static void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
             new Object [] { deploymentName, resourceGroupName } );
-        DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName);
+        DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName, maxDeleteAttempts);
         deploymentsToClean.add(newDeploymentToClean);
     }
     
@@ -104,12 +115,14 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 final ResourceManagementClient rmc = ResourceManagementService.create(config)
                     .withRequestFilterFirst(new AzureUserAgentFilter());
 
+                // This will throw if the deployment can't be found.  This could happen in a couple instances
+                // 1) The deployment has already been deleted
+                // 2) The deployment doesn't exist yet (race between creating the deployment and it
+                //    being accepted by Azure.
+                // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
+                // of retries.  If we hit 0, we remove the deployment from our list.
                 DeploymentGetResult deployment = 
                     rmc.getDeploymentsOperations().get(info.getResourceGroupName(), info.getDeploymentName());
-                if (deployment.getDeployment() == null) {
-                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
-                    continue;
-                }
                 
                 Calendar deploymentTime = deployment.getDeployment().getProperties().getTimestamp();
                 
@@ -148,7 +161,19 @@ public final class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
             catch (Exception e) {
-                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed to delete deployment: {0}", e.toString());
+                LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed to get/delete deployment: {0}", e.toString());
+                // Check the number of attempts remaining. If greater than 0, decrement
+                // and add back into the queue.
+                if (info.hasAttemptsRemaining()) {
+                    info.decrementAttemptsRemaining();
+
+                    if (firstBackInQueue == null) {
+                        firstBackInQueue = info;
+                    }
+
+                    // Put it back in the queue for another attempt
+                    deploymentsToClean.add(info);
+                }
             }
         }
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Done cleaning deployments");
