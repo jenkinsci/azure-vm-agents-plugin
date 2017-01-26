@@ -58,15 +58,21 @@ public class TokenCache {
 
     public static String getUserAgent() {
         String version = null;
+        String instanceId = null;
         try {
             version = TokenCache.class.getPackage().getImplementationVersion();
+            instanceId = Jenkins.getInstance().getLegacyInstanceId();
         } catch (Exception e) {
         }
 
         if(version == null) {
             version = "local";
         }
-        return Constants.PLUGIN_NAME + "/" + version;
+        if(instanceId == null) {
+            instanceId = "local";
+        }
+
+        return Constants.PLUGIN_NAME + "/" + version + "/" + instanceId;
     }
 
     public static ApplicationTokenCredentials get(AzureCredentials.ServicePrincipal servicePrincipal) {
