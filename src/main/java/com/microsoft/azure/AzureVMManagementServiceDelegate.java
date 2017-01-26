@@ -276,12 +276,18 @@ public class AzureVMManagementServiceDelegate {
             if (StringUtils.isNotBlank(template.getVirtualNetworkName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
+                if (StringUtils.isNotBlank(template.getVirtualNetworkResourceGroupName())) {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
+                } else {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
+                }
             } else {
                 // Add the definition of the vnet and subnet into the template
                 final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
                 final String subnetName = Constants.DEFAULT_SUBNET_NAME;
                 ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", virtualNetworkName);
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", subnetName);
+                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
 
                 // Read the vnet fragment
                 fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
@@ -1039,6 +1045,7 @@ public class AzureVMManagementServiceDelegate {
      * @param initScript
      * @param credentialsId
      * @param virtualNetworkName
+     * @param virtualNetworkResourceGroupName
      * @param subnetName
      * @param retentionTimeInMin
      * @param jvmOptions
@@ -1064,6 +1071,7 @@ public class AzureVMManagementServiceDelegate {
             final String initScript,
             final String credentialsId,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final String retentionTimeInMin,
             final String jvmOptions,
@@ -1136,6 +1144,7 @@ public class AzureVMManagementServiceDelegate {
                     imageVersion,
                     storageAccountName,
                     virtualNetworkName,
+                    virtualNetworkResourceGroupName,
                     subnetName,
                     resourceGroupName,
                     errors
@@ -1159,6 +1168,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageVersion,
             final String storageAccountName,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final String resourceGroupName,
             final List<String> errors) {
@@ -1170,7 +1180,7 @@ public class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyVirtualNetwork(config, virtualNetworkName, subnetName, resourceGroupName);
+                return verifyVirtualNetwork(config, virtualNetworkName, subnetName, virtualNetworkResourceGroupName, resourceGroupName);
             }
         };
         verificationTaskList.add(callVerifyVirtualNetwork);
@@ -1251,12 +1261,17 @@ public class AzureVMManagementServiceDelegate {
             final Configuration config,
             final String virtualNetworkName,
             final String subnetName,
+            final String virtualNetworkResourceGroupName,
             final String resourceGroupName) {
         if (StringUtils.isNotBlank(virtualNetworkName)) {
-            VirtualNetwork virtualNetwork = getVirtualNetwork(config, virtualNetworkName, resourceGroupName);
+            String finalResourceGroupName = resourceGroupName;
+            if (StringUtils.isNotBlank(virtualNetworkResourceGroupName)) {
+                finalResourceGroupName = virtualNetworkResourceGroupName;
+            }
+            VirtualNetwork virtualNetwork = getVirtualNetwork(config, virtualNetworkName, finalResourceGroupName);
 
             if (virtualNetwork == null) {
-                return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName);
+                return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName, finalResourceGroupName);
             }
 
             if (StringUtils.isNotBlank(subnetName)) {
