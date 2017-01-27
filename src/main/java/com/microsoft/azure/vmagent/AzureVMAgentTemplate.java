@@ -484,15 +484,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return "";
         }
 
-        private synchronized List<String> getVMSizes(final String location) {
-            return AzureVMManagementServiceDelegate.getVMSizes(location);
-        }
-
-        public ListBoxModel doFillVirtualMachineSizeItems(@QueryParameter final String location)
+        public ListBoxModel doFillVirtualMachineSizeItems(
+                @RelativePath("..") @QueryParameter final String azureCredentialsId,
+                @QueryParameter final String location)
                 throws IOException, ServletException {
 
+            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             ListBoxModel model = new ListBoxModel();
-            List<String> vmSizes = AzureVMManagementServiceDelegate.getVMSizes(location);
+            List<String> vmSizes = AzureVMManagementServiceDelegate.getVMSizes(servicePrincipal, location);
 
             for (String vmSize : vmSizes) {
                 model.add(vmSize);
@@ -516,16 +515,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillLocationItems(
-                @RelativePath("..") @QueryParameter final String serviceManagementURL)
+                @RelativePath("..") @QueryParameter final String azureCredentialsId)
                 throws IOException, ServletException {
+            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+
             ListBoxModel model = new ListBoxModel();
 
-            Map<String, String> locations = AzureVMManagementServiceDelegate.getVirtualMachineLocations(serviceManagementURL);
+            Set<String> locations = AzureVMManagementServiceDelegate.getVirtualMachineLocations(servicePrincipal);
 
-            // This map contains display name -> actual location name.  We
-            // need the actual location name later, but just grab the keys of
-            // the map for the model.
-            for (String location : locations.keySet()) {
+            for (String location : locations) {
                 model.add(location);
             }
 
