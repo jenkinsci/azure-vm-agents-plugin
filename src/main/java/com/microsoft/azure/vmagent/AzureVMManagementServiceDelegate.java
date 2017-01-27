@@ -49,10 +49,14 @@ import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.compute.VirtualMachineImage;
 import com.microsoft.azure.management.compute.VirtualMachineOffer;
 import com.microsoft.azure.management.compute.VirtualMachinePublisher;
+import com.microsoft.azure.management.compute.VirtualMachineSize;
 import com.microsoft.azure.management.compute.VirtualMachineSku;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.storage.SkuName;
+import com.microsoft.azure.management.resources.Provider;
+import com.microsoft.azure.management.resources.ProviderResourceType;
+import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.storage.StorageAccountKey;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
@@ -73,7 +77,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
@@ -104,11 +110,9 @@ public class AzureVMManagementServiceDelegate {
 
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
 
-    private static final Map<String, String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
+    private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
 
-    private static final Map<String, String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
-
-    private static final Map<String, String> AVAILABLE_LOCATIONS_ALL = getAvailableLocationsAll();
+    private static final Set<String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
 
     /**
      * Creates a new deployment of VMs based on the provided template
@@ -505,39 +509,32 @@ public class AzureVMManagementServiceDelegate {
      *
      * @return
      */
-    private static Map<String, String> getAvailableLocationsStandard() {
-        final Map<String, String> locations = new HashMap<String, String>();
-        locations.put("East US", "eastus");
-        locations.put("West US", "westus");
-        locations.put("South Central US", "southcentralus");
-        locations.put("Central US", "centralus");
-        locations.put("North Central US", "northcentralus");
-        locations.put("North Europe", "northeurope");
-        locations.put("West Europe", "westeurope");
-        locations.put("Southeast Asia", "southeastasia");
-        locations.put("East Asia", "eastasia");
-        locations.put("Japan West", "japanwest");
-        locations.put("Japan East", "japaneast");
-        locations.put("Brazil South", "brazilsouth");
-        locations.put("Australia Southeast", "australiasoutheast");
-        locations.put("Australia East", "australiaeast");
-        locations.put("Central India", "centralindia");
-        locations.put("South India", "southindia");
-        locations.put("West India", "westindia");
+    private static Set<String> getAvailableLocationsStandard() {
+        final Set<String> locations = new HashSet<>();
+        locations.add("East US");
+        locations.add("West US");
+        locations.add("South Central US");
+        locations.add("Central US");
+        locations.add("North Central US");
+        locations.add("North Europe");
+        locations.add("West Europe");
+        locations.add("Southeast Asia");
+        locations.add("East Asia");
+        locations.add("Japan West");
+        locations.add("Japan East");
+        locations.add("Brazil South");
+        locations.add("Australia Southeast");
+        locations.add("Australia East");
+        locations.add("Central India");
+        locations.add("South India");
+        locations.add("West India");
         return locations;
     }
 
-    private static Map<String, String> getAvailableLocationsChina() {
-        final Map<String, String> locations = new HashMap<String, String>();
-        locations.put("China North", "chinanorth");
-        locations.put("China East", "chinaeast");
-        return locations;
-    }
-
-    private static Map<String, String> getAvailableLocationsAll() {
-        final Map<String, String> locations = new HashMap<String, String>();
-        locations.putAll(getAvailableLocationsStandard());
-        locations.putAll(getAvailableLocationsChina());
+    private static Set<String> getAvailableLocationsChina() {
+        final Set<String> locations = new HashSet<>();
+        locations.add("China North");
+        locations.add("China East");
         return locations;
     }
 
@@ -578,24 +575,63 @@ public class AzureVMManagementServiceDelegate {
 
     /**
      * Gets map of Azure datacenter locations which supports Persistent VM role.
-     * Today this is hardcoded pulling from the array, because the old form of
+     * If it can't fetch the data then it will return a default hardcoded set
      * certificate based auth appears to be required.
+     * @param servicePrincipal Service Principal
+     * @return Set of available regions
      */
-    public static Map<String, String> getVirtualMachineLocations(String serviceManagementUrl) {
-        if (serviceManagementUrl != null && serviceManagementUrl.toLowerCase().contains("china")) {
-            return AVAILABLE_LOCATIONS_CHINA;
+    public static Set<String> getVirtualMachineLocations(AzureCredentials.ServicePrincipal servicePrincipal) {
+        try {
+            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            Set<String> regions = new HashSet<>();
+            PagedList<Provider> providers = azureClient.providers().list();
+            for (Provider provider : providers) {
+                List<ProviderResourceType> resourceTypes = provider.resourceTypes();
+                for (ProviderResourceType resourceType : resourceTypes) {
+                    if (!resourceType.resourceType().equalsIgnoreCase("virtualMachines")) {
+                        continue;
+                    }
+
+                    for (String location: resourceType.locations()) {
+                        if (!azureClient.virtualMachines().sizes().listByRegion(location).isEmpty()) {
+                            regions.add(location);
+                        }
+                    }
+
+                }
+            }
+            return regions;
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO,
+                    "AzureVMManagementServiceDelegate: getVirtualMachineLocations: error while fetching the regions {0}. Will return default list ", e);
+            if (servicePrincipal != null && servicePrincipal.getServiceManagementURL() != null && servicePrincipal.getServiceManagementURL().toLowerCase().contains("china")) {
+                return AVAILABLE_LOCATIONS_CHINA;
+            }
+            return AVAILABLE_LOCATIONS_STD;
         }
-        return AVAILABLE_LOCATIONS_STD;
     }
 
     /**
-     * Gets list of virtual machine sizes. Currently hardcoded because the old
-     * vm size API does not support the new method of authentication
+     * Gets list of virtual machine sizes. If it can't fetch the data then it will return a default hardcoded list
      *
+     * @param servicePrincipal Service Principal
      * @param location Location to obtain VM sizes for
+     * @return List of VM sizes
      */
-    public static List<String> getVMSizes(final String location) {
-        return AVAILABLE_ROLE_SIZES.get(location);
+    public static List<String> getVMSizes(AzureCredentials.ServicePrincipal servicePrincipal, final String location) {
+        try {
+            List<String> ret = new ArrayList<>();
+            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            PagedList<VirtualMachineSize> vmSizes = azureClient.virtualMachines().sizes().listByRegion(location);
+            for (VirtualMachineSize vmSize : vmSizes) {
+                ret.add(vmSize.name());
+            }
+            return ret;
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO,
+                    "AzureVMManagementServiceDelegate: getVMSizes: error while fetching the VM sizes {0}. Will return default list ", e);
+            return AVAILABLE_ROLE_SIZES.get(location);
+        }
     }
 
     /**
@@ -947,11 +983,11 @@ public class AzureVMManagementServiceDelegate {
      * @return
      */
     private static String getLocationName(String location) {
-        if (AVAILABLE_LOCATIONS_ALL.containsKey(location)) {
-            return AVAILABLE_LOCATIONS_ALL.get(location);
+        try {
+            return Region.findByLabelOrName(location).name();
+        } catch (Exception e) {
+            return null;
         }
-
-        return null;
     }
 
     /**
