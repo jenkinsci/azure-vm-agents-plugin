@@ -509,10 +509,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .withNewResourceGroup(testEnv.azureResourceGroup)
                     .create();
 
-            Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(), AzureVMManagementServiceDelegate
+            Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
                     .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName));
 
-            Assert.assertEquals(Messages.Azure_GC_Template_SA_Cant_Validate(), AzureVMManagementServiceDelegate
+            Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(), AzureVMManagementServiceDelegate
                     .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);

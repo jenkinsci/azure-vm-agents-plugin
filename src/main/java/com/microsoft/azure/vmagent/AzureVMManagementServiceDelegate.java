@@ -1280,16 +1280,22 @@ public class AzureVMManagementServiceDelegate {
             final ServicePrincipal servicePrincipal,
             final String resourceGroupName,
             final String storageAccountName) {
-
+        boolean isAvailable = false;
         try {
-            if ( null != TokenCache.getInstance(servicePrincipal).getAzureClient().storageAccounts().getByGroup(resourceGroupName, storageAccountName)) {
-                return Messages.Azure_GC_Template_SA_Already_Exists();
+            Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            //if it's not available we need to check if it's already in our resource group
+            isAvailable = azureClient.storageAccounts().checkNameAvailability(storageAccountName).isAvailable();
+            if ( !isAvailable && null == azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName) ) {
+                    return Messages.Azure_GC_Template_SA_Already_Exists();
             } else {
                 return Constants.OP_SUCCESS;
             }
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
-            return Messages.Azure_GC_Template_SA_Cant_Validate();
+            if (!isAvailable)
+                return Messages.Azure_GC_Template_SA_Already_Exists();
+            else
+                return Messages.Azure_GC_Template_SA_Cant_Validate();
         }
     }
 
