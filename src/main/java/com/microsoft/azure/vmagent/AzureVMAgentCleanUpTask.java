@@ -15,6 +15,7 @@
  */
 package com.microsoft.azure.vmagent;
 
+import com.microsoft.azure.PagedList;
 import com.microsoft.azure.vmagent.Messages;
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -23,9 +24,13 @@ import java.util.logging.Logger;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Deployment;
+import com.microsoft.azure.management.resources.GenericResource;
+import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.retry.DefaultRetryStrategy;
+import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
+import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.TokenCache;
 
 import jenkins.model.Jenkins;
@@ -33,9 +38,16 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.model.Computer;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
 @Extension
@@ -92,6 +104,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 new Object [] { deploymentName, resourceGroupName } );
             DeploymentInfo newDeploymentToClean = new DeploymentInfo(cloudName, resourceGroupName, deploymentName, maxDeleteAttempts);
             deploymentsToClean.add(newDeploymentToClean);
+        }
+
+        public AzureUtil.DeploymentTag getDeploymentTag() {
+            return new AzureUtil.DeploymentTag();
         }
     }
 
@@ -185,7 +201,121 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Done cleaning deployments");
     }
-    
+
+    /* There are some edge-cases where we might loose track of the provisioned resources:
+        1. the process stops right after we start provisioning
+        2. some Azure error blocks us from deleting the resource
+       This method will look into the resource group and remove all resources that have our tag and are not accounted for.
+    */
+    public void cleanLeakedResources() {
+        Jenkins instance = Jenkins.getInstance();
+        if (instance == null)
+            return;
+        for (AzureVMCloud cloud : instance.clouds.getAll(AzureVMCloud.class)) {
+            cleanLeakedResources(cloud.getResourceGroupName(), cloud.getServicePrincipal(), cloud.name, new DeploymentRegistrar());
+        }
+    }
+
+    public List<String> getValidVMs(final String cloudName) {
+        List<String> VMs = new ArrayList<>();
+        Jenkins instance = Jenkins.getInstance();
+        if (instance != null) {
+            for (Computer computer : instance.getComputers()) {
+                if (computer instanceof AzureVMComputer) {
+                    AzureVMComputer azureComputer = (AzureVMComputer) computer;
+                    AzureVMAgent agent = azureComputer.getNode();
+                    if (agent != null && agent.getCloudName().equals(cloudName)) {
+                        final String vmName = computer.getName();
+                        VMs.add(vmName);
+                    }
+                }
+            }
+        }
+        return VMs;
+    }
+
+    public void cleanLeakedResources(
+            final String resourceGroup,
+            final ServicePrincipal servicePrincipal,
+            final String cloudName,
+            final DeploymentRegistrar deploymentRegistrar) {
+        try{
+            final List<String> validVMs = getValidVMs(cloudName);
+            final Azure azureClient  = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            //can't use listByTag because for some reason that method strips all the tags from the outputted resources (https://github.com/Azure/azure-sdk-for-java/issues/1436)
+            final PagedList<GenericResource> resources = azureClient.genericResources().listByGroup(resourceGroup);
+
+            final PriorityQueue<GenericResource> resourcesMarkedForDeletion = new PriorityQueue<> (resources.size(), new Comparator<GenericResource>(){
+                @Override
+                public int compare(GenericResource o1, GenericResource o2) {
+                    int o1Priority = getPriority(o1);
+                    int o2Priority = getPriority(o2);
+                    if (o1Priority == o2Priority) {
+                        return 0;
+                    }
+                    return (o1Priority < o2Priority) ? - 1 : 1;
+                }
+                private int getPriority(final GenericResource resource) {
+                    final String type = resource.type();
+                    if (StringUtils.containsIgnoreCase(type, "virtualMachine")) {
+                        return 1;
+                    }
+                    if (StringUtils.containsIgnoreCase(type, "networkInterface")) {
+                        return 2;
+                    }
+                    if (StringUtils.containsIgnoreCase(type, "IPAddress")) {
+                        return 3;
+                    }
+                    return 4;
+                }
+            });
+
+            for (GenericResource resource : resources) {
+                final Map<String,String> tags = resource.tags();
+                if ( !tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME) || 
+                     !deploymentRegistrar.getDeploymentTag().matches(new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
+                    continue;
+                }
+                boolean shouldSkipDeletion = false;
+                for (String validVM : validVMs) {
+                    if (resource.name().contains(validVM)) {
+                        shouldSkipDeletion = true;
+                        break;
+                    }
+                }
+                // we're not removing storage accounts of networks - someone else might be using them
+                if (shouldSkipDeletion || StringUtils.containsIgnoreCase(resource.type(), "StorageAccounts") || StringUtils.containsIgnoreCase(resource.type(), "virtualNetworks")) {
+                    continue;
+                }
+                resourcesMarkedForDeletion.add(resource);
+            }
+
+            while(!resourcesMarkedForDeletion.isEmpty()) {
+                try {
+                    final GenericResource resource = resourcesMarkedForDeletion.poll();
+                    if (resource == null)
+                        continue;
+
+                    URI osDiskURI = null;
+                    if (StringUtils.containsIgnoreCase(resource.type(), "virtualMachine")) {
+                        osDiskURI = new URI(azureClient.virtualMachines().getById(resource.id()).osDiskVhdUri());
+                    }
+
+                    LOGGER.log(Level.INFO, "cleanLeakedResources: deleting {0} from resource group {1}", new Object[]{resource.name(), resourceGroup});
+                    azureClient.genericResources().deleteById(resource.id());
+                    if ( osDiskURI != null) {
+                        AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, osDiskURI, resourceGroup);
+                    }
+                } catch (Exception e) {
+                    LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean resource ", e);
+                }
+            }
+        } catch (Exception e) {
+            // No need to throw exception back, just log and move on. 
+            LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean leaked resources ", e);
+        }
+    }
+
     private void cleanVMs() {
         cleanVMs(new ExecutionEngine());
     }
@@ -293,6 +423,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         cleanVMs();
         // Clean up the deployments
         cleanDeployments();
+
+        cleanLeakedResources();
     }
 
     @Override

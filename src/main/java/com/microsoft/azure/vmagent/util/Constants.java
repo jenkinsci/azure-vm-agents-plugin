@@ -139,4 +139,12 @@ public class Constants {
     public static final String DEFAULT_RESOURCE_GROUP_PATTERN = "^[a-zA-Z0-9][a-zA-Z\\-_0-9]{0,62}[a-zA-Z0-9]$";
     
     public static final HttpLoggingInterceptor.Level DEFAULT_AZURE_SDK_LOGGING_LEVEL = HttpLoggingInterceptor.Level.NONE;
+    
+    public static final String AZURE_JENKINS_TAG_NAME = "JenkinsManagedTag";
+    
+    public static final String AZURE_JENKINS_TAG_VALUE = "ManagedByAzureVMAgents";
+    
+    public static final String AZURE_RESOURCES_TAG_NAME = "JenkinsResourceTag";
+    
+    public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60;//in seconds
 }

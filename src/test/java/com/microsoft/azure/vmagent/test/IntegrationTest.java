@@ -34,6 +34,7 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.util.Secret;
@@ -48,6 +49,7 @@ import org.junit.*;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /*
@@ -199,6 +201,7 @@ public class IntegrationTest {
 
         if (deploymentRegistrar == null) {
             deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         }
 
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
@@ -221,7 +224,10 @@ public class IntegrationTest {
         return AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
     }
 
-    protected VirtualMachine createAzureVM(final String vmName) throws CloudException, IOException{
+    protected VirtualMachine createAzureVM(final String vmName) throws CloudException, IOException {
+        return createAzureVM(vmName, "JenkinsTag", "testing");
+    }
+    protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue) throws CloudException, IOException {
         return customTokenCache.getAzureClient().virtualMachines()
                 .define(vmName)
                 .withRegion(testEnv.azureLocation)
@@ -232,6 +238,8 @@ public class IntegrationTest {
                 .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_14_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
                 .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345") //don't try this at home
+                .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
+                .withTag(tagName, tagValue)
                 .create();
     }
 }
