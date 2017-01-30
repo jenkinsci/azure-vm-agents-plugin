@@ -396,4 +396,65 @@ public class AzureUtil {
             return false;
         return true;
     }
+
+    public static class DeploymentTag {
+
+        public DeploymentTag() {
+            this(System.currentTimeMillis() / 1000);
+        }
+
+        /*  Expects a string in this format: "<id>/<timestamp>".
+            If id is ommited it will be replaced with an empty string
+            If timestamp is ommited or it's a negative number than it will be replaced with 0 */
+        public DeploymentTag(final String tag){
+            String id = "";
+            long ts = 0;
+
+            if (tag != null && !tag.isEmpty()) {
+                String[] parts = tag.split("/");
+                if (parts.length >= 1) {
+                    id = parts[0];
+                }
+                if (parts.length >= 2) {
+                    try {
+                        ts = Long.parseLong(parts[1]);
+                        ts = (ts < 0) ? 0 : ts;
+                    } catch (Exception e) {
+                        ts = 0;
+                    }
+                }
+            }
+            this.instanceId = id;
+            this.timestamp = ts;
+        }
+
+        public String get() {
+            return instanceId + "/" + Long.toString(timestamp);
+        }
+
+        // two tags match if they have the same instance id and the timestamp diff is greater than Constants.AZURE_DEPLOYMENT_TIMEOUT
+        public boolean matches(final DeploymentTag rhs) {
+            return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
+        }
+
+        public boolean matches(final DeploymentTag rhs, long timeout) {
+            if (!instanceId.equals(rhs.instanceId))
+                return false;
+             return Math.abs(timestamp - rhs.timestamp) > timeout;
+        }
+
+        protected DeploymentTag(long timestamp) {
+            String id = "";
+            try {
+                id = Jenkins.getInstance().getLegacyInstanceId();
+            } catch (Exception e) {
+                id = "AzureJenkins000";
+            }
+            this.instanceId = id;
+            this.timestamp = timestamp;
+        }
+
+        private final String instanceId;
+        private final long timestamp;
+    }
 }

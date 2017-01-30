@@ -31,9 +31,12 @@ import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
+import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
+import edu.emory.mathcs.backport.java.util.Arrays;
 import java.net.URI;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -93,7 +96,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         try {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
-
+            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
             deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
 
             verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
@@ -110,6 +113,62 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             for(int i = 0; i < numberOfAgents; i++) {
                 final String baseName = deploymentInfo.getVmBaseName() + String.valueOf(i);
+                final String commonAssertMsg = testEnv.azureResourceGroup +  ":" + baseName;
+                VirtualMachine actualVM = null;
+                NetworkInterface actualNetIface = null;
+                PublicIpAddress actualIP = null;
+                try {
+                    actualVM = customTokenCache.getAzureClient()
+                                .virtualMachines()
+                                .getByGroup(testEnv.azureResourceGroup, baseName);
+
+                    actualNetIface = customTokenCache.getAzureClient()
+                                .networkInterfaces()
+                                .getByGroup(testEnv.azureResourceGroup, baseName + "NIC");
+
+                    actualIP = customTokenCache.getAzureClient()
+                                .publicIpAddresses()
+                                .getByGroup(testEnv.azureResourceGroup, baseName + "IPName");
+
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, null, e);
+                }
+                Assert.assertNotNull("The deployed VM doesn't exist: "+ commonAssertMsg, actualVM);
+                Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
+                Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
+            }
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void canDeployMultipleTimes() {
+        try {
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar2 = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+            when(deploymentRegistrar2.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("other_tag/123"));
+
+            AzureVMDeploymentInfo firstDeployment = createDefaultDeployment(1, deploymentRegistrar);
+            AzureVMDeploymentInfo secondDeployment = createDefaultDeployment(1, deploymentRegistrar);
+            AzureVMDeploymentInfo thirdDeployment = createDefaultDeployment(1, deploymentRegistrar2);
+
+            Network actualVNet = null;
+            StorageAccount actualStorageAcc = null;
+            try {
+                actualVNet =  customTokenCache.getAzureClient().networks().getByGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, null, e);
+            }
+            Assert.assertNotNull("The deployed VNet doesn't exist: "+ testEnv.azureResourceGroup, actualVNet);
+            Assert.assertNotNull("The deployed Storage Account doesn't exist: "+ testEnv.azureResourceGroup, actualStorageAcc);
+            final List<String> baseVMNames = Arrays.asList(new Object[]{ firstDeployment.getVmBaseName(), secondDeployment.getVmBaseName(), thirdDeployment.getVmBaseName() });
+            for(String base: baseVMNames) {
+                final String baseName = base + "0";
                 final String commonAssertMsg = testEnv.azureResourceGroup +  ":" + baseName;
                 VirtualMachine actualVM = null;
                 NetworkInterface actualNetIface = null;

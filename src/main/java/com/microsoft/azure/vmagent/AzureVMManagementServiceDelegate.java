@@ -203,6 +203,8 @@ public class AzureVMManagementServiceDelegate {
 
             ObjectNode.class.cast(tmp.get("variables")).put("vmName", vmBaseName);
             ObjectNode.class.cast(tmp.get("variables")).put("location", locationName);
+            ObjectNode.class.cast(tmp.get("variables")).put("jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
+            ObjectNode.class.cast(tmp.get("variables")).put("resourceTag", deploymentRegistrar.getDeploymentTag().get());
 
             if (StringUtils.isNotBlank(template.getImagePublisher())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("imagePublisher", template.getImagePublisher());
@@ -836,25 +838,7 @@ public class AzureVMManagementServiceDelegate {
 
                     // Now remove the disks
                     for (URI diskUri : diskUrisToRemove) {
-                        // Obtain container, storage account, and blob name
-                        String storageAccountName = diskUri.getHost().split("\\.")[0];
-                        String containerName = PathUtility.getContainerNameFromUri(diskUri, false);
-                        String blobName = PathUtility.getBlobNameFromURI(diskUri, false);
-
-                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing disk blob {0}, in container {1} of storage account {2}",
-                                new Object[]{blobName, containerName, storageAccountName});
-
-                        List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                            .getByGroup(resourceGroupName, storageAccountName)
-                            .getKeys();
-                        if (!storageKeys.isEmpty()) {
-                            String storageAccountKey = storageKeys.get(0).value();
-                            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
-                            CloudBlobClient blobClient = account.createCloudBlobClient();
-                            blobClient.getContainerReference(containerName)
-                                    .getBlockBlobReference(blobName)
-                                    .deleteIfExists();
-                        }
+                        AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, diskUri, resourceGroupName);
                     }
                 }
             } catch (Exception e) {
@@ -879,6 +863,28 @@ public class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: terminateVirtualMachine: unrecoverable exception deleting VM",
                     uce);
+        }
+    }
+
+    public static void removeStorageBlob(final Azure azureClient, final URI blobURI, final String resourceGroupName) throws Exception {
+         // Obtain container, storage account, and blob name
+        String storageAccountName = blobURI.getHost().split("\\.")[0];
+        String containerName = PathUtility.getContainerNameFromUri(blobURI, false);
+        String blobName = PathUtility.getBlobNameFromURI(blobURI, false);
+
+        LOGGER.log(Level.INFO, "removeStorageBlob: Removing disk blob {0}, in container {1} of storage account {2}",
+                new Object[]{blobName, containerName, storageAccountName});
+
+        List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
+            .getByGroup(resourceGroupName, storageAccountName)
+            .getKeys();
+        if (!storageKeys.isEmpty()) {
+            String storageAccountKey = storageKeys.get(0).value();
+            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
+            CloudBlobClient blobClient = account.createCloudBlobClient();
+            blobClient.getContainerReference(containerName)
+                    .getBlockBlobReference(blobName)
+                    .deleteIfExists();
         }
     }
 

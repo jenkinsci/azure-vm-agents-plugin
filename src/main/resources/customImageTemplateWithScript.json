@@ -2,8 +2,8 @@
     "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "storageAccountKey" : {
-            "type" : "secureString"
+        "storageAccountKey": {
+            "type": "secureString"
         }
     },
     "variables": {
@@ -18,7 +18,9 @@
         "startupScriptURI": "",
         "startupScriptName": "",
         "jenkinsServerURL": "",
-        "clientSecrets": []
+        "clientSecrets": [],
+        "jenkinsTag": "ManagedByAzureVMAgents",
+        "resourceTag": "AzureJenkins"
     },
     "resources": [
         {
@@ -35,6 +37,10 @@
                 "dnsSettings": {
                     "domainNameLabel": "[concat(variables('vmName'), copyIndex())]"
                 }
+            },
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
             }
         },
         {
@@ -50,7 +56,8 @@
                 "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]"
             ],
             "properties": {
-                "ipConfigurations": [{
+                "ipConfigurations": [
+                    {
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
@@ -61,7 +68,12 @@
                                 "id": "[variables('subnetRef')]"
                             }
                         }
-                    }]
+                    }
+                ]
+            },
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
             }
         },
         {
@@ -100,12 +112,14 @@
                     }
                 },
                 "networkProfile": {
-                    "networkInterfaces": [{
+                    "networkInterfaces": [
+                        {
                             "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmName'), copyIndex(), 'NIC'))]"
-                        }]
+                        }
+                    ]
                 }
             },
-            "resources" : [
+            "resources": [
                 {
                     "type": "extensions",
                     "name": "[concat('customScript', variables('vmName'), copyIndex())]",
@@ -126,12 +140,16 @@
                             "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File ', variables('startupScriptName'),' ', variables('jenkinsServerURL'),' ', variables('vmName'),copyIndex(),' ', variables('clientSecrets')[copyIndex()])]"
                         },
                         "protectedSettings": {
-                            "storageAccountName" : "[variables('storageAccountName')]",
-                            "storageAccountKey" : "[parameters('storageAccountKey')]"
+                            "storageAccountName": "[variables('storageAccountName')]",
+                            "storageAccountKey": "[parameters('storageAccountKey')]"
                         }
                     }
                 }
-            ]
+            ],
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
+            }
         }
     ]
 }
