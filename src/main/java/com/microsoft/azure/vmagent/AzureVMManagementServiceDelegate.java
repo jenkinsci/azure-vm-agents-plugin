@@ -962,6 +962,7 @@ public class AzureVMManagementServiceDelegate {
      * @param virtualMachineSize
      * @param storageAccountName
      * @param noOfParallelJobs
+     * @param isCustomReferenceUsed
      * @param image
      * @param osType
      * @param imagePublisher
@@ -987,6 +988,7 @@ public class AzureVMManagementServiceDelegate {
             final String virtualMachineSize,
             final String storageAccountName,
             final String noOfParallelJobs,
+            final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String image,
             final String osType,
             final String imagePublisher,
@@ -1045,7 +1047,7 @@ public class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyImageParameters(image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
+            validationResult = verifyImageParameters(referenceType, image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -1060,6 +1062,7 @@ public class AzureVMManagementServiceDelegate {
             verifyTemplateAsync(
                     servicePrincipal,
                     location,
+                    referenceType,
                     image,
                     imagePublisher,
                     imageOffer,
@@ -1083,6 +1086,7 @@ public class AzureVMManagementServiceDelegate {
     private static void verifyTemplateAsync(
             final ServicePrincipal servicePrincipal,
             final String location,
+            final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String image,
             final String imagePublisher,
             final String imageOffer,
@@ -1112,7 +1116,7 @@ public class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyVirtualMachineImage(servicePrincipal,
-                        location, storageAccountName, image, imagePublisher, imageOffer, imageSku, imageVersion);
+                        location, storageAccountName, referenceType, image, imagePublisher, imageOffer, imageSku, imageVersion);
             }
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
@@ -1203,12 +1207,14 @@ public class AzureVMManagementServiceDelegate {
             final ServicePrincipal servicePrincipal,
             final String location,
             final String storageAccountName,
+            final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String image,
             final String imagePublisher,
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if (StringUtils.isNotBlank(image)) {
+        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image)) || 
+               referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM ) {
             try {
                 // Custom image verification.  We must verify that the VM image
                 // storage account is the same as the target storage account.
@@ -1232,7 +1238,7 @@ public class AzureVMManagementServiceDelegate {
                 }
                 String uriStorageAccount = host.substring(0, firstDot);
                 if (!uriStorageAccount.equals(storageAccountName)) {
-                    return Messages.Azure_GC_Template_ImageURI_Not_Valid();
+                    return Messages.Azure_GC_Template_ImageURI_Wrong_Storage_Account();
                 }
                 return Constants.OP_SUCCESS;
             } catch (Exception e) {
@@ -1347,13 +1353,15 @@ public class AzureVMManagementServiceDelegate {
      * @return
      */
     private static String verifyImageParameters(
+            final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String image,
             final String osType,
             final String imagePublisher,
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ((StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType))) {
+        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)) ) || 
+                referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
             // Check that the image string is a URI by attempting to create
             // a URI
             final URI u;

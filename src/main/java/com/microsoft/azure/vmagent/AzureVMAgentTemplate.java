@@ -70,6 +70,12 @@ import org.kohsuke.stapler.AncestorInPath;
  */
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
+    public enum ImageReferenceType {
+        UNKNOWN,
+        CUSTOM,
+        REFERENCE,
+    }
+
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
 
     // General Configuration
@@ -217,6 +223,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public String isType(final String type) {
+        if(this.imageReferenceType == null && type.equals("reference")) {
+            return "true";
+        }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType) ? "true" : "false";
     }
 
@@ -459,6 +468,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 virtualMachineSize,
                 storageAccountName,
                 noOfParallelJobs + "",
+                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : ( imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
                 image,
                 osType,
                 imagePublisher,
@@ -664,7 +674,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String virtualNetworkName,
                 @QueryParameter String subnetName,
                 @QueryParameter String retentionTimeInMin,
-                @QueryParameter String jvmOptions) {
+                @QueryParameter String jvmOptions,
+                @QueryParameter String imageReferenceType) {
+
+            /*
+            imageReferenceType will not be passed to doVerifyConfiguration unless Jenkins core has https://github.com/jenkinsci/jenkins/pull/2734
+            The plugin should be able to run in both modes.
+            */
+            ImageReferenceType referenceType = ImageReferenceType.UNKNOWN;
+            if (imageReferenceType != null) {
+                referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE;
+            }
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             if(storageAccountName.trim().isEmpty())
@@ -738,6 +758,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     virtualMachineSize,
                     storageAccountName,
                     noOfParallelJobs,
+                    referenceType,
                     image,
                     osType,
                     imagePublisher,
