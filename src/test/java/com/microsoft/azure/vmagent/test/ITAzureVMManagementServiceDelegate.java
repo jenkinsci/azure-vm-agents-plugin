@@ -519,4 +519,22 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(e.getMessage(), false);
         }
     }
+
+    @Test
+    public void deploymentWorksIfStorageAccountIsCreatedBefore() {
+        /*
+        uploadCustomScript creates the storage account if it's not available.
+        The SDK will always create it using the latest API version.
+        The deployment has an hardcoded API version that might be lower than the one in the SDK, thus failing the deployment.
+        This test makes sure the deployment JSON is up to date API version-wise
+        */
+        try {
+            final String uploadFileName = UUID.randomUUID().toString() + ".txt";
+            uploadCustomScript(uploadFileName, UUID.randomUUID().toString());
+            createDefaultDeployment(1, null);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
 }
