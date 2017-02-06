@@ -52,6 +52,7 @@ import com.microsoft.azure.management.compute.VirtualMachinePublisher;
 import com.microsoft.azure.management.compute.VirtualMachineSku;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.resources.DeploymentMode;
+import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccountKey;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
@@ -351,6 +352,7 @@ public class AzureVMManagementServiceDelegate {
             azureClient.storageAccounts().define(targetStorageAccount)
                     .withRegion(location)
                     .withExistingResourceGroup(resourceGroupName)
+                    .withSku(SkuName.STANDARD_LRS)
                     .create();
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
