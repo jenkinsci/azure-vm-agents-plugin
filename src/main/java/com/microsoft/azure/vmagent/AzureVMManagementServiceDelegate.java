@@ -595,8 +595,14 @@ public class AzureVMManagementServiceDelegate {
                     }
 
                     for (String location: resourceType.locations()) {
-                        if (!azureClient.virtualMachines().sizes().listByRegion(location).isEmpty()) {
-                            regions.add(location);
+                        if (!regions.contains(location)) {
+                            try {
+                                if (!azureClient.virtualMachines().sizes().listByRegion(location).isEmpty()) {
+                                    regions.add(location);
+                                }
+                            } catch (Exception e){
+                                //some of the provider regions might not be valid for other API calls. The SDK call will throw an exception instead of returning an emtpy list
+                            }
                         }
                     }
 
