@@ -27,6 +27,7 @@ import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
+import com.microsoft.azure.management.resources.TargetResource;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -396,6 +397,9 @@ public class AzureVMCloud extends Cloud {
             for (Deployment dep : deployments) {
                 PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
                 for (DeploymentOperation op : ops) {
+                    if (op.targetResource() == null) {
+                        continue;
+                    }
                     final String resource = op.targetResource().resourceName();
                     final String type = op.targetResource().resourceType();
                     final String state = op.provisioningState();
