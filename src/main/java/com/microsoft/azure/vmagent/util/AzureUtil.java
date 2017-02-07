@@ -443,6 +443,10 @@ public class AzureUtil {
              return Math.abs(timestamp - rhs.timestamp) > timeout;
         }
 
+        public boolean isFromSameInstance(final DeploymentTag rhs) {
+            return instanceId.equals(rhs.instanceId);
+        }
+
         protected DeploymentTag(long timestamp) {
             String id = "";
             try {

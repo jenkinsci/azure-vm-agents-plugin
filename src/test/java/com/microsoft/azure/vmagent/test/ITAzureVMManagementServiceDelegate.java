@@ -289,7 +289,9 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             Random rand = new Random();
             final int numberOfAgents = rand.nextInt(4) + 1;
+            final String vmName = "vmnotcounted";
             createDefaultDeployment(numberOfAgents, null);
+            createAzureVM(vmName);
 
             Assert.assertEquals(numberOfAgents, AzureVMManagementServiceDelegate.getVirtualMachineCount(servicePrincipal, testEnv.azureResourceGroup));
             Assert.assertEquals(0, AzureVMManagementServiceDelegate.getVirtualMachineCount(servicePrincipal, testEnv.azureResourceGroup + "-missing"));

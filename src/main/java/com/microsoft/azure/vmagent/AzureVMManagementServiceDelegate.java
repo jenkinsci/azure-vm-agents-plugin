@@ -761,7 +761,17 @@ public class AzureVMManagementServiceDelegate {
     public static int getVirtualMachineCount(final ServicePrincipal servicePrincipal, final String resourceGroupName) {
         try {
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-            return azureClient.virtualMachines().listByGroup(resourceGroupName).size();
+            final PagedList<VirtualMachine> vms = azureClient.virtualMachines().listByGroup(resourceGroupName);
+            int count = 0;
+            final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
+            for (VirtualMachine vm : vms) {
+                final Map<String,String> tags = vm.tags();
+                if ( tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME) &&
+                     deployTag.isFromSameInstance(new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
+                    count++;
+                }
+            }
+            return count;
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
