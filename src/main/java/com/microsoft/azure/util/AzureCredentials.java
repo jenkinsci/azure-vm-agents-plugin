@@ -182,15 +182,15 @@ public class AzureCredentials extends BaseStandardCredentials {
 
         private static String getTenantFromTokenEndpoint(String oauth2TokenEndpoint)
         {
-            if(!oauth2TokenEndpoint.matches("[a-z:/\\.]*/[a-z0-9\\-]*/oauth2/token$")) {
+            if(!oauth2TokenEndpoint.matches("https://[a-zA-Z0-9\\.]*/[a-z0-9\\-]*/?.*$")) {
                 return "";
             } else {
                 final String[] parts = oauth2TokenEndpoint.split("/");
-                for (int i = parts.length - 1; i > 0; i--) {
-                    if (parts[i].equalsIgnoreCase("oauth2") && i > 0)
-                        return parts[i-1];
+                if (parts.length < 4) {
+                    return "";
+                } else {
+                    return parts[3];
                 }
-                return "";
             }
         }
 
