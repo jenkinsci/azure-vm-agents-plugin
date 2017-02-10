@@ -407,7 +407,8 @@ public class AzureVMCloud extends Cloud {
                         if(resource.equalsIgnoreCase(vmName)) {
 
                             if (!state.equalsIgnoreCase("creating")
-                                && !state.equalsIgnoreCase("succeeded")){
+                                && !state.equalsIgnoreCase("succeeded")
+                                && !state.equalsIgnoreCase("running")){
                                 final String statusCode = op.statusCode();
                                 final Object statusMessage = op.statusMessage();
                                 String finalStatusMessage = statusCode;

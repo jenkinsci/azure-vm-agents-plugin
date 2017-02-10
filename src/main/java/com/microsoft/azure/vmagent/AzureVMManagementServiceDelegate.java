@@ -317,7 +317,7 @@ public class AzureVMManagementServiceDelegate {
                     .withTemplate(tmp.toString())
                     .withParameters("{}")
                     .withMode(DeploymentMode.INCREMENTAL)
-                    .create();
+                    .beginCreate();
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: deployment: Unable to deploy", e);

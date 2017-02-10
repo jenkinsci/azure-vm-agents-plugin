@@ -17,8 +17,11 @@ package com.microsoft.azure.vmagent.test;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.microsoft.azure.CloudException;
+import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.compute.KnownLinuxVirtualMachineImage;
 import com.microsoft.azure.management.compute.VirtualMachine;
+import com.microsoft.azure.management.resources.Deployment;
+import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.management.storage.StorageAccountKey;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
@@ -41,6 +44,7 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -187,7 +191,7 @@ public class IntegrationTest {
         }
     }
 
-    protected AzureVMDeploymentInfo createDefaultDeployment(final int numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException {
+    protected AzureVMDeploymentInfo createDefaultDeployment(final int numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException, Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
         final String osType = Constants.OS_TYPE_LINUX;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
@@ -220,7 +224,59 @@ public class IntegrationTest {
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
         when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
 
-        return AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
+        AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
+        List<String> vmNames = new ArrayList<>();
+        for(int i = 0; i< numberOfAgents; i++) {
+            vmNames.add(ret.getVmBaseName() + String.valueOf(i));
+        }
+
+        //wait for deployment to complete
+        final int maxTries = 20; //wait 10 minutes
+        for(int i = 0; i < maxTries; i++) {
+            if (areAllVMsDeployed(vmNames)) {
+                return ret;
+            }
+
+            try {
+                Thread.sleep(30 * 1000);
+            } catch (InterruptedException ex) {
+                // ignore
+            }
+        }
+        throw new Exception("Deployment is not completed after 10 minutes");
+    }
+    
+    protected boolean areAllVMsDeployed(final List<String> vmNames) {
+        int deployedVMs = 0;
+        PagedList<Deployment> deployments= customTokenCache.getAzureClient().deployments().listByGroup(testEnv.azureResourceGroup);
+        for (Deployment dep : deployments) {
+            PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
+            for (DeploymentOperation op : ops) {
+                if (op.targetResource() == null) {
+                    continue;
+                }
+                final String resource = op.targetResource().resourceName();
+                final String state = op.provisioningState();
+                if (op.targetResource().resourceType().contains("virtualMachine")) {
+                    if (!state.equalsIgnoreCase("creating")
+                        && !state.equalsIgnoreCase("succeeded")
+                        && !state.equalsIgnoreCase("running")){
+                        return false;
+                    }
+                    else if (state.equalsIgnoreCase("succeeded")) {
+                        for(String vmName: vmNames) {
+                            if(resource.equalsIgnoreCase(vmName)) {
+                                deployedVMs++;
+                                break;
+                            }
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+        return deployedVMs == vmNames.size();
     }
 
     protected VirtualMachine createAzureVM(final String vmName) throws CloudException, IOException {
