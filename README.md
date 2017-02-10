@@ -157,8 +157,7 @@ Refer to
 2. If the Jenkins master does not have a security configuration, leave the Init script blank for the default
    script to execute on the agent.
 3. If the Jenkins master has a security configuration, then refer to the script at
-   https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script.ps1 and modify the script with the proper
-   Jenkins credentials.
+   https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1
 
    At a minimum, the script needs to be modified with the Jenkins user name and API token.
    To get the API token, click on your username --> configure --> show api token<br>
