@@ -245,6 +245,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             //can't use listByTag because for some reason that method strips all the tags from the outputted resources (https://github.com/Azure/azure-sdk-for-java/issues/1436)
             final PagedList<GenericResource> resources = azureClient.genericResources().listByGroup(resourceGroup);
 
+            if (resources == null || resources.isEmpty()) {
+                return;
+            }
+
             final PriorityQueue<GenericResource> resourcesMarkedForDeletion = new PriorityQueue<> (resources.size(), new Comparator<GenericResource>(){
                 @Override
                 public int compare(GenericResource o1, GenericResource o2) {
