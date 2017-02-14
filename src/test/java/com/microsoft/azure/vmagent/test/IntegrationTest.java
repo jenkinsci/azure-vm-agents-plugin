@@ -22,7 +22,9 @@ import com.microsoft.azure.management.compute.KnownLinuxVirtualMachineImage;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
+import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccountKey;
+import com.microsoft.azure.storage.AccessCondition;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.StorageException;
@@ -37,7 +39,6 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.util.Secret;
@@ -53,7 +54,6 @@ import org.junit.*;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /*
@@ -168,7 +168,7 @@ public class IntegrationTest {
         return blob.downloadText();
     }
 
-    protected boolean storageAccountExist(final URI storageURI){
+    protected boolean blobExists(final URI storageURI){
         try {
             final String storageAccountName = storageURI.getHost().split("\\.")[0];
             final String containerName = PathUtility.getContainerNameFromUri(storageURI, false);
@@ -185,6 +185,28 @@ public class IntegrationTest {
                 CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
                 CloudBlobClient blobClient = account.createCloudBlobClient();
                 return blobClient.getContainerReference(containerName).getBlockBlobReference(blobName).exists();
+            }
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
+    protected boolean containerExists(final URI storageURI){
+        try {
+            final String storageAccountName = storageURI.getHost().split("\\.")[0];
+            final String containerName = PathUtility.getContainerNameFromUri(storageURI, false);
+
+            List<StorageAccountKey> storageKeys = customTokenCache.getAzureClient().storageAccounts()
+                .getByGroup(testEnv.azureResourceGroup, storageAccountName)
+                .getKeys();
+
+            if (storageKeys.isEmpty()) {
+                return false;
+            } else {
+                String storageAccountKey = storageKeys.get(0).value();
+                CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
+                CloudBlobClient blobClient = account.createCloudBlobClient();
+                return blobClient.getContainerReference(containerName).exists();
             }
         } catch(Exception e) {
             return false;
@@ -296,5 +318,34 @@ public class IntegrationTest {
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                 .withTag(tagName, tagValue)
                 .create();
+    }
+
+    protected URI uploadFile(final String uploadFileName, final String writtenData, final String containerName) throws Exception {
+        customTokenCache.getAzureClient().resourceGroups()
+            .define(testEnv.azureResourceGroup)
+            .withRegion(testEnv.azureLocation)
+            .create();
+        customTokenCache.getAzureClient().storageAccounts().define(testEnv.azureStorageAccountName)
+            .withRegion(testEnv.azureLocation)
+            .withExistingResourceGroup(testEnv.azureResourceGroup)
+            .withSku(SkuName.STANDARD_LRS)
+            .create();
+        List<StorageAccountKey> storageKeys = customTokenCache.getAzureClient().storageAccounts()
+            .getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName)
+            .getKeys();
+        if(storageKeys.isEmpty()) {
+            throw new Exception("Can't find key");
+        }
+
+        String storageAccountKey = storageKeys.get(0).value();
+
+        CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(testEnv.azureStorageAccountName, storageAccountKey));
+        CloudBlobClient blobClient = account.createCloudBlobClient();
+        CloudBlobContainer container = blobClient.getContainerReference(containerName);
+        container.createIfNotExists();
+        CloudBlockBlob blob = container.getBlockBlobReference(uploadFileName);
+        blob.uploadText(writtenData, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
+
+        return blob.getUri();
     }
 }

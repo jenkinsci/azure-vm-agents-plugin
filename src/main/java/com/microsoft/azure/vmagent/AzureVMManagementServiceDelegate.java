@@ -65,6 +65,7 @@ import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import com.microsoft.azure.storage.blob.ListBlobItem;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -901,6 +902,16 @@ public class AzureVMManagementServiceDelegate {
             blobClient.getContainerReference(containerName)
                     .getBlockBlobReference(blobName)
                     .deleteIfExists();
+
+            if (containerName.startsWith("jnk")) {
+                Iterable<ListBlobItem> blobs = blobClient.getContainerReference(containerName).listBlobs();
+                if (blobs.iterator().hasNext()) { // the container is not empty
+                    return;
+                }
+                // the container is empty and we should delete it
+                LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
+                blobClient.getContainerReference(containerName).delete();
+            }
         }
     }
 

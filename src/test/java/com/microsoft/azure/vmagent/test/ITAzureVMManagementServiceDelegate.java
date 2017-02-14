@@ -328,7 +328,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String vmName = "vmterminate";
             VirtualMachine vm = createAzureVM(vmName);
             final URI osDiskStorageAccount = new URI(vm.osDiskVhdUri());
-            Assert.assertTrue(storageAccountExist(osDiskStorageAccount));
+            Assert.assertTrue(blobExists(osDiskStorageAccount));
 
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
@@ -337,7 +337,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
             Assert.assertNull(customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup, vmName));
-            Assert.assertFalse(storageAccountExist(osDiskStorageAccount));
+            Assert.assertFalse(blobExists(osDiskStorageAccount));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -593,6 +593,49 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String uploadFileName = UUID.randomUUID().toString() + ".txt";
             uploadCustomScript(uploadFileName, UUID.randomUUID().toString());
             createDefaultDeployment(1, null);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void removeStorageBlobRemovesEmptyJenkinsContainers() {
+        try {
+            final String fileName = "abc.txt";
+            final String data = "5gadfgbsdafsdg";
+            final String containerName_from_jenkins = "jnkshouldgetdeleted"; // we deploy the init scrit in containers starting with jnk
+            final String containerName_from_user = "notstartingwithjnk"; // we shouldn't delete containers not deployed by us
+            final URI deletedContainerBlobURI = uploadFile(fileName, data, containerName_from_jenkins);
+            final URI existingContainerBlobURI = uploadFile(fileName, data, containerName_from_user);
+
+            AzureVMManagementServiceDelegate.removeStorageBlob(customTokenCache.getAzureClient(), deletedContainerBlobURI, testEnv.azureResourceGroup);
+            AzureVMManagementServiceDelegate.removeStorageBlob(customTokenCache.getAzureClient(), existingContainerBlobURI, testEnv.azureResourceGroup);
+
+            Assert.assertFalse(containerExists(deletedContainerBlobURI)); // both container and blob are missing
+            Assert.assertTrue(containerExists(existingContainerBlobURI)); // the container is there, but the blob is missing
+            Assert.assertFalse(blobExists(existingContainerBlobURI));
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void removeStorageBlobKeepsContainerIfNotEmpty() {
+        try {
+            final String fileName1 = "abc1.txt";
+            final String fileName2 = "abc2.txt";
+            final String data = "5gadfgbsdafsdg";
+            final String containerName = "jnkshouldgetdeleted";
+            final URI blobToBeDeleted = uploadFile(fileName1, data, containerName);
+            final URI notDeletedBlob = uploadFile(fileName2, data, containerName);
+
+            AzureVMManagementServiceDelegate.removeStorageBlob(customTokenCache.getAzureClient(), blobToBeDeleted, testEnv.azureResourceGroup);
+
+            Assert.assertTrue(containerExists(blobToBeDeleted));
+            Assert.assertFalse(blobExists(blobToBeDeleted));
+            Assert.assertTrue(blobExists(notDeletedBlob));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
