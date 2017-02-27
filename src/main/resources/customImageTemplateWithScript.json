@@ -20,7 +20,8 @@
         "jenkinsServerURL": "",
         "clientSecrets": [],
         "jenkinsTag": "ManagedByAzureVMAgents",
-        "resourceTag": "AzureJenkins"
+        "resourceTag": "AzureJenkins",
+        "blobEndpointSuffix":".blob.core.windows.net/"
     },
     "resources": [
         {
@@ -107,7 +108,7 @@
                         },
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
+                            "uri": "[concat('http://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
                         }
                     }
                 },

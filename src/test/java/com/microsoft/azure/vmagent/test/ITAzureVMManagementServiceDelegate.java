@@ -615,7 +615,25 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertFalse(containerExists(deletedContainerBlobURI)); // both container and blob are missing
             Assert.assertTrue(containerExists(existingContainerBlobURI)); // the container is there, but the blob is missing
             Assert.assertFalse(blobExists(existingContainerBlobURI));
-        } catch (Exception e) {
+        } catch (Exception e){
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+    
+    @Test
+    //Add Test for global first, will add test for mooncake later
+    public void getBlobEndpointSuffixForArmTemplateForGlobal(){
+        try {
+            customTokenCache.getAzureClient().storageAccounts()
+            .define(testEnv.azureStorageAccountName)
+            .withRegion(testEnv.azureLocation)
+            .withNewResourceGroup(testEnv.azureResourceGroup)
+            .create();
+            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+            String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForTemplate(storageAccount);
+            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForTemplate.get(TestEnvironment.AZUREPUBLIC));            
+        } catch (Exception e){
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }
@@ -636,7 +654,25 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(containerExists(blobToBeDeleted));
             Assert.assertFalse(blobExists(blobToBeDeleted));
             Assert.assertTrue(blobExists(notDeletedBlob));
-        } catch (Exception e) {
+        } catch (Exception e){
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+    
+    @Test
+    //Add Test for global first, will add test for mooncake later
+    public void getBlobEndpointSuffixForCloudStorageAccountForGlobal(){
+        try {
+            customTokenCache.getAzureClient().storageAccounts()
+            .define(testEnv.azureStorageAccountName)
+            .withRegion(testEnv.azureLocation)
+            .withNewResourceGroup(testEnv.azureResourceGroup)
+            .create();
+            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+            String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
+            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForCloudStorageAccount.get(TestEnvironment.AZUREPUBLIC));            
+        } catch (Exception e){
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }

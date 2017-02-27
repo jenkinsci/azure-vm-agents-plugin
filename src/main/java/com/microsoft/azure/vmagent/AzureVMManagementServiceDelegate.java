@@ -57,13 +57,13 @@ import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.resources.Provider;
 import com.microsoft.azure.management.resources.ProviderResourceType;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
+import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.management.storage.StorageAccountKey;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.storage.AccessCondition;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import com.microsoft.azure.util.AzureCredentials;
@@ -114,7 +114,7 @@ public class AzureVMManagementServiceDelegate {
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
 
     private static final Set<String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
-
+    
     /**
      * Creates a new deployment of VMs based on the provided template
      *
@@ -150,6 +150,7 @@ public class AzureVMManagementServiceDelegate {
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
             final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
             final String locationName = getLocationName(template.getLocation());
+            final String storageAccountName = template.getStorageAccountName();
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
@@ -161,11 +162,12 @@ public class AzureVMManagementServiceDelegate {
                     "AzureVMManagementServiceDelegate: createDeployment: Creating a new deployment {0} with VM base name {1}",
                     new Object[]{deploymentName, vmBaseName});
 
-            azureClient.resourceGroups()
-                    .define(resourceGroupName)
-                    .withRegion(locationName)
-                    .create();
-
+            createAzureResourceGroup(azureClient, locationName, resourceGroupName);
+            //For blob endpoint url in arm template, it's different based on different environments
+            //So create StorageAccount and get suffix 
+            createStorageAccount(azureClient, storageAccountName, locationName, resourceGroupName);
+            StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
+            String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
             final boolean useCustomScriptExtension
                     = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(template.getInitScript())
                     && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
@@ -201,7 +203,7 @@ public class AzureVMManagementServiceDelegate {
             count.put("type", "int");
             count.put("defaultValue", numberOfAgents);
             ObjectNode.class.cast(tmp.get("parameters")).replace("count", count);
-
+            
             ObjectNode.class.cast(tmp.get("variables")).put("vmName", vmBaseName);
             ObjectNode.class.cast(tmp.get("variables")).put("location", locationName);
             ObjectNode.class.cast(tmp.get("variables")).put("jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
@@ -244,7 +246,7 @@ public class AzureVMManagementServiceDelegate {
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
                 List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                        .getByGroup(template.getResourceGroupName(), template.getStorageAccountName())
+                        .getByGroup(template.getResourceGroupName(), storageAccountName)
                         .getKeys();
                 if(storageKeys.isEmpty()) {
                     throw new AzureCloudException("AzureVMManagementServiceDelegate: createDeployment: "
@@ -267,10 +269,14 @@ public class AzureVMManagementServiceDelegate {
             ObjectNode.class.cast(tmp.get("variables")).put("adminUsername", creds.getUsername());
             ObjectNode.class.cast(tmp.get("variables")).put("adminPassword", creds.getPassword().getPlainText());
 
-            if (StringUtils.isNotBlank(template.getStorageAccountName())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", template.getStorageAccountName());
+            if (StringUtils.isNotBlank(storageAccountName)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", storageAccountName);
             }
-
+            
+            if(StringUtils.isNotBlank(blobEndpointSuffix)){
+                ObjectNode.class.cast(tmp.get("variables")).put("blobEndpointSuffix", blobEndpointSuffix);
+            }
+                
             // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
             if (StringUtils.isNotBlank(template.getVirtualNetworkName())) {
@@ -309,7 +315,6 @@ public class AzureVMManagementServiceDelegate {
                     break;
                 }
             }
-
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
             // Create the deployment
@@ -350,38 +355,17 @@ public class AzureVMManagementServiceDelegate {
         final Azure azureClient = tokenCache.getAzureClient();
 
         //make sure the resource group and storage account exist
-        azureClient.resourceGroups()
-                    .define(resourceGroupName)
-                    .withRegion(location)
-                    .create();
-
+        createAzureResourceGroup(azureClient, location, resourceGroupName);
         try {
-            azureClient.storageAccounts().define(targetStorageAccount)
-                    .withRegion(location)
-                    .withExistingResourceGroup(resourceGroupName)
-                    .withSku(SkuName.STANDARD_LRS)
-                    .create();
+            createStorageAccount(azureClient, targetStorageAccount, location, resourceGroupName);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
         }
-        List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                        .getByGroup(resourceGroupName, targetStorageAccount)
-                        .getKeys();
-        if(storageKeys.isEmpty()) {
-            throw new AzureCloudException("AzureVMManagementServiceDelegate: uploadCustomScript: "
-                    + "Exception occured while fetching the storage account key");
-        }
-
-        String storageAccountKey = storageKeys.get(0).value();
-        String scriptText = template.getInitScript();
-
-        CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(targetStorageAccount, storageAccountKey));
-        CloudBlobClient blobClient = account.createCloudBlobClient();
-        CloudBlobContainer container = blobClient.getContainerReference(Constants.CONFIG_CONTAINER_NAME);
+        CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
         CloudBlockBlob blob = container.getBlockBlobReference(targetScriptName);
+        String scriptText = template.getInitScript();
         blob.uploadText(scriptText, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
-
         return blob.getUri().toString();
     }
 
@@ -891,28 +875,17 @@ public class AzureVMManagementServiceDelegate {
 
         LOGGER.log(Level.INFO, "removeStorageBlob: Removing disk blob {0}, in container {1} of storage account {2}",
                 new Object[]{blobName, containerName, storageAccountName});
-
-        List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-            .getByGroup(resourceGroupName, storageAccountName)
-            .getKeys();
-        if (!storageKeys.isEmpty()) {
-            String storageAccountKey = storageKeys.get(0).value();
-            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
-            CloudBlobClient blobClient = account.createCloudBlobClient();
-            blobClient.getContainerReference(containerName)
-                    .getBlockBlobReference(blobName)
-                    .deleteIfExists();
-
-            if (containerName.startsWith("jnk")) {
-                Iterable<ListBlobItem> blobs = blobClient.getContainerReference(containerName).listBlobs();
-                if (blobs.iterator().hasNext()) { // the container is not empty
-                    return;
-                }
-                // the container is empty and we should delete it
-                LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
-                blobClient.getContainerReference(containerName).delete();
+        CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, storageAccountName, containerName);
+        container.getBlockBlobReference(blobName).deleteIfExists();
+        if (containerName.startsWith("jnk")) {
+            Iterable<ListBlobItem> blobs = container.listBlobs();
+            if (blobs.iterator().hasNext()) { // the container is not empty
+                return;
             }
-        }
+            // the container is empty and we should delete it
+            LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
+            container.delete();
+        }        
     }
 
     /**
@@ -1451,4 +1424,181 @@ public class AzureVMManagementServiceDelegate {
             return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
         }
     }
+    
+    /**
+     * Create Azure resource Group
+     * 
+     * @param azureClient
+     * @param locationName
+     * @param resourceGroupName
+     * @return
+     */
+    private static void createAzureResourceGroup(Azure azureClient, String locationName, String resourceGroupName) throws AzureCloudException {
+        try{
+            azureClient.resourceGroups()
+            .define(resourceGroupName)
+            .withRegion(locationName)
+            .create();
+        } catch(Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
+            throw new AzureCloudException(String.format(" Failed to create resource group with group name %s, location %s",
+            resourceGroupName, locationName), e);
+        }
+    }
+    
+    /**
+     * Create storage Account
+     * 
+     * @param azureClient
+     * @param targetStorageAccount
+     * @param location
+     * @param resourceGroupName
+     * @return
+     */
+    private static void createStorageAccount(Azure azureClient, String targetStorageAccount, String location, String resourceGroupName) throws AzureCloudException{
+        try {
+            azureClient.storageAccounts().define(targetStorageAccount)
+                    .withRegion(location)
+                    .withExistingResourceGroup(resourceGroupName)
+                    .withSku(SkuName.STANDARD_LRS)
+                    .create();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
+            throw new AzureCloudException(String.format("Failed to create storage account with account name %s, location %s, resourceGroupName %s",
+                    targetStorageAccount, location, resourceGroupName), e);
+        }
+    }
+    
+    /**
+     * Get StorageAccount by resourceGroup name and storageAccount name
+     *
+     * @param azureClient
+     * @param storageAccountName
+     * @param resourceGroupName
+     * 
+     * @return StorageAccount object
+     */
+    private static StorageAccount getStorageAccount(Azure azureClient, String targetStorageAccount, String resourceGroupName){
+        return azureClient.storageAccounts().getByGroup(resourceGroupName, targetStorageAccount);
+    }
+    
+    /**
+     * Get the blob endpoint suffix for , it's like ".blob.core.windows.net/" for public azure
+     * or ".blob.core.chinacloudapi.cn" for Azure China
+     *
+     * @param storageAccount
+     * @return endpointSuffix
+     */
+    public static String getBlobEndpointSuffixForTemplate(StorageAccount storageAccount){
+        return getBlobEndPointSuffix(storageAccount, Constants.BLOB, Constants.BLOB_ENDPOINT_PREFIX, Constants.FWD_SLASH);
+    }
+    
+    /**
+     * Get the blob endpoint suffix for constructing CloudStorageAccount  , it's like "core.windows.net"
+     * or "core.chinacloudapi.cn" for AzureChina
+     *
+     * @param storageAccount
+     * @return endpointSuffix
+     */
+    public static String getBlobEndpointSuffixForCloudStorageAccount(StorageAccount storageAccount){
+        return getBlobEndPointSuffix(storageAccount, Constants.BLOB_ENDPOINT_SUFFIX_STARTKEY, "", "");
+    }
+    
+    /**
+     * Get the blob endpoint substring with prefix and suffix
+     *
+     * @param storageAccount
+     * @param startKey uses to get the start position of sub string, if it's null or empty then whole input string will be used
+     * @param prefix the prefix of substring will be added, if it's null or empty then it will not be added'
+     * @param suffix the suffix will be append to substring if substring doesn't contain it,if it's null or empty then it will not be added
+     * @return endpointSuffix
+     */
+    private static String getBlobEndPointSuffix(StorageAccount storageAccount, String startKey, String prefix, String suffix)
+    {
+        String endpointSuffix = null;
+        if(storageAccount != null){
+            String blobUri = storageAccount.endPoints().primary().blob().toLowerCase();
+            endpointSuffix = getSubString(blobUri, startKey, prefix, suffix);
+        }
+        
+        return endpointSuffix;
+    }
+
+    
+    /**
+     * Get substring with startKey,  endSuffix and prefix
+     *
+     * @param startKey startKey used to get the start position of string, if it's null or empty then whole input string will be used
+     * @param prefix the prefix of substring will be added, if it's null or empty then it will not be added'
+     * @param suffix the suffix will be append to substring if substring doesn't contain it,if it's null or empty then it will not be added
+     * @return 
+     */
+    private static String getSubString(String uri, String startKey, String prefix, String suffix){
+        String subString = null;
+        if(StringUtils.isNotBlank(uri)){
+            if(StringUtils.isNotEmpty(startKey) && uri.indexOf(startKey) >= 0){
+                subString = uri.substring(uri.indexOf(startKey));                
+            } else {
+                subString = uri;
+            }
+            subString = StringUtils.isNotEmpty(prefix) ? prefix + subString : subString;
+            if(StringUtils.isNotEmpty(suffix) && subString.lastIndexOf(suffix) < subString.length() - suffix.length()){
+                subString = subString + suffix;
+            }
+        }
+        return subString;
+    }
+    
+    /**
+     * Get CloudStorageAccount
+     *
+     * @param storageAccount
+     * @return CloudStorageAccount object
+     */
+    public static CloudStorageAccount getCloudStorageAccount(StorageAccount storageAccount) throws AzureCloudException{
+        List<StorageAccountKey> storageKeys =storageAccount.getKeys();
+        if(storageKeys.isEmpty()) {
+            throw new AzureCloudException("AzureVMManagementServiceDelegate: uploadCustomScript: "
+                    + "Exception occured while fetching the storage account key");
+        }
+
+        String storageAccountKey = storageKeys.get(0).value();
+        String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
+        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: getCloudStorageAccount: the suffix for contruct CloudStorageCloud is {0}",blobSuffix);
+        if(StringUtils.isEmpty(blobSuffix)){
+            throw new AzureCloudException("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
+                    + "Exception occured while getting blobSuffix, it's empty'");
+        }
+        try {
+            return new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccount.name(), storageAccountKey), false, blobSuffix);
+        } catch (Exception e){
+            LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: GetCloudStorageAccount: unable to get CloudStorageAccount with storage account {0} and blob Suffix {1}",
+                    new Object[]{storageAccount.name(), blobSuffix});
+            throw new AzureCloudException(e);
+        }
+    }
+    
+    /**
+     * Get CloudBlobContainer
+     *
+     * @param account
+     * @param containerName
+     * @return CloudBlobContainer
+     */
+    public static CloudBlobContainer getCloudBlobContainer(CloudStorageAccount account, String containerName) throws AzureCloudException{
+        try {
+            return account.createCloudBlobClient().getContainerReference(containerName);
+        } catch (Exception e){
+            LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getCloudBlobContainer: unable to get CloudStorageAccount with container name {1}",
+                    new Object[]{containerName});
+            throw new AzureCloudException(e);
+        }
+    }
+
+    public static CloudBlobContainer getCloudBlobContainer(Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContanerName) throws AzureCloudException{
+        StorageAccount storageAccount = azureClient.storageAccounts()
+            .getByGroup(resourceGroupName, targetStorageAccount);
+        CloudStorageAccount account = getCloudStorageAccount(storageAccount);
+        return getCloudBlobContainer(account, blobContanerName);
+    }   
 }

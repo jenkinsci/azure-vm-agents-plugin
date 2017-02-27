@@ -12,7 +12,8 @@
         "storageAccountContainerName": "vhds",
         "storageAccountType": "Standard_LRS",
         "jenkinsTag": "ManagedByAzureVMAgents",
-        "resourceTag": "AzureJenkins"
+        "resourceTag": "AzureJenkins",
+        "blobEndpointSuffix":".blob.core.windows.net/"
     },
     "resources": [
         {
@@ -109,7 +110,7 @@
                     "osDisk": {
                         "name": "osdisk",
                         "vhd": {
-                            "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
+                            "uri": "[concat('http://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
                         },
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
