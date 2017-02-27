@@ -47,6 +47,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,6 +83,12 @@ public class IntegrationTest {
         public final String azureImageOffer;
         public final String azureImageSku;
         public final String azureImageSize;
+        public final Map<String, String> blobEndpointSuffixForTemplate;
+        public final Map<String,String> blobEndpointSuffixForCloudStorageAccount;
+        public final static String AZUREPUBLIC = "azure public";
+        public final static String AZURECHINA = "azure china";
+        public final static String AZUREUSGOVERMENT = "azure us goverment";
+        public final static String AZUREGERMAN = "azure german";
 
         TestEnvironment() {
             subscriptionId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_SUBSCRIPTION_ID");
@@ -99,6 +107,16 @@ public class IntegrationTest {
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "14.04.5-LTS");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
+            blobEndpointSuffixForTemplate = new HashMap<String, String>();
+            blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
+            blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
+            blobEndpointSuffixForTemplate.put(AZUREUSGOVERMENT, ".blob.core.usgovcloudapi.net/");
+            blobEndpointSuffixForTemplate.put(AZUREGERMAN, ".blob.core.cloudapi.de/");
+            blobEndpointSuffixForCloudStorageAccount = new HashMap<String, String>();
+            blobEndpointSuffixForCloudStorageAccount.put(AZUREPUBLIC, "core.windows.net/");
+            blobEndpointSuffixForCloudStorageAccount.put(AZURECHINA, "core.chinacloudapi.cn/");
+            blobEndpointSuffixForCloudStorageAccount.put(AZUREUSGOVERMENT, "core.usgovcloudapi.net/");
+            blobEndpointSuffixForCloudStorageAccount.put(AZUREGERMAN, "core.cloudapi.de/");
         }
 
         private static String loadFromEnv(final String name) {

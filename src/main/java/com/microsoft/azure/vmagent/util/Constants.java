@@ -40,6 +40,10 @@ public class Constants {
     public static final String BASE_URI_SUFFIX = ".core.windows.net/";
 
     public static final String FWD_SLASH = "/";
+    
+    public static final String BLOB_ENDPOINT_SUFFIX_STARTKEY = "core";
+    
+    public static final String BLOB_ENDPOINT_PREFIX = ".";
 
     public static final int DEFAULT_MAX_VM_LIMIT = 10;
     
