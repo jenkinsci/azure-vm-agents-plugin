@@ -151,7 +151,7 @@ public class IntegrationTest {
         try {
             customTokenCache.getAzureClient().resourceGroups().deleteByName(testEnv.azureResourceGroup);
         } catch (CloudException e) {
-            if (e.getResponse().code() != 404) {
+            if (e.response().code() != 404) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
         }
@@ -315,6 +315,7 @@ public class IntegrationTest {
                 .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_14_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
                 .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345") //don't try this at home
+                .withUnmanagedDisks()
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                 .withTag(tagName, tagValue)
                 .create();

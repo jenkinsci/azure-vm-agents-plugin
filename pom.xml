@@ -16,7 +16,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <azuresdk.version>1.0.0-beta4.1</azuresdk.version>
+    <azuresdk.version>1.0.0-beta5</azuresdk.version>
     <azure-storage.version>4.4.0</azure-storage.version>
     <jenkins.version>1.653</jenkins.version>
     <java.level>7</java.level>
@@ -163,6 +163,16 @@
     <repository>
       <id>repo.jenkins-ci.org</id>
       <url>http://repo.jenkins-ci.org/public/</url>
+    </repository>
+    <repository>
+        <id>com.springsource.repository.bundles.release</id>
+        <name>SpringSource Enterprise Bundle Repository - SpringSource Bundle Releases</name>
+        <url>http://repository.springsource.com/maven/bundles/release</url>
+    </repository>
+    <repository>
+        <id>com.springsource.repository.bundles.external</id>
+        <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+        <url>http://repository.springsource.com/maven/bundles/external</url>
     </repository>
   </repositories>
 
