@@ -846,7 +846,7 @@ public class AzureVMManagementServiceDelegate {
                     final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
                     List<URI> diskUrisToRemove = new ArrayList<>();
                     // Mark OS disk for removal
-                    diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osDiskVhdUri()));
+                    diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
                     // TODO: Remove data disks or add option to do so?
 
                     // Remove the VM

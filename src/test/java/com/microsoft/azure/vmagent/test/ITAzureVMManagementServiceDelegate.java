@@ -327,7 +327,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final String vmName = "vmterminate";
             VirtualMachine vm = createAzureVM(vmName);
-            final URI osDiskStorageAccount = new URI(vm.osDiskVhdUri());
+            final URI osDiskStorageAccount = new URI(vm.osUnmanagedDiskVhdUri());
             Assert.assertTrue(blobExists(osDiskStorageAccount));
 
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);

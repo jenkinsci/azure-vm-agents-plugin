@@ -302,7 +302,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                     URI osDiskURI = null;
                     if (StringUtils.containsIgnoreCase(resource.type(), "virtualMachine")) {
-                        osDiskURI = new URI(azureClient.virtualMachines().getById(resource.id()).osDiskVhdUri());
+                        osDiskURI = new URI(azureClient.virtualMachines().getById(resource.id()).osUnmanagedDiskVhdUri());
                     }
 
                     LOGGER.log(Level.INFO, "cleanLeakedResources: deleting {0} from resource group {1}", new Object[]{resource.name(), resourceGroup});
