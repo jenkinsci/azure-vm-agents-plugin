@@ -33,7 +33,7 @@ Refer to
 ## Configure the plugin : Azure profile configuration
 1. Within the Jenkins dashboard, click Manage Jenkins --> Configure System --> Scroll to the bottom of the page
    and find the section with the dropdown "Add new cloud" --> click on it and select "Microsoft Azure VM Agents"
-2. Select an existing account from the Azure Credentials drop down or add new "Microsoft Azure VM Agents" credentials in the Credentials Management page by filling out the Subscription ID, Client ID, Client Secret and the OAuth 2.0 Token Endpoint.
+2. Select an existing account from the Azure Credentials drop down or add new "Microsoft Azure Service Principal" credentials in the Credentials Management page by filling out the Subscription ID, Client ID, Client Secret and the OAuth 2.0 Token Endpoint.
 3. Click on “Verify configuration” to make sure that the profile configuration is done correctly.
 4. Save and continue with the template configuration (See instructions below)
 
