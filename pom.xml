@@ -18,11 +18,13 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <azuresdk.version>1.0.0-beta5</azuresdk.version>
     <azure-storage.version>4.4.0</azure-storage.version>
+    <jackson.version>2.7.2</jackson.version>
     <jenkins.version>1.653</jenkins.version>
     <java.level>7</java.level>
     <findbugs.failOnError>true</findbugs.failOnError>
     <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <azure-credentials.version>1.0</azure-credentials.version>
   </properties>
 
   <licenses>
@@ -84,7 +86,29 @@
       <version>${azuresdk.version}</version>
       <type>jar</type>
     </dependency>
-
+    
+     <dependency>
+       <groupId>com.fasterxml.jackson.core</groupId>
+       <artifactId>jackson-databind</artifactId>
+       <version>${jackson.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>com.fasterxml.jackson.core</groupId>
+       <artifactId>jackson-annotations</artifactId>
+       <version>${jackson.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>com.fasterxml.jackson.core</groupId>
+       <artifactId>jackson-core</artifactId>
+       <version>${jackson.version}</version>
+     </dependency>
+    
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>azure-credentials</artifactId>
+      <version>${azure-credentials.version}</version>
+    </dependency>
+    
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
@@ -139,12 +163,6 @@
         <scope>test</scope>
     </dependency>
 
-
-    <dependency>
-        <groupId>org.jenkins-ci.plugins</groupId>
-        <artifactId>credentials</artifactId>
-        <version>1.21</version>
-    </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>plain-credentials</artifactId>

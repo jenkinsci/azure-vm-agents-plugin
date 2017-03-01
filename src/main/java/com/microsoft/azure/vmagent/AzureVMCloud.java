@@ -725,8 +725,12 @@ public class AzureVMCloud extends Cloud {
             }      
             AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
             try {
-                credentials.validate(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
-            } catch (AzureCredentialsValidationException e) {
+                credentials.validate();
+                final String validationResult = AzureVMManagementServiceDelegate.verifyConfiguration(credentials, resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
+                if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
+                    return FormValidation.error(validationResult);
+                }
+            } catch (AzureCredentials.ValidationException e) {
                 return FormValidation.error(e.getMessage());
             }
             return FormValidation.ok(Messages.Azure_Config_Success());
