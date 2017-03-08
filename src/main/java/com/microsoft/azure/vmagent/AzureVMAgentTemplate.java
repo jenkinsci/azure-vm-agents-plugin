@@ -93,7 +93,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final int noOfParallelJobs;
 
-    private final Node.Mode useAgentAlwaysIfAvail;
+    private Node.Mode usageMode;
 
     private final boolean shutdownOnIdle;
 
@@ -153,7 +153,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String virtualMachineSize,
             final String storageAccountName,
             final String noOfParallelJobs,
-            final Node.Mode useAgentAlwaysIfAvail,
+            final String usageMode,
             final String imageReferenceType,
             final String image,
             final String osType,
@@ -189,7 +189,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         } else {
             this.noOfParallelJobs = Integer.parseInt(noOfParallelJobs);
         }
-        this.useAgentAlwaysIfAvail = useAgentAlwaysIfAvail;
+        setUsageMode(usageMode);
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
@@ -256,7 +256,22 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public Node.Mode getUseAgentAlwaysIfAvail() {
-        return useAgentAlwaysIfAvail;
+        return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
+    }
+
+    public String getUsageMode() {
+        return getUseAgentAlwaysIfAvail().getDescription();
+    }
+
+    public void setUsageMode(final String mode) {
+        Node.Mode val = Node.Mode.NORMAL;
+        for(Node.Mode m : hudson.Functions.getNodeModes()) {
+            if (mode.equalsIgnoreCase(m.getDescription())) {
+                val = m;
+                break;
+            }
+        }
+        this.usageMode = val;
     }
 
     public boolean isShutdownOnIdle() {
@@ -537,6 +552,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 model.add(location);
             }
 
+            return model;
+        }
+        
+        public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
+            ListBoxModel model = new ListBoxModel();
+            for(Node.Mode m : hudson.Functions.getNodeModes()) {
+                model.add(m.getDescription());
+            }
             return model;
         }
 
