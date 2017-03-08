@@ -34,7 +34,9 @@
         <f:checkbox/>
       </f:entry>
 
-      <f:slave-mode name="useAgentAlwaysIfAvail" node="${instance}" help="/plugin/azure-vm-agents/help-slaveMode.html" default="EXCLUSIVE"/>
+      <f:entry title="${%Usage}" field="usageMode" help="/plugin/azure-vm-agents/help-slaveMode.html" >
+          <f:select />
+      </f:entry>
     </f:section>
 
     <f:section title="${%Image_Configuration}">
