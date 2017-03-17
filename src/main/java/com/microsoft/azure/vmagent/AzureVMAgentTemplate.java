@@ -518,10 +518,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             ListBoxModel model = new ListBoxModel();
             List<String> vmSizes = AzureVMManagementServiceDelegate.getVMSizes(servicePrincipal, location);
 
-            for (String vmSize : vmSizes) {
-                model.add(vmSize);
+            if (vmSizes != null) {
+                for (String vmSize : vmSizes) {
+                    model.add(vmSize);
+                }
             }
-
             return model;
         }
 
