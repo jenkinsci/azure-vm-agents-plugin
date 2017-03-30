@@ -56,7 +56,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
-import java.util.Map;
 import java.util.logging.Level;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.lang.StringUtils;
@@ -126,6 +125,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String subnetName;
 
+    private boolean usePrivateIP;
+
     private final String jvmOptions;
 
     // Indicates whether the template is disabled.
@@ -167,6 +168,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String credentialsId,
             final String virtualNetworkName,
             final String subnetName,
+            final boolean usePrivateIP,
             final String agentWorkspace,
             final String jvmOptions,
             final String retentionTimeInMin,
@@ -203,6 +205,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.subnetName = subnetName;
+        this.usePrivateIP = usePrivateIP;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
@@ -332,6 +335,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public void setSubnetName(String subnetName) {
         this.subnetName = subnetName;
+    }
+    
+    public boolean getUsePrivateIP() {
+        return usePrivateIP;
     }
 
     public String getAgentWorkspace() {
@@ -475,8 +482,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * @throws Exception
      */
     public List<String> verifyTemplate() throws Exception {
-        return AzureVMManagementServiceDelegate.verifyTemplate(
-                azureCloud.getServicePrincipal(),
+        return AzureVMManagementServiceDelegate.verifyTemplate(azureCloud.getServicePrincipal(),
                 templateName,
                 labels,
                 location,
@@ -498,7 +504,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 retentionTimeInMin + "",
                 jvmOptions,
                 getResourceGroupName(),
-                true);
+                true,
+                usePrivateIP);
     }
 
     @Extension
@@ -695,6 +702,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
                 @QueryParameter String subnetName,
+                @QueryParameter boolean usePrivateIP,
                 @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions,
                 @QueryParameter String imageReferenceType) {
@@ -736,8 +744,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     + "credentialsId: {19};\n\t"
                     + "virtualNetworkName: {20};\n\t"
                     + "subnetName: {21};\n\t"
-                    + "retentionTimeInMin: {22};\n\t"
-                    + "jvmOptions: {23};",
+                    + "privateIP: {22};\n\t"
+                    + "retentionTimeInMin: {23};\n\t"
+                    + "jvmOptions: {24};",
                     new Object[]{
                         servicePrincipal.getSubscriptionId(),
                         (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -761,6 +770,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                         credentialsId,
                         virtualNetworkName,
                         subnetName,
+                        usePrivateIP,
                         retentionTimeInMin,
                         jvmOptions});
 
@@ -795,7 +805,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     retentionTimeInMin,
                     jvmOptions,
                     resourceGroupName,
-                    false);
+                    false,
+                    usePrivateIP);
 
             if (errors.size() > 0) {
                 StringBuilder errorString = new StringBuilder(Messages.Azure_GC_Template_Error_List()).append("\n");

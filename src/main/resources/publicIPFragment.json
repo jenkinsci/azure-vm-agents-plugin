@@ -1,0 +1,20 @@
+{
+    "apiVersion": "2015-05-01-preview",
+    "type": "Microsoft.Network/publicIPAddresses",
+    "name": "[concat(variables('vmName'), copyIndex(), 'IPName')]",
+    "location": "[variables('location')]",
+    "copy": {
+        "name": "vmcopy",
+        "count": "[parameters('count')]"
+    },
+    "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+        "dnsSettings": {
+            "domainNameLabel": "[concat(variables('vmName'), copyIndex())]"
+        }
+    },
+    "tags": {
+        "JenkinsManagedTag": "[variables('jenkinsTag')]",
+        "JenkinsResourceTag": "[variables('resourceTag')]"
+    }
+}

@@ -13,7 +13,7 @@
         "storageAccountType": "Standard_LRS",
         "jenkinsTag": "ManagedByAzureVMAgents",
         "resourceTag": "AzureJenkins",
-        "blobEndpointSuffix":".blob.core.windows.net/"
+        "blobEndpointSuffix": ".blob.core.windows.net/"
     },
     "resources": [
         {
@@ -27,26 +27,6 @@
         },
         {
             "apiVersion": "2015-05-01-preview",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[concat(variables('vmName'), copyIndex(), 'IPName')]",
-            "location": "[variables('location')]",
-            "copy": {
-                "name": "vmcopy",
-                "count": "[parameters('count')]"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
-                "dnsSettings": {
-                    "domainNameLabel": "[concat(variables('vmName'), copyIndex())]"
-                }
-            },
-            "tags": {
-                "JenkinsManagedTag": "[variables('jenkinsTag')]",
-                "JenkinsResourceTag": "[variables('resourceTag')]"
-            }
-        },
-        {
-            "apiVersion": "2015-05-01-preview",
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[concat(variables('vmName'), copyIndex(), 'NIC')]",
             "location": "[variables('location')]",
@@ -54,18 +34,13 @@
                 "name": "vmcopy",
                 "count": "[parameters('count')]"
             },
-            "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]"
-            ],
+            "dependsOn": [],
             "properties": {
                 "ipConfigurations": [
                     {
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('vmName'), copyIndex(), 'IPName'))]"
-                            },
                             "subnet": {
                                 "id": "[variables('subnetRef')]"
                             }
