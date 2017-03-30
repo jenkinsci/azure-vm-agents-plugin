@@ -52,6 +52,7 @@ import com.microsoft.azure.management.compute.VirtualMachinePublisher;
 import com.microsoft.azure.management.compute.VirtualMachineSize;
 import com.microsoft.azure.management.compute.VirtualMachineSku;
 import com.microsoft.azure.management.network.Network;
+import com.microsoft.azure.management.network.PublicIpAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.resources.Provider;
@@ -107,6 +108,8 @@ public class AzureVMManagementServiceDelegate {
 
     private static final String VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME = "/virtualNetworkFragment.json";
 
+    private static final String PUBLIC_IP_FRAGMENT_FILENAME = "/publicIPFragment.json";
+
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
@@ -140,7 +143,6 @@ public class AzureVMManagementServiceDelegate {
             throws AzureCloudException, IOException {
 
         InputStream embeddedTemplate = null;
-        InputStream fragmentStream = null;
         try {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
@@ -285,38 +287,13 @@ public class AzureVMManagementServiceDelegate {
                 ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
             } else {
-                // Add the definition of the vnet and subnet into the template
-                final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
-                final String subnetName = Constants.DEFAULT_SUBNET_NAME;
-                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", virtualNetworkName);
-                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", subnetName);
-
-                // Read the vnet fragment
-                fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
-
-                final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
-                // Add the virtual network fragment
-                ArrayNode.class.cast(tmp.get("resources")).add(virtualNetworkFragment);
-
-                // Because we created/updated this in the template, we need to add the appropriate
-                // dependsOn node to the networkInterface
-                // Microsoft.Network/virtualNetworks/<vnet name>
-                // Find the network interfaces node
-                ArrayNode resourcesNodes = ArrayNode.class.cast(tmp.get("resources"));
-                Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
-                while (resourcesNodesIter.hasNext()) {
-                    JsonNode resourcesNode = resourcesNodesIter.next();
-                    JsonNode typeNode = resourcesNode.get("type");
-                    if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
-                        continue;
-                    }
-                    // Find the dependsOn node
-                    ArrayNode dependsOnNode = ArrayNode.class.cast(resourcesNode.get("dependsOn"));
-                    // Add to the depends on node.
-                    dependsOnNode.add("[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]");
-                    break;
-                }
+                AddDefaultVNetResourceNode(tmp, mapper);
             }
+
+            if (!template.getUsePrivateIP()) {
+                AddPublicIPResourceNode(tmp, mapper);
+            }
+
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
             // Create the deployment
@@ -336,8 +313,104 @@ public class AzureVMManagementServiceDelegate {
         finally {
             if (embeddedTemplate != null)
                 embeddedTemplate.close();
-            if (fragmentStream != null)
+        }
+    }
+
+    private static void AddPublicIPResourceNode(
+            final JsonNode template,
+            final ObjectMapper mapper) throws IOException {
+
+        final String ipName = "variables('vmName'), copyIndex(), 'IPName'";
+        try (InputStream fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
+
+            final JsonNode publicIPFragment = mapper.readTree(fragmentStream);
+            // Add the virtual network fragment
+            ArrayNode.class.cast(template.get("resources")).add(publicIPFragment);
+
+            // Because we created/updated this in the template, we need to add the appropriate
+            // dependsOn node to the networkInterface and the ipConfigurations properties
+            // "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]"
+            // Find the network interfaces node
+            ArrayNode resourcesNodes = ArrayNode.class.cast(template.get("resources"));
+            Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
+            while (resourcesNodesIter.hasNext()) {
+                JsonNode resourcesNode = resourcesNodesIter.next();
+                JsonNode typeNode = resourcesNode.get("type");
+                if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
+                    continue;
+                }
+                // Find the dependsOn node
+                ArrayNode dependsOnNode = ArrayNode.class.cast(resourcesNode.get("dependsOn"));
+                // Add to the depends on node.
+                dependsOnNode.add("[concat('Microsoft.Network/publicIPAddresses/'," + ipName + ")]");
+
+                //Find the ipConfigurations/ipconfig1 node
+                ArrayNode ipConfigurationsNode = ArrayNode.class.cast(resourcesNode.get("properties").get("ipConfigurations"));
+                Iterator<JsonNode> ipConfigNodeIter = ipConfigurationsNode.elements();
+                while (ipConfigNodeIter.hasNext()) {
+                    JsonNode ipConfigNode = ipConfigNodeIter.next();
+                    JsonNode nameNode = ipConfigNode.get("name");
+                    if (nameNode == null || !nameNode.asText().equals("ipconfig1")) {
+                        continue;
+                    }
+                    //find the properties node
+                    ObjectNode propertiesNode = ObjectNode.class.cast(ipConfigNode.get("properties"));
+                    //add the publicIPAddress node
+                    ObjectNode publicIPIdNode = mapper.createObjectNode();
+                    publicIPIdNode.put("id", "[resourceId('Microsoft.Network/publicIPAddresses', concat("
+                            + ipName
+                            + "))]");
+                    // propertiesNode.putObject("publicIPAddress").put
+                    propertiesNode.set("publicIPAddress", publicIPIdNode);
+                    break;
+                }
+                break;
+            }
+        }
+    }
+
+    private static void AddDefaultVNetResourceNode(
+            final JsonNode template,
+            final ObjectMapper mapper) throws IOException {
+        InputStream fragmentStream = null;
+        try {
+            // Add the definition of the vnet and subnet into the template
+            final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
+            final String subnetName = Constants.DEFAULT_SUBNET_NAME;
+            ObjectNode.class.cast(template.get("variables")).put("virtualNetworkName", virtualNetworkName);
+            ObjectNode.class.cast(template.get("variables")).put("subnetName", subnetName);
+
+            // Read the vnet fragment
+            fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
+
+            final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
+            // Add the virtual network fragment
+            ArrayNode.class.cast(template.get("resources")).add(virtualNetworkFragment);
+
+            // Because we created/updated this in the template, we need to add the appropriate
+            // dependsOn node to the networkInterface
+            // Microsoft.Network/virtualNetworks/<vnet name>
+            // Find the network interfaces node
+            ArrayNode resourcesNodes = ArrayNode.class.cast(template.get("resources"));
+            Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
+            while (resourcesNodesIter.hasNext()) {
+                JsonNode resourcesNode = resourcesNodesIter.next();
+                JsonNode typeNode = resourcesNode.get("type");
+                if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
+                    continue;
+                }
+                // Find the dependsOn node
+                ArrayNode dependsOnNode = ArrayNode.class.cast(resourcesNode.get("dependsOn"));
+                // Add to the depends on node.
+                dependsOnNode.add("[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]");
+                break;
+            }
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            if (fragmentStream != null) {
                 fragmentStream.close();
+            }
         }
     }
 
@@ -385,7 +458,15 @@ public class AzureVMManagementServiceDelegate {
         VirtualMachine vm = azureClient.virtualMachines().getByGroup(template.getResourceGroupName(), azureAgent.getNodeName());
 
         // Getting the first virtual IP
-        azureAgent.setPublicDNSName(vm.getPrimaryPublicIpAddress().fqdn());
+        final PublicIpAddress publicIP = vm.getPrimaryPublicIpAddress();
+        String fqdn = "";
+        if (publicIP == null) {
+            fqdn = vm.getPrimaryNetworkInterface().primaryPrivateIp();
+            LOGGER.log(Level.INFO, "The Azure agent doesn't have a public IP. Will use the private IP");
+        } else {
+            fqdn = publicIP.fqdn();
+        }
+        azureAgent.setPublicDNSName(fqdn);
         azureAgent.setSshPort(Constants.DEFAULT_SSH_PORT);
 
         LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}",
@@ -1012,6 +1093,7 @@ public class AzureVMManagementServiceDelegate {
      * @param virtualMachineSize
      * @param storageAccountName
      * @param noOfParallelJobs
+     * @param referenceType
      * @param isCustomReferenceUsed
      * @param image
      * @param osType
@@ -1028,6 +1110,7 @@ public class AzureVMManagementServiceDelegate {
      * @param jvmOptions
      * @param returnOnSingleError
      * @param resourceGroupName
+     * @param usePrivateIP
      * @return
      */
     public static List<String> verifyTemplate(
@@ -1053,7 +1136,8 @@ public class AzureVMManagementServiceDelegate {
             final String retentionTimeInMin,
             final String jvmOptions,
             final String resourceGroupName,
-            final boolean returnOnSingleError) {
+            final boolean returnOnSingleError,
+            final boolean usePrivateIP) {
 
         List<String> errors = new ArrayList<String>();
 
@@ -1122,7 +1206,8 @@ public class AzureVMManagementServiceDelegate {
                     virtualNetworkName,
                     subnetName,
                     resourceGroupName,
-                    errors
+                    errors,
+                    usePrivateIP
             );
 
         } catch (Exception e) {
@@ -1146,7 +1231,8 @@ public class AzureVMManagementServiceDelegate {
             final String virtualNetworkName,
             final String subnetName,
             final String resourceGroupName,
-            final List<String> errors) {
+            final List<String> errors,
+            final boolean usePrivateIP) {
 
         List<Callable<String>> verificationTaskList = new ArrayList<Callable<String>>();
 
@@ -1155,7 +1241,7 @@ public class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyVirtualNetwork(servicePrincipal, virtualNetworkName, subnetName, resourceGroupName);
+                return verifyVirtualNetwork(servicePrincipal, virtualNetworkName, subnetName, usePrivateIP, resourceGroupName);
             }
         };
         verificationTaskList.add(callVerifyVirtualNetwork);
@@ -1236,6 +1322,7 @@ public class AzureVMManagementServiceDelegate {
             final ServicePrincipal servicePrincipal,
             final String virtualNetworkName,
             final String subnetName,
+            final boolean usePrivateIP,
             final String resourceGroupName) {
         if (StringUtils.isNotBlank(virtualNetworkName)) {
             Network virtualNetwork = getVirtualNetwork(servicePrincipal, virtualNetworkName, resourceGroupName);
@@ -1243,11 +1330,13 @@ public class AzureVMManagementServiceDelegate {
                 return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName);
             }
 
-            if (StringUtils.isNotBlank(subnetName)) {
+            if (StringUtils.isBlank(subnetName)) {
+                return Messages.Azure_GC_Template_subnet_Empty();
+            } else {
                 if (virtualNetwork.subnets().get(subnetName) == null)
                     return Messages.Azure_GC_Template_subnet_NotFound(subnetName);
             }
-        } else if (StringUtils.isNotBlank(subnetName)) {
+        } else if (StringUtils.isNotBlank(subnetName) || usePrivateIP) {
             return Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty();
         }
         return Constants.OP_SUCCESS;

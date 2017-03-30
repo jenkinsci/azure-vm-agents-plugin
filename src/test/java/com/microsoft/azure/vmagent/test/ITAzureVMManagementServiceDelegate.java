@@ -145,6 +145,60 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
+    public void createDeploymentWithPrivateIPTest() {
+        try {
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
+            AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
+
+            verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
+            Network actualVNet = null;
+            StorageAccount actualStorageAcc = null;
+            try {
+                actualVNet =  customTokenCache.getAzureClient().networks().getByGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, null, e);
+            }
+            Assert.assertNotNull("The deployed VNet doesn't exist: "+ testEnv.azureResourceGroup, actualVNet);
+            Assert.assertNotNull("The deployed Storage Account doesn't exist: "+ testEnv.azureResourceGroup, actualStorageAcc);
+
+            final String baseName = deploymentInfo.getVmBaseName() + "0";
+            VirtualMachine actualVM = null;
+            NetworkInterface actualNetIface = null;
+            PublicIpAddress actualIP = null;
+            String privateIP = "";
+            try {
+                actualVM = customTokenCache.getAzureClient()
+                            .virtualMachines()
+                            .getByGroup(testEnv.azureResourceGroup, baseName);
+
+                actualNetIface = customTokenCache.getAzureClient()
+                            .networkInterfaces()
+                            .getByGroup(testEnv.azureResourceGroup, baseName + "NIC");
+
+                privateIP = actualNetIface.primaryPrivateIp();
+
+                actualIP = customTokenCache.getAzureClient()
+                            .publicIpAddresses()
+                            .getByGroup(testEnv.azureResourceGroup, baseName + "IPName");
+
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, null, e);
+            }
+            Assert.assertNotNull("The deployed VM doesn't exist", actualVM);
+            Assert.assertNotNull("The deployed Network interface doesn't exist", actualNetIface);
+            Assert.assertTrue("The deployed VM doesn't have a private IP", privateIP != null && !privateIP.isEmpty());
+            Assert.assertNull("The deployed VM shouldn't have a public IP", actualIP);
+            
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
     public void canDeployMultipleTimes() {
         try {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
@@ -200,8 +254,24 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         }
     }
 
+    private void setVirtualMachineDetailsCommonVerification(final String vmName, final String fqdn) throws Exception {
+        AzureVMAgent agentMock = mock(AzureVMAgent.class);
+        AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
+        AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+
+        when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+        when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+        when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
+        when(agentMock.getNodeName()).thenReturn(vmName);
+
+        AzureVMManagementServiceDelegate.setVirtualMachineDetails(agentMock, templateMock);
+
+        verify(agentMock).setPublicDNSName(fqdn);
+        verify(agentMock).setSshPort(Constants.DEFAULT_SSH_PORT);
+    }
+
     @Test
-    public void setVirtualMachineDetailsTest() {
+    public void setVirtualMachineDetailsWithPublicIP() {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
@@ -210,19 +280,23 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName")
                     .fqdn();
 
-            AzureVMAgent agentMock = mock(AzureVMAgent.class);
-            AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+            setVirtualMachineDetailsCommonVerification(nodeName, ip);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
 
-            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
-            when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
-            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
-            when(agentMock.getNodeName()).thenReturn(nodeName);
+    @Test
+    public void setVirtualMachineDetailsWithPrivateIP() {
+        try {
+            final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, null);
+            final String nodeName = deploymentInfo.getVmBaseName() + "0";
+            final String ip = customTokenCache.getAzureClient()
+                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIp();
 
-            AzureVMManagementServiceDelegate.setVirtualMachineDetails(agentMock, templateMock);
-
-            verify(agentMock).setPublicDNSName(ip);
-            verify(agentMock).setSshPort(Constants.DEFAULT_SSH_PORT);
+           setVirtualMachineDetailsCommonVerification(nodeName, ip);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -505,17 +579,33 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
            Assert.assertEquals(Constants.OP_SUCCESS,
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, vnetName, subnetName, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, vnetName, subnetName, false, testEnv.azureResourceGroup));
 
             final String wrongVnet = vnetName+"wrong";
             Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_NotFound(wrongVnet),
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, wrongVnet, subnetName, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, wrongVnet, subnetName, false, testEnv.azureResourceGroup));
 
             final String wrongSnet = subnetName+"wrong";
             Assert.assertEquals(Messages.Azure_GC_Template_subnet_NotFound(wrongSnet),
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, vnetName, wrongSnet, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, vnetName, wrongSnet, false, testEnv.azureResourceGroup));
+            
+            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, "", subnetName, false, testEnv.azureResourceGroup));
+            
+            Assert.assertEquals(Constants.OP_SUCCESS,
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, "", "", false, testEnv.azureResourceGroup));
+
+            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, "", "", true, testEnv.azureResourceGroup));
+            
+            Assert.assertEquals(Messages.Azure_GC_Template_subnet_Empty(),
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, vnetName, "", false, testEnv.azureResourceGroup));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);

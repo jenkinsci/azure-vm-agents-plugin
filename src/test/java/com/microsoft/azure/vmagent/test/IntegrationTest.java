@@ -231,7 +231,18 @@ public class IntegrationTest {
         }
     }
 
-    protected AzureVMDeploymentInfo createDefaultDeployment(final int numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException, Exception {
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            final int numberOfAgents,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+            ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(numberOfAgents, true, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            final int numberOfAgents,
+            final boolean usePrivateIP,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+            ) throws AzureCloudException, IOException, Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
         final String osType = Constants.OS_TYPE_LINUX;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
@@ -263,6 +274,7 @@ public class IntegrationTest {
         when(templateMock.getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
         when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
+        when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();
