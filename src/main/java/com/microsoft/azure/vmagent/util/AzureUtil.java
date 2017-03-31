@@ -44,9 +44,10 @@ public class AzureUtil {
 
     public static final String VAL_UPPER_CASE_REGEX = "(?=.*[A-Z]).{1,}";
 
-    public static final String VAL_SPECIAL_CHAR_REGEX = "(?=.*[!@#$%^&*.]).{1,}";
 
-    public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z!@#\\$%\\^&\\*\\.]*{8,123})";
+    public static final String VAL_SPECIAL_CHAR_REGEX = "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
+
+    public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']*{8,123})";
 
     public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
     
