@@ -237,7 +237,7 @@ public class IntegrationTest {
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
-        final Secret vmPassword = Secret.fromString(UUID.randomUUID().toString());
+        final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'");
 
         StandardUsernamePasswordCredentials vmCredentials = mock(StandardUsernamePasswordCredentials.class);
         when(vmCredentials.getUsername()).thenReturn(vmUser);
@@ -332,7 +332,7 @@ public class IntegrationTest {
                 .withoutPrimaryPublicIpAddress()
                 .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_14_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
-                .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345") //don't try this at home
+                .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'") //don't try this at home
                 .withUnmanagedDisks()
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                 .withTag(tagName, tagValue)
