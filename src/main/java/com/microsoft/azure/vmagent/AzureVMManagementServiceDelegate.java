@@ -459,19 +459,50 @@ public class AzureVMManagementServiceDelegate {
 
         // Getting the first virtual IP
         final PublicIpAddress publicIP = vm.getPrimaryPublicIpAddress();
+        String publicIPStr = "";
+        String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIp();
         String fqdn = "";
         if (publicIP == null) {
-            fqdn = vm.getPrimaryNetworkInterface().primaryPrivateIp();
+            fqdn = privateIP;
             LOGGER.log(Level.INFO, "The Azure agent doesn't have a public IP. Will use the private IP");
         } else {
             fqdn = publicIP.fqdn();
+            publicIPStr = publicIP.ipAddress();
         }
         azureAgent.setPublicDNSName(fqdn);
         azureAgent.setSshPort(Constants.DEFAULT_SSH_PORT);
+        azureAgent.setPublicIP(publicIPStr);
+        azureAgent.setPrivateIP(privateIP);
 
         LOGGER.log(Level.INFO, "Azure agent details:\nnodeName{0}\nadminUserName={1}\nshutdownOnIdle={2}\nretentionTimeInMin={3}\nlabels={4}",
                 new Object[]{azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
                     azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
+    }
+
+    public static void attachPublicIP(final AzureVMAgent azureAgent, final AzureVMAgentTemplate template) throws Exception {
+        final Azure azureClient = TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()).getAzureClient();
+        final VirtualMachine vm = azureClient.virtualMachines().getByGroup(template.getResourceGroupName(), azureAgent.getNodeName());
+        LOGGER.log(Level.INFO, "Trying to attach a public IP to the agent {0}", azureAgent.getNodeName());
+        if (vm != null) {
+            //check if the VM already has a public IP
+            if (vm.getPrimaryPublicIpAddress() == null) {
+                vm.getPrimaryNetworkInterface()
+                        .update()
+                        .withNewPrimaryPublicIpAddress(
+                                azureClient.publicIpAddresses()
+                                        .define(azureAgent.getNodeName() + "IPName")
+                                        .withRegion(template.getLocation())
+                                        .withExistingResourceGroup(template.getResourceGroupName())
+                                        .withLeafDomainLabel(azureAgent.getNodeName())
+                        ).apply();
+
+                setVirtualMachineDetails(azureAgent, template);
+            } else {
+                LOGGER.log(Level.INFO, "Agent {0} already has a public IP", azureAgent.getNodeName());
+            }
+        } else {
+            LOGGER.log(Level.WARNING, "Could not find agent {0} in Azure", azureAgent.getNodeName());
+        }
     }
 
     /**

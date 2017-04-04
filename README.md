@@ -196,5 +196,9 @@ Refer to
 10. Logs are available @ Manage Jenkins --> System logs --> All Jenkins logs.
 11. Once the node is provisined in Azure, which typically takes about 5 to 7 minutes, node gets added to Jenkins.
 
-
-
+## Provision an agent without a public IP
+1. Click the 'Advanced' button in your Azure VM Agent template configuration
+1. Update the Virtual Network Name and Subnet Name to match with the ones of the Jenkins master. This is required because otherwise the Jenkins master can't reach the agent.
+1. Enable the 'Make VM agent IP private' check box.
+1. If you need to access the provisioned agent, you can attach a public IP by going to the Nodes Management page ( < jenkins_master_url >/computer) and configure the desired node.
+1. Click 'Attach a public IP' and wait for the IP to get provisioned.
