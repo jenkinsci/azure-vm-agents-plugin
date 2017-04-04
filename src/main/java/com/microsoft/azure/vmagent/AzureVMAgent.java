@@ -16,32 +16,31 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
+import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
+import com.microsoft.azure.vmagent.util.CleanUpAction;
+import com.microsoft.azure.vmagent.util.Constants;
+import hudson.Extension;
+import hudson.model.Descriptor.FormException;
+import hudson.model.TaskListener;
+import hudson.slaves.AbstractCloudComputer;
+import hudson.slaves.AbstractCloudSlave;
+import hudson.slaves.ComputerLauncher;
+import hudson.slaves.JNLPLauncher;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.OfflineCause;
+import hudson.slaves.RetentionStrategy;
+import hudson.util.FormValidation;
+import jenkins.model.Jenkins;
+import org.jvnet.localizer.Localizable;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.util.AzureCredentials;
-
-import hudson.Extension;
-import hudson.model.TaskListener;
-import hudson.model.Descriptor.FormException;
-import hudson.slaves.AbstractCloudComputer;
-import hudson.slaves.AbstractCloudSlave;
-import hudson.slaves.JNLPLauncher;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.ComputerLauncher;
-import hudson.slaves.OfflineCause;
-import hudson.slaves.RetentionStrategy;
 import java.util.logging.Level;
-import org.jvnet.localizer.Localizable;
+import java.util.logging.Logger;
 
 public class AzureVMAgent extends AbstractCloudSlave {
 
@@ -76,6 +75,10 @@ public class AzureVMAgent extends AbstractCloudSlave {
     // set during post create step
     private String publicDNSName;
 
+    private String publicIP;
+
+    private String privateIP;
+
     private int sshPort;
 
     private final Mode mode;
@@ -83,17 +86,17 @@ public class AzureVMAgent extends AbstractCloudSlave {
     private String templateName;
 
     private CleanUpAction cleanUpAction;
-    
+
     private Localizable cleanUpReason;
-    
+
     private String resourceGroupName;
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgent.class.getName());
 
     private final boolean executeInitScriptAsRoot;
-    
+
     private final boolean doNotUseMachineIfInitFails;
-    
+
     private boolean eligibleForReuse;
 
     @DataBoundConstructor
@@ -189,8 +192,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 numExecutors,
                 mode,
                 label,
-                agentLaunchMethod.equalsIgnoreCase("SSH") ? 
-                    new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
+                agentLaunchMethod.equalsIgnoreCase("SSH") ?
+                        new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 new AzureVMCloudRetensionStrategy(retentionTimeInMin),
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
@@ -226,9 +229,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return vmCredentialsId;
     }
 
-    public AzureCredentials.ServicePrincipal getServicePrincipal()
-    {
-        if(credentials == null && azureCredentialsId != null)
+    public AzureCredentials.ServicePrincipal getServicePrincipal() {
+        if (credentials == null && azureCredentialsId != null)
             return AzureCredentials.getServicePrincipal(azureCredentialsId);
         return credentials;
     }
@@ -252,13 +254,13 @@ public class AzureVMAgent extends AbstractCloudSlave {
     public CleanUpAction getCleanUpAction() {
         return cleanUpAction;
     }
-    
+
     public Localizable getCleanUpReason() {
         return cleanUpReason;
     }
-    
+
     /**
-     * @param cleanUpReason 
+     * @param cleanUpReason
      */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular
@@ -266,21 +268,20 @@ public class AzureVMAgent extends AbstractCloudSlave {
         if (cleanUpAction == CleanUpAction.DEFAULT) {
             if (isShutdownOnIdle()) {
                 cleanUpAction = CleanUpAction.SHUTDOWN;
-            }
-            else {
+            } else {
                 cleanUpAction = CleanUpAction.DELETE;
             }
         }
         this.cleanUpAction = cleanUpAction;
     }
-    
+
     /**
-     * @param cleanUpReason 
+     * @param cleanUpReason
      */
     private void setCleanupReason(Localizable cleanUpReason) {
         this.cleanUpReason = cleanUpReason;
     }
-    
+
     /**
      * Clear the cleanup action and reset to the default behavior
      */
@@ -288,7 +289,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         setCleanUpAction(CleanUpAction.DEFAULT);
         setCleanupReason(null);
     }
-    
+
     /**
      * Block any cleanup from happening
      */
@@ -296,7 +297,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         setCleanUpAction(CleanUpAction.BLOCK);
         setCleanupReason(null);
     }
-    
+
     public boolean isCleanUpBlocked() {
         return getCleanUpAction() == CleanUpAction.BLOCK;
     }
@@ -305,8 +306,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
         if (cleanUpAction != CleanUpAction.DELETE && cleanUpAction != CleanUpAction.SHUTDOWN) {
             throw new IllegalStateException("Only use this method to set explicit cleanup operations");
         }
-        AzureVMComputer computer = (AzureVMComputer)this.toComputer();
-        if (computer!= null) {
+        AzureVMComputer computer = (AzureVMComputer) this.toComputer();
+        if (computer != null) {
             // Set the machine temporarily offline machine with an offline reason.
             computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
             // Reset the "by user" bit.
@@ -352,6 +353,22 @@ public class AzureVMAgent extends AbstractCloudSlave {
         this.sshPort = sshPort;
     }
 
+    public String getPublicIP() {
+        return publicIP;
+    }
+
+    public void setPublicIP(final String publicIP) {
+        this.publicIP = publicIP;
+    }
+
+    public String getPrivateIP() {
+        return privateIP;
+    }
+
+    public void setPrivateIP(final String privateIP) {
+        this.privateIP = privateIP;
+    }
+
     public int getRetentionTimeInMin() {
         return retentionTimeInMin;
     }
@@ -371,11 +388,11 @@ public class AzureVMAgent extends AbstractCloudSlave {
     public void setTemplateName(String templateName) {
         this.templateName = templateName;
     }
-    
+
     public String getResourceGroupName() {
         return resourceGroupName;
     }
-    
+
     public boolean getExecuteInitScriptAsRoot() {
         return executeInitScriptAsRoot;
     }
@@ -399,7 +416,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
     public AzureVMCloud getCloud() {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
-    
+
     public void shutdown(Localizable reason) {
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
@@ -413,7 +430,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
 
     /**
      * Delete node in Azure and in Jenkins
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void deprovision(Localizable reason) throws Exception {
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}", this.getDisplayName());
@@ -427,12 +445,32 @@ public class AzureVMAgent extends AbstractCloudSlave {
         if (parentCloud != null) {
             parentCloud.adjustVirtualMachineCount(1);
         }
-        
+
         Jenkins.getInstance().removeNode(this);
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
         return AzureVMManagementServiceDelegate.isVMAliveOrHealthy(this);
+    }
+
+    private final Object publicIPAttachLock = new Object();
+
+    public String attachPublicIP() {
+        if (!publicIP.isEmpty()) {
+            return publicIP;
+        }
+        //attachPublicIP will try and provision a public IP or will return if one already exists
+        // because of that we can just wait here until we have a public IP
+        synchronized (publicIPAttachLock) {
+            try {
+                AzureVMCloud azureVMCloud = (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+                AzureVMManagementServiceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO,
+                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}", new Object[]{getNodeName(), e});
+            }
+            return publicIP;
+        }
     }
 
     @Override
@@ -467,6 +505,21 @@ public class AzureVMAgent extends AbstractCloudSlave {
         @Override
         public boolean isInstantiable() {
             return false;
+        }
+
+        //abusing a bit of f:validateButton because it has nice progress
+        public FormValidation doAttachPublicIP(@QueryParameter String vmAgentName) {
+            AzureVMAgent vmAgent = (AzureVMAgent) Jenkins.getInstance().getNode(vmAgentName);
+            String publicIP = "";
+            if (vmAgent != null) {
+                publicIP = vmAgent.attachPublicIP();
+            }
+
+            if (publicIP.isEmpty()) {
+                return FormValidation.error(Messages.Azure_VM_Agent_Attach_Public_IP_Failure());
+            } else {
+                return FormValidation.ok(Messages.Azure_VM_Agent_Attach_Public_IP_Success() + " ( " + publicIP + " ) ");
+            }
         }
     }
 }

@@ -254,7 +254,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         }
     }
 
-    private void setVirtualMachineDetailsCommonVerification(final String vmName, final String fqdn) throws Exception {
+    private void setVirtualMachineDetailsCommonVerification(final String vmName, final String fqdn, final String privateIP, final String publicIp) throws Exception {
         AzureVMAgent agentMock = mock(AzureVMAgent.class);
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
@@ -268,6 +268,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         verify(agentMock).setPublicDNSName(fqdn);
         verify(agentMock).setSshPort(Constants.DEFAULT_SSH_PORT);
+        verify(agentMock).setPublicIP(publicIp);
+        verify(agentMock).setPrivateIP(privateIP);
     }
 
     @Test
@@ -275,12 +277,14 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
-            final String ip = customTokenCache.getAzureClient()
+            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
                     .publicIpAddresses()
-                    .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName")
-                    .fqdn();
+                    .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName");
+            final String privateIP = customTokenCache.getAzureClient()
+                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIp();
 
-            setVirtualMachineDetailsCommonVerification(nodeName, ip);
+            setVirtualMachineDetailsCommonVerification(nodeName, publicIP.fqdn(), privateIP, publicIP.ipAddress());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -296,7 +300,81 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
                     .getPrimaryNetworkInterface().primaryPrivateIp();
 
-           setVirtualMachineDetailsCommonVerification(nodeName, ip);
+            setVirtualMachineDetailsCommonVerification(nodeName, ip, ip, "");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void attachPublicIP() {
+        try {
+            final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, null);
+            final String nodeName = deploymentInfo.getVmBaseName() + "0";
+            final String privateIP = customTokenCache.getAzureClient()
+                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIp();
+            AzureVMAgent agentMock = mock(AzureVMAgent.class);
+            AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
+            AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+            when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
+            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
+            when(agentMock.getNodeName()).thenReturn(nodeName);
+
+            AzureVMManagementServiceDelegate.attachPublicIP(agentMock, templateMock);
+
+            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
+                    .virtualMachines()
+                    .getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIpAddress();
+            Assert.assertNotNull(publicIP);
+            verify(agentMock).setPublicDNSName(publicIP.fqdn());
+            verify(agentMock).setSshPort(Constants.DEFAULT_SSH_PORT);
+            verify(agentMock).setPublicIP(publicIP.ipAddress());
+            verify(agentMock).setPrivateIP(privateIP);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void attachPublicIPIsNoOpWhenAlreadyExists() {
+        try {
+            final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, true, null);
+            final String nodeName = deploymentInfo.getVmBaseName() + "0";
+
+            AzureVMAgent agentMock = mock(AzureVMAgent.class);
+            AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
+            AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+            when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
+            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
+            when(agentMock.getNodeName()).thenReturn(nodeName);
+
+            final String initialPublicIPId = customTokenCache.getAzureClient()
+                    .virtualMachines()
+                    .getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIpAddress().id();
+
+            AzureVMManagementServiceDelegate.attachPublicIP(agentMock, templateMock);
+
+            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
+                    .virtualMachines()
+                    .getByGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIpAddress();
+
+            Assert.assertNotNull(publicIP);
+            Assert.assertEquals(initialPublicIPId, publicIP.id());
+
+            verify(agentMock, never()).setPublicDNSName(any(String.class));
+            verify(agentMock, never()).setSshPort(any(int.class));
+            verify(agentMock, never()).setPublicIP(any(String.class));
+            verify(agentMock, never()).setPrivateIP(any(String.class));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
