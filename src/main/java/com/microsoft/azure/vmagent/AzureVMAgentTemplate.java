@@ -127,6 +127,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private boolean usePrivateIP;
 
+    private final String nsgName;
+
     private final String jvmOptions;
 
     // Indicates whether the template is disabled.
@@ -169,6 +171,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String virtualNetworkName,
             final String subnetName,
             final boolean usePrivateIP,
+            final String nsgName,
             final String agentWorkspace,
             final String jvmOptions,
             final String retentionTimeInMin,
@@ -206,6 +209,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.virtualNetworkName = virtualNetworkName;
         this.subnetName = subnetName;
         this.usePrivateIP = usePrivateIP;
+        this.nsgName = nsgName;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
@@ -339,6 +343,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     
     public boolean getUsePrivateIP() {
         return usePrivateIP;
+    }
+
+    public String getNsgName() {
+        return nsgName;
     }
 
     public String getAgentWorkspace() {
@@ -505,7 +513,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 jvmOptions,
                 getResourceGroupName(),
                 true,
-                usePrivateIP);
+                usePrivateIP,
+                nsgName);
     }
 
     @Extension
@@ -703,6 +712,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String virtualNetworkName,
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
+                @QueryParameter String nsgName,
                 @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions,
                 @QueryParameter String imageReferenceType) {
@@ -722,57 +732,59 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t"
-                    + "subscriptionId: {0};\n\t"
-                    + "clientId: {1};\n\t"
-                    + "clientSecret: {2};\n\t"
-                    + "serviceManagementURL: {3};\n\t"
-                    + "resourceGroupName: {4};\n\t."
-                    + "templateName: {5};\n\t"
-                    + "labels: {6};\n\t"
-                    + "location: {7};\n\t"
-                    + "virtualMachineSize: {8};\n\t"
-                    + "storageAccountName: {9};\n\t"
-                    + "noOfParallelJobs: {10};\n\t"
-                    + "image: {11};\n\t"
-                    + "osType: {12};\n\t"
-                    + "imagePublisher: {13};\n\t"
-                    + "imageOffer: {14};\n\t"
-                    + "imageSku: {15};\n\t"
-                    + "imageVersion: {16};\n\t"
-                    + "agentLaunchMethod: {17};\n\t"
-                    + "initScript: {18};\n\t"
-                    + "credentialsId: {19};\n\t"
-                    + "virtualNetworkName: {20};\n\t"
-                    + "subnetName: {21};\n\t"
-                    + "privateIP: {22};\n\t"
-                    + "retentionTimeInMin: {23};\n\t"
-                    + "jvmOptions: {24};",
+                            + "subscriptionId: {0};\n\t"
+                            + "clientId: {1};\n\t"
+                            + "clientSecret: {2};\n\t"
+                            + "serviceManagementURL: {3};\n\t"
+                            + "resourceGroupName: {4};\n\t."
+                            + "templateName: {5};\n\t"
+                            + "labels: {6};\n\t"
+                            + "location: {7};\n\t"
+                            + "virtualMachineSize: {8};\n\t"
+                            + "storageAccountName: {9};\n\t"
+                            + "noOfParallelJobs: {10};\n\t"
+                            + "image: {11};\n\t"
+                            + "osType: {12};\n\t"
+                            + "imagePublisher: {13};\n\t"
+                            + "imageOffer: {14};\n\t"
+                            + "imageSku: {15};\n\t"
+                            + "imageVersion: {16};\n\t"
+                            + "agentLaunchMethod: {17};\n\t"
+                            + "initScript: {18};\n\t"
+                            + "credentialsId: {19};\n\t"
+                            + "virtualNetworkName: {20};\n\t"
+                            + "subnetName: {21};\n\t"
+                            + "privateIP: {22};\n\t"
+                            + "nsgName: {23};\n\t"
+                            + "retentionTimeInMin: {24};\n\t"
+                            + "jvmOptions: {25};",
                     new Object[]{
-                        servicePrincipal.getSubscriptionId(),
-                        (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
-                        (StringUtils.isNotBlank(servicePrincipal.getClientSecret()) ? "********" : null),
-                        servicePrincipal.getServiceManagementURL(),
-                        resourceGroupName,
-                        templateName,
-                        labels,
-                        location,
-                        virtualMachineSize,
-                        storageAccountName,
-                        noOfParallelJobs,
-                        image,
-                        osType,
-                        imagePublisher,
-                        imageOffer,
-                        imageSku,
-                        imageVersion,
-                        agentLaunchMethod,
-                        initScript,
-                        credentialsId,
-                        virtualNetworkName,
-                        subnetName,
-                        usePrivateIP,
-                        retentionTimeInMin,
-                        jvmOptions});
+                            servicePrincipal.getSubscriptionId(),
+                            (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
+                            (StringUtils.isNotBlank(servicePrincipal.getClientSecret()) ? "********" : null),
+                            servicePrincipal.getServiceManagementURL(),
+                            resourceGroupName,
+                            templateName,
+                            labels,
+                            location,
+                            virtualMachineSize,
+                            storageAccountName,
+                            noOfParallelJobs,
+                            image,
+                            osType,
+                            imagePublisher,
+                            imageOffer,
+                            imageSku,
+                            imageVersion,
+                            agentLaunchMethod,
+                            initScript,
+                            credentialsId,
+                            virtualNetworkName,
+                            subnetName,
+                            usePrivateIP,
+                            nsgName,
+                            retentionTimeInMin,
+                            jvmOptions});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the 
@@ -806,7 +818,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     jvmOptions,
                     resourceGroupName,
                     false,
-                    usePrivateIP);
+                    usePrivateIP,
+                    nsgName);
 
             if (errors.size() > 0) {
                 StringBuilder errorString = new StringBuilder(Messages.Azure_GC_Template_Error_List()).append("\n");

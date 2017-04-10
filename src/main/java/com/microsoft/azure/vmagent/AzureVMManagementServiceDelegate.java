@@ -52,6 +52,7 @@ import com.microsoft.azure.management.compute.VirtualMachinePublisher;
 import com.microsoft.azure.management.compute.VirtualMachineSize;
 import com.microsoft.azure.management.compute.VirtualMachineSku;
 import com.microsoft.azure.management.network.Network;
+import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIpAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.storage.SkuName;
@@ -294,6 +295,10 @@ public class AzureVMManagementServiceDelegate {
                 AddPublicIPResourceNode(tmp, mapper);
             }
 
+            if (StringUtils.isNotBlank(template.getNsgName())) {
+                AddNSGNode(tmp, mapper, template.getNsgName());
+            }
+
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
             // Create the deployment
@@ -368,6 +373,38 @@ public class AzureVMManagementServiceDelegate {
             }
         }
     }
+
+    private static void AddNSGNode(
+            final JsonNode template,
+            final ObjectMapper mapper,
+            final String nsgName) throws IOException {
+
+        ObjectNode.class.cast(template.get("variables")).put("nsgName", nsgName);
+
+        ArrayNode resourcesNodes = ArrayNode.class.cast(template.get("resources"));
+        Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
+        while (resourcesNodesIter.hasNext()) {
+            JsonNode resourcesNode = resourcesNodesIter.next();
+            JsonNode typeNode = resourcesNode.get("type");
+            if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
+                continue;
+            }
+
+            ObjectNode nsgNode = mapper.createObjectNode();
+            nsgNode.put(
+                    "id",
+                    "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+            );
+
+            // Find the properties node
+            // We will attach the provided NSG and not check if it's valid because that's done in the verification step
+            ObjectNode propertiesNode = ObjectNode.class.cast(resourcesNode.get("properties"));
+            propertiesNode.set("networkSecurityGroup", nsgNode);
+            break;
+        }
+    }
+
+
 
     private static void AddDefaultVNetResourceNode(
             final JsonNode template,
@@ -813,7 +850,7 @@ public class AzureVMManagementServiceDelegate {
         public VMStatus(String value) {
             super(value);
         }
-    };
+    }
 
     /**
      * Gets current status of virtual machine
@@ -1168,7 +1205,8 @@ public class AzureVMManagementServiceDelegate {
             final String jvmOptions,
             final String resourceGroupName,
             final boolean returnOnSingleError,
-            final boolean usePrivateIP) {
+            final boolean usePrivateIP,
+            final String nsgName) {
 
         List<String> errors = new ArrayList<String>();
 
@@ -1238,7 +1276,8 @@ public class AzureVMManagementServiceDelegate {
                     subnetName,
                     resourceGroupName,
                     errors,
-                    usePrivateIP
+                    usePrivateIP,
+                    nsgName
             );
 
         } catch (Exception e) {
@@ -1263,7 +1302,8 @@ public class AzureVMManagementServiceDelegate {
             final String subnetName,
             final String resourceGroupName,
             final List<String> errors,
-            final boolean usePrivateIP) {
+            final boolean usePrivateIP,
+            final String nsgName) {
 
         List<Callable<String>> verificationTaskList = new ArrayList<Callable<String>>();
 
@@ -1297,6 +1337,16 @@ public class AzureVMManagementServiceDelegate {
             }
         };
         verificationTaskList.add(callVerifyStorageAccountName);
+
+        // Callable for NSG.
+        Callable<String> callVerifyNSG = new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return verifyNSG(servicePrincipal, resourceGroupName, nsgName);
+            }
+        };
+        verificationTaskList.add(callVerifyNSG);
 
         try {
             for (Future<String> validationResult : AzureVMCloud.getThreadPool().invokeAll(verificationTaskList)) {
@@ -1550,7 +1600,21 @@ public class AzureVMManagementServiceDelegate {
             return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
         }
     }
-    
+
+    public static String verifyNSG(
+            final ServicePrincipal servicePrincipal,
+            final String resourceGroupName,
+            final String nsgName) {
+        if (StringUtils.isNotBlank(nsgName)) {
+            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            NetworkSecurityGroup nsg = azureClient.networkSecurityGroups().getByGroup(resourceGroupName, nsgName);
+            if (nsg == null) {
+                return Messages.Azure_GC_Template_NSG_NotFound(nsgName);
+            }
+        }
+        return Constants.OP_SUCCESS;
+    }
+
     /**
      * Create Azure resource Group
      * 

@@ -20,6 +20,7 @@ import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkInterface;
+import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIpAddress;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
@@ -830,7 +831,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     
     @Test
     //Add Test for global first, will add test for mooncake later
-    public void getBlobEndpointSuffixForCloudStorageAccountForGlobal(){
+    public void getBlobEndpointSuffixForCloudStorageAccountForGlobal() {
         try {
             customTokenCache.getAzureClient().storageAccounts()
             .define(testEnv.azureStorageAccountName)
@@ -839,8 +840,34 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             .create();
             StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
-            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForCloudStorageAccount.get(TestEnvironment.AZUREPUBLIC));            
-        } catch (Exception e){
+            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForCloudStorageAccount.get(TestEnvironment.AZUREPUBLIC));
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+            Assert.assertTrue(e.getMessage(), false);
+        }
+    }
+
+    @Test
+    public void createDeploymentWithExistingNSG() {
+        try {
+            final String nsgName = TestEnvironment.GenerateRandomString(12);
+            NetworkSecurityGroup nsg = customTokenCache.getAzureClient().networkSecurityGroups()
+                    .define(nsgName)
+                    .withRegion(testEnv.azureLocation)
+                    .withNewResourceGroup(testEnv.azureResourceGroup)
+                    .create();
+
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
+            AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, nsgName, deploymentRegistrar);
+
+            VirtualMachine deployedVM = customTokenCache.getAzureClient()
+                    .virtualMachines()
+                    .getByGroup(testEnv.azureResourceGroup, deploymentInfo.getVmBaseName() + "0");
+
+            final String actualNSGId = deployedVM.getPrimaryNetworkInterface().getNetworkSecurityGroup().id();
+            Assert.assertEquals(nsg.id(), actualNSGId);
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }

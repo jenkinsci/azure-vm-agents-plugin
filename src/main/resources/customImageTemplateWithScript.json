@@ -9,6 +9,7 @@
     "variables": {
         "virtualNetworkName": "",
         "subnetName": "",
+        "nsgName": "",
         "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",

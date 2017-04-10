@@ -234,7 +234,7 @@ public class IntegrationTest {
     protected AzureVMDeploymentInfo createDefaultDeployment(
             final int numberOfAgents,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-            ) throws AzureCloudException, IOException, Exception {
+    ) throws AzureCloudException, IOException, Exception {
         return createDefaultDeployment(numberOfAgents, true, deploymentRegistrar);
     }
 
@@ -242,7 +242,24 @@ public class IntegrationTest {
             final int numberOfAgents,
             final boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-            ) throws AzureCloudException, IOException, Exception {
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(numberOfAgents, usePrivateIP, "", deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            final int numberOfAgents,
+            final String nsgName,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(numberOfAgents, true, nsgName, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            final int numberOfAgents,
+            final boolean usePrivateIP,
+            final String nsgName,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
         final String osType = Constants.OS_TYPE_LINUX;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
@@ -275,6 +292,7 @@ public class IntegrationTest {
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
         when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
+        when(templateMock.getNsgName()).thenReturn(nsgName);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();
