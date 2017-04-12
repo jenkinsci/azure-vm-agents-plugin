@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>azure-vm-agents</artifactId>
-  <version>0.4.4</version>
+  <version>0.4.5-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Azure VM Agents</name>
   <description>Provisions agents on Azure cloud</description>
@@ -174,7 +174,7 @@
     <connection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/azure-vm-agents-plugin</url>
-    <tag>azure-vm-agents-0.4.4</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <repositories>
