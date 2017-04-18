@@ -131,6 +131,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                             new Object[]{templateName, cloudName});
 
                     AzureVMCloud cloud = getCloud(cloudName);
+
                     // If the cloud is null, could mean that the cloud details changed
                     // between the last time we ran this task
                     if (cloud == null) {
@@ -157,9 +158,17 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                         toRemove.add(templateName);
                         continue;
                     }
+
                     // The template is not yet verified.  Do so now
                     try {
+                        // Verify the template within itself
                         List<String> errors = agentTemplate.verifyTemplate();
+
+                        // Verify the template name is unique
+                        if (!cloud.getTemplateNameIsUnique(templateName)) {
+                            errors.add(Messages.Azure_GC_Template_Name_Not_Unique());
+                        }
+
                         if (errors.isEmpty()) {
                             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified succesfully", templateName);
                             // Verified, set the template to verified.

@@ -84,7 +84,13 @@ public class AzureVMCloud extends Cloud {
 
     private final String resourceGroupName;
 
-    private final List<AzureVMAgentTemplate> instTemplates;
+    // Current set of VM templates.
+    // This list should not be accessed without copying it
+    // or obtaining synchronization on vmTemplatesListLock
+    private List<AzureVMAgentTemplate> vmTemplates;
+
+    @Deprecated
+    private transient List<AzureVMAgentTemplate> instTemplates;
 
     private final int deploymentTimeout;
     
@@ -104,8 +110,8 @@ public class AzureVMCloud extends Cloud {
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
             final String resourceGroupName,
-            final List<AzureVMAgentTemplate> instTemplates) {
-        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit, deploymentTimeout, resourceGroupName, instTemplates);
+            final List<AzureVMAgentTemplate> vmTemplates) {
+        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit, deploymentTimeout, resourceGroupName, vmTemplates);
     }
 
     public AzureVMCloud(
@@ -114,7 +120,7 @@ public class AzureVMCloud extends Cloud {
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
             final String resourceGroupName,
-            final List<AzureVMAgentTemplate> instTemplates) {
+            final List<AzureVMAgentTemplate> vmTemplates) {
         super(AzureUtil.getCloudName(credentials.getSubscriptionId()));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
@@ -134,11 +140,10 @@ public class AzureVMCloud extends Cloud {
 
         this.configurationValid = false;
 
-        this.instTemplates = instTemplates == null
+        // Set the templates
+        setVmTemplates(vmTemplates == null
                 ? Collections.<AzureVMAgentTemplate>emptyList()
-                : instTemplates;
-
-        readResolve();
+                : vmTemplates);
 
         registerVerificationIfNeeded();
     }
@@ -154,7 +159,7 @@ public class AzureVMCloud extends Cloud {
         AzureVMCloudVerificationTask.registerCloud(this.name);
         // Register all templates.  We don't know what happened with them
         // when save was hit.
-        AzureVMCloudVerificationTask.registerTemplates(this.getInstTemplates());
+        AzureVMCloudVerificationTask.registerTemplates(this.getVmTemplates());
         // Force the verification task to run if it's not already running.
         // Note that early in startup this could return null
         if (AzureVMCloudVerificationTask.get() != null) {
@@ -163,9 +168,20 @@ public class AzureVMCloud extends Cloud {
     }
 
     private Object readResolve() {
-        for (AzureVMAgentTemplate template : instTemplates) {
-            template.setAzureCloud(this);
+        synchronized(this) {
+            // Ensure that renamed field is set
+            if (instTemplates != null && vmTemplates == null) {
+                vmTemplates = instTemplates;
+                instTemplates = null;
+            }
+            
+            // Walk the list of templates and assign the parent cloud (which is transient).
+            ensureVmTemplateList();
+            for (AzureVMAgentTemplate template : vmTemplates) {
+                template.setAzureCloud(this);
+            }
         }
+        
         return this;
     }
 
@@ -232,12 +248,88 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Returns the current set of templates. Required for config.jelly
-     *
-     * @return
+     * Ensures there is a valid template list available.
+     * Must be called under the vmTemplatesListLock
      */
-    public List<AzureVMAgentTemplate> getInstTemplates() {
-        return Collections.unmodifiableList(instTemplates);
+    private void ensureVmTemplateList() {
+        if (vmTemplates == null) {
+            vmTemplates = new ArrayList<AzureVMAgentTemplate>();
+        }
+    }
+
+    /**
+     * Remove all templates in the template set.
+     */
+    public final void clearVmTemplates() {
+        // Obtain lock while we copy the list.
+        synchronized (this) {
+            ensureVmTemplateList();
+            vmTemplates.clear();
+        }
+    }
+
+    /**
+     * Adds a new VM template to the store
+     */
+    public final void addVmTemplate(AzureVMAgentTemplate newTemplate) {
+        // Obtain lock while we copy the list.
+        synchronized (this) {
+            ensureVmTemplateList();
+            vmTemplates.add(newTemplate);
+            newTemplate.setAzureCloud(this);
+        }
+    }
+
+    /**
+     * Sets the template list to a new template list.  The list is cleared and
+     * the elements are iteratively added (to avoid leakage of the
+     * internal template list)
+     * @param newTemplates Template set to use
+     */
+    public final void setVmTemplates(List<AzureVMAgentTemplate> newTemplates) {
+        synchronized (this) {
+            ensureVmTemplateList();
+            vmTemplates.clear();
+            for (AzureVMAgentTemplate newTemplate : newTemplates) {
+                vmTemplates.add(newTemplate);
+                newTemplate.setAzureCloud(this);
+            }
+        }
+    }
+
+    /**
+     * Removes a template from the template store by name.
+     * Removes all templates with the template name.
+     * @param templateName Template name to remove
+     */
+    public final void removeVmTemplate(String templateName) {
+        // Obtain lock while we copy the list.
+        synchronized (this) {
+            ensureVmTemplateList();
+            // in 1.8 we can use lambdas here, but in order to maintain
+            // 1.7 compatibility we don't.
+            ArrayList<AzureVMAgentTemplate> removeTemplates = new ArrayList<AzureVMAgentTemplate>();
+            for (AzureVMAgentTemplate template : vmTemplates) {
+                if (template.getTemplateName().equals(templateName)) {
+                    removeTemplates.add(template);
+                }
+            }
+            vmTemplates.removeAll(removeTemplates);
+        }
+    }
+
+    /**
+     * Returns the current set of templates. Required for config.jelly
+     * @return List of available template
+     */
+    public List<AzureVMAgentTemplate> getVmTemplates() {
+        // Obtain lock while we copy the list.
+        synchronized (this) {
+            ensureVmTemplateList();
+            // Copy the list.  Objects underneath can be left as-is.
+            List<AzureVMAgentTemplate> listCopy = new ArrayList<AzureVMAgentTemplate>(vmTemplates);
+            return Collections.unmodifiableList(listCopy);
+        }
     }
 
     /**
@@ -321,21 +413,49 @@ public class AzureVMCloud extends Cloud {
      */
     public AzureVMAgentTemplate getAzureAgentTemplate(final Label label) {
         LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: Retrieving agent template with label {0}", label);
-        for (AzureVMAgentTemplate agentTemplate : instTemplates) {
-            LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}", agentTemplate.getTemplateName());
-            if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.NORMAL) {
-                if (label == null || label.matches(agentTemplate.getLabelDataSet())) {
-                    LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: {0} matches!", agentTemplate.getTemplateName());
-                    return agentTemplate;
-                }
-            } else if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
-                if (label != null && label.matches(agentTemplate.getLabelDataSet())) {
-                    LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: {0} matches!", agentTemplate.getTemplateName());
-                    return agentTemplate;
+        // Lock the templates list rather than using getVMTemplates to avoid unecessary copies.
+        synchronized (this) {
+            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
+                LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}", agentTemplate.getTemplateName());
+                if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.NORMAL) {
+                    if (label == null || label.matches(agentTemplate.getLabelDataSet())) {
+                        LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: {0} matches!", agentTemplate.getTemplateName());
+                        return agentTemplate;
+                    }
+                } else if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
+                    if (label != null && label.matches(agentTemplate.getLabelDataSet())) {
+                        LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: {0} matches!", agentTemplate.getTemplateName());
+                        return agentTemplate;
+                    }
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * Determines whether the given template name is unique among all templates
+     * @param name Name to check
+     * @return True if the name is unique, false otherwise.
+     */
+    public boolean getTemplateNameIsUnique(final String name) {
+        if (StringUtils.isBlank(name)) {
+            return true;
+        }
+
+        boolean foundOne = false;
+        synchronized (this) {
+            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
+                if (name.equals(agentTemplate.getTemplateName())) {
+                    if (foundOne) {
+                        return false;
+                    }
+                    foundOne = true;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -349,9 +469,11 @@ public class AzureVMCloud extends Cloud {
             return null;
         }
 
-        for (AzureVMAgentTemplate agentTemplate : instTemplates) {
-            if (name.equalsIgnoreCase(agentTemplate.getTemplateName())) {
-                return agentTemplate;
+        synchronized (this) {
+            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
+                if (name.equals(agentTemplate.getTemplateName())) {
+                    return agentTemplate;
+                }
             }
         }
         return null;
