@@ -22,7 +22,7 @@
   </f:section>
 
   <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">
-    <f:repeatable field="instTemplates">
+    <f:repeatable field="vmTemplates">
       <st:include page="config.jelly" class="${descriptor.clazz}" />
     </f:repeatable>
   </f:entry>
