@@ -164,11 +164,6 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                         // Verify the template within itself
                         List<String> errors = agentTemplate.verifyTemplate();
 
-                        // Verify the template name is unique
-                        if (!cloud.getTemplateNameIsUnique(templateName)) {
-                            errors.add(Messages.Azure_GC_Template_Name_Not_Unique());
-                        }
-
                         if (errors.isEmpty()) {
                             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: {0} verified succesfully", templateName);
                             // Verified, set the template to verified.

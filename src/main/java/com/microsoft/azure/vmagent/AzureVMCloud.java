@@ -18,16 +18,13 @@ package com.microsoft.azure.vmagent;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.azure.vmagent.exceptions.AzureCredentialsValidationException;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
-import com.microsoft.azure.management.resources.TargetResource;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -64,7 +61,6 @@ import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.model.Item;
-import hudson.model.Items;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import java.nio.charset.Charset;
@@ -431,31 +427,6 @@ public class AzureVMCloud extends Cloud {
             }
         }
         return null;
-    }
-
-    /**
-     * Determines whether the given template name is unique among all templates
-     * @param name Name to check
-     * @return True if the name is unique, false otherwise.
-     */
-    public boolean getTemplateNameIsUnique(final String name) {
-        if (StringUtils.isBlank(name)) {
-            return true;
-        }
-
-        boolean foundOne = false;
-        synchronized (this) {
-            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
-                if (name.equals(agentTemplate.getTemplateName())) {
-                    if (foundOne) {
-                        return false;
-                    }
-                    foundOne = true;
-                }
-            }
-        }
-
-        return true;
     }
 
     /**
