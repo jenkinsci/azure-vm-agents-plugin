@@ -46,6 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -422,13 +426,41 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
-    @Override
-    public void execute(TaskListener arg0) throws InterruptedException {
+    private void clean() {
         cleanVMs();
         // Clean up the deployments
         cleanDeployments();
 
         cleanLeakedResources();
+    }
+    
+    @Override
+    public void execute(TaskListener arg0) throws InterruptedException {
+        LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: execute: start");
+
+        Callable<Void> callClean = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                clean();
+                return null;
+            }
+        };
+        
+        Future<Void> result = AzureVMCloud.getThreadPool().submit(callClean);
+                
+        try {
+            LOGGER.info("AzureVMAgentCleanUpTask: execute: Running clean with 15 minute timeout");
+            // Get will block until time expires or until task completes
+            result.get(15, TimeUnit.MINUTES);
+        } catch (ExecutionException executionException) {
+            LOGGER.log(Level.SEVERE, "AzureVMAgentCleanUpTask: execute: Got execution exception while cleaning", executionException);
+        } catch (TimeoutException timeoutException) {
+            LOGGER.log(Level.SEVERE, "AzureVMAgentCleanUpTask: execute: Hit timeout while cleaning", timeoutException);
+        } catch (Exception others) {
+            LOGGER.log(Level.SEVERE, "AzureVMAgentCleanUpTask: execute: Hit other exception while cleaning", others);
+        }
+
+        LOGGER.info("AzureVMAgentCleanUpTask: execute: end");
     }
 
     @Override
