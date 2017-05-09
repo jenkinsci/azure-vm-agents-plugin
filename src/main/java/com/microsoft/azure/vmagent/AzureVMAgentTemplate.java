@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -123,6 +123,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String virtualNetworkName;
 
+    private String virtualNetworkResourceGroupName;
+
     private String subnetName;
 
     private boolean usePrivateIP;
@@ -169,6 +171,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String initScript,
             final String credentialsId,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final boolean usePrivateIP,
             final String nsgName,
@@ -207,6 +210,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.agentLaunchMethod = agentLaunchMethod;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
+        this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
         this.subnetName = subnetName;
         this.usePrivateIP = usePrivateIP;
         this.nsgName = nsgName;
@@ -333,6 +337,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.virtualNetworkName = virtualNetworkName;
     }
 
+    public String getVirtualNetworkResourceGroupName() {
+        return this.virtualNetworkResourceGroupName;
+    }
+
     public String getSubnetName() {
         return subnetName;
     }
@@ -340,7 +348,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public void setSubnetName(String subnetName) {
         this.subnetName = subnetName;
     }
-    
+
     public boolean getUsePrivateIP() {
         return usePrivateIP;
     }
@@ -369,7 +377,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
-            
+
         }
     }
 
@@ -508,6 +516,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 initScript,
                 credentialsId,
                 virtualNetworkName,
+                virtualNetworkResourceGroupName,
                 subnetName,
                 retentionTimeInMin + "",
                 jvmOptions,
@@ -571,7 +580,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             return model;
         }
-        
+
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             for(Node.Mode m : hudson.Functions.getNodeModes()) {
@@ -710,6 +719,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
+                @QueryParameter String virtualNetworkResourceGroupName,
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
@@ -753,11 +763,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "initScript: {18};\n\t"
                             + "credentialsId: {19};\n\t"
                             + "virtualNetworkName: {20};\n\t"
-                            + "subnetName: {21};\n\t"
-                            + "privateIP: {22};\n\t"
-                            + "nsgName: {23};\n\t"
-                            + "retentionTimeInMin: {24};\n\t"
-                            + "jvmOptions: {25};",
+                            + "virtualNetworkResourceGroupName: {21};\n\t"
+                            + "subnetName: {22};\n\t"
+                            + "privateIP: {23};\n\t"
+                            + "nsgName: {24};\n\t"
+                            + "retentionTimeInMin: {25};\n\t"
+                            + "jvmOptions: {26};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -780,6 +791,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             initScript,
                             credentialsId,
                             virtualNetworkName,
+                            virtualNetworkResourceGroupName,
                             subnetName,
                             usePrivateIP,
                             nsgName,
@@ -787,8 +799,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             jvmOptions});
 
             // First validate the subscription info.  If it is not correct,
-            // then we can't validate the 
-            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName, 
+            // then we can't validate the
+            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName,
                     maxVirtualMachinesLimit, deploymentTimeout);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
@@ -813,6 +825,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     initScript,
                     credentialsId,
                     virtualNetworkName,
+                    virtualNetworkResourceGroupName,
                     subnetName,
                     retentionTimeInMin,
                     jvmOptions,

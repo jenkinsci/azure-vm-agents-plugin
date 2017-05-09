@@ -117,6 +117,11 @@
                 <f:textbox/>
             </f:entry>
 
+            <f:entry title="${%VirtualNetworkResourceGroup_Name}" field="virtualNetworkResourceGroupName"
+                     help="/plugin/azure-vm-agents/help-virtualNetworkResourceGroupName.html">
+                <f:textbox/>
+            </f:entry>
+
             <f:entry title="${%Subnet_Name}" field="subnetName" help="/plugin/azure-vm-agents/help-subnetName.html">
                 <f:textbox/>
             </f:entry>
@@ -156,6 +161,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountName,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountName,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

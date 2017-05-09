@@ -118,9 +118,9 @@ public class AzureVMManagementServiceDelegate {
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
 
     private static final Set<String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
-    
+
     private static final List<String> DEFAULT_VM_SIZES = Arrays.asList(new String[]{"Standard_A0","Standard_A1","Standard_A2","Standard_A3","Standard_A5","Standard_A4","Standard_A6","Standard_A7","Basic_A0","Basic_A1","Basic_A2","Basic_A3","Basic_A4","Standard_DS1_v2","Standard_DS2_v2","Standard_DS3_v2","Standard_DS4_v2","Standard_DS5_v2","Standard_DS11_v2","Standard_DS12_v2","Standard_DS13_v2","Standard_DS14_v2","Standard_DS15_v2","Standard_DS1","Standard_DS2","Standard_DS3","Standard_DS4","Standard_DS11","Standard_DS12","Standard_DS13","Standard_DS14","Standard_F1s","Standard_F2s","Standard_F4s","Standard_F8s","Standard_F16s","Standard_D1","Standard_D2","Standard_D3","Standard_D4","Standard_D11","Standard_D12","Standard_D13","Standard_D14","Standard_A1_v2","Standard_A2m_v2","Standard_A2_v2","Standard_A4m_v2","Standard_A4_v2","Standard_A8m_v2","Standard_A8_v2","Standard_D1_v2","Standard_D2_v2","Standard_D3_v2","Standard_D4_v2","Standard_D5_v2","Standard_D11_v2","Standard_D12_v2","Standard_D13_v2","Standard_D14_v2","Standard_D15_v2","Standard_F1","Standard_F2","Standard_F4","Standard_F8","Standard_F16"});
-    
+
     /**
      * Creates a new deployment of VMs based on the provided template
      *
@@ -169,7 +169,7 @@ public class AzureVMManagementServiceDelegate {
 
             createAzureResourceGroup(azureClient, locationName, resourceGroupName);
             //For blob endpoint url in arm template, it's different based on different environments
-            //So create StorageAccount and get suffix 
+            //So create StorageAccount and get suffix
             createStorageAccount(azureClient, storageAccountName, locationName, resourceGroupName);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
@@ -208,7 +208,7 @@ public class AzureVMManagementServiceDelegate {
             count.put("type", "int");
             count.put("defaultValue", numberOfAgents);
             ObjectNode.class.cast(tmp.get("parameters")).replace("count", count);
-            
+
             ObjectNode.class.cast(tmp.get("variables")).put("vmName", vmBaseName);
             ObjectNode.class.cast(tmp.get("variables")).put("location", locationName);
             ObjectNode.class.cast(tmp.get("variables")).put("jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
@@ -277,18 +277,23 @@ public class AzureVMManagementServiceDelegate {
             if (StringUtils.isNotBlank(storageAccountName)) {
                 ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", storageAccountName);
             }
-            
+
             if(StringUtils.isNotBlank(blobEndpointSuffix)){
                 ObjectNode.class.cast(tmp.get("variables")).put("blobEndpointSuffix", blobEndpointSuffix);
             }
-                
+
             // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
             if (StringUtils.isNotBlank(template.getVirtualNetworkName())) {
                 ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
                 ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
+                if (StringUtils.isNotBlank(template.getVirtualNetworkResourceGroupName())) {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
+                } else {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
+                }
             } else {
-                AddDefaultVNetResourceNode(tmp, mapper);
+                AddDefaultVNetResourceNode(tmp, mapper, resourceGroupName);
             }
 
             if (!template.getUsePrivateIP()) {
@@ -408,13 +413,15 @@ public class AzureVMManagementServiceDelegate {
 
     private static void AddDefaultVNetResourceNode(
             final JsonNode template,
-            final ObjectMapper mapper) throws IOException {
+            final ObjectMapper mapper,
+            final String resourceGroupName) throws IOException {
         InputStream fragmentStream = null;
         try {
             // Add the definition of the vnet and subnet into the template
             final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
             final String subnetName = Constants.DEFAULT_SUBNET_NAME;
             ObjectNode.class.cast(template.get("variables")).put("virtualNetworkName", virtualNetworkName);
+            ObjectNode.class.cast(template.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
             ObjectNode.class.cast(template.get("variables")).put("subnetName", subnetName);
 
             // Read the vnet fragment
@@ -1040,7 +1047,7 @@ public class AzureVMManagementServiceDelegate {
             // the container is empty and we should delete it
             LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
             container.delete();
-        }        
+        }
     }
 
     /**
@@ -1173,6 +1180,7 @@ public class AzureVMManagementServiceDelegate {
      * @param initScript
      * @param credentialsId
      * @param virtualNetworkName
+     * @param virtualNetworkResourceGroupName
      * @param subnetName
      * @param retentionTimeInMin
      * @param jvmOptions
@@ -1200,6 +1208,7 @@ public class AzureVMManagementServiceDelegate {
             final String initScript,
             final String credentialsId,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final String retentionTimeInMin,
             final String jvmOptions,
@@ -1273,6 +1282,7 @@ public class AzureVMManagementServiceDelegate {
                     imageVersion,
                     storageAccountName,
                     virtualNetworkName,
+                    virtualNetworkResourceGroupName,
                     subnetName,
                     resourceGroupName,
                     errors,
@@ -1299,6 +1309,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageVersion,
             final String storageAccountName,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final String resourceGroupName,
             final List<String> errors,
@@ -1312,7 +1323,7 @@ public class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyVirtualNetwork(servicePrincipal, virtualNetworkName, subnetName, usePrivateIP, resourceGroupName);
+                return verifyVirtualNetwork(servicePrincipal, virtualNetworkName, virtualNetworkResourceGroupName, subnetName, usePrivateIP, resourceGroupName);
             }
         };
         verificationTaskList.add(callVerifyVirtualNetwork);
@@ -1402,13 +1413,18 @@ public class AzureVMManagementServiceDelegate {
     public static String verifyVirtualNetwork(
             final ServicePrincipal servicePrincipal,
             final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
             final String subnetName,
             final boolean usePrivateIP,
             final String resourceGroupName) {
         if (StringUtils.isNotBlank(virtualNetworkName)) {
-            Network virtualNetwork = getVirtualNetwork(servicePrincipal, virtualNetworkName, resourceGroupName);
+            String finalResourceGroupName =  resourceGroupName;
+            if (StringUtils.isNotBlank(virtualNetworkResourceGroupName)) {
+                finalResourceGroupName = virtualNetworkResourceGroupName;
+            }
+            Network virtualNetwork = getVirtualNetwork(servicePrincipal, virtualNetworkName, finalResourceGroupName);
             if (virtualNetwork == null) {
-                return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName);
+                return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName, finalResourceGroupName);
             }
 
             if (StringUtils.isBlank(subnetName)) {
@@ -1433,7 +1449,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image)) || 
+        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image)) ||
                referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM ) {
             try {
                 // Custom image verification.  We must verify that the VM image
@@ -1580,7 +1596,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)) ) || 
+        if ( (referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)) ) ||
                 referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
             // Check that the image string is a URI by attempting to create
             // a URI
@@ -1617,7 +1633,7 @@ public class AzureVMManagementServiceDelegate {
 
     /**
      * Create Azure resource Group
-     * 
+     *
      * @param azureClient
      * @param locationName
      * @param resourceGroupName
@@ -1635,10 +1651,10 @@ public class AzureVMManagementServiceDelegate {
             resourceGroupName, locationName), e);
         }
     }
-    
+
     /**
      * Create storage Account
-     * 
+     *
      * @param azureClient
      * @param targetStorageAccount
      * @param location
@@ -1658,20 +1674,20 @@ public class AzureVMManagementServiceDelegate {
                     targetStorageAccount, location, resourceGroupName), e);
         }
     }
-    
+
     /**
      * Get StorageAccount by resourceGroup name and storageAccount name
      *
      * @param azureClient
      * @param storageAccountName
      * @param resourceGroupName
-     * 
+     *
      * @return StorageAccount object
      */
     private static StorageAccount getStorageAccount(Azure azureClient, String targetStorageAccount, String resourceGroupName){
         return azureClient.storageAccounts().getByGroup(resourceGroupName, targetStorageAccount);
     }
-    
+
     /**
      * Get the blob endpoint suffix for , it's like ".blob.core.windows.net/" for public azure
      * or ".blob.core.chinacloudapi.cn" for Azure China
@@ -1682,7 +1698,7 @@ public class AzureVMManagementServiceDelegate {
     public static String getBlobEndpointSuffixForTemplate(StorageAccount storageAccount){
         return getBlobEndPointSuffix(storageAccount, Constants.BLOB, Constants.BLOB_ENDPOINT_PREFIX, Constants.FWD_SLASH);
     }
-    
+
     /**
      * Get the blob endpoint suffix for constructing CloudStorageAccount  , it's like "core.windows.net"
      * or "core.chinacloudapi.cn" for AzureChina
@@ -1693,7 +1709,7 @@ public class AzureVMManagementServiceDelegate {
     public static String getBlobEndpointSuffixForCloudStorageAccount(StorageAccount storageAccount){
         return getBlobEndPointSuffix(storageAccount, Constants.BLOB_ENDPOINT_SUFFIX_STARTKEY, "", "");
     }
-    
+
     /**
      * Get the blob endpoint substring with prefix and suffix
      *
@@ -1710,24 +1726,24 @@ public class AzureVMManagementServiceDelegate {
             String blobUri = storageAccount.endPoints().primary().blob().toLowerCase();
             endpointSuffix = getSubString(blobUri, startKey, prefix, suffix);
         }
-        
+
         return endpointSuffix;
     }
 
-    
+
     /**
      * Get substring with startKey,  endSuffix and prefix
      *
      * @param startKey startKey used to get the start position of string, if it's null or empty then whole input string will be used
      * @param prefix the prefix of substring will be added, if it's null or empty then it will not be added'
      * @param suffix the suffix will be append to substring if substring doesn't contain it,if it's null or empty then it will not be added
-     * @return 
+     * @return
      */
     private static String getSubString(String uri, String startKey, String prefix, String suffix){
         String subString = null;
         if(StringUtils.isNotBlank(uri)){
             if(StringUtils.isNotEmpty(startKey) && uri.indexOf(startKey) >= 0){
-                subString = uri.substring(uri.indexOf(startKey));                
+                subString = uri.substring(uri.indexOf(startKey));
             } else {
                 subString = uri;
             }
@@ -1738,7 +1754,7 @@ public class AzureVMManagementServiceDelegate {
         }
         return subString;
     }
-    
+
     /**
      * Get CloudStorageAccount
      *
@@ -1767,7 +1783,7 @@ public class AzureVMManagementServiceDelegate {
             throw new AzureCloudException(e);
         }
     }
-    
+
     /**
      * Get CloudBlobContainer
      *
@@ -1790,5 +1806,5 @@ public class AzureVMManagementServiceDelegate {
             .getByGroup(resourceGroupName, targetStorageAccount);
         CloudStorageAccount account = getCloudStorageAccount(storageAccount);
         return getCloudBlobContainer(account, blobContanerName);
-    }   
+    }
 }

@@ -191,7 +191,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertNotNull("The deployed Network interface doesn't exist", actualNetIface);
             Assert.assertTrue("The deployed VM doesn't have a private IP", privateIP != null && !privateIP.isEmpty());
             Assert.assertNull("The deployed VM shouldn't have a public IP", actualIP);
-            
+
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
@@ -653,38 +653,39 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void verifyVirtualNetworkTest() {
         try{
             final String vnetName = "jenkinsarm-vnet";
+            final String vnetResourceGroup = "";
             final String subnetName = "jenkinsarm-snet";
             createDefaultDeployment(1, null);
 
            Assert.assertEquals(Constants.OP_SUCCESS,
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, vnetName, subnetName, false, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
 
             final String wrongVnet = vnetName+"wrong";
-            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_NotFound(wrongVnet),
+            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_NotFound(wrongVnet, testEnv.azureResourceGroup),
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, wrongVnet, subnetName, false, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, wrongVnet, vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
 
             final String wrongSnet = subnetName+"wrong";
             Assert.assertEquals(Messages.Azure_GC_Template_subnet_NotFound(wrongSnet),
                     AzureVMManagementServiceDelegate
-                            .verifyVirtualNetwork(servicePrincipal, vnetName, wrongSnet, false, testEnv.azureResourceGroup));
-            
-            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", subnetName, false, testEnv.azureResourceGroup));
-            
-            Assert.assertEquals(Constants.OP_SUCCESS,
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", "", false, testEnv.azureResourceGroup));
+                            .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup, wrongSnet, false, testEnv.azureResourceGroup));
 
             Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
                    AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", "", true, testEnv.azureResourceGroup));
-            
+                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
+
+            Assert.assertEquals(Constants.OP_SUCCESS,
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", false, testEnv.azureResourceGroup));
+
+            Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
+                   AzureVMManagementServiceDelegate
+                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", true, testEnv.azureResourceGroup));
+
             Assert.assertEquals(Messages.Azure_GC_Template_subnet_Empty(),
                    AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, vnetName, "", false, testEnv.azureResourceGroup));
+                           .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup,"", false, testEnv.azureResourceGroup));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -789,7 +790,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(e.getMessage(), false);
         }
     }
-    
+
     @Test
     //Add Test for global first, will add test for mooncake later
     public void getBlobEndpointSuffixForArmTemplateForGlobal(){
@@ -801,7 +802,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             .create();
             StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForTemplate(storageAccount);
-            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForTemplate.get(TestEnvironment.AZUREPUBLIC));            
+            Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForTemplate.get(TestEnvironment.AZUREPUBLIC));
         } catch (Exception e){
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -828,7 +829,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(e.getMessage(), false);
         }
     }
-    
+
     @Test
     //Add Test for global first, will add test for mooncake later
     public void getBlobEndpointSuffixForCloudStorageAccountForGlobal() {

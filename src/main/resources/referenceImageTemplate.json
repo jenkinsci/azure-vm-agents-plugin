@@ -4,10 +4,11 @@
     "parameters": {},
     "variables": {
         "virtualNetworkName": "",
+        "virtualNetworkResourceGroupName": "",
         "subnetName": "",
         "nsgName": "",
         "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+        "vnetID": "[resourceId(variables('virtualNetworkResourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
         "publicIPAddressType": "Dynamic",
         "storageAccountContainerName": "vhds",
