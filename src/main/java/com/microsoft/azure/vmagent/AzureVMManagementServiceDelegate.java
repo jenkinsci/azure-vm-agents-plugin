@@ -498,11 +498,6 @@ public class AzureVMManagementServiceDelegate {
         ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes());
         blob.upload(stream, stringSize, AccessCondition.generateEmptyCondition(), null, null);
         return blob.getUri().toString();
-
-//        CloudBlockBlob blob = container.getBlockBlobReference(targetScriptName);
-//        String scriptText = template.getInitScript();
-//        blob.uploadText(scriptText, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
-//        return blob.getUri().toString();
     }
 
     /**

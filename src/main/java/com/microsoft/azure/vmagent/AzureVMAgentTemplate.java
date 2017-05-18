@@ -585,10 +585,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             ListBoxModel model = new ListBoxModel();
 
-
-
             model.add(Constants.STORAGE_ACCOUNT_TYPE_STANDARD);
-            model.add(Constants.STORAGE_ACCOUNT_TYPE_PREMIUM);
+
+            if(virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
+                model.add(Constants.STORAGE_ACCOUNT_TYPE_PREMIUM);
+            }
             return model;
         }
         
