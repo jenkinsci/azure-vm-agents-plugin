@@ -259,9 +259,6 @@ public class AzureVMAgent extends AbstractCloudSlave {
         return cleanUpReason;
     }
 
-    /**
-     * @param cleanUpReason
-     */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular
         // node

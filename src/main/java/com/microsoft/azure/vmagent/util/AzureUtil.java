@@ -50,7 +50,7 @@ public class AzureUtil {
     public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']*{8,123})";
 
     public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
-    
+
     public static final String VAL_TEMPLATE = "^[a-z][a-z0-9-]*[a-z0-9]$";
 
     /** Converts bytes to hex representation */
@@ -242,16 +242,17 @@ public class AzureUtil {
 
         return errorMessage.contains("The specified deployment slot Production is occupied");
     }
-    
+
     /**
      * Retrieves the name of the cloud for registering with Jenkins
      * @param subscriptionId Subscription id
+     * @param resourceGroupName Resource group name
      * @return Name of the cloud
      */
-    public static String getCloudName(String subscriptionId) {
-        return Constants.AZURE_CLOUD_PREFIX + subscriptionId;
+    public static String getCloudName(final String subscriptionId, final String resourceGroupName) {
+        return Constants.AZURE_CLOUD_PREFIX + subscriptionId + resourceGroupName;
     }
-    
+
     /**
      * Returns a template name that can be used for the base of a VM name
      * @return A shortened template name if required, the full name otherwise
@@ -265,7 +266,7 @@ public class AzureUtil {
         }
         // If the template name ends in a number, we add a dash
         // to split up the name
-        
+
         int maxLength;
         if (usageType.equals(Constants.OS_TYPE_LINUX)) {
             // Linux, length <= 63 characters, 10 characters for the date
@@ -282,25 +283,25 @@ public class AzureUtil {
         else {
             throw new IllegalArgumentException("Unknown OS/Usage type");
         }
-        
+
         // Chop of what we need for date digits
         maxLength -= dateDigits;
         // Chop off extra if needed for suffix digits
         maxLength -= extraSuffixDigits;
-        
+
         // Shorten the name
         String shortenedName = templateName.substring(0,Math.min(templateName.length(), maxLength));
-        
+
         // If the name ends in a digit, either append or replace the last char with a - so it's
         // not confusing
         if (StringUtils.isNumeric(shortenedName.substring(shortenedName.length()-1))) {
             shortenedName = shortenedName.substring(0, Math.min(templateName.length(), maxLength-1));
             shortenedName += '-';
         }
-        
+
         return shortenedName;
     }
-    
+
     /**
      * Returns true if the template name is valid, false otherwise
      * @param templateName Template name to validate
@@ -309,7 +310,7 @@ public class AzureUtil {
     public static boolean isValidTemplateName(String templateName) {
         return templateName.matches(VAL_TEMPLATE);
     }
-    
+
     /**
      * Creates a deployment given a template name and OS type
      * @param templateName Valid template name
@@ -320,38 +321,38 @@ public class AzureUtil {
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Invalid template name");
         }
-        
+
         Format formatter = new SimpleDateFormat(Constants.DEPLOYMENT_NAME_DATE_FORMAT);
-        return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT, 
-            Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0), 
+        return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT,
+            Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0),
                 formatter.format(timestamp));
     }
-    
+
     /**
      * Creates a new VM base name given the input parameters.
      * @param templateName Template name
      * @param osType Type of OS
      * @param numberOfVmsToCreate Number of VMs that will be created
      *       (which is added to the suffix of the VM name by azure)
-     * @return 
+     * @return
      */
     public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Invalid template name");
         }
-        
+
         // For VM names, we use a simpler form.  VM names are pretty short 
         int numberOfDigits = (int)Math.floor(Math.log10((double)numberOfVMs))+1;
         // Get the hash of the deployment name
         Integer deploymentHashCode = deploymentName.hashCode();
         // Convert the int into a hex string and do a substring
-        String shortenedDeploymentHash = 
+        String shortenedDeploymentHash =
             Integer.toHexString(deploymentHashCode).substring(0, Constants.VM_NAME_HASH_LENGTH - 1);
-        return String.format("%s%s", getShortenedTemplateName(templateName, osType, 
-            Constants.VM_NAME_HASH_LENGTH, numberOfDigits), 
+        return String.format("%s%s", getShortenedTemplateName(templateName, osType,
+            Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
                 shortenedDeploymentHash);
     }
-    
+
     public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) throws AzureCloudException {
         // Grab the pass
         StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(
@@ -362,10 +363,10 @@ public class AzureUtil {
         if (creds == null) {
             throw new AzureCloudException("Could not find credentials with id: " + credentialsId);
         }
-        
+
         return creds;
     }
-    
+
     /**
      * Checks if the ResourceGroup Name is valid with Azure Standards
      * @param resourceGroupName Resource Group Name
