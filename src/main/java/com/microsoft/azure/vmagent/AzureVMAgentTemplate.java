@@ -90,6 +90,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String storageAccountName;
 
+    private String storageAccountType;
+
     private final int noOfParallelJobs;
 
     private Node.Mode usageMode;
@@ -154,6 +156,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String labels,
             final String location,
             final String virtualMachineSize,
+            final String storageAccountType,
             final String storageAccountName,
             final String noOfParallelJobs,
             final String usageMode,
@@ -185,6 +188,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.labels = labels;
         this.location = location;
         this.virtualMachineSize = virtualMachineSize;
+        this.storageAccountType = storageAccountType;
         this.storageAccountName = storageAccountName;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
@@ -253,6 +257,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return virtualMachineSize;
     }
 
+    public String getStorageAccountType() { return storageAccountType; }
 
     public String getStorageAccountName() {
         return storageAccountName;
@@ -569,6 +574,21 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 model.add(location);
             }
 
+            return model;
+        }
+
+        public ListBoxModel doFillStorageAccountTypeItems(
+                @RelativePath("..") @QueryParameter final String azureCredentialsId,
+                @QueryParameter final String virtualMachineSize)
+                throws IOException, ServletException {
+            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+
+            ListBoxModel model = new ListBoxModel();
+
+
+
+            model.add(Constants.STORAGE_ACCOUNT_TYPE_STANDARD);
+            model.add(Constants.STORAGE_ACCOUNT_TYPE_PREMIUM);
             return model;
         }
         

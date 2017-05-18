@@ -31,6 +31,10 @@
                 <f:select/>
             </f:entry>
 
+            <f:entry title="${%Storage_Account_Type}" field="storageAccountType" help="/plugin/azure-vm-agents/help-storageAccountType.html">
+                <f:select/>
+            </f:entry>
+
             <f:entry title="${%Storage_Account_Name}" field="storageAccountName"
                      help="/plugin/azure-vm-agents/help-storageAccountName.html">
                 <f:textbox/>

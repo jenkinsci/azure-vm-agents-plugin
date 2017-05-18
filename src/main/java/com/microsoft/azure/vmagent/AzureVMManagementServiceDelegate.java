@@ -17,6 +17,7 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.microsoft.azure.storage.blob.CloudPageBlob;
 import hudson.model.Descriptor.FormException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -28,7 +29,7 @@ import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.core.PathUtility;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -76,7 +77,7 @@ import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
-import java.io.InputStream;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
@@ -156,6 +157,7 @@ public class AzureVMManagementServiceDelegate {
             final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
             final String locationName = getLocationName(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
+            final String storageAccountType = template.getStorageAccountType();
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
@@ -170,7 +172,7 @@ public class AzureVMManagementServiceDelegate {
             createAzureResourceGroup(azureClient, locationName, resourceGroupName);
             //For blob endpoint url in arm template, it's different based on different environments
             //So create StorageAccount and get suffix 
-            createStorageAccount(azureClient, storageAccountName, locationName, resourceGroupName);
+            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
             final boolean useCustomScriptExtension
@@ -276,6 +278,11 @@ public class AzureVMManagementServiceDelegate {
 
             if (StringUtils.isNotBlank(storageAccountName)) {
                 ObjectNode.class.cast(tmp.get("variables")).put("storageAccountName", storageAccountName);
+            }
+
+            if (StringUtils.isNotBlank(storageAccountType)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountType", storageAccountType.equalsIgnoreCase("Standard")
+                                      ? "Standard_LRS" : "Premium_LRS");
             }
             
             if(StringUtils.isNotBlank(blobEndpointSuffix)){
@@ -462,6 +469,7 @@ public class AzureVMManagementServiceDelegate {
      */
     public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
         String targetStorageAccount = template.getStorageAccountName();
+        String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
         String location = template.getLocation();
         final Azure azureClient = tokenCache.getAzureClient();
@@ -469,16 +477,32 @@ public class AzureVMManagementServiceDelegate {
         //make sure the resource group and storage account exist
         createAzureResourceGroup(azureClient, location, resourceGroupName);
         try {
-            createStorageAccount(azureClient, targetStorageAccount, location, resourceGroupName);
+            createStorageAccount(azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
         }
         CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
-        CloudBlockBlob blob = container.getBlockBlobReference(targetScriptName);
+        CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
         String scriptText = template.getInitScript();
-        blob.uploadText(scriptText, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
+        int stringSize = scriptText.length() % 512 == 0 ? scriptText.length() : scriptText.length() - scriptText.length() % 512 + 512;
+        blob.create(stringSize);
+
+        int lastLen = stringSize - scriptText.length();
+        StringBuilder fillString = new StringBuilder();
+        while(--lastLen >= 0) {
+            fillString.append(' ');
+        }
+        scriptText = scriptText.concat(fillString.toString());
+
+        ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes());
+        blob.upload(stream, stringSize, AccessCondition.generateEmptyCondition(), null, null);
         return blob.getUri().toString();
+
+//        CloudBlockBlob blob = container.getBlockBlobReference(targetScriptName);
+//        String scriptText = template.getInitScript();
+//        blob.uploadText(scriptText, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
+//        return blob.getUri().toString();
     }
 
     /**
@@ -1645,12 +1669,14 @@ public class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return
      */
-    private static void createStorageAccount(Azure azureClient, String targetStorageAccount, String location, String resourceGroupName) throws AzureCloudException{
+    private static void createStorageAccount(Azure azureClient, String targetStorageAccountType, String targetStorageAccount, String location, String resourceGroupName) throws AzureCloudException{
         try {
             azureClient.storageAccounts().define(targetStorageAccount)
                     .withRegion(location)
                     .withExistingResourceGroup(resourceGroupName)
-                    .withSku(SkuName.STANDARD_LRS)
+                    .withSku(targetStorageAccountType.equalsIgnoreCase("Standard") ?
+                            SkuName.STANDARD_LRS :
+                            SkuName.PREMIUM_LRS)
                     .create();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage());

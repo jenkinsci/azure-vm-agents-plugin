@@ -72,7 +72,12 @@ public class Constants {
     public static final String OS_TYPE_WINDOWS = "Windows";
 
     public static final String OS_TYPE_LINUX = "Linux";
-    
+
+    /**Storage Account Types **/
+    public static final String STORAGE_ACCOUNT_TYPE_STANDARD = "Standard";
+
+    public static final String STORAGE_ACCOUNT_TYPE_PREMIUM = "Premium";
+
     /** Usage types for template names **/
     public static final String USAGE_TYPE_DEPLOYMENT = "Deployment";
     
