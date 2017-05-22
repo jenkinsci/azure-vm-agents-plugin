@@ -250,7 +250,7 @@ public class AzureUtil {
      * @return Name of the cloud
      */
     public static String getCloudName(final String subscriptionId, final String resourceGroupName) {
-        return Constants.AZURE_CLOUD_PREFIX + subscriptionId + resourceGroupName;
+        return Constants.AZURE_CLOUD_PREFIX + subscriptionId + "-" + resourceGroupName;
     }
 
     /**
