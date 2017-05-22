@@ -30,6 +30,7 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.core.PathUtility;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -495,7 +496,7 @@ public class AzureVMManagementServiceDelegate {
         }
         scriptText = scriptText.concat(fillString.toString());
 
-        ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes());
+        ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));
         blob.upload(stream, stringSize, AccessCondition.generateEmptyCondition(), null, null);
         return blob.getUri().toString();
     }

@@ -578,10 +578,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillStorageAccountTypeItems(
-                @RelativePath("..") @QueryParameter final String azureCredentialsId,
                 @QueryParameter final String virtualMachineSize)
                 throws IOException, ServletException {
-            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
 
             ListBoxModel model = new ListBoxModel();
 

@@ -17,7 +17,18 @@ Below are examples of initialization scripts: </br></br>
         First argument - Jenkins server URL<br/>
         Second argument - VMName<br/>
         Third argument - JNLP secret, required if the server has security enabled.<br/>
-    You need to install Java, download the slave jar file from: '[server url]jnlpJars/slave.jar'.<br/>
+    You need to install Java, download the slave jar file from: '[server url]jnlpJars/slave.jar'.<br/><br/>
+    <b>Download & Install JAVA</b></br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$destination = "C:\jdk-8u131-windows-x64.exe"</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$client = new-object System.Net.WebClient</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$cookie = "oraclelicense=accept-securebackup-cookie"</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$client.downloadFile($source, $destination)</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$proc = Start-Process -FilePath $destination -ArgumentList "/s" -Wait -PassThru</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;$proc.WaitForExit()</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")</br>
+    &nbsp;&nbsp;&nbsp;&nbsp;[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")</br><br/>
     The server url should already have a trailing slash.  Then execute the following to connect:<br/>
     java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp<br/>
 </div>
