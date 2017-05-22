@@ -600,6 +600,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return model;
         }
 
+
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             for(Node.Mode m : hudson.Functions.getNodeModes()) {
