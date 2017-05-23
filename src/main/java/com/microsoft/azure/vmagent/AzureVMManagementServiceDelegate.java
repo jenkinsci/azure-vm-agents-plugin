@@ -158,7 +158,7 @@ public class AzureVMManagementServiceDelegate {
             final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
             final String locationName = getLocationName(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
-            final String storageAccountType = template.getStorageAccountType();
+            final String storageAccountType = template.getStorageAccountType() == null ? SkuName.STANDARD_LRS.toString() : template.getStorageAccountType();
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
@@ -282,8 +282,7 @@ public class AzureVMManagementServiceDelegate {
             }
 
             if (StringUtils.isNotBlank(storageAccountType)) {
-                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountType", storageAccountType.equalsIgnoreCase(Constants.STORAGE_ACCOUNT_TYPE_STANDARD)
-                                      ? SkuName.STANDARD_LRS.toString() : SkuName.PREMIUM_LRS.toString());
+                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountType", storageAccountType);
             }
 
 
@@ -467,13 +466,11 @@ public class AzureVMManagementServiceDelegate {
         }
     }
 
-    private static String pageBlobFormat(final String sourceString) throws Exception {
+    private static String paddedScriptForPageBlob(final String sourceString) throws Exception {
         /*Page blob must align to 512-byte page boundaries*/
-        int formatStringLength = sourceString.length() % 512 == 0
-                ? sourceString.length()
-                : sourceString.length() - sourceString.length() % 512 + 512;
+        int currentStringLength = sourceString.getBytes(StandardCharsets.UTF_8).length;
+        int formatStringLength = (currentStringLength + 512 - 1) / 512 * 512;
 
-        int currentStringLength = sourceString.length();
         StringBuilder fillString = new StringBuilder();
         while(currentStringLength < formatStringLength) {
             fillString.append(' ');
@@ -510,7 +507,7 @@ public class AzureVMManagementServiceDelegate {
         CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
-        String scriptText = pageBlobFormat(template.getInitScript());
+        String scriptText = paddedScriptForPageBlob(template.getInitScript());
 
         try {
             blob.create(scriptText.length());
@@ -1701,9 +1698,7 @@ public class AzureVMManagementServiceDelegate {
             azureClient.storageAccounts().define(targetStorageAccount)
                     .withRegion(location)
                     .withExistingResourceGroup(resourceGroupName)
-                    .withSku(targetStorageAccountType.equalsIgnoreCase(Constants.STORAGE_ACCOUNT_TYPE_STANDARD) ?
-                            SkuName.STANDARD_LRS :
-                            SkuName.PREMIUM_LRS)
+                    .withSku(SkuName.fromString(targetStorageAccountType))
                     .create();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
