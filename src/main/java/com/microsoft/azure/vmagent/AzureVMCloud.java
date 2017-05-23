@@ -19,54 +19,39 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.PagedList;
-import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.vmagent.util.AzureUtil;
-import com.microsoft.azure.vmagent.util.CleanUpAction;
+import com.microsoft.azure.vmagent.util.*;
+import hudson.Extension;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
+import hudson.model.*;
+import hudson.security.ACL;
+import hudson.slaves.Cloud;
+import hudson.slaves.NodeProvisioner.PlannedNode;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import hudson.util.StreamTaskListener;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
-import hudson.Extension;
-import hudson.model.Computer;
-import hudson.model.Descriptor;
-import hudson.model.Label;
-import hudson.model.Node;
-import hudson.slaves.Cloud;
-import hudson.slaves.NodeProvisioner.PlannedNode;
-import hudson.util.FormValidation;
-import hudson.util.StreamTaskListener;
-
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.FailureStage;
-import com.microsoft.azure.vmagent.util.TokenCache;
-import hudson.init.InitMilestone;
-import hudson.init.Initializer;
-import hudson.model.Item;
-import hudson.security.ACL;
-import hudson.util.ListBoxModel;
-import java.nio.charset.Charset;
+import java.util.concurrent.*;
 import java.util.logging.Level;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.AncestorInPath;
+import java.util.logging.Logger;
 
 public class AzureVMCloud extends Cloud {
 
@@ -117,7 +102,7 @@ public class AzureVMCloud extends Cloud {
             final String deploymentTimeout,
             final String resourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        super(AzureUtil.getCloudName(credentials.getSubscriptionId()));
+        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), resourceGroupName));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
         this.resourceGroupName = resourceGroupName;
