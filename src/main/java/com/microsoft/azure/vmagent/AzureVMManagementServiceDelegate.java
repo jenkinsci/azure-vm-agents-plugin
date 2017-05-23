@@ -158,7 +158,7 @@ public class AzureVMManagementServiceDelegate {
             final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
             final String locationName = getLocationName(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
-            final String storageAccountType = template.getStorageAccountType() == null ? SkuName.STANDARD_LRS.toString() : template.getStorageAccountType();
+            final String storageAccountType = template.getStorageAccountType();
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
