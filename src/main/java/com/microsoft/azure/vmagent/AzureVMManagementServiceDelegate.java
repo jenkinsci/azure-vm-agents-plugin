@@ -282,8 +282,8 @@ public class AzureVMManagementServiceDelegate {
             }
 
             if (StringUtils.isNotBlank(storageAccountType)) {
-                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountType", storageAccountType.equalsIgnoreCase("Standard")
-                                      ? "Standard_LRS" : "Premium_LRS");
+                ObjectNode.class.cast(tmp.get("variables")).put("storageAccountType", storageAccountType.equalsIgnoreCase(Constants.STORAGE_ACCOUNT_TYPE_STANDARD)
+                                      ? SkuName.STANDARD_LRS.toString() : SkuName.PREMIUM_LRS.toString());
             }
 
 
@@ -467,6 +467,23 @@ public class AzureVMManagementServiceDelegate {
         }
     }
 
+    private static String pageBlobFormat(final String sourceString) throws Exception {
+        /*Page blob must align to 512-byte page boundaries*/
+        int formatStringLength = sourceString.length() % 512 == 0
+                ? sourceString.length()
+                : sourceString.length() - sourceString.length() % 512 + 512;
+
+        int currentStringLength = sourceString.length();
+        StringBuilder fillString = new StringBuilder();
+        while(currentStringLength < formatStringLength) {
+            fillString.append('\0');
+            currentStringLength++;
+        }
+
+        return sourceString.concat(fillString.toString());
+    }
+
+
     /**
      * Uploads the custom script for a template to blob storage
      *
@@ -493,19 +510,16 @@ public class AzureVMManagementServiceDelegate {
         CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
-        String scriptText = template.getInitScript();
-        int stringSize = scriptText.length() % 512 == 0 ? scriptText.length() : scriptText.length() - scriptText.length() % 512 + 512;
-        blob.create(stringSize);
+        String scriptText = pageBlobFormat(template.getInitScript());
 
-        int lastLen = stringSize - scriptText.length();
-        StringBuilder fillString = new StringBuilder();
-        while(--lastLen >= 0) {
-            fillString.append(' ');
+        try {
+            blob.create(scriptText.length());
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO, e.getMessage());
         }
-        scriptText = scriptText.concat(fillString.toString());
 
         ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));
-        blob.upload(stream, stringSize, AccessCondition.generateEmptyCondition(), null, null);
+        blob.upload(stream, scriptText.length(), AccessCondition.generateEmptyCondition(), null, null);
         return blob.getUri().toString();
     }
 
@@ -1687,7 +1701,7 @@ public class AzureVMManagementServiceDelegate {
             azureClient.storageAccounts().define(targetStorageAccount)
                     .withRegion(location)
                     .withExistingResourceGroup(resourceGroupName)
-                    .withSku(targetStorageAccountType.equalsIgnoreCase("Standard") ?
+                    .withSku(targetStorageAccountType.equalsIgnoreCase(Constants.STORAGE_ACCOUNT_TYPE_STANDARD) ?
                             SkuName.STANDARD_LRS :
                             SkuName.PREMIUM_LRS)
                     .create();

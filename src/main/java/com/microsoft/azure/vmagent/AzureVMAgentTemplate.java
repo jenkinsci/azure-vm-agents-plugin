@@ -261,7 +261,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return virtualMachineSize;
     }
 
-    public String getStorageAccountType() { return storageAccountType; }
+    public String getStorageAccountType() {
+        return storageAccountType == null ? Constants.STORAGE_ACCOUNT_TYPE_STANDARD : storageAccountType;
+    }
 
     public String getStorageAccountName() {
         return storageAccountName;
@@ -594,6 +596,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             model.add(Constants.STORAGE_ACCOUNT_TYPE_STANDARD);
 
+            /*As introduced in Azure Docs, VmSize among DS/GS/FS/LS supports premium storage*/
             if(virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
                 model.add(Constants.STORAGE_ACCOUNT_TYPE_PREMIUM);
             }
