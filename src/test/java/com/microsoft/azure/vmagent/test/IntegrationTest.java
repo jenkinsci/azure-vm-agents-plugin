@@ -266,6 +266,7 @@ public class IntegrationTest {
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
         final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'");
+        final String storageType = SkuName.STANDARD_LRS.toString();
 
         StandardUsernamePasswordCredentials vmCredentials = mock(StandardUsernamePasswordCredentials.class);
         when(vmCredentials.getUsername()).thenReturn(vmUser);
@@ -293,6 +294,7 @@ public class IntegrationTest {
         when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
+        when(templateMock.getStorageAccountType()).thenReturn(storageType);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();
