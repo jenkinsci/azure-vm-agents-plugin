@@ -476,7 +476,7 @@ public class AzureVMManagementServiceDelegate {
         int currentStringLength = sourceString.length();
         StringBuilder fillString = new StringBuilder();
         while(currentStringLength < formatStringLength) {
-            fillString.append('\0');
+            fillString.append(' ');
             currentStringLength++;
         }
 
