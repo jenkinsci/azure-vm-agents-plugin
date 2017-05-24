@@ -469,10 +469,10 @@ public class AzureVMManagementServiceDelegate {
     private static String paddedScriptForPageBlob(final String sourceString) throws Exception {
         /*Page blob must align to 512-byte page boundaries*/
         int currentStringLength = sourceString.getBytes(StandardCharsets.UTF_8).length;
-        int formatStringLength = (currentStringLength + 512 - 1) / 512 * 512;
+        int paddedStringLength = (currentStringLength + 512 - 1) / 512 * 512;
 
         StringBuilder fillString = new StringBuilder();
-        while(currentStringLength < formatStringLength) {
+        while(currentStringLength < paddedStringLength) {
             fillString.append(' ');
             currentStringLength++;
         }
@@ -498,8 +498,8 @@ public class AzureVMManagementServiceDelegate {
         final Azure azureClient = tokenCache.getAzureClient();
 
         //make sure the resource group and storage account exist
-        createAzureResourceGroup(azureClient, location, resourceGroupName);
         try {
+            createAzureResourceGroup(azureClient, location, resourceGroupName);
             createStorageAccount(azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
@@ -508,11 +508,11 @@ public class AzureVMManagementServiceDelegate {
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
         String scriptText = paddedScriptForPageBlob(template.getInitScript());
-
+        int scriptLength = scriptText.getBytes().length;
         try {
-            blob.create(scriptText.length());
+            blob.create(scriptLength);
         } catch (Exception e) {
-            LOGGER.log(Level.INFO, e.getMessage());
+            throw new AzureCloudException(String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
         }
 
         ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));

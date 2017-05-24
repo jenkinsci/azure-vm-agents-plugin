@@ -254,7 +254,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public String getStorageAccountType() {
-        return storageAccountType == null ? SkuName.STANDARD_LRS.toString() : storageAccountType;
+        return StringUtils.isBlank(storageAccountType) ? SkuName.STANDARD_LRS.toString() : storageAccountType;
     }
 
     public String getStorageAccountName() {
