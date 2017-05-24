@@ -44,6 +44,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.mockito.Mockito.*;
@@ -83,8 +85,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     Constants.CONFIG_CONTAINER_NAME,
                     uploadFileName
                     );
-
-            Assert.assertEquals(writtenData, downloadedData);
+            /*Data padded before upload to Page Blob so we need to use strip*/
+            Assert.assertEquals(StringUtils.strip(writtenData), StringUtils.strip(downloadedData));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);

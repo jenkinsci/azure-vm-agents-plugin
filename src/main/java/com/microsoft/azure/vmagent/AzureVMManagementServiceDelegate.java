@@ -508,7 +508,7 @@ public class AzureVMManagementServiceDelegate {
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
         String scriptText = paddedScriptForPageBlob(template.getInitScript());
-        int scriptLength = scriptText.getBytes().length;
+        int scriptLength = scriptText.getBytes(StandardCharsets.UTF_8).length;
         try {
             blob.create(scriptLength);
         } catch (Exception e) {
