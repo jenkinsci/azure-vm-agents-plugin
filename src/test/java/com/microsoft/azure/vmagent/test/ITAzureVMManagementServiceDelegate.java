@@ -742,6 +742,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .define(testEnv.azureStorageAccountName)
                     .withRegion(testEnv.azureLocation)
                     .withNewResourceGroup(testEnv.azureResourceGroup)
+                    .withSku(SkuName.fromString(testEnv.azureStorageAccountType))
                     .create();
 
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
