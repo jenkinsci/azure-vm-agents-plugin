@@ -1563,7 +1563,7 @@ public class AzureVMManagementServiceDelegate {
             CheckNameAvailabilityResult checkResult = azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
             if( !isAvailable && checkResult.reason().equals(Reason.ACCOUNT_NAME_INVALID)) {
-                return Messages.Azure_GC_Template_SA_Cant_Validate();
+                return "The storage account name is not valid, a valid name can contain only lowercase letters and numbers, and must between 3 and 24 characters";
             } else if ( !isAvailable ) {
                 /*if it's not available we need to check if it's already in our resource group*/
                 StorageAccount checkAccount = azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName);
@@ -1574,7 +1574,7 @@ public class AzureVMManagementServiceDelegate {
                     if ( checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType) ) {
                         return Constants.OP_SUCCESS;
                     } else {
-                        return Messages.Azure_GC_Template_SA_Cant_Validate() + String.format("The chosen storage type: %s doesn't match existing account type: %s",
+                        return String.format("The chosen storage type: %s doesn't match existing account type: %s",
                                 storageAccountType, checkAccount.inner().sku().name().toString());
                     }
                 }
