@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,6 +28,24 @@ import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import jenkins.model.Jenkins;
+
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
 import hudson.Extension;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
@@ -38,20 +56,11 @@ import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
-import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AzureVMCloud extends Cloud {
 
@@ -74,7 +83,7 @@ public class AzureVMCloud extends Cloud {
     private transient List<AzureVMAgentTemplate> instTemplates;
 
     private final int deploymentTimeout;
-    
+
     private static ExecutorService threadPool;
 
     // True if the subscription has been verified.
@@ -155,14 +164,14 @@ public class AzureVMCloud extends Cloud {
                 vmTemplates = instTemplates;
                 instTemplates = null;
             }
-            
+
             // Walk the list of templates and assign the parent cloud (which is transient).
             ensureVmTemplateList();
             for (AzureVMAgentTemplate template : vmTemplates) {
                 template.setAzureCloud(this);
             }
         }
-        
+
         return this;
     }
 
@@ -204,7 +213,7 @@ public class AzureVMCloud extends Cloud {
         }
         return AzureVMCloud.threadPool;
     }
-    
+
     public int getMaxVirtualMachinesLimit() {
         return maxVirtualMachinesLimit;
     }
@@ -446,6 +455,7 @@ public class AzureVMCloud extends Cloud {
      * @throws Exception
      */
     public AzureVMAgent createProvisionedAgent(
+            final ProvisioningActivity.Id provisioningId,
             final AzureVMAgentTemplate template,
             final String vmName,
             final String deploymentName) throws Exception {
@@ -500,8 +510,8 @@ public class AzureVMCloud extends Cloud {
 
                                 final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
                                 final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
-                                
-                                AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(vmName, deploymentName, template, osType);
+
+                                AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(provisioningId, vmName, deploymentName, template, osType);
                                 AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
                                 return newAgent;
                             } else {
@@ -512,7 +522,7 @@ public class AzureVMCloud extends Cloud {
                         }
                     }
                 }
-                
+
             }
         } while (triesLeft > 0);
 
@@ -542,17 +552,23 @@ public class AzureVMCloud extends Cloud {
 
                 if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
                     LOGGER.log(Level.INFO, "AzureVMCloud: provision: agent computer eligible for reuse {0}", agentComputer.getName());
+
+                    final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(this.name, template.getTemplateName());
+
                     try {
                         if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                             numberOfAgents--;
-                            plannedNodes.add(new PlannedNode(
-                                    template.getTemplateName(),
+
+                            plannedNodes.add(new TrackedPlannedNode(
+                                    provisioningId,
+                                    template.getNoOfParallelJobs(),
                                     Computer.threadPoolForRemoting.submit(new Callable<Node>() {
 
                                         @Override
                                         public Node call() throws Exception {
                                             LOGGER.log(Level.INFO, "Found existing node, starting VM {0}", agentNode.
                                                     getNodeName());
+
                                             AzureVMManagementServiceDelegate.startVirtualMachine(agentNode);
                                             // set virtual machine details again
                                             Thread.sleep(30 * 1000); // wait for 30 seconds
@@ -567,9 +583,10 @@ public class AzureVMCloud extends Cloud {
                                             azureComputer.setAcceptingTasks(true);
                                             agentNode.clearCleanUpAction();
                                             agentNode.setEligibleForReuse(false);
+
                                             return agentNode;
                                         }
-                                    }), template.getNoOfParallelJobs()));
+                                    })));
                         }
                     } catch (Exception e) {
                         // Couldn't bring the node back online.  Mark it
@@ -611,14 +628,17 @@ public class AzureVMCloud extends Cloud {
 
                 for (int i = 0; i < numberOfNewAgents; i++) {
                     final int index = i;
-                    plannedNodes.add(new PlannedNode(
-                            template.getTemplateName(),
+                    final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(this.name, template.getTemplateName());
+
+                    plannedNodes.add(new TrackedPlannedNode(
+                            provisioningId,
+                            template.getNoOfParallelJobs(),
                             Computer.threadPoolForRemoting.submit(new Callable<Node>() {
 
                                 @Override
                                 public Node call() throws Exception {
 
-                                    // Wait for the future to complete 
+                                    // Wait for the future to complete
                                     AzureVMDeploymentInfo info = deploymentFuture.get();
 
                                     final String deploymentName = info.getDeploymentName();
@@ -628,6 +648,7 @@ public class AzureVMCloud extends Cloud {
                                     AzureVMAgent agent = null;
                                     try {
                                         agent = createProvisionedAgent(
+                                                provisioningId,
                                                 template,
                                                 vmName,
                                                 deploymentName);
@@ -683,7 +704,7 @@ public class AzureVMCloud extends Cloud {
                                     }
                                     return agent;
                                 }
-                            }), template.getNoOfParallelJobs()));
+                            })));
                 }
                 // wait for deployment completion ant than check for created nodes
             } catch (Exception e) {
@@ -800,7 +821,7 @@ public class AzureVMCloud extends Cloud {
 
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
-            }      
+            }
             AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
             try {
                 credentials.validate();

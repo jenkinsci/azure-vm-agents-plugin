@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,19 +32,25 @@ import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.jvnet.localizer.Localizable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class AzureVMAgent extends AbstractCloudSlave {
+public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private static final long serialVersionUID = -760014706860995557L;
+
+    private ProvisioningActivity.Id provisioningId;
 
     private final String cloudName;
 
@@ -157,6 +163,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
     }
 
     public AzureVMAgent(
+            final ProvisioningActivity.Id id,
             final String name,
             final String templateName,
             final String nodeDescription,
@@ -214,6 +221,8 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 resourceGroupName,
                 executeInitScriptAsRoot,
                 doNotUseMachineIfInitFails);
+
+        this.provisioningId = id;
     }
 
     public String getCloudName() {
@@ -405,6 +414,11 @@ public class AzureVMAgent extends AbstractCloudSlave {
     protected void _terminate(final TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
         LOGGER.log(Level.INFO, "AzureVMAgent: _terminate: called for agent {0}", getNodeName());
+
+        ProvisioningActivity activity = CloudStatistics.get().getActivityFor(this);
+        if (activity != null) {
+            activity.enterIfNotAlready(ProvisioningActivity.Phase.COMPLETED);
+        }
     }
 
     @Override
@@ -492,6 +506,12 @@ public class AzureVMAgent extends AbstractCloudSlave {
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";
+    }
+
+    @Nullable
+    @Override
+    public ProvisioningActivity.Id getId() {
+        return provisioningId;
     }
 
     @Extension

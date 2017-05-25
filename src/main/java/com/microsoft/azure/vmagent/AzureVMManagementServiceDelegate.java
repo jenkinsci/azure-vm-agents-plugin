@@ -88,6 +88,8 @@ import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 
 /**
  * Business delegate class which handles calls to Azure management service SDK.
@@ -628,10 +630,12 @@ public class AzureVMManagementServiceDelegate {
      * @throws AzureCloudException
      */
     public static AzureVMAgent parseResponse(
+            final ProvisioningActivity.Id id,
             final String vmname,
             final String deploymentName,
             final AzureVMAgentTemplate template,
             final OperatingSystemTypes osType) throws AzureCloudException {
+
         try {
 
             LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: parseDeploymentResponse: \n"
@@ -643,6 +647,7 @@ public class AzureVMManagementServiceDelegate {
             AzureVMCloud azureCloud = template.getAzureCloud();
 
             return new AzureVMAgent(
+                    id,
                     vmname,
                     template.getTemplateName(),
                     template.getTemplateDesc(),
