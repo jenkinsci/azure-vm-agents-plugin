@@ -736,7 +736,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void verifyStorageAccountNameTest() {
         try{
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
             customTokenCache.getAzureClient().storageAccounts()
                     .define(testEnv.azureStorageAccountName)
@@ -745,10 +745,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .create();
 
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
             Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(), AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);

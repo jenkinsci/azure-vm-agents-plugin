@@ -1228,6 +1228,7 @@ public class AzureVMManagementServiceDelegate {
             final String location,
             final String virtualMachineSize,
             final String storageAccountName,
+            final String storageAccountType,
             final String noOfParallelJobs,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String image,
@@ -1313,6 +1314,7 @@ public class AzureVMManagementServiceDelegate {
                     imageSku,
                     imageVersion,
                     storageAccountName,
+                    storageAccountType,
                     virtualNetworkName,
                     virtualNetworkResourceGroupName,
                     subnetName,
@@ -1340,6 +1342,7 @@ public class AzureVMManagementServiceDelegate {
             final String imageSku,
             final String imageVersion,
             final String storageAccountName,
+            final String storageAccountType,
             final String virtualNetworkName,
             final String virtualNetworkResourceGroupName,
             final String subnetName,
@@ -1376,7 +1379,7 @@ public class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyStorageAccountName(servicePrincipal, resourceGroupName, storageAccountName);
+                return verifyStorageAccountName(servicePrincipal, resourceGroupName, storageAccountName, storageAccountType);
             }
         };
         verificationTaskList.add(callVerifyStorageAccountName);
@@ -1553,16 +1556,26 @@ public class AzureVMManagementServiceDelegate {
     public static String verifyStorageAccountName(
             final ServicePrincipal servicePrincipal,
             final String resourceGroupName,
-            final String storageAccountName) {
+            final String storageAccountName,
+            final String storageAccountType) {
         boolean isAvailable = false;
         try {
             Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             //if it's not available we need to check if it's already in our resource group
             isAvailable = azureClient.storageAccounts().checkNameAvailability(storageAccountName).isAvailable();
-            if ( !isAvailable && null == azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName) ) {
+            StorageAccount checkAccount = azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName);
+            if ( !isAvailable && null == checkAccount ) {
                     return Messages.Azure_GC_Template_SA_Already_Exists();
-            } else {
+            } else if( isAvailable ){
                 return Constants.OP_SUCCESS;
+            } else {
+                /*if the storage account is already in out resource group, check whether they are the same type*/
+                if ( checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType) ) {
+                    return Constants.OP_SUCCESS;
+                } else {
+                    return Messages.Azure_GC_Template_SA_Cant_Validate() + String.format("The chosen storage type: %s doesn't match existing account type: %s",
+                            storageAccountType, checkAccount.inner().sku().name().toString());
+                }
             }
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
