@@ -443,7 +443,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         // Adjust parent VM count up by one.
         AzureVMCloud parentCloud = getCloud();
         if (parentCloud != null) {
-            parentCloud.adjustVirtualMachineCount(1);
+            parentCloud.adjustVirtualMachineCount(-1);
         }
 
         Jenkins.getInstance().removeNode(this);

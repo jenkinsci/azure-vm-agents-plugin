@@ -349,18 +349,21 @@ public class AzureVMCloud extends Cloud {
      * @param quantityDesired Number that are desired
      * @return Number that can be allocated.
      */
-    public int adjustAvailableVirtualMachines(int quantityDesired) {
+    public int getAndAdjustVirtualMachineCounts(int quantityDesired) {
         synchronized (this) {
+            LOGGER.log(Level.INFO, "Current estimated VM count: {0}, quantity desired {1}",
+                new Object[]{approximateVirtualMachineCount, quantityDesired});
             if (approximateVirtualMachineCount + quantityDesired <= getMaxVirtualMachinesLimit()) {
-                // Enough available, return the desired quantity
-                approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount - quantityDesired);
+                // Enough available, return the desired quantity, and update the number we think we
+                // have laying around.
+                approximateVirtualMachineCount += quantityDesired;
                 return quantityDesired;
             } else {
                 // Not enough available, return what we have. Remember we could
                 // go negative (if for instance another Jenkins instance had
                 // a higher limit.
                 int quantityAvailable = Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
-                approximateVirtualMachineCount = Math.max(approximateVirtualMachineCount, getMaxVirtualMachinesLimit());
+                approximateVirtualMachineCount += quantityAvailable;;
                 return quantityAvailable;
             }
         }
@@ -586,7 +589,7 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
-                int adjustedNumberOfAgents = adjustAvailableVirtualMachines(numberOfAgents);
+                int adjustedNumberOfAgents = getAndAdjustVirtualMachineCounts(numberOfAgents);
                 if (adjustedNumberOfAgents == 0) {
                     LOGGER.log(Level.INFO, "Not able to create any new nodes, at or above maximum VM count of {0}",
                             getMaxVirtualMachinesLimit());
@@ -637,7 +640,7 @@ public class AzureVMCloud extends Cloud {
                                         AzureVMManagementServiceDelegate.terminateVirtualMachine(
                                                 template.getAzureCloud().getServicePrincipal(), vmName,
                                                 template.getResourceGroupName());
-                                        template.getAzureCloud().adjustVirtualMachineCount(1);
+                                        template.getAzureCloud().adjustVirtualMachineCount(-1);
                                         // Update the template status given this new issue.
                                         template.handleTemplateProvisioningFailure(e.getMessage(), FailureStage.PROVISIONING);
                                         throw e;
@@ -672,7 +675,7 @@ public class AzureVMCloud extends Cloud {
                                         AzureVMManagementServiceDelegate.terminateVirtualMachine(
                                                 template.getAzureCloud().getServicePrincipal(), vmName,
                                                 template.getResourceGroupName());
-                                        template.getAzureCloud().adjustVirtualMachineCount(1);
+                                        template.getAzureCloud().adjustVirtualMachineCount(-1);
 
                                         // Update the template status
                                         template.handleTemplateProvisioningFailure(vmName, FailureStage.POSTPROVISIONING);
