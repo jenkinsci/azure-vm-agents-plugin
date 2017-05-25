@@ -79,6 +79,7 @@ public class IntegrationTest {
         public final String azureLocation;
         public final String azureResourceGroup;
         public final String azureStorageAccountName;
+        public final String azureStorageAccountType;
         public final String azureImagePublisher;
         public final String azureImageOffer;
         public final String azureImageSku;
@@ -103,6 +104,7 @@ public class IntegrationTest {
             azureLocation = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_LOCATION", "East US");
             azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
             azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst") + TestEnvironment.GenerateRandomString(19);
+            azureStorageAccountType = SkuName.STANDARD_LRS.toString();
             azureImagePublisher = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_PUBLISHER", "Canonical");
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "14.04.5-LTS");
@@ -266,6 +268,7 @@ public class IntegrationTest {
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
         final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'");
+        final String storageType = SkuName.STANDARD_LRS.toString();
 
         StandardUsernamePasswordCredentials vmCredentials = mock(StandardUsernamePasswordCredentials.class);
         when(vmCredentials.getUsername()).thenReturn(vmUser);
@@ -293,6 +296,7 @@ public class IntegrationTest {
         when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
+        when(templateMock.getStorageAccountType()).thenReturn(storageType);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();

@@ -19,6 +19,8 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.microsoft.azure.management.storage.SkuName;
+import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
@@ -79,6 +81,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     private final String virtualMachineSize;
 
     private String storageAccountName;
+
+    private String storageAccountType;
 
     private final int noOfParallelJobs;
 
@@ -146,6 +150,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String labels,
             final String location,
             final String virtualMachineSize,
+            final String storageAccountType,
             final String storageAccountName,
             final String noOfParallelJobs,
             final String usageMode,
@@ -178,6 +183,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.labels = labels;
         this.location = location;
         this.virtualMachineSize = virtualMachineSize;
+        this.storageAccountType = storageAccountType;
         this.storageAccountName = storageAccountName;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
@@ -247,6 +253,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return virtualMachineSize;
     }
 
+    public String getStorageAccountType() {
+        return StringUtils.isBlank(storageAccountType) ? SkuName.STANDARD_LRS.toString() : storageAccountType;
+    }
 
     public String getStorageAccountName() {
         return storageAccountName;
@@ -494,6 +503,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 location,
                 virtualMachineSize,
                 storageAccountName,
+                storageAccountType,
                 noOfParallelJobs + "",
                 (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : ( imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
                 image,
@@ -570,6 +580,22 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             return model;
         }
+
+        public ListBoxModel doFillStorageAccountTypeItems(
+                @QueryParameter final String virtualMachineSize)
+                throws IOException, ServletException {
+
+            ListBoxModel model = new ListBoxModel();
+
+            model.add(SkuName.STANDARD_LRS.toString());
+
+            /*As introduced in Azure Docs, VmSize among DS/GS/FS/LS supports premium storage*/
+            if(virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
+                model.add(SkuName.PREMIUM_LRS.toString());
+            }
+            return model;
+        }
+
 
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
@@ -698,6 +724,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String location,
                 @QueryParameter String virtualMachineSize,
                 @QueryParameter String storageAccountName,
+                @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String image,
                 @QueryParameter String osType,
@@ -803,6 +830,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     location,
                     virtualMachineSize,
                     storageAccountName,
+                    storageAccountType,
                     noOfParallelJobs,
                     referenceType,
                     image,

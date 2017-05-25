@@ -394,7 +394,7 @@ public class AzureVMCloud extends Cloud {
      */
     public AzureVMAgentTemplate getAzureAgentTemplate(final Label label) {
         LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: Retrieving agent template with label {0}", label);
-        // Lock the templates list rather than using getVMTemplates to avoid unecessary copies.
+        // Lock the templates list rather than using getVMTemplates to avoid unnecessary copies.
         synchronized (this) {
             for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
                 LOGGER.log(Level.FINE, "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}", agentTemplate.getTemplateName());

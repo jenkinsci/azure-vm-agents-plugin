@@ -72,7 +72,7 @@ public class Constants {
     public static final String OS_TYPE_WINDOWS = "Windows";
 
     public static final String OS_TYPE_LINUX = "Linux";
-    
+
     /** Usage types for template names **/
     public static final String USAGE_TYPE_DEPLOYMENT = "Deployment";
     

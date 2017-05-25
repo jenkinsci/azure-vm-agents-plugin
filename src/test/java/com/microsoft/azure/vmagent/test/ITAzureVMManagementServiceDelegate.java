@@ -22,6 +22,7 @@ import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkInterface;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIpAddress;
+import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.AzureVMAgent;
@@ -43,6 +44,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.mockito.Mockito.*;
@@ -71,6 +74,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
         when(templateMock.getInitScript()).thenReturn(writtenData);
+        when(templateMock.getStorageAccountType()).thenReturn(SkuName.STANDARD_LRS.toString());
 
         try {
             AzureVMManagementServiceDelegate.uploadCustomScript(templateMock, uploadFileName, customTokenCache);
@@ -81,8 +85,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     Constants.CONFIG_CONTAINER_NAME,
                     uploadFileName
                     );
-
-            Assert.assertEquals(writtenData, downloadedData);
+            /*Data padded before upload to Page Blob so we need to use strip*/
+            Assert.assertEquals(StringUtils.strip(writtenData), StringUtils.strip(downloadedData));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -732,19 +736,20 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void verifyStorageAccountNameTest() {
         try{
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
             customTokenCache.getAzureClient().storageAccounts()
                     .define(testEnv.azureStorageAccountName)
                     .withRegion(testEnv.azureLocation)
                     .withNewResourceGroup(testEnv.azureResourceGroup)
+                    .withSku(SkuName.fromString(testEnv.azureStorageAccountType))
                     .create();
 
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
             Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(), AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName));
+                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
