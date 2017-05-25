@@ -344,21 +344,24 @@ public class AzureVMCloud extends Cloud {
 
     /**
      * Given the number of VMs that are desired, returns the number of VMs that
-     * can be allocated.
+     * can be allocated and adjusts the number of VMs we believe exist
      *
      * @param quantityDesired Number that are desired
-     * @return Number that can be allocated
+     * @return Number that can be allocated.
      */
-    public int getAvailableVirtualMachineCount(int quantityDesired) {
+    public int adjustAvailableVirtualMachines(int quantityDesired) {
         synchronized (this) {
             if (approximateVirtualMachineCount + quantityDesired <= getMaxVirtualMachinesLimit()) {
                 // Enough available, return the desired quantity
+                approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount - quantityDesired);
                 return quantityDesired;
             } else {
                 // Not enough available, return what we have. Remember we could
                 // go negative (if for instance another Jenkins instance had
                 // a higher limit.
-                return Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
+                int quantityAvailable = Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
+                approximateVirtualMachineCount = Math.max(approximateVirtualMachineCount, getMaxVirtualMachinesLimit());
+                return quantityAvailable;
             }
         }
     }
@@ -471,52 +474,49 @@ public class AzureVMCloud extends Cloud {
                 .withUserAgent(TokenCache.getUserAgent())
                 .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
                 .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
-            PagedList<Deployment> deployments= azureClient.deployments().listByGroup(resourceGroupName);
-            for (Deployment dep : deployments) {
-                PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
-                for (DeploymentOperation op : ops) {
-                    if (op.targetResource() == null) {
-                        continue;
-                    }
-                    final String resource = op.targetResource().resourceName();
-                    final String type = op.targetResource().resourceType();
-                    final String state = op.provisioningState();
-                    if (op.targetResource().resourceType().contains("virtualMachine")) {
-                        if(resource.equalsIgnoreCase(vmName)) {
+            Deployment dep = azureClient.deployments().getByName(deploymentName);
+            PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
+            for (DeploymentOperation op : ops) {
+                if (op.targetResource() == null) {
+                    continue;
+                }
+                final String resource = op.targetResource().resourceName();
+                final String type = op.targetResource().resourceType();
+                final String state = op.provisioningState();
+                if (op.targetResource().resourceType().contains("virtualMachine")) {
+                    if(resource.equalsIgnoreCase(vmName)) {
 
-                            if (!state.equalsIgnoreCase("creating")
-                                && !state.equalsIgnoreCase("succeeded")
-                                && !state.equalsIgnoreCase("running")){
-                                final String statusCode = op.statusCode();
-                                final Object statusMessage = op.statusMessage();
-                                String finalStatusMessage = statusCode;
-                                if (statusMessage != null) {
-                                    finalStatusMessage += " - " + statusMessage.toString();
-                                }
-                                throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
+                        if (!state.equalsIgnoreCase("creating")
+                            && !state.equalsIgnoreCase("succeeded")
+                            && !state.equalsIgnoreCase("running")){
+                            final String statusCode = op.statusCode();
+                            final Object statusMessage = op.statusMessage();
+                            String finalStatusMessage = statusCode;
+                            if (statusMessage != null) {
+                                finalStatusMessage += " - " + statusMessage.toString();
                             }
-                            else if (state.equalsIgnoreCase("succeeded")) {
-                                LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
+                            throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
+                        }
+                        else if (state.equalsIgnoreCase("succeeded")) {
+                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
 
-                                final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
-                                final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
-                                
-                                AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(vmName, deploymentName, template, osType);
-                                AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
-                                return newAgent;
-                            } else {
-                                LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
-                                    new Object[]{deploymentName, state, type, resource,
-                                        (maxTries - triesLeft) * sleepTimeInSeconds});
-                            }
+                            final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
+                            final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
+
+                            AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(vmName, deploymentName, template, osType);
+                            AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
+                            return newAgent;
+                        } else {
+                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
+                                new Object[]{deploymentName, state, type, resource,
+                                    (maxTries - triesLeft) * sleepTimeInSeconds});
                         }
                     }
                 }
-                
             }
         } while (triesLeft > 0);
 
-        throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)", deploymentName, sleepTimeInSeconds));
+        throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)", deploymentName, timeoutInSeconds));
     }
 
     @Override
@@ -586,7 +586,7 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
-                int adjustedNumberOfAgents = getAvailableVirtualMachineCount(numberOfAgents);
+                int adjustedNumberOfAgents = adjustAvailableVirtualMachines(numberOfAgents);
                 if (adjustedNumberOfAgents == 0) {
                     LOGGER.log(Level.INFO, "Not able to create any new nodes, at or above maximum VM count of {0}",
                             getMaxVirtualMachinesLimit());
@@ -596,10 +596,6 @@ public class AzureVMCloud extends Cloud {
                             new Object[]{adjustedNumberOfAgents, numberOfAgents});
                 }
                 final int numberOfNewAgents = adjustedNumberOfAgents;
-
-                // Adjust number of nodes available by the number of created nodes.
-                // Negative to reduce number available.
-                this.adjustVirtualMachineCount(-adjustedNumberOfAgents);
 
                 Callable<AzureVMDeploymentInfo> callableTask = new Callable<AzureVMDeploymentInfo>() {
                     @Override
@@ -650,18 +646,22 @@ public class AzureVMCloud extends Cloud {
                                     try {
                                         LOGGER.log(Level.INFO, "Azure Cloud: provision: Adding agent {0} to Jenkins nodes", agent.getNodeName());
                                         // Place the node in blocked state while it starts.
-                                        agent.blockCleanUpAction();
-                                        Jenkins.getInstance().addNode(agent);
-                                        Computer computer = agent.toComputer();
-                                        if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH") && computer != null) {
-                                            computer.connect(false).get();
-                                        } else if (agent.getAgentLaunchMethod().equalsIgnoreCase("JNLP")) {
-                                            // Wait until node is online
-                                            waitUntilJNLPNodeIsOnline(agent);
+                                        try {
+                                            agent.blockCleanUpAction();
+                                            Jenkins.getInstance().addNode(agent);
+                                            Computer computer = agent.toComputer();
+                                            if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH") && computer != null) {
+                                                computer.connect(false).get();
+                                            } else if (agent.getAgentLaunchMethod().equalsIgnoreCase("JNLP")) {
+                                                // Wait until node is online
+                                                waitUntilJNLPNodeIsOnline(agent);
+                                            }
                                         }
-                                        // Place node in default state, now can be
-                                        // dealt with by the cleanup task.
-                                        agent.clearCleanUpAction();
+                                        finally {
+                                            // Place node in default state, now can be
+                                            // dealt with by the cleanup task.
+                                            agent.clearCleanUpAction();
+                                        }
                                     } catch (Exception e) {
                                         LOGGER.log(
                                                 Level.SEVERE,
