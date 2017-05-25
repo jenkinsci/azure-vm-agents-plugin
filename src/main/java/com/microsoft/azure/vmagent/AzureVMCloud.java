@@ -62,6 +62,8 @@ import org.kohsuke.stapler.AncestorInPath;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 
+import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
+
 public class AzureVMCloud extends Cloud {
 
     public static final Logger LOGGER = Logger.getLogger(AzureVMCloud.class.getName());
@@ -139,7 +141,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Register the initial verification if required
+     * Register the initial verification if required.
      */
     private void registerVerificationIfNeeded() {
         if (this.isConfigurationValid()) {
@@ -158,7 +160,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     private Object readResolve() {
-        synchronized(this) {
+        synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
                 vmTemplates = instTemplates;
@@ -230,10 +232,10 @@ public class AzureVMCloud extends Cloud {
         return credentialsId;
     }
 
-    public AzureCredentials.ServicePrincipal getServicePrincipal()
-    {
-        if(credentials == null && credentialsId != null)
+    public AzureCredentials.ServicePrincipal getServicePrincipal() {
+        if (credentials == null && credentialsId != null) {
             return AzureCredentials.getServicePrincipal(credentialsId);
+        }
         return credentials;
     }
 
@@ -259,7 +261,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Adds a new VM template to the store
+     * Adds a new VM template to the store.
      */
     public final void addVmTemplate(AzureVMAgentTemplate newTemplate) {
         // Obtain lock while we copy the list.
@@ -274,6 +276,7 @@ public class AzureVMCloud extends Cloud {
      * Sets the template list to a new template list.  The list is cleared and
      * the elements are iteratively added (to avoid leakage of the
      * internal template list)
+     *
      * @param newTemplates Template set to use
      */
     public final void setVmTemplates(List<AzureVMAgentTemplate> newTemplates) {
@@ -290,6 +293,7 @@ public class AzureVMCloud extends Cloud {
     /**
      * Removes a template from the template store by name.
      * Removes all templates with the template name.
+     *
      * @param templateName Template name to remove
      */
     public final void removeVmTemplate(String templateName) {
@@ -310,6 +314,7 @@ public class AzureVMCloud extends Cloud {
 
     /**
      * Returns the current set of templates. Required for config.jelly
+     *
      * @return List of available template
      */
     public List<AzureVMAgentTemplate> getVmTemplates() {
@@ -332,7 +337,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Set the configuration verification status
+     * Set the configuration verification status.
      *
      * @param isValid True for verified + valid, false otherwise.
      */
@@ -341,7 +346,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Retrieves the current approximate virtual machine count
+     * Retrieves the current approximate virtual machine count.
      *
      * @return
      */
@@ -373,7 +378,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Adjust the number of currently allocated VMs
+     * Adjust the number of currently allocated VMs.
      *
      * @param delta Number to adjust by.
      */
@@ -446,10 +451,10 @@ public class AzureVMCloud extends Cloud {
 
     /**
      * Once a new deployment is created, construct a new AzureVMAgent object
-     * given information about the template
+     * given information about the template.
      *
-     * @param template Template used to create the new agent
-     * @param vmName Name of the created VM
+     * @param template       Template used to create the new agent
+     * @param vmName         Name of the created VM
      * @param deploymentName Name of the deployment containing the VM
      * @return New agent. Throws otherwise.
      * @throws Exception
@@ -469,7 +474,7 @@ public class AzureVMCloud extends Cloud {
         do {
             triesLeft--;
             try {
-                Thread.sleep(sleepTimeInSeconds * 1000);
+                Thread.sleep(sleepTimeInSeconds * MILLIS_IN_SECOND);
             } catch (InterruptedException ex) {
                 // ignore
             }
@@ -477,11 +482,11 @@ public class AzureVMCloud extends Cloud {
             // Create a new RM client each time because the config may expire while
             // in this long running operation
             final Azure azureClient = Azure.configure()
-                .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-                .withUserAgent(TokenCache.getUserAgent())
-                .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
-                .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
-            PagedList<Deployment> deployments= azureClient.deployments().listByGroup(resourceGroupName);
+                    .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                    .withUserAgent(TokenCache.getUserAgent())
+                    .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
+                    .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+            PagedList<Deployment> deployments = azureClient.deployments().listByGroup(resourceGroupName);
             for (Deployment dep : deployments) {
                 PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
                 for (DeploymentOperation op : ops) {
@@ -492,11 +497,11 @@ public class AzureVMCloud extends Cloud {
                     final String type = op.targetResource().resourceType();
                     final String state = op.provisioningState();
                     if (op.targetResource().resourceType().contains("virtualMachine")) {
-                        if(resource.equalsIgnoreCase(vmName)) {
+                        if (resource.equalsIgnoreCase(vmName)) {
 
                             if (!state.equalsIgnoreCase("creating")
-                                && !state.equalsIgnoreCase("succeeded")
-                                && !state.equalsIgnoreCase("running")){
+                                    && !state.equalsIgnoreCase("succeeded")
+                                    && !state.equalsIgnoreCase("running")) {
                                 final String statusCode = op.statusCode();
                                 final Object statusMessage = op.statusMessage();
                                 String finalStatusMessage = statusCode;
@@ -504,8 +509,7 @@ public class AzureVMCloud extends Cloud {
                                     finalStatusMessage += " - " + statusMessage.toString();
                                 }
                                 throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
-                            }
-                            else if (state.equalsIgnoreCase("succeeded")) {
+                            } else if (state.equalsIgnoreCase("succeeded")) {
                                 LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
 
                                 final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
@@ -516,8 +520,8 @@ public class AzureVMCloud extends Cloud {
                                 return newAgent;
                             } else {
                                 LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
-                                    new Object[]{deploymentName, state, type, resource,
-                                        (maxTries - triesLeft) * sleepTimeInSeconds});
+                                        new Object[]{deploymentName, state, type, resource,
+                                                (maxTries - triesLeft) * sleepTimeInSeconds});
                             }
                         }
                     }
@@ -570,8 +574,9 @@ public class AzureVMCloud extends Cloud {
                                                     getNodeName());
 
                                             AzureVMManagementServiceDelegate.startVirtualMachine(agentNode);
+                                            final int waitTimeInMillis = 30 * 1000; // wait for 30 seconds
                                             // set virtual machine details again
-                                            Thread.sleep(30 * 1000); // wait for 30 seconds
+                                            Thread.sleep(waitTimeInMillis);
                                             AzureVMManagementServiceDelegate.setVirtualMachineDetails(
                                                     agentNode, template);
                                             Jenkins.getInstance().addNode(agentNode);
@@ -725,8 +730,7 @@ public class AzureVMCloud extends Cloud {
      * Jenkins.
      *
      * @param agent Node to wait for
-     * @throws Exception Throws if the wait time expires or other exception
-     * happens.
+     * @throws Exception Throws if the wait time expires or other exception happens.
      */
     private void waitUntilJNLPNodeIsOnline(final AzureVMAgent agent) throws Exception {
         LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: for agent {0}", agent.getDisplayName());
@@ -736,8 +740,9 @@ public class AzureVMCloud extends Cloud {
             public String call() {
                 try {
                     Computer computer = agent.toComputer();
-                    if (computer != null)
+                    if (computer != null) {
                         computer.waitUntilOnline();
+                    }
                 } catch (InterruptedException e) {
                     // just ignore
                 }
@@ -748,7 +753,8 @@ public class AzureVMCloud extends Cloud {
 
         try {
             // 30 minutes is decent time for the node to be alive
-            String result = future.get(30, TimeUnit.MINUTES);
+            final int timeoutInMinutes = 30;
+            String result = future.get(timeoutInMinutes, TimeUnit.MINUTES);
             LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node is alive , result {0}", result);
         } catch (Exception ex) {
             throw new AzureCloudException("Azure Cloud: waitUntilOnline: Failure waiting till online", ex);

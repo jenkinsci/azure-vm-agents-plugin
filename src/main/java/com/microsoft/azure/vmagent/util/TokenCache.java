@@ -19,8 +19,10 @@ import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureCredentials;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -28,21 +30,21 @@ public class TokenCache {
 
     private static final Logger LOGGER = Logger.getLogger(TokenCache.class.getName());
 
-    private static final Object tsafe = new Object();
+    private static final Object TSAFE = new Object();
 
     private static TokenCache cache = null;
-    
+
     protected final AzureCredentials.ServicePrincipal credentials;
 
     public static TokenCache getInstance(final AzureCredentials.ServicePrincipal servicePrincipal) {
-        synchronized (tsafe) {
+        synchronized (TSAFE) {
             if (cache == null) {
                 cache = new TokenCache(servicePrincipal);
             } else if (cache.credentials == null
                     || !StringUtils.isEmpty(cache.credentials.getSubscriptionId()) || !cache.credentials.getSubscriptionId().equals(servicePrincipal.getSubscriptionId())
                     || !StringUtils.isEmpty(cache.credentials.getClientId()) || !cache.credentials.getClientId().equals(servicePrincipal.getClientId())
                     || !StringUtils.isEmpty(cache.credentials.getClientSecret()) || !cache.credentials.getClientSecret().equals(servicePrincipal.getClientSecret())
-                    || !StringUtils.isEmpty(cache.credentials.getTenant())|| !cache.credentials.getTenant().equals(servicePrincipal.getTenant())
+                    || !StringUtils.isEmpty(cache.credentials.getTenant()) || !cache.credentials.getTenant().equals(servicePrincipal.getTenant())
                     || !StringUtils.isEmpty(cache.credentials.getServiceManagementURL()) || !cache.credentials.getServiceManagementURL().equals(servicePrincipal.getServiceManagementURL())) {
                 cache = new TokenCache(servicePrincipal);
             }
@@ -65,10 +67,10 @@ public class TokenCache {
         } catch (Exception e) {
         }
 
-        if(version == null) {
+        if (version == null) {
             version = "local";
         }
-        if(instanceId == null) {
+        if (instanceId == null) {
             instanceId = "local";
         }
 
@@ -91,10 +93,10 @@ public class TokenCache {
 
     public Azure getAzureClient() {
         return Azure
-            .configure()
-            .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-            .withUserAgent(getUserAgent())
-            .authenticate(get(credentials))
-            .withSubscription(credentials.getSubscriptionId());
+                .configure()
+                .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                .withUserAgent(getUserAgent())
+                .authenticate(get(credentials))
+                .withSubscription(credentials.getSubscriptionId());
     }
 }

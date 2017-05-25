@@ -19,6 +19,7 @@ package com.microsoft.azure.vmagent.util;
 /**
  * Represents the action that should be taken by the Azure VM Agent Cleanup Task
  * if the machine is to be cleaned up if it is in an offline state.
+ *
  * @author mmitche
  */
 public enum CleanUpAction {

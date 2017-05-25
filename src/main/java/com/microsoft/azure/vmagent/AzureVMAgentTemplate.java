@@ -20,7 +20,6 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.management.storage.SkuName;
-import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
@@ -54,10 +53,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class defines the configuration of Azure instance templates
+ * This class defines the configuration of Azure instance templates.
  *
  * @author Suresh Nallamilli
- *
  */
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
@@ -68,6 +66,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
+
+    private static final int GEN_STORAGE_ACCOUNT_UID_LENGTH = 22;
 
     // General Configuration
     private final String templateName;
@@ -188,7 +188,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
-                        trim().equals("0")) {
+                trim().equals("0")) {
             this.noOfParallelJobs = 1;
         } else {
             this.noOfParallelJobs = Integer.parseInt(noOfParallelJobs);
@@ -230,7 +230,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public String isType(final String type) {
-        if(this.imageReferenceType == null && type.equals("reference")) {
+        if (this.imageReferenceType == null && type.equals("reference")) {
             return "true";
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType) ? "true" : "false";
@@ -275,7 +275,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public void setUsageMode(final String mode) {
         Node.Mode val = Node.Mode.NORMAL;
-        for(Node.Mode m : hudson.Functions.getNodeModes()) {
+        for (Node.Mode m : hudson.Functions.getNodeModes()) {
             if (mode.equalsIgnoreCase(m.getDescription())) {
                 val = m;
                 break;
@@ -416,7 +416,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     /**
-     * Set the template verification status
+     * Set the template verification status.
      *
      * @param isValid True for verified + valid, false otherwise.
      */
@@ -478,7 +478,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * If provisioning failed, handle the status and queue the template for
      * verification.
      *
-     * @param message Failure message
+     * @param message     Failure message
      * @param failureStep Stage that failure occurred
      */
     public void handleTemplateProvisioningFailure(final String message, final FailureStage failureStep) {
@@ -505,7 +505,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 storageAccountName,
                 storageAccountType,
                 noOfParallelJobs + "",
-                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : ( imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
+                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
                 image,
                 osType,
                 imagePublisher,
@@ -590,7 +590,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             model.add(SkuName.STANDARD_LRS.toString());
 
             /*As introduced in Azure Docs, VmSize among DS/GS/FS/LS supports premium storage*/
-            if(virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
+            if (virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
                 model.add(SkuName.PREMIUM_LRS.toString());
             }
             return model;
@@ -599,7 +599,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            for(Node.Mode m : hudson.Functions.getNodeModes()) {
+            for (Node.Mode m : hudson.Functions.getNodeModes()) {
                 model.add(m.getDescription());
             }
             return model;
@@ -640,9 +640,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
          * Check the template's name. Name must conform to restrictions on VM
          * naming
          *
-         * @param value Current name
+         * @param value            Current name
          * @param templateDisabled Is the template disabled
-         * @param osType OS type
+         * @param osType           OS type
          * @return
          */
         public FormValidation doCheckTemplateName(
@@ -754,8 +754,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
-            if(storageAccountName.trim().isEmpty())
+            if (storageAccountName.trim().isEmpty()) {
                 storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(resourceGroupName, servicePrincipal);
+            }
 
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t"
@@ -878,15 +879,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public static String generateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId()))
+            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId())) {
                 md.update(servicePrincipal.getSubscriptionId().getBytes("UTF-8"));
-            if (null != resourceGroupName)
+            }
+            if (null != resourceGroupName) {
                 md.update(resourceGroupName.getBytes("UTF-8"));
+            }
 
             String uid = DatatypeConverter.printBase64Binary(md.digest());
-            uid = uid.substring(0, 22);
+            uid = uid.substring(0, GEN_STORAGE_ACCOUNT_UID_LENGTH);
             uid = uid.toLowerCase();
-            uid = uid.replaceAll("[^a-z0-9]","a");
+            uid = uid.replaceAll("[^a-z0-9]", "a");
             return "jn" + uid;
         } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             LOGGER.log(Level.WARNING, "Could not genetare UID from the resource group name. Will fallback on using the resource group name.", e);
