@@ -17,6 +17,7 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.microsoft.azure.management.storage.*;
 import com.microsoft.azure.storage.blob.CloudPageBlob;
 import hudson.model.Descriptor.FormException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,12 +58,9 @@ import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIpAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
-import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.resources.Provider;
 import com.microsoft.azure.management.resources.ProviderResourceType;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import com.microsoft.azure.management.storage.StorageAccount;
-import com.microsoft.azure.management.storage.StorageAccountKey;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.storage.AccessCondition;
@@ -1561,21 +1559,27 @@ public class AzureVMManagementServiceDelegate {
         boolean isAvailable = false;
         try {
             Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-            //if it's not available we need to check if it's already in our resource group
-            isAvailable = azureClient.storageAccounts().checkNameAvailability(storageAccountName).isAvailable();
-            StorageAccount checkAccount = azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName);
-            if ( !isAvailable && null == checkAccount ) {
+
+            CheckNameAvailabilityResult checkResult = azureClient.storageAccounts().checkNameAvailability(storageAccountName);
+            isAvailable = checkResult.isAvailable();
+            if( !isAvailable && checkResult.reason().equals(Reason.ACCOUNT_NAME_INVALID)) {
+                return Messages.Azure_GC_Template_SA_Cant_Validate();
+            } else if ( !isAvailable ) {
+                /*if it's not available we need to check if it's already in our resource group*/
+                StorageAccount checkAccount = azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName);
+                if ( null == checkAccount ) {
                     return Messages.Azure_GC_Template_SA_Already_Exists();
-            } else if( isAvailable ){
-                return Constants.OP_SUCCESS;
-            } else {
-                /*if the storage account is already in out resource group, check whether they are the same type*/
-                if ( checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType) ) {
-                    return Constants.OP_SUCCESS;
                 } else {
-                    return Messages.Azure_GC_Template_SA_Cant_Validate() + String.format("The chosen storage type: %s doesn't match existing account type: %s",
-                            storageAccountType, checkAccount.inner().sku().name().toString());
+                    /*if the storage account is already in out resource group, check whether they are the same type*/
+                    if ( checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType) ) {
+                        return Constants.OP_SUCCESS;
+                    } else {
+                        return Messages.Azure_GC_Template_SA_Cant_Validate() + String.format("The chosen storage type: %s doesn't match existing account type: %s",
+                                storageAccountType, checkAccount.inner().sku().name().toString());
+                    }
                 }
+            } else {
+                return Constants.OP_SUCCESS;
             }
         } catch (Exception e) {
             LOGGER.log(Level.INFO, e.getMessage());
