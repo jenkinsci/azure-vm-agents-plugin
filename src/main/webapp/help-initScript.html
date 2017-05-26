@@ -1,37 +1,52 @@
 <div>
-<b>At a minimum, the init script needs to install a Java runtime</b>.</br>
-
-Custom prepared images are recommended if the initialization script is taking more than 20 minutes to execute.<br></br>
-
-Below are examples of initialization scripts: </br></br>
-1)	<b>Ubuntu</b></br>
-    <pre><code>
-        # Install Java
-        sudo apt-get -y update
-        sudo apt-get install -y openjdk-7-jdk
-        sudo apt-get -y update --fix-missing
-        sudo apt-get install -y openjdk-7-jdk
-    </code></pre>
-2)	<b>Windows w/JNLP</b></br>
-    For Windows agents with JNLP launch, this script is a powershell script.</br>
-    You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1">sample</a><br />
-    Automatically passed to this script is:<br/>
-        First argument - Jenkins server URL<br/>
-        Second argument - VMName<br/>
-        Third argument - JNLP secret, required if the server has security enabled.<br/>
-    You need to install Java, download the slave jar file from: '[server url]jnlpJars/slave.jar'.<br/>
-    <pre><code>
-        # Download and Install Java
-        $source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"
-        $destination = "C:\jdk-8u131-windows-x64.exe"
-        $client = new-object System.Net.WebClient
-        $cookie = "oraclelicense=accept-securebackup-cookie"
-        $client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
-        $client.downloadFile($source, $destination)
-        $proc = Start-Process -FilePath $destination -ArgumentList "/s"m -Wait -PassThru
-        $proc.WaitForExit()
-        [System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
-        [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")</code></pre><br/>
-    The server url should already have a trailing slash.  Then execute the following to connect:<br/>
-    java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp<br/>
+  <p><b>At a minimum, the init script needs to install a Java runtime.</b></p>
+  <p>Custom prepared images are recommended if the initialization script is taking more than 20 minutes to execute.</p>
+  <p>
+    Below are examples of initialization scripts:
+    <ol>
+      <li>
+        <b>Ubuntu</b>
+        <p>
+          <pre><code># Install Java
+sudo apt-get -y update
+sudo apt-get install -y openjdk-7-jdk
+# Install Git
+sudo apt-get install -y git</code></pre>
+        </p>
+      </li>
+      <li>
+        <b>Windows w/JNLP</b>
+        <p>
+          For Windows agents with JNLP launch, this script is a powershell script.
+          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1">sample</a>.<br>
+        </p>
+        <p>
+          Arguments automatically passed to this script are:
+          <ul>
+            <li>First argument - Jenkins server URL</li>
+            <li>Second argument - VMName</li>
+            <li>Third argument - JNLP secret, required if the server has security enabled.</li>
+          </ul>
+        </p>
+        <p>
+          You need to install Java, download the slave jar file from: '<code>[server url]jnlpJars/slave.jar</code>'.
+          <pre><code># Download and Install Java
+$source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"
+$destination = "C:\jdk-8u131-windows-x64.exe"
+$client = new-object System.Net.WebClient
+$cookie = "oraclelicense=accept-securebackup-cookie"
+$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
+$client.downloadFile($source, $destination)
+$proc = Start-Process -FilePath $destination -ArgumentList "/s"m -Wait -PassThru
+$proc.WaitForExit()
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
+[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")</code></pre>
+        </p>
+        <p>
+          The server url should already have a trailing slash.  Then execute the following to connect:
+          <pre><code>java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp</code></pre>
+        </p>
+      </li>
+    </ol>
+  </o>
 </div>
