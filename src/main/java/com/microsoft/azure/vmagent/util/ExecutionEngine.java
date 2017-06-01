@@ -16,6 +16,7 @@
 package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMCloud;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;

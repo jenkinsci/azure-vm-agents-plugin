@@ -18,18 +18,23 @@ package com.microsoft.azure.vmagent.retry;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 
+import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
+
 /**
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class DefaultRetryStrategy implements RetryStrategy {
+    private static final int DEFAULT_MAX_RETRIES = 3;
+    private static final int DEFAULT_WAIT_INTERVAL_IN_SECONDS = 2;
+    private static final int DEFAULT_TIMEOUT_IN_SECONDS = 4 * 60; // 4 minutes
 
     protected int currentRetryCount = 0;
 
-    protected int maxRetries = 3;
+    protected int maxRetries = DEFAULT_MAX_RETRIES;
 
-    protected int waitInterval = 2; // 2 seconds
+    protected int waitInterval = DEFAULT_WAIT_INTERVAL_IN_SECONDS;
 
-    protected int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
+    protected int defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
 
     public DefaultRetryStrategy() {
     }
@@ -44,10 +49,8 @@ public class DefaultRetryStrategy implements RetryStrategy {
     public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
         if (currentRetryCount >= maxRetries) {
             throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);
-        } else if (AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage())) {
-            return true;
         } else {
-            return false;
+            return AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage());
         }
     }
 
@@ -57,7 +60,7 @@ public class DefaultRetryStrategy implements RetryStrategy {
 
         if (canRetry(currentRetryCount, e)) {
             try {
-                Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * 1000);
+                Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * MILLIS_IN_SECOND);
             } catch (InterruptedException e1) {
             }
         }
@@ -76,9 +79,9 @@ public class DefaultRetryStrategy implements RetryStrategy {
     @Override
     public void reset() {
         currentRetryCount = 0;
-        maxRetries = 3;
-        waitInterval = 2;
-        defaultTimeoutInSeconds = 4 * 60;
+        maxRetries = DEFAULT_MAX_RETRIES;
+        waitInterval = DEFAULT_WAIT_INTERVAL_IN_SECONDS;
+        defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
     }
 
 }

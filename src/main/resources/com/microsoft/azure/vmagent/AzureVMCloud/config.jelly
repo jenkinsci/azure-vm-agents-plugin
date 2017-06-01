@@ -2,28 +2,28 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
-  <f:section title="${%Azure_Profile_Configuration}">
-    <f:entry title="${%Azure_Credentials}" field="azureCredentialsId" help="/plugin/azure-vm-agents/help-azureCredentials.html">
-      <c:select expressionAllowed="false"/>
-    </f:entry>
-    <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit" help="/plugin/azure-vm-agents/help-maxVirtualMachinesLimit.html">
-      <f:textbox default="${descriptor.getDefaultMaxVMLimit()}" />
-    </f:entry>
+    <f:section title="${%Azure_Profile_Configuration}">
+        <f:entry title="${%Azure_Credentials}" field="azureCredentialsId" help="/plugin/azure-vm-agents/help-azureCredentials.html">
+            <c:select expressionAllowed="false"/>
+        </f:entry>
+        <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit" help="/plugin/azure-vm-agents/help-maxVirtualMachinesLimit.html">
+            <f:textbox default="${descriptor.getDefaultMaxVMLimit()}"/>
+        </f:entry>
 
-    <f:entry title="${%Deployment_Timeout}" field="deploymentTimeout" help="/plugin/azure-vm-agents/help-deploymentTimeout.html">
-      <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}" />
-    </f:entry>
+        <f:entry title="${%Deployment_Timeout}" field="deploymentTimeout" help="/plugin/azure-vm-agents/help-deploymentTimeout.html">
+            <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}"/>
+        </f:entry>
 
-    <f:entry title="${%Resource_Group_Name}" field="resourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
-      <f:textbox default="${descriptor.getDefaultResourceGroupName()}" />
-    </f:entry>
-    <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
-          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupName" />
-  </f:section>
+        <f:entry title="${%Resource_Group_Name}" field="resourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
+            <f:textbox default="${descriptor.getDefaultResourceGroupName()}"/>
+        </f:entry>
+        <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
+                          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupName"/>
+    </f:section>
 
-  <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">
-    <f:repeatable field="vmTemplates">
-      <st:include page="config.jelly" class="${descriptor.clazz}" />
-    </f:repeatable>
-  </f:entry>
+    <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">
+        <f:repeatable field="vmTemplates">
+            <st:include page="config.jelly" class="${descriptor.clazz}"/>
+        </f:repeatable>
+    </f:entry>
 </j:jelly>
