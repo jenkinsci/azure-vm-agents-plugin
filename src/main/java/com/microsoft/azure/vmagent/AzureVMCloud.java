@@ -24,6 +24,7 @@ import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
+import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
@@ -74,7 +75,13 @@ public class AzureVMCloud extends Cloud {
 
     private final int maxVirtualMachinesLimit;
 
+    private final String resourceGroupReferenceType;
+
     private final String resourceGroupName;
+
+    private final String resourceGroupNameByCreating;
+
+    private final String resourceGroupNameByChoosing;
 
     // Current set of VM templates.
     // This list should not be accessed without copying it
@@ -101,9 +108,12 @@ public class AzureVMCloud extends Cloud {
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
-            final String resourceGroupName,
+            final String resourceGroupReferenceType,
+            final String resourceGroupNameByCreating,
+            final String resourceGroupNameByChoosing,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit, deploymentTimeout, resourceGroupName, vmTemplates);
+        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit,
+                deploymentTimeout, resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing, vmTemplates);
     }
 
     public AzureVMCloud(
@@ -111,12 +121,17 @@ public class AzureVMCloud extends Cloud {
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
-            final String resourceGroupName,
+            final String resourceGroupReferenceType,
+            final String resourceGroupNameByCreating,
+            final String resourceGroupNameByChoosing,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), resourceGroupName));
+        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing)));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
-        this.resourceGroupName = resourceGroupName;
+        this.resourceGroupReferenceType = resourceGroupReferenceType;
+        this.resourceGroupNameByChoosing = resourceGroupNameByChoosing;
+        this.resourceGroupNameByCreating = resourceGroupNameByCreating;
+        this.resourceGroupName = getResourceGroupName(resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -157,6 +172,13 @@ public class AzureVMCloud extends Cloud {
         if (AzureVMCloudVerificationTask.get() != null) {
             AzureVMCloudVerificationTask.get().doRun();
         }
+    }
+
+    private static String getResourceGroupName(final String type, final String filledName, final String choseName) {
+        if (StringUtils.isBlank(type) || type.equalsIgnoreCase("new")) {
+            return filledName;
+        }
+        return choseName;
     }
 
     private Object readResolve() {
@@ -216,12 +238,31 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
+    public String isCreateNewResourceGroup(final String type) {
+        if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
+            return "true";
+        }
+        return type != null && type.equalsIgnoreCase(this.resourceGroupReferenceType) ? "true" : "false";
+    }
+
     public int getMaxVirtualMachinesLimit() {
         return maxVirtualMachinesLimit;
     }
 
     public String getResourceGroupName() {
         return resourceGroupName;
+    }
+
+    public String getResourceGroupNameByCreating() {
+        return resourceGroupNameByCreating;
+    }
+
+    public String getResourceGroupNameByChoosing() {
+        return resourceGroupNameByChoosing;
+    }
+
+    public String getResourceGroupReferenceType() {
+        return resourceGroupReferenceType;
     }
 
     public int getDeploymentTimeout() {
@@ -843,6 +884,19 @@ public class AzureVMCloud extends Cloud {
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
             return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
+        }
+
+        public ListBoxModel doFillResourceGroupNameByChoosingItems(@QueryParameter final String azureCredentialsId) {
+            ListBoxModel model = new ListBoxModel();
+            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+
+            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+
+            for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
+                model.add(resourceGroup.name());
+            }
+
+            return model;
         }
     }
 }
