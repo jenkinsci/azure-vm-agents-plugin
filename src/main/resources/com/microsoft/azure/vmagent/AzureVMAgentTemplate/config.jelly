@@ -36,9 +36,18 @@
                 <f:select/>
             </f:entry>
 
-            <f:entry title="${%Storage_Account_Name}" field="storageAccountName"
-                     help="/plugin/azure-vm-agents/help-storageAccountName.html">
-                <f:textbox/>
+            <f:entry title="${%Storage_Account_Name}">
+                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="Create new" checked="${instance == null || instance.isCreateNewStorageAccount('new')}" inline="true">
+                    <f:entry field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
+                        <f:textbox/>
+                    </f:entry>
+                </f:radioBlock>
+
+                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="Use exist" checked="${instance.isCreateNewStorageAccount('create')}" inline="true">
+                    <f:entry field="existStorageAccountName">
+                        <f:select/>
+                    </f:entry>
+                </f:radioBlock>
             </f:entry>
 
             <f:entry title="${%RetentionTimeInMin}" field="retentionTimeInMin"

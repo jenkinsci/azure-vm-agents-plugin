@@ -14,21 +14,20 @@
             <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}"/>
         </f:entry>
 
-        <f:radioBlock name="resourceGroupReferenceType" value="new" title="Create new" checked="${instance == null || instance.isCreateNewResourceGroup('new')}">
-            <f:entry title="${%Resource_Group_Name}" field="resourceGroupNameByCreating">
-                <f:textbox/>
-            </f:entry>
-        </f:radioBlock>
+        <f:entry title="${%Resource_Group_Name}">
+            <f:radioBlock name="resourceGroupReferenceType" value="new" title="Create new" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
+                <f:entry field="newResourceGroupName">
+                    <f:textbox />
+                </f:entry>
+            </f:radioBlock>
 
-        <f:radioBlock name="resourceGroupReferenceType" value="exist" title="Use exist" checked="${instance.isCreateNewResourceGroup('exist')}">
-            <f:entry title="${%Resource_Group_Name}" field="resourceGroupNameByChoosing">
-                <f:select/>
-            </f:entry>
-        </f:radioBlock>
-
-        <f:entry title="${%Resource_Group_Name}" field="resourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
-            <f:textbox default="${descriptor.getDefaultResourceGroupName()}"/>
+            <f:radioBlock name="resourceGroupReferenceType" value="exist" title="Use exist" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
+                <f:entry field="existResourceGroupName">
+                    <f:select/>
+                </f:entry>
+            </f:radioBlock>
         </f:entry>
+
         <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
                           with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupName"/>
     </f:section>

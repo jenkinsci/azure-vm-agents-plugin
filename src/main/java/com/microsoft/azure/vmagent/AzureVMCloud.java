@@ -77,11 +77,15 @@ public class AzureVMCloud extends Cloud {
 
     private final String resourceGroupReferenceType;
 
-    private final String resourceGroupName;
+    private final String newResourceGroupName;
 
-    private final String resourceGroupNameByCreating;
+    private final String existResourceGroupName;
 
-    private final String resourceGroupNameByChoosing;
+    private String resourceGroupName;
+
+//    private final String resourceGroupNameByCreating;
+//
+//    private final String resourceGroupNameByChoosing;
 
     // Current set of VM templates.
     // This list should not be accessed without copying it
@@ -109,11 +113,11 @@ public class AzureVMCloud extends Cloud {
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
             final String resourceGroupReferenceType,
-            final String resourceGroupNameByCreating,
-            final String resourceGroupNameByChoosing,
+            final String newResourceGroupName,
+            final String existResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
         this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit,
-                deploymentTimeout, resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing, vmTemplates);
+                deploymentTimeout, resourceGroupReferenceType, newResourceGroupName, existResourceGroupName, vmTemplates);
     }
 
     public AzureVMCloud(
@@ -122,16 +126,16 @@ public class AzureVMCloud extends Cloud {
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
             final String resourceGroupReferenceType,
-            final String resourceGroupNameByCreating,
-            final String resourceGroupNameByChoosing,
+            final String newResourceGroupName,
+            final String existResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing)));
+        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName)));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
         this.resourceGroupReferenceType = resourceGroupReferenceType;
-        this.resourceGroupNameByChoosing = resourceGroupNameByChoosing;
-        this.resourceGroupNameByCreating = resourceGroupNameByCreating;
-        this.resourceGroupName = getResourceGroupName(resourceGroupReferenceType, resourceGroupNameByCreating, resourceGroupNameByChoosing);
+        this.newResourceGroupName = newResourceGroupName;
+        this.existResourceGroupName = existResourceGroupName;
+        this.resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -172,13 +176,6 @@ public class AzureVMCloud extends Cloud {
         if (AzureVMCloudVerificationTask.get() != null) {
             AzureVMCloudVerificationTask.get().doRun();
         }
-    }
-
-    private static String getResourceGroupName(final String type, final String filledName, final String choseName) {
-        if (StringUtils.isBlank(type) || type.equalsIgnoreCase("new")) {
-            return filledName;
-        }
-        return choseName;
     }
 
     private Object readResolve() {
@@ -249,20 +246,27 @@ public class AzureVMCloud extends Cloud {
         return maxVirtualMachinesLimit;
     }
 
-    public String getResourceGroupName() {
-        return resourceGroupName;
+    public static String getResourceGroupName(final String type, final String newName, final String existName) {
+        if (StringUtils.isBlank(type) || type.equalsIgnoreCase("new")) {
+            return newName;
+        }
+        return existName;
     }
 
-    public String getResourceGroupNameByCreating() {
-        return resourceGroupNameByCreating;
+    public String getNewResourceGroupName() {
+        return newResourceGroupName;
     }
 
-    public String getResourceGroupNameByChoosing() {
-        return resourceGroupNameByChoosing;
+    public String getExistResourceGroupName() {
+        return existResourceGroupName;
     }
 
     public String getResourceGroupReferenceType() {
         return resourceGroupReferenceType;
+    }
+
+    public String getResourceGroupName() {
+        return resourceGroupName;
     }
 
     public int getDeploymentTimeout() {
@@ -864,8 +868,11 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String azureCredentialsId,
                 @QueryParameter String maxVirtualMachinesLimit,
                 @QueryParameter String deploymentTimeout,
-                @QueryParameter String resourceGroupName) {
+                @QueryParameter String resourceGroupType,
+                @QueryParameter String newResourceGroupName,
+                @QueryParameter String existResourceGroupName) {
 
+            String resourceGroupName = getResourceGroupName(resourceGroupType, newResourceGroupName, existResourceGroupName);
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
@@ -886,7 +893,8 @@ public class AzureVMCloud extends Cloud {
             return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
         }
 
-        public ListBoxModel doFillResourceGroupNameByChoosingItems(@QueryParameter final String azureCredentialsId) {
+        public ListBoxModel doFillExistResourceGroupNameItems(@QueryParameter String azureCredentialsId) {
+            azureCredentialsId = "my_principal";
             ListBoxModel model = new ListBoxModel();
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
 
