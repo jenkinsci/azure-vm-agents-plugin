@@ -646,17 +646,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return model;
         }
 
-        public ListBoxModel doFillStorageAccountNameItems(
+        public ListBoxModel doFillExistStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter final String azureCredentialsId,
-                @RelativePath("..") @QueryParameter final String resourceGroupReferenceType,
-                @RelativePath("..") @QueryParameter final String newResourceGroupName,
                 @RelativePath("..") @QueryParameter final String existResourceGroupName,
                 @QueryParameter final String storageAccountType) {
             ListBoxModel model = new ListBoxModel();
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
 
-            String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
+            String resourceGroupName = existResourceGroupName;
             List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
             for (StorageAccount storageAccount : storageAccountList) {
                 if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {

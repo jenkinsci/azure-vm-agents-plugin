@@ -894,7 +894,6 @@ public class AzureVMCloud extends Cloud {
         }
 
         public ListBoxModel doFillExistResourceGroupNameItems(@QueryParameter String azureCredentialsId) {
-            azureCredentialsId = "my_principal";
             ListBoxModel model = new ListBoxModel();
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
 
