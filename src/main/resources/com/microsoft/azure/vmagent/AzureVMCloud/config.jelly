@@ -15,14 +15,14 @@
         </f:entry>
 
         <f:entry title="${%Resource_Group_Name}">
-            <f:radioBlock name="resourceGroupReferenceType" value="new" title="Create new" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
-                <f:entry field="newResourceGroupName">
+            <f:radioBlock name="${Resource_Group_Reference_Type}" value="new" title="Create new" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
+                <f:entry field="${New_Resource_Group_Name}">
                     <f:textbox />
                 </f:entry>
             </f:radioBlock>
 
-            <f:radioBlock name="resourceGroupReferenceType" value="exist" title="Use exist" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
-                <f:entry field="existResourceGroupName">
+            <f:radioBlock name="${Resource_Group_Reference_Type}" value="exist" title="Use exist" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
+                <f:entry field="${Exist_Resource_Group_Name}">
                     <f:select/>
                 </f:entry>
             </f:radioBlock>

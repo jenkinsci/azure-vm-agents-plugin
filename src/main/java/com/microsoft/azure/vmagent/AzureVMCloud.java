@@ -83,10 +83,6 @@ public class AzureVMCloud extends Cloud {
 
     private String resourceGroupName;
 
-//    private final String resourceGroupNameByCreating;
-//
-//    private final String resourceGroupNameByChoosing;
-
     // Current set of VM templates.
     // This list should not be accessed without copying it
     // or obtaining synchronization on vmTemplatesListLock
