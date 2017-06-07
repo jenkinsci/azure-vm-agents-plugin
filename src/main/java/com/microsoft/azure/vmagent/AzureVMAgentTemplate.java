@@ -83,7 +83,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String virtualMachineSize;
 
-    private final String storageAccountNameReferenceType;
+    private String storageAccountNameReferenceType;
 
     private String storageAccountName;
 
@@ -195,7 +195,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.location = location;
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
-        this.storageAccountName = getStorageAccountName(storageAccountType, newStorageAccountName, existStorageAccountName);
+        this.storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existStorageAccountName);
         this.newStorageAccountName = newStorageAccountName;
         this.existStorageAccountName = existStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
@@ -277,7 +277,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public static String getStorageAccountName(final String type, final String newName, final String existName) {
-        if (StringUtils.isBlank(type) || type.equalsIgnoreCase("new")) {
+        //type maybe null in this version, so we can guess according to whether newName is blank or not
+        if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
+                || StringUtils.isNotBlank(type) && type.equalsIgnoreCase("new")) {
             return newName;
         }
         return existName;
@@ -289,6 +291,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public void setStorageAccountName(final String storageAccountName) {
         this.storageAccountName = storageAccountName;
+    }
+
+    public String getNewStorageAccountName() {
+        return newStorageAccountName;
+    }
+
+    public String getExistStorageAccountName() {
+        return existStorageAccountName;
     }
 
     public Node.Mode getUseAgentAlwaysIfAvail() {
@@ -409,7 +419,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
-
+            newStorageAccountName = storageAccountName;
         }
     }
 
@@ -648,21 +658,29 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillExistStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter final String azureCredentialsId,
+                @RelativePath("..") @QueryParameter final String storageAccountNameReferenceType,
+                @RelativePath("..") @QueryParameter final String newResourceGroupName,
                 @RelativePath("..") @QueryParameter final String existResourceGroupName,
-                @QueryParameter final String storageAccountType) {
+                @QueryParameter final String storageAccountType) throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
-            Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
 
-            String resourceGroupName = existResourceGroupName;
-            List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
-            for (StorageAccount storageAccount : storageAccountList) {
-                if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {
-                    model.add(storageAccount.name());
+            try {
+                AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+                Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+
+                String resourceGroupName = AzureVMCloud.getResourceGroupName(storageAccountNameReferenceType, newResourceGroupName, existResourceGroupName);
+                List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
+                for (StorageAccount storageAccount : storageAccountList) {
+                    if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {
+                        model.add(storageAccount.name());
+                    }
                 }
-            }
 
-            return model;
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Cannot list storage account: {0}", e);
+            } finally {
+                return model;
+            }
         }
 
         public FormValidation doCheckInitScript(
@@ -811,7 +829,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
-            String storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newResourceGroupName, existStorageAccountName);
+            String storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existStorageAccountName);
             if (storageAccountName.trim().isEmpty()) {
                 storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(resourceGroupName, servicePrincipal);
             }

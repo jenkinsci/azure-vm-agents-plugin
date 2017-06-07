@@ -37,13 +37,13 @@
             </f:entry>
 
             <f:entry title="${%Storage_Account_Name}">
-                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="Create new" checked="${instance == null || instance.isCreateNewStorageAccount('new')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isCreateNewStorageAccount('new')}" inline="true">
                     <f:entry field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:textbox/>
                     </f:entry>
                 </f:radioBlock>
 
-                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="Use exist" checked="${instance.isCreateNewStorageAccount('create')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="${%Storage_Account_Use_Exist}" checked="${instance.isCreateNewStorageAccount('exist')}" inline="true">
                     <f:entry field="existStorageAccountName">
                         <f:select/>
                     </f:entry>
@@ -77,7 +77,7 @@
             <f:radioBlock name="imageReferenceType" value="reference" title="${%Marketplace_Image}"
                           checked="${instance==null || instance.isType('reference')}"
                           help="/plugin/azure-vm-agents/help-imageReference.html" inline="true">
-                
+
                 <f:entry title="${%Image_Publisher}" field="imagePublisher"
                          help="/plugin/azure-vm-agents/help-imageReference.html">
                     <f:textbox/>
@@ -176,6 +176,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountName,storageAccountType,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existStorageAccountName,storageAccountType,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

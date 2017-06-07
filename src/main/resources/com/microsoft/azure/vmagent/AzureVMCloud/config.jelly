@@ -15,21 +15,21 @@
         </f:entry>
 
         <f:entry title="${%Resource_Group_Name}">
-            <f:radioBlock name="${Resource_Group_Reference_Type}" value="new" title="Create new" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
-                <f:entry field="${New_Resource_Group_Name}">
+            <f:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
+                <f:entry field="newResourceGroupName">
                     <f:textbox />
                 </f:entry>
             </f:radioBlock>
 
-            <f:radioBlock name="${Resource_Group_Reference_Type}" value="exist" title="Use exist" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
-                <f:entry field="${Exist_Resource_Group_Name}">
+            <f:radioBlock name="resourceGroupReferenceType" value="exist" title="${%Resource_Group_Use_Exist}" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
+                <f:entry field="existResourceGroupName">
                     <f:select/>
                 </f:entry>
             </f:radioBlock>
         </f:entry>
 
         <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
-                          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupName"/>
+                          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName"/>
     </f:section>
 
     <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">

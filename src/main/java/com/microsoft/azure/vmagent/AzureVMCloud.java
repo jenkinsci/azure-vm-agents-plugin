@@ -29,6 +29,8 @@ import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.*;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +62,7 @@ import hudson.util.StreamTaskListener;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 
+import javax.servlet.ServletException;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 
@@ -243,7 +246,9 @@ public class AzureVMCloud extends Cloud {
     }
 
     public static String getResourceGroupName(final String type, final String newName, final String existName) {
-        if (StringUtils.isBlank(type) || type.equalsIgnoreCase("new")) {
+        //type maybe null in this version, so we can guess according to whether newName is blank or not
+        if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
+                || StringUtils.isNotBlank(type) && type.equalsIgnoreCase("new")) {
             return newName;
         }
         return existName;
@@ -864,11 +869,11 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String azureCredentialsId,
                 @QueryParameter String maxVirtualMachinesLimit,
                 @QueryParameter String deploymentTimeout,
-                @QueryParameter String resourceGroupType,
+                @QueryParameter String resourceGroupReferenceType,
                 @QueryParameter String newResourceGroupName,
                 @QueryParameter String existResourceGroupName) {
 
-            String resourceGroupName = getResourceGroupName(resourceGroupType, newResourceGroupName, existResourceGroupName);
+            String resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
@@ -889,17 +894,22 @@ public class AzureVMCloud extends Cloud {
             return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
         }
 
-        public ListBoxModel doFillExistResourceGroupNameItems(@QueryParameter String azureCredentialsId) {
+        public ListBoxModel doFillExistResourceGroupNameItems(@QueryParameter String azureCredentialsId) throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
 
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            try {
+                AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
 
-            for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
-                model.add(resourceGroup.name());
+                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+
+                for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
+                    model.add(resourceGroup.name());
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Cannot list resource group name: {0}", e);
+            } finally {
+                return model;
             }
-
-            return model;
         }
     }
 }
