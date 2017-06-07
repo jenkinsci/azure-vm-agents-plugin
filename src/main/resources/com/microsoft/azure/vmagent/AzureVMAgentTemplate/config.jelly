@@ -44,7 +44,7 @@
                 </f:radioBlock>
 
                 <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="${%Storage_Account_Use_Exist}" checked="${instance.isCreateNewStorageAccount('exist')}" inline="true">
-                    <f:entry field="existStorageAccountName">
+                    <f:entry field="existStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>
                 </f:radioBlock>

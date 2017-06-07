@@ -294,6 +294,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public String getNewStorageAccountName() {
+        //backward compatibility, the old version plugin only have storageAccountName
+        if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existStorageAccountName)
+                && StringUtils.isNotBlank(storageAccountName)) {
+            newStorageAccountName = storageAccountName;
+        }
+
         return newStorageAccountName;
     }
 

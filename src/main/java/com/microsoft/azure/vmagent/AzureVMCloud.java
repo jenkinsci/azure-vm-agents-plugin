@@ -80,7 +80,7 @@ public class AzureVMCloud extends Cloud {
 
     private final String resourceGroupReferenceType;
 
-    private final String newResourceGroupName;
+    private String newResourceGroupName;
 
     private final String existResourceGroupName;
 
@@ -255,6 +255,11 @@ public class AzureVMCloud extends Cloud {
     }
 
     public String getNewResourceGroupName() {
+        //backward compatibility, the old version plugin only have resourceGroupName
+        if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
+                && StringUtils.isNotBlank(resourceGroupName)) {
+            newResourceGroupName = resourceGroupName;
+        }
         return newResourceGroupName;
     }
 

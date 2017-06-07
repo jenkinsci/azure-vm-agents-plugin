@@ -16,13 +16,13 @@
 
         <f:entry title="${%Resource_Group_Name}">
             <f:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isCreateNewResourceGroup('new')}" inline="true">
-                <f:entry field="newResourceGroupName">
+                <f:entry field="newResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:textbox />
                 </f:entry>
             </f:radioBlock>
 
             <f:radioBlock name="resourceGroupReferenceType" value="exist" title="${%Resource_Group_Use_Exist}" checked="${instance.isCreateNewResourceGroup('exist')}" inline="true">
-                <f:entry field="existResourceGroupName">
+                <f:entry field="existResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:select/>
                 </f:entry>
             </f:radioBlock>
