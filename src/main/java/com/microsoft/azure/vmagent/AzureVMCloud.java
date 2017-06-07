@@ -31,10 +31,7 @@ import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +39,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import hudson.logging.LogRecorder;
+import hudson.logging.LogRecorderManager;
 import jenkins.model.Jenkins;
 
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
@@ -67,6 +66,7 @@ import java.nio.charset.Charset;
 import java.util.logging.Level;
 
 import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
+import static hudson.init.InitMilestone.PLUGINS_STARTED;
 
 public class AzureVMCloud extends Cloud {
 
@@ -838,6 +838,12 @@ public class AzureVMCloud extends Cloud {
     @Extension
     public static class DescriptorImpl extends Descriptor<Cloud> {
 
+        private static final String LOG_RECORDER_NAME = "Azure VM Agent (Auto)";
+
+        public String getLogRecorderName() {
+            return LOG_RECORDER_NAME;
+        }
+
         @Initializer(before = InitMilestone.PLUGINS_STARTED)
         public static void addAliases() {
             Jenkins.XSTREAM2.addCompatibilityAlias("com.microsoft.azure.AzureVMCloud", AzureVMCloud.class);
@@ -847,6 +853,19 @@ public class AzureVMCloud extends Cloud {
             Jenkins.XSTREAM2.addCompatibilityAlias("com.microsoft.azure.AzureVMCloudRetensionStrategy", AzureVMCloudRetensionStrategy.class);
             Jenkins.XSTREAM2.addCompatibilityAlias("com.microsoft.azure.AzureVMAgentPostBuildAction", AzureVMAgentPostBuildAction.class);
             Jenkins.XSTREAM2.addCompatibilityAlias("com.microsoft.azure.Messages", Messages.class);
+        }
+
+        @Initializer(before = PLUGINS_STARTED)
+        public static void addLogRecorder(Jenkins h) throws IOException {
+            LogRecorderManager manager = h.getLog();
+            Map<String, LogRecorder> logRecorders = manager.logRecorders;
+            if (!logRecorders.containsKey(LOG_RECORDER_NAME)) {
+                LogRecorder recorder = new LogRecorder(LOG_RECORDER_NAME);
+                String packageName = AzureVMAgent.class.getPackage().getName();
+                recorder.targets.add(new LogRecorder.Target(packageName, Level.WARNING));
+                logRecorders.put(LOG_RECORDER_NAME, recorder);
+                recorder.save();
+            }
         }
 
         @Override

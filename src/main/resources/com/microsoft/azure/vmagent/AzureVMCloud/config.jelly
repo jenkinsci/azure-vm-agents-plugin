@@ -1,16 +1,21 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-
+    <f:block>
+        <f:link href="${rootURL}/log/${descriptor.logRecorderName}/">${%Azure_VM_Agent_Log_Link}</f:link>
+    </f:block>
     <f:section title="${%Azure_Profile_Configuration}">
-        <f:entry title="${%Azure_Credentials}" field="azureCredentialsId" help="/plugin/azure-vm-agents/help-azureCredentials.html">
+        <f:entry title="${%Azure_Credentials}" field="azureCredentialsId"
+                 help="/plugin/azure-vm-agents/help-azureCredentials.html">
             <c:select expressionAllowed="false"/>
         </f:entry>
-        <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit" help="/plugin/azure-vm-agents/help-maxVirtualMachinesLimit.html">
+        <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit"
+                 help="/plugin/azure-vm-agents/help-maxVirtualMachinesLimit.html">
             <f:textbox default="${descriptor.getDefaultMaxVMLimit()}"/>
         </f:entry>
 
-        <f:entry title="${%Deployment_Timeout}" field="deploymentTimeout" help="/plugin/azure-vm-agents/help-deploymentTimeout.html">
+        <f:entry title="${%Deployment_Timeout}" field="deploymentTimeout"
+                 help="/plugin/azure-vm-agents/help-deploymentTimeout.html">
             <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}"/>
         </f:entry>
 
