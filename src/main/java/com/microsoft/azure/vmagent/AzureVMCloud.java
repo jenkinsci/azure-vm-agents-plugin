@@ -178,19 +178,18 @@ public class AzureVMCloud extends Cloud {
     }
 
     private Object readResolve() {
+        if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
+                && StringUtils.isNotBlank(resourceGroupName)) {
+            newResourceGroupName = resourceGroupName;
+        }
+        //resourceGroupName is transient so we need to restore it for future using
+        resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
                 vmTemplates = instTemplates;
                 instTemplates = null;
             }
-
-            if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
-                    && StringUtils.isNotBlank(resourceGroupName)) {
-                newResourceGroupName = resourceGroupName;
-            }
-            //resourceGroupName is transient so we need to restore it for future using
-            resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
 
             // Walk the list of templates and assign the parent cloud (which is transient).
             ensureVmTemplateList();
