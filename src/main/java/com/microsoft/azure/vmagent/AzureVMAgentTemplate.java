@@ -238,6 +238,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private Object readResolve() {
         labelDataSet = Label.parse(labels);
+
+        if (StringUtils.isBlank(storageAccountType)) {
+            storageAccountType = SkuName.STANDARD_LRS.toString();
+        }
         return this;
     }
 
