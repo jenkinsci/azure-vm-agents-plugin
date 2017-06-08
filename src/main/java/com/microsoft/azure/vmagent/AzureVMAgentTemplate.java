@@ -85,7 +85,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String storageAccountNameReferenceType;
 
-    private String storageAccountName;
+    private transient String storageAccountName;
 
     private String newStorageAccountName;
 
@@ -240,7 +240,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.templateVerified = false;
 
         // Forms data which is not persisted
-        readResolve();
+        labelDataSet = Label.parse(labels);
     }
 
 
@@ -253,6 +253,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private Object readResolve() {
         labelDataSet = Label.parse(labels);
+        if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existStorageAccountName)
+                && StringUtils.isNotBlank(storageAccountName)) {
+            newStorageAccountName = storageAccountName;
+        }
+        storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existStorageAccountName);
         return this;
     }
 
@@ -294,12 +299,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public String getNewStorageAccountName() {
-        //backward compatibility, the old version plugin only have storageAccountName
-        if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existStorageAccountName)
-                && StringUtils.isNotBlank(storageAccountName)) {
-            newStorageAccountName = storageAccountName;
-        }
-
         return newStorageAccountName;
     }
 
@@ -311,7 +310,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
     }
 
-    public String isCreateNewStorageAccount(final String type) {
+    public String isStorageAccountNameReferenceTypeEquals(final String type) {
         if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
             return "true";
         }
@@ -426,6 +425,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
             newStorageAccountName = storageAccountName;
+            //if storageAccountNameReferenceType equals exist, we help to choose new directly
+            storageAccountNameReferenceType = "new";
         }
     }
 
@@ -664,17 +665,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillExistStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter final String azureCredentialsId,
-                @RelativePath("..") @QueryParameter final String storageAccountNameReferenceType,
+                @RelativePath("..") @QueryParameter final String resourceGroupReferenceType,
                 @RelativePath("..") @QueryParameter final String newResourceGroupName,
                 @RelativePath("..") @QueryParameter final String existResourceGroupName,
                 @QueryParameter final String storageAccountType) throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
 
             try {
                 AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
                 Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
 
-                String resourceGroupName = AzureVMCloud.getResourceGroupName(storageAccountNameReferenceType, newResourceGroupName, existResourceGroupName);
+                String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
                 List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
                 for (StorageAccount storageAccount : storageAccountList) {
                     if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {

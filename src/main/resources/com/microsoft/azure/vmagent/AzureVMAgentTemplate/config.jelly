@@ -37,13 +37,13 @@
             </f:entry>
 
             <f:entry title="${%Storage_Account_Name}">
-                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isCreateNewStorageAccount('new')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new') == 'true'}" inline="true">
                     <f:entry field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:textbox/>
                     </f:entry>
                 </f:radioBlock>
 
-                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="${%Storage_Account_Use_Exist}" checked="${instance.isCreateNewStorageAccount('exist')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('exist') == 'true'}" inline="true">
                     <f:entry field="existStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>

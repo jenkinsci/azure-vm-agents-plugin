@@ -84,7 +84,7 @@ public class AzureVMCloud extends Cloud {
 
     private final String existResourceGroupName;
 
-    private String resourceGroupName;
+    private transient String resourceGroupName;
 
     // Current set of VM templates.
     // This list should not be accessed without copying it
@@ -185,6 +185,13 @@ public class AzureVMCloud extends Cloud {
                 instTemplates = null;
             }
 
+            if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
+                    && StringUtils.isNotBlank(resourceGroupName)) {
+                newResourceGroupName = resourceGroupName;
+            }
+            //resourceGroupName is transient so we need to restore it for future using
+            resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
+
             // Walk the list of templates and assign the parent cloud (which is transient).
             ensureVmTemplateList();
             for (AzureVMAgentTemplate template : vmTemplates) {
@@ -234,7 +241,7 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
-    public String isCreateNewResourceGroup(final String type) {
+    public String isResourceGroupReferenceTypeEquals(final String type) {
         if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
             return "true";
         }
@@ -255,11 +262,6 @@ public class AzureVMCloud extends Cloud {
     }
 
     public String getNewResourceGroupName() {
-        //backward compatibility, the old version plugin only have resourceGroupName
-        if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
-                && StringUtils.isNotBlank(resourceGroupName)) {
-            newResourceGroupName = resourceGroupName;
-        }
         return newResourceGroupName;
     }
 
@@ -920,6 +922,9 @@ public class AzureVMCloud extends Cloud {
 
         public ListBoxModel doFillExistResourceGroupNameItems(@QueryParameter String azureCredentialsId) throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
 
             try {
                 AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
