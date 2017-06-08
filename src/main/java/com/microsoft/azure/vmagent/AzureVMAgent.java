@@ -440,7 +440,7 @@ public class AzureVMAgent extends AbstractCloudSlave {
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
-        // Adjust parent VM count up by one.
+        // Adjust estimated virtual machine count.
         AzureVMCloud parentCloud = getCloud();
         if (parentCloud != null) {
             parentCloud.adjustVirtualMachineCount(-1);
