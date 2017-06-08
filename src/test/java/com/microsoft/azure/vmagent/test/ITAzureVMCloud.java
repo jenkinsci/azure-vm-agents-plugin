@@ -25,6 +25,9 @@ import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.Node;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,6 +42,7 @@ public class ITAzureVMCloud extends IntegrationTest {
         try {
             final String vmName = "fakeVM";
             final String deploymentName = "fakeDeployment";
+            final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, "xyz", "42", "0", testEnv.azureResourceGroup, null));
 
@@ -46,7 +50,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
 
             try {
-                cloudMock.createProvisionedAgent(templateMock, vmName, deploymentName);
+                cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
                 Assert.assertTrue(false);
             } catch (AzureCloudException ex) {
                 Assert.assertTrue(true);
@@ -79,6 +83,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final String agentLaunchMethod = Constants.LAUNCH_METHOD_SSH;
             final boolean executeInitScriptAsRoot = true;
             final boolean doNotUseMachineIfInitFails = true;
+            final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, credentialsId, "42", "30", testEnv.azureResourceGroup, null));
@@ -101,7 +106,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.getExecuteInitScriptAsRoot()).thenReturn(executeInitScriptAsRoot);
             when(templateMock.getDoNotUseMachineIfInitFails()).thenReturn(doNotUseMachineIfInitFails);
 
-            AzureVMAgent newAgent = cloudMock.createProvisionedAgent(templateMock, vmName, deploymentName);
+            AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
             Assert.assertEquals(vmDNS, newAgent.getPublicDNSName());
             Assert.assertEquals(Constants.DEFAULT_SSH_PORT, newAgent.getSshPort());
