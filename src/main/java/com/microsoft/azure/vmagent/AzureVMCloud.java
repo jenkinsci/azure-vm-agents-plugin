@@ -344,39 +344,38 @@ public class AzureVMCloud extends Cloud {
 
     /**
      * Given the number of VMs that are desired, returns the number of VMs that
-     * can be allocated and adjusts the number of VMs we believe exist
+     * can be allocated and adjusts the number of VMs we believe exist.
+     * If the number desired is less than 0, this subtracts from the total number
+     * of virtual machines we currently have available.
      *
-     * @param quantityDesired Number that are desired
-     * @return Number that can be allocated.
+     * @param delta Number that are desired, or if less than 0, the number we are 'returning' to the pool
+     * @return Number that can be allocated, up to the number desired.  0 if the number desired was < 0
      */
-    public int getAndAdjustVirtualMachineCounts(int quantityDesired) {
+    public int adjustVirtualMachineCount(int delta) {
         synchronized (this) {
-            LOGGER.log(Level.INFO, "Current estimated VM count: {0}, quantity desired {1}",
-                new Object[]{approximateVirtualMachineCount, quantityDesired});
-            if (approximateVirtualMachineCount + quantityDesired <= getMaxVirtualMachinesLimit()) {
-                // Enough available, return the desired quantity, and update the number we think we
-                // have laying around.
-                approximateVirtualMachineCount += quantityDesired;
-                return quantityDesired;
-            } else {
-                // Not enough available, return what we have. Remember we could
-                // go negative (if for instance another Jenkins instance had
-                // a higher limit.
-                int quantityAvailable = Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
-                approximateVirtualMachineCount += quantityAvailable;;
-                return quantityAvailable;
+            if (delta < 0) {
+                LOGGER.log(Level.FINE, "Current estimated VM count: {0}, reducing by {1}",
+                    new Object[]{approximateVirtualMachineCount, delta});
+                approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount + delta);
+                return 0;
             }
-        }
-    }
-
-    /**
-     * Adjust the number of currently allocated VMs
-     *
-     * @param delta Number to adjust by.
-     */
-    public void adjustVirtualMachineCount(int delta) {
-        synchronized (this) {
-            approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount + delta);
+            else {
+                LOGGER.log(Level.FINE, "Current estimated VM count: {0}, quantity desired {1}",
+                    new Object[]{approximateVirtualMachineCount, delta});
+                if (approximateVirtualMachineCount + delta <= getMaxVirtualMachinesLimit()) {
+                    // Enough available, return the desired quantity, and update the number we think we
+                    // have laying around.
+                    approximateVirtualMachineCount += delta;
+                    return delta;
+                } else {
+                    // Not enough available, return what we have. Remember we could
+                    // go negative (if for instance another Jenkins instance had
+                    // a higher limit.
+                    int quantityAvailable = Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
+                    approximateVirtualMachineCount += quantityAvailable;
+                    return quantityAvailable;
+                }
+            }
         }
     }
 
@@ -478,6 +477,10 @@ public class AzureVMCloud extends Cloud {
                 .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
                 .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
             Deployment dep = azureClient.deployments().getByName(deploymentName);
+            // Might find no deployment.  
+            if (dep == null) {
+                throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Could not find Deployment %s", new Object[]{deploymentName}));
+            }
             PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
             for (DeploymentOperation op : ops) {
                 if (op.targetResource() == null) {
@@ -589,7 +592,7 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
-                int adjustedNumberOfAgents = getAndAdjustVirtualMachineCounts(numberOfAgents);
+                int adjustedNumberOfAgents = adjustVirtualMachineCount(numberOfAgents);
                 if (adjustedNumberOfAgents == 0) {
                     LOGGER.log(Level.INFO, "Not able to create any new nodes, at or above maximum VM count of {0}",
                             getMaxVirtualMachinesLimit());
