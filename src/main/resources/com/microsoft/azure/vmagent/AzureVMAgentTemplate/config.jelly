@@ -66,6 +66,13 @@
         </f:section>
 
         <f:section title="${%Image_Configuration}">
+            <f:radioBlock name="imageReferenceType" value="buildIn" title="${%Build_In_Image}" checked="${instance==null || instance.isType('buildIn') == 'true'}"
+                          inline="true">
+                <f:entry field="buildInImage">
+                    <f:select/>
+                </f:entry>
+            </f:radioBlock>
+
             <f:radioBlock name="imageReferenceType" value="custom" title="${%Custom_Image}"
                           checked="${instance.isType('custom')}" help="/plugin/azure-vm-agents/help-image.html"
                           inline="true">
@@ -75,7 +82,7 @@
             </f:radioBlock>
 
             <f:radioBlock name="imageReferenceType" value="reference" title="${%Marketplace_Image}"
-                          checked="${instance==null || instance.isType('reference')}"
+                          checked="${instance.isType('reference')}"
                           help="/plugin/azure-vm-agents/help-imageReference.html" inline="true">
 
                 <f:entry title="${%Image_Publisher}" field="imagePublisher"
@@ -176,6 +183,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existStorageAccountName,storageAccountType,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existStorageAccountName,storageAccountType,noOfParallelJobs,buildInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

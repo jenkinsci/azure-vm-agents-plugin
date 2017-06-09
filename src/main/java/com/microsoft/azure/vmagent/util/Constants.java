@@ -99,6 +99,12 @@ public final class Constants {
     public static final int MAX_PROV_RETRIES = 20;
 
     /**
+     * Build In Image.
+     */
+    public static final String WINDOWS_SERVER_2012 = "Windows Server 2012";
+    public static final String UBUNTU_1404_LTS = "Ubuntu 14.04 LTS";
+
+    /**
      * Error codes.
      */
     public static final String ERROR_CODE_RESOURCE_NF = "ResourceNotFound";

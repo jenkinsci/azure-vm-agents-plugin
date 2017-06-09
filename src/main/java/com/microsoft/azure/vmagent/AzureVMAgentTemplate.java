@@ -66,6 +66,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         UNKNOWN,
         CUSTOM,
         REFERENCE,
+        BUILDIN,
     }
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
@@ -101,6 +102,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     // Image Configuration
     private final String imageReferenceType;
+
+    private final String buildInImage;
 
     private final String image;
 
@@ -166,6 +169,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String noOfParallelJobs,
             final String usageMode,
             final String imageReferenceType,
+            final String buildInImage,
             final String image,
             final String osType,
             final boolean imageReference,
@@ -209,6 +213,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
         setUsageMode(usageMode);
         this.imageReferenceType = imageReferenceType;
+        this.buildInImage = buildInImage;
         this.image = image;
         this.osType = osType;
         this.imagePublisher = imagePublisher;
@@ -245,7 +250,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
 
     public String isType(final String type) {
-        if (this.imageReferenceType == null && type.equals("reference")) {
+        if (this.imageReferenceType == null && type.equals("buildIn")) {
             return "true";
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType) ? "true" : "false";
@@ -343,6 +348,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public String getImageReferenceType() {
         return imageReferenceType;
+    }
+
+    public String getBuildInImage() {
+        return buildInImage;
     }
 
     public String getImage() {
@@ -560,7 +569,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 storageAccountName,
                 storageAccountType,
                 noOfParallelJobs + "",
-                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
+                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN
+                        : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
+                        : (imageReferenceType.equalsIgnoreCase("buildIn") ? ImageReferenceType.BUILDIN
+                        : ImageReferenceType.REFERENCE)),
+                buildInImage,
                 image,
                 osType,
                 imagePublisher,
@@ -698,6 +711,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
         }
 
+        public ListBoxModel doFillBuildInImageItems() {
+            ListBoxModel model = new ListBoxModel();
+            model.add(Constants.WINDOWS_SERVER_2012);
+            model.add(Constants.UBUNTU_1404_LTS);
+            return model;
+        }
+
         public FormValidation doCheckInitScript(
                 @QueryParameter final String value,
                 @QueryParameter final String agentLaunchMethod) {
@@ -815,6 +835,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String existStorageAccountName,
                 @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
+                @QueryParameter String buildInImage,
                 @QueryParameter String image,
                 @QueryParameter String osType,
                 @QueryParameter String imagePublisher,
@@ -925,6 +946,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     storageAccountType,
                     noOfParallelJobs,
                     referenceType,
+                    buildInImage,
                     image,
                     osType,
                     imagePublisher,

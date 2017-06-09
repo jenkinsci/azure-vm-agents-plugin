@@ -112,6 +112,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
+    private static final String IMAGE_BUILD_IN = "buildIn";
+
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
 
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
@@ -120,6 +122,19 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final List<String> DEFAULT_VM_SIZES = Arrays.asList(new String[]{"Standard_A0", "Standard_A1", "Standard_A2", "Standard_A3", "Standard_A5", "Standard_A4", "Standard_A6", "Standard_A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4", "Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS15_v2", "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4", "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_F1s", "Standard_F2s", "Standard_F4s", "Standard_F8s", "Standard_F16s", "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4", "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14", "Standard_A1_v2", "Standard_A2m_v2", "Standard_A2_v2", "Standard_A4m_v2", "Standard_A4_v2", "Standard_A8m_v2", "Standard_A8_v2", "Standard_D1_v2", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D15_v2", "Standard_F1", "Standard_F2", "Standard_F4", "Standard_F8", "Standard_F16"});
 
+    private static final Map<String, String> DEFAULT_IMAGE_PUBLISHER = getDefaultImagePublisher();
+
+    private static final Map<String, String> DEFAULT_IMAGE_OFFER = getDefaultImageOffer();
+
+    private static final Map<String, String> DEFAULT_IMAGE_SKU = getDefaultImageSku();
+
+    private static final Map<String, String> DEFAULT_IMAGE_VERSION = getDefaultImageVersion();
+
+    private static final Map<String, String> DEFAULT_OS_TYPE = getDefaultOsType();
+
+    private static final Map<String, String> DEFAULT_LAUNCH_METHOD = getDefaultLaunchMethod();
+
+    private static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -176,6 +191,23 @@ public final class AzureVMManagementServiceDelegate {
             final boolean useCustomScriptExtension
                     = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(template.getInitScript())
                     && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
+
+            String imagePublisher = template.getImagePublisher();
+            String imageOffer = template.getImageOffer();
+            String imageSku = template.getImageSku();
+            String imageVersion = template.getImageVersion();
+            String osType = template.getOsType();
+            String agentLaunchMethod = template.getAgentLaunchMethod();
+            String initScript = template.getInitScript();
+            //if chosen buildIn, use default image setting
+            if(template.getImageReferenceType().equals(IMAGE_BUILD_IN)) {
+                if(StringUtils.isBlank(template.getBuildInImage())) {
+                    throw new Exception("Build-in image is null");
+                } else if (template.getBuildInImage().equals(Constants.WINDOWS_SERVER_2012)) {
+
+                }
+
+            }
 
             // check if a custom image id has been provided otherwise work with publisher and offer
             if (template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
@@ -516,6 +548,14 @@ public final class AzureVMManagementServiceDelegate {
         return blob.getUri().toString();
     }
 
+    public static void setDefaultParams(AzureVMAgentTemplate template) {
+        if (StringUtils.isBlank(template.getBuildInImage())) {
+            return;
+        } else if (template.getBuildInImage().equals(Constants.WINDOWS_SERVER_2012)) {
+            template.set
+        }
+    }
+
     /**
      * Sets properties of virtual machine like IP and ssh port.
      *
@@ -749,6 +789,52 @@ public final class AzureVMManagementServiceDelegate {
         return sizes;
     }
 
+    private static Map<String, String> getDefaultImagePublisher() {
+        final Map<String, String> imagePublisher = new HashMap<>();
+        imagePublisher.put(Constants.WINDOWS_SERVER_2012, "MicrosoftWindowsServer");
+        imagePublisher.put(Constants.UBUNTU_1404_LTS, "Canonical");
+        return imagePublisher;
+    }
+
+    private static Map<String, String> getDefaultImageOffer() {
+        final Map<String, String> imageOffer = new HashMap<>();
+        imageOffer.put(Constants.WINDOWS_SERVER_2012, "WindowsServer");
+        imageOffer.put(Constants.UBUNTU_1404_LTS, "UbuntuServer");
+        return imageOffer;
+    }
+
+    private static Map<String, String> getDefaultImageSku() {
+        final Map<String, String> imageSku = new HashMap<>();
+        imageSku.put(Constants.WINDOWS_SERVER_2012, "2012-R2-Datacenter");
+        imageSku.put(Constants.UBUNTU_1404_LTS, "14.04.5-LTS");
+        return imageSku;
+    }
+
+    private static Map<String, String> getDefaultImageVersion() {
+        final Map<String, String> imageVersion = new HashMap<>();
+        imageVersion.put(Constants.WINDOWS_SERVER_2012, "latest");
+        imageVersion.put(Constants.UBUNTU_1404_LTS, "latest");
+        return imageVersion;
+    }
+
+    private static Map<String, String> getDefaultOsType() {
+        final Map<String, String> osType = new HashMap<>();
+        osType.put(Constants.WINDOWS_SERVER_2012, "Windows");
+        osType.put(Constants.UBUNTU_1404_LTS, "Linux");
+        return osType;
+    }
+
+    private static Map<String, String> getDefaultLaunchMethod() {
+        final Map<String, String> launchMethod = new HashMap<>();
+        launchMethod.put(Constants.WINDOWS_SERVER_2012, "JNLP");
+        launchMethod.put(Constants.UBUNTU_1404_LTS, "SSH");
+        return launchMethod;
+    }
+
+    private static Map<String, String> getDefaultInitScript() {
+        final Map<String, String> initScript = new HashMap<>();
+        return initScript;
+    }
     /**
      * Gets map of Azure datacenter locations which supports Persistent VM role.
      * If it can't fetch the data then it will return a default hardcoded set
@@ -1240,6 +1326,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountType,
             final String noOfParallelJobs,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String buildInImage,
             final String image,
             final String osType,
             final String imagePublisher,
