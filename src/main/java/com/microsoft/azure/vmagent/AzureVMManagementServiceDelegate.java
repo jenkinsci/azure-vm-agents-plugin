@@ -87,6 +87,7 @@ import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.IOUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 
 /**
@@ -135,6 +136,10 @@ public final class AzureVMManagementServiceDelegate {
     private static final Map<String, String> DEFAULT_LAUNCH_METHOD = getDefaultLaunchMethod();
 
     private static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
+
+    private static final String INIT_SCRIPT_WINDOWS_FILENAME = "/windowsInitScript.ps1";
+
+    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/ubuntuInitScript.sh";
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -831,9 +836,10 @@ public final class AzureVMManagementServiceDelegate {
         return launchMethod;
     }
 
-    private static Map<String, String> getDefaultInitScript() {
+    private static Map<String, String> getDefaultInitScript() throws IOException {
         final Map<String, String> initScript = new HashMap<>();
-
+        initScript.put(Constants.WINDOWS_SERVER_2012, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
+        initScript.put(Constants.UBUNTU_1404_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
         return initScript;
     }
     /**
