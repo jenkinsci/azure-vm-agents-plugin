@@ -26,15 +26,15 @@
                 </f:entry>
             </f:radioBlock>
 
-            <f:radioBlock name="resourceGroupReferenceType" value="exist" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('exist')}" inline="true">
-                <f:entry field="existResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
+            <f:radioBlock name="resourceGroupReferenceType" value="existing" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('existing')}" inline="true">
+                <f:entry field="existingResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:select/>
                 </f:entry>
             </f:radioBlock>
         </f:entry>
 
         <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
-                          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName"/>
+                          with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName"/>
     </f:section>
 
     <f:entry title="${%Azure_Virtual_Machine_Template}" description="${%Azure_Virtual_Machine_Template_desc}">

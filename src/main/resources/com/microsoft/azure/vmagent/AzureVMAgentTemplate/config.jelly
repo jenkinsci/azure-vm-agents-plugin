@@ -43,8 +43,8 @@
                     </f:entry>
                 </f:radioBlock>
 
-                <f:radioBlock name="storageAccountNameReferenceType" value="exist" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('exist')}" inline="true">
-                    <f:entry field="existStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
+                <f:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
+                    <f:entry field="existingStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>
                 </f:radioBlock>
@@ -176,6 +176,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existStorageAccountName,storageAccountType,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>
