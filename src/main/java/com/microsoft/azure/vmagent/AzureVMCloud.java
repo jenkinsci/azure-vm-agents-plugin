@@ -78,7 +78,7 @@ public class AzureVMCloud extends Cloud {
 
     private final int maxVirtualMachinesLimit;
 
-    private final String resourceGroupReferenceType;
+    private String resourceGroupReferenceType;
 
     private String newResourceGroupName;
 
@@ -181,6 +181,7 @@ public class AzureVMCloud extends Cloud {
         if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existResourceGroupName)
                 && StringUtils.isNotBlank(resourceGroupName)) {
             newResourceGroupName = resourceGroupName;
+            resourceGroupReferenceType = "new";
         }
         //resourceGroupName is transient so we need to restore it for future using
         resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existResourceGroupName);
@@ -240,11 +241,11 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
-    public String isResourceGroupReferenceTypeEquals(final String type) {
+    public Boolean isResourceGroupReferenceTypeEquals(final String type) {
         if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
-            return "true";
+            return true;
         }
-        return type != null && type.equalsIgnoreCase(this.resourceGroupReferenceType) ? "true" : "false";
+        return type != null && type.equalsIgnoreCase(this.resourceGroupReferenceType);
     }
 
     public int getMaxVirtualMachinesLimit() {

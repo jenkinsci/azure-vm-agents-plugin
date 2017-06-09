@@ -253,7 +253,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         if (this.imageReferenceType == null && type.equals("buildIn")) {
             return "true";
         }
-        return type != null && type.equalsIgnoreCase(this.imageReferenceType) ? "true" : "false";
+        return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
 
     private Object readResolve() {
@@ -266,6 +266,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existStorageAccountName)
                 && StringUtils.isNotBlank(storageAccountName)) {
             newStorageAccountName = storageAccountName;
+            storageAccountNameReferenceType = "new";
         }
         storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existStorageAccountName);
         return this;
@@ -320,11 +321,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
     }
 
-    public String isStorageAccountNameReferenceTypeEquals(final String type) {
+    public Boolean isStorageAccountNameReferenceTypeEquals(final String type) {
         if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
-            return "true";
+            return true;
         }
-        return type != null && type.equalsIgnoreCase(this.storageAccountNameReferenceType) ? "true" : "false";
+        return type != null && type.equalsIgnoreCase(this.storageAccountNameReferenceType);
     }
 
     public String getUsageMode() {
