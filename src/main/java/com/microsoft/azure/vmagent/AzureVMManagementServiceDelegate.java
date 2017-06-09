@@ -833,6 +833,7 @@ public final class AzureVMManagementServiceDelegate {
 
     private static Map<String, String> getDefaultInitScript() {
         final Map<String, String> initScript = new HashMap<>();
+
         return initScript;
     }
     /**

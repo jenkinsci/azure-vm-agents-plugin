@@ -29,6 +29,7 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.*;
@@ -249,9 +250,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
 
-    public String isType(final String type) {
+    public Boolean isType(final String type) {
         if (this.imageReferenceType == null && type.equals("buildIn")) {
-            return "true";
+            return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
