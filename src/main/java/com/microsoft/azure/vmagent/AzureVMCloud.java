@@ -24,6 +24,7 @@ import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
+import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
@@ -60,6 +61,7 @@ import hudson.util.StreamTaskListener;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 
+import javax.servlet.ServletException;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 
@@ -76,7 +78,13 @@ public class AzureVMCloud extends Cloud {
 
     private final int maxVirtualMachinesLimit;
 
-    private final String resourceGroupName;
+    private String resourceGroupReferenceType;
+
+    private String newResourceGroupName;
+
+    private final String existingResourceGroupName;
+
+    private transient String resourceGroupName;
 
     // Current set of VM templates.
     // This list should not be accessed without copying it
@@ -103,9 +111,12 @@ public class AzureVMCloud extends Cloud {
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
-            final String resourceGroupName,
+            final String resourceGroupReferenceType,
+            final String newResourceGroupName,
+            final String existingResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit, deploymentTimeout, resourceGroupName, vmTemplates);
+        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit,
+                deploymentTimeout, resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName, vmTemplates);
     }
 
     public AzureVMCloud(
@@ -113,12 +124,17 @@ public class AzureVMCloud extends Cloud {
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
             final String deploymentTimeout,
-            final String resourceGroupName,
+            final String resourceGroupReferenceType,
+            final String newResourceGroupName,
+            final String existingResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), resourceGroupName));
+        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName)));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
-        this.resourceGroupName = resourceGroupName;
+        this.resourceGroupReferenceType = resourceGroupReferenceType;
+        this.newResourceGroupName = newResourceGroupName;
+        this.existingResourceGroupName = existingResourceGroupName;
+        this.resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -162,6 +178,13 @@ public class AzureVMCloud extends Cloud {
     }
 
     private Object readResolve() {
+        if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existingResourceGroupName)
+                && StringUtils.isNotBlank(resourceGroupName)) {
+            newResourceGroupName = resourceGroupName;
+            resourceGroupReferenceType = "new";
+        }
+        //resourceGroupName is transient so we need to restore it for future using
+        resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
@@ -218,8 +241,36 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
+    public Boolean isResourceGroupReferenceTypeEquals(final String type) {
+        if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.resourceGroupReferenceType);
+    }
+
     public int getMaxVirtualMachinesLimit() {
         return maxVirtualMachinesLimit;
+    }
+
+    public static String getResourceGroupName(final String type, final String newName, final String existingName) {
+        //type maybe null in this version, so we can guess according to whether newName is blank or not
+        if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
+                || StringUtils.isNotBlank(type) && type.equalsIgnoreCase("new")) {
+            return newName;
+        }
+        return existingName;
+    }
+
+    public String getNewResourceGroupName() {
+        return newResourceGroupName;
+    }
+
+    public String getExistingResourceGroupName() {
+        return existingResourceGroupName;
+    }
+
+    public String getResourceGroupReferenceType() {
+        return resourceGroupReferenceType;
     }
 
     public String getResourceGroupName() {
@@ -844,8 +895,11 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String azureCredentialsId,
                 @QueryParameter String maxVirtualMachinesLimit,
                 @QueryParameter String deploymentTimeout,
-                @QueryParameter String resourceGroupName) {
+                @QueryParameter String resourceGroupReferenceType,
+                @QueryParameter String newResourceGroupName,
+                @QueryParameter String existingResourceGroupName) {
 
+            String resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
@@ -864,6 +918,27 @@ public class AzureVMCloud extends Cloud {
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
             return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
+        }
+
+        public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId) throws IOException, ServletException {
+            ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
+
+            try {
+                AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+
+                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+
+                for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
+                    model.add(resourceGroup.name());
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Cannot list resource group name: {0}", e);
+            } finally {
+                return model;
+            }
         }
     }
 }
