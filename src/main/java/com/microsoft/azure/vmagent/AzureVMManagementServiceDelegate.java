@@ -137,9 +137,9 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
 
-    private static final String INIT_SCRIPT_WINDOWS_FILENAME = "/windowsInitScript.ps1";
+    private static final String INIT_SCRIPT_WINDOWS_FILENAME = "/scripts/windowsInitScript.ps1";
 
-    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/ubuntuInitScript.sh";
+    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/scripts/ubuntuInitScript.sh";
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -193,26 +193,30 @@ public final class AzureVMManagementServiceDelegate {
             createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
-            final boolean useCustomScriptExtension
-                    = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(template.getInitScript())
-                    && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
 
             String imagePublisher = template.getImagePublisher();
             String imageOffer = template.getImageOffer();
             String imageSku = template.getImageSku();
-            String imageVersion = template.getImageVersion();
             String osType = template.getOsType();
             String agentLaunchMethod = template.getAgentLaunchMethod();
             String initScript = template.getInitScript();
             //if chosen buildIn, use default image setting
-            if(template.getImageReferenceType().equals(IMAGE_BUILD_IN)) {
-                if(StringUtils.isBlank(template.getBuildInImage())) {
-                    throw new Exception("Build-in image is null");
-                } else if (template.getBuildInImage().equals(Constants.WINDOWS_SERVER_2012)) {
-
+            if (template.getImageReferenceType().equals(IMAGE_BUILD_IN)) {
+                if (StringUtils.isBlank(template.getBuildInImage())) {
+                    throw new AzureCloudException("Build-in image is null");
+                } else {
+                    imagePublisher = DEFAULT_IMAGE_PUBLISHER.get(template.getBuildInImage());
+                    imageOffer = DEFAULT_IMAGE_OFFER.get(template.getBuildInImage());
+                    imageSku = DEFAULT_IMAGE_SKU.get(template.getBuildInImage());
+                    osType = DEFAULT_OS_TYPE.get(template.getBuildInImage());
+                    agentLaunchMethod = DEFAULT_LAUNCH_METHOD.get(template.getBuildInImage());
+                    initScript = DEFAULT_INIT_SCRIPT.get(template.getBuildInImage());
                 }
-
             }
+
+            final boolean useCustomScriptExtension
+                    = osType.equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(initScript)
+                    && agentLaunchMethod.equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
             if (template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
@@ -251,20 +255,20 @@ public final class AzureVMManagementServiceDelegate {
             ObjectNode.class.cast(tmp.get("variables")).put("jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             ObjectNode.class.cast(tmp.get("variables")).put("resourceTag", deploymentRegistrar.getDeploymentTag().get());
 
-            if (StringUtils.isNotBlank(template.getImagePublisher())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imagePublisher", template.getImagePublisher());
+            if (StringUtils.isNotBlank(imagePublisher)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imagePublisher", imagePublisher);
             }
 
-            if (StringUtils.isNotBlank(template.getImageOffer())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imageOffer", template.getImageOffer());
+            if (StringUtils.isNotBlank(imageOffer)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imageOffer", imageOffer);
             }
 
-            if (StringUtils.isNotBlank(template.getImageSku())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imageSku", template.getImageSku());
+            if (StringUtils.isNotBlank(imageSku)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imageSku", imageSku);
             }
 
-            if (StringUtils.isNotBlank(template.getOsType())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("osType", template.getOsType());
+            if (StringUtils.isNotBlank(osType)) {
+                ObjectNode.class.cast(tmp.get("variables")).put("osType", osType);
             }
 
             if (StringUtils.isNotBlank(template.getImage())) {
@@ -283,7 +287,7 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
-                String scriptUri = uploadCustomScript(template, scriptName, tokenCache);
+                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, initScript);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptURI", scriptUri);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
@@ -520,10 +524,11 @@ public final class AzureVMManagementServiceDelegate {
      * @param template         Template containing script to upload
      * @param targetScriptName Script to upload
      * @param tokenCache       TokenCache
+     * @param initScript       Specify initScript
      * @return URI of script
      * @throws java.lang.Exception
      */
-    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
+    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache, String initScript) throws Exception {
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
@@ -540,7 +545,7 @@ public final class AzureVMManagementServiceDelegate {
         CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
-        String scriptText = paddedScriptForPageBlob(template.getInitScript());
+        String scriptText = paddedScriptForPageBlob(initScript);
         int scriptLength = scriptText.getBytes(StandardCharsets.UTF_8).length;
         try {
             blob.create(scriptLength);
@@ -553,12 +558,8 @@ public final class AzureVMManagementServiceDelegate {
         return blob.getUri().toString();
     }
 
-    public static void setDefaultParams(AzureVMAgentTemplate template) {
-        if (StringUtils.isBlank(template.getBuildInImage())) {
-            return;
-        } else if (template.getBuildInImage().equals(Constants.WINDOWS_SERVER_2012)) {
-            template.set
-        }
+    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
+        return uploadCustomScript(template, targetScriptName, tokenCache, template.getInitScript());
     }
 
     /**
@@ -836,11 +837,16 @@ public final class AzureVMManagementServiceDelegate {
         return launchMethod;
     }
 
-    private static Map<String, String> getDefaultInitScript() throws IOException {
+    private static Map<String, String> getDefaultInitScript() {
         final Map<String, String> initScript = new HashMap<>();
-        initScript.put(Constants.WINDOWS_SERVER_2012, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
-        initScript.put(Constants.UBUNTU_1404_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
-        return initScript;
+        try {
+            initScript.put(Constants.WINDOWS_SERVER_2012, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
+            initScript.put(Constants.UBUNTU_1404_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
+            return initScript;
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getDefaultInitScript: cannot get init script {0}. Deployment may fail if using build-in image", e);
+            return initScript;
+        }
     }
     /**
      * Gets map of Azure datacenter locations which supports Persistent VM role.
@@ -1395,7 +1401,7 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyImageParameters(referenceType, image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
+            validationResult = verifyImageParameters(referenceType, buildInImage, image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -1411,6 +1417,7 @@ public final class AzureVMManagementServiceDelegate {
                     servicePrincipal,
                     location,
                     referenceType,
+                    buildInImage,
                     image,
                     imagePublisher,
                     imageOffer,
@@ -1439,6 +1446,7 @@ public final class AzureVMManagementServiceDelegate {
             final ServicePrincipal servicePrincipal,
             final String location,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String buildInImage,
             final String image,
             final String imagePublisher,
             final String imageOffer,
@@ -1472,7 +1480,7 @@ public final class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyVirtualMachineImage(servicePrincipal,
-                        location, storageAccountName, referenceType, image, imagePublisher, imageOffer, imageSku, imageVersion);
+                        location, storageAccountName, referenceType, buildInImage, image, imagePublisher, imageOffer, imageSku, imageVersion);
             }
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
@@ -1584,11 +1592,12 @@ public final class AzureVMManagementServiceDelegate {
             final String location,
             final String storageAccountName,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String buildInImage,
             final String image,
-            final String imagePublisher,
-            final String imageOffer,
-            final String imageSku,
-            final String imageVersion) {
+            String imagePublisher,
+            String imageOffer,
+            String imageSku,
+            String imageVersion) {
         if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image))
                 || referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
             try {
@@ -1622,6 +1631,12 @@ public final class AzureVMManagementServiceDelegate {
                 return Messages.Azure_GC_Template_ImageURI_Not_Valid();
             }
         } else {
+            if (referenceType == AzureVMAgentTemplate.ImageReferenceType.BUILDIN) {
+                imagePublisher = DEFAULT_IMAGE_PUBLISHER.get(buildInImage);
+                imageOffer = DEFAULT_IMAGE_OFFER.get(buildInImage);
+                imageSku = DEFAULT_IMAGE_SKU.get(buildInImage);
+                imageVersion = DEFAULT_IMAGE_VERSION.get(buildInImage);
+            }
             try {
                 List<VirtualMachinePublisher> publishers = TokenCache.getInstance(servicePrincipal).getAzureClient().virtualMachineImages().publishers().listByRegion(getLocationName(location));
                 for (VirtualMachinePublisher publisher : publishers) {
@@ -1748,6 +1763,7 @@ public final class AzureVMManagementServiceDelegate {
      */
     private static String verifyImageParameters(
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String buildInImage,
             final String image,
             final String osType,
             final String imagePublisher,
@@ -1765,10 +1781,15 @@ public final class AzureVMManagementServiceDelegate {
                 Messages.Azure_GC_Template_ImageURI_Not_Valid();
             }
             return Constants.OP_SUCCESS;
-        } else if (StringUtils.isNotBlank(imagePublisher)
+        } else if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN || referenceType == AzureVMAgentTemplate.ImageReferenceType.REFERENCE)
+                && StringUtils.isNotBlank(imagePublisher)
                 && StringUtils.isNotBlank(imageOffer)
                 && StringUtils.isNotBlank(imageSku)
                 && StringUtils.isNotBlank(imageVersion)) {
+            return Constants.OP_SUCCESS;
+        } else if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN || referenceType == AzureVMAgentTemplate.ImageReferenceType.BUILDIN)
+                && StringUtils.isNotBlank(buildInImage)) {
+            //If imageReferenceType is UNKNOWN, always guess the type equals buildIn if it doesn't match the previous condition, so the verification always success.
             return Constants.OP_SUCCESS;
         } else {
             return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");

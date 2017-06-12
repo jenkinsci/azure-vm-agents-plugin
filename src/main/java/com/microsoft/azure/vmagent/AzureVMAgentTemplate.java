@@ -29,7 +29,6 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.*;
