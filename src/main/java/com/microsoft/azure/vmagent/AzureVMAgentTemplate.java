@@ -48,10 +48,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +64,43 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         CUSTOM,
         REFERENCE,
         BUILDIN,
+    }
+
+    public static class ImageReferenceTypeClass {
+        private String image;
+        private String imagePublisher;
+        private String imageOffer;
+        private String imageSku;
+        private String imageVersion;
+
+        @DataBoundConstructor
+        public ImageReferenceTypeClass(final String image, final String imagePublisher, final String imageOffer, final String imageSku, final String imageVersion) {
+            this.image = image;
+            this.imagePublisher = imagePublisher;
+            this.imageOffer = imageOffer;
+            this.imageSku = imageSku;
+            this.imageVersion = imageVersion;
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        public String getImagePublisher() {
+            return imagePublisher;
+        }
+
+        public String getImageOffer() {
+            return imageOffer;
+        }
+
+        public String getImageSku() {
+            return imageSku;
+        }
+
+        public String getImageVersion() {
+            return imageVersion;
+        }
     }
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
@@ -170,16 +204,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String existingStorageAccountName,
             final String noOfParallelJobs,
             final String usageMode,
-            final String imageReferenceType,
             final String buildInImage,
-            final String image,
             final String osType,
             final String  imageTopLevelType,
             final boolean imageReference,
-            final String imagePublisher,
-            final String imageOffer,
-            final String imageSku,
-            final String imageVersion,
+            final ImageReferenceTypeClass imageReferenceTypeClass,
             final String agentLaunchMethod,
             final String initScript,
             final String credentialsId,
@@ -216,17 +245,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
-        this.imageReferenceType = imageReferenceType;
+        this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
         this.buildInImage = buildInImage;
-        this.image = image;
-        this.osType = imageReferenceType.equals("buildIn") ? AzureVMManagementServiceDelegate.DEFAULT_OS_TYPE.get(buildInImage) : osType;
-        this.imagePublisher = imagePublisher;
-        this.imageOffer = imageOffer;
-        this.imageSku = imageSku;
-        this.imageVersion = imageVersion;
+        this.image = imageReferenceTypeClass.image;
+        this.osType = osType;
+        this.imagePublisher = imageReferenceTypeClass.imagePublisher;
+        this.imageOffer = imageReferenceTypeClass.imageOffer;
+        this.imageSku = imageReferenceTypeClass.imageSku;
+        this.imageVersion = imageReferenceTypeClass.imageVersion;
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
-        this.agentLaunchMethod = imageReferenceType.equals("buildIn") ? AzureVMManagementServiceDelegate.DEFAULT_LAUNCH_METHOD.get(buildInImage) : agentLaunchMethod;
+        this.agentLaunchMethod = agentLaunchMethod;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
@@ -250,6 +279,30 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
+    }
+
+    public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
+        Map<String, Object> properties = new HashMap<>();
+        String buildInImage = template.getBuildInImage();
+        Boolean isBase = template.getImageTopLevelType().equals("base");
+        properties.put("imagePublisher", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PUBLISHER.get(buildInImage) : template.getImagePublisher());
+        properties.put("imageOffer", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_OFFER.get(buildInImage) : template.getImageOffer());
+        properties.put("imageSku", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_SKU.get(buildInImage) : template.getImageSku());
+        properties.put("imageVersion", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_VERSION.get(buildInImage) : template.getImageVersion());
+        properties.put("osType", isBase ? AzureVMManagementServiceDelegate.DEFAULT_OS_TYPE.get(buildInImage) : template.getOsType());
+        properties.put("agentLaunchMethod", isBase ? AzureVMManagementServiceDelegate.DEFAULT_LAUNCH_METHOD.get(buildInImage) : template.getAgentLaunchMethod());
+        properties.put("initScript", isBase ? AzureVMManagementServiceDelegate.DEFAULT_INIT_SCRIPT.get(buildInImage) : template.getInitScript());
+        properties.put("virtualNetworkName", isBase ? "" : template.getVirtualNetworkName());
+        properties.put("virtualNetworkResourceGroupName", isBase ? "" : template.getVirtualNetworkResourceGroupName());
+        properties.put("subnetName", isBase ? "" : template.getSubnetName());
+        properties.put("usePrivateIP", isBase ? false : template.getUsePrivateIP());
+        properties.put("nsgName", isBase ? "" : template.getNsgName());
+        properties.put("jvmOptions", isBase ? "" : template.getJvmOptions());
+        properties.put("noOfParallelJobs", isBase ? 1 : template.getNoOfParallelJobs());
+        properties.put("templateDisabled", isBase ? false : template.isTemplateDisabled());
+        properties.put("executeInitScriptAsRoot", isBase ? true : template.getExecuteInitScriptAsRoot());
+        properties.put("doNotUseMachineIfInitFails", isBase ? true : template.getDoNotUseMachineIfInitFails());
+        return properties;
     }
 
 
@@ -360,6 +413,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public String getImageReferenceType() {
         return imageReferenceType;
+    }
+
+    public String getImageTopLevelType() {
+        return imageTopLevelType;
+    }
+
+    public String getImageReferenceType(ImageReferenceTypeClass imageReferenceTypeClass) {
+        if (imageReferenceTypeClass.image != null) {
+            return "custom";
+        }
+        return "reference";
     }
 
     public String getBuildInImage() {
@@ -581,6 +645,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 storageAccountName,
                 storageAccountType,
                 noOfParallelJobs + "",
+                imageTopLevelType,
                 (imageReferenceType == null) ? ImageReferenceType.UNKNOWN
                         : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
                         : (imageReferenceType.equalsIgnoreCase("buildIn") ? ImageReferenceType.BUILDIN
@@ -872,10 +937,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             */
             ImageReferenceType referenceType = ImageReferenceType.UNKNOWN;
             if (imageReferenceType != null) {
-                referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
-                        : (imageReferenceType.equalsIgnoreCase("buildIn") ? ImageReferenceType.BUILDIN
-                        : ImageReferenceType.REFERENCE);
+                referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE;
             }
+            String imageTopLevelType = null;
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -961,6 +1025,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     storageAccountName,
                     storageAccountType,
                     noOfParallelJobs,
+                    imageTopLevelType,
                     referenceType,
                     buildInImage,
                     image,

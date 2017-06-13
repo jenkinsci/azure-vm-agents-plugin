@@ -68,47 +68,38 @@
         <f:section title="${%Image_Configuration}">
             <f:radioBlock name="imageTopLevelType" value="base" title="${%Build_In_Image}" checked="${instance == null || instance.isTopLevelType('base')}"
                           inline="true">
-                <f:nested>
-
                 <f:entry field="buildInImage">
                     <f:select/>
                 </f:entry>
-                </f:nested>
             </f:radioBlock>
 
-            <f:radioBlock name="imageTopLevelType" value="advanced" title="Use advanced images" checked="instance.isTopLevelType('advanced')" inline="true">
-                <f:nested>
-                    <f:radioBlock name="imageReferenceType" value="custom" title="${%Custom_Image}"
-                                  checked="${instance == null || instance.isType('custom')}" help="/plugin/azure-vm-agents/help-image.html"
-                                  inline="true">
+            <f:radioBlock name="imageTopLevelType" value="advanced" title="Use advanced images" checked="${instance.isTopLevelType('advanced')}" inline="true">
+                <f:dropdownList name="imageReferenceTypeClass">
+                    <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
                         <f:entry title="${%Image}" field="image" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
                         </f:entry>
-                    </f:radioBlock>
-                </f:nested>
+                    </f:dropdownListBlock>
 
-                <f:nested>
-                <f:radioBlock name="imageReferenceType" value="reference" title="${%Marketplace_Image}"
-                              checked="${instance.isType('reference')}"
-                              help="/plugin/azure-vm-agents/help-imageReference.html" inline="true">
+                    <f:dropdownListBlock title="${%Marketplace_Image}" value="reference" selected="${instance.isType('reference')}">
+                        <f:entry title="${%Image_Publisher}" field="imagePublisher"
+                                 help="/plugin/azure-vm-agents/help-imageReference.html">
+                            <f:textbox/>
+                        </f:entry>
+                        <f:entry title="${%Image_Offer}" field="imageOffer"
+                                 help="/plugin/azure-vm-agents/help-imageReference.html">
+                            <f:textbox/>
+                        </f:entry>
+                        <f:entry title="${%Image_Sku}" field="imageSku" help="/plugin/azure-vm-agents/help-imageReference.html">
+                            <f:textbox/>
+                        </f:entry>
+                        <f:entry title="${%Image_Version}" field="imageVersion"
+                                 help="/plugin/azure-vm-agents/help-imageReference.html">
+                            <f:textbox default="latest"/>
+                        </f:entry>
+                    </f:dropdownListBlock>
+                </f:dropdownList>
 
-                    <f:entry title="${%Image_Publisher}" field="imagePublisher"
-                             help="/plugin/azure-vm-agents/help-imageReference.html">
-                        <f:textbox/>
-                    </f:entry>
-                    <f:entry title="${%Image_Offer}" field="imageOffer"
-                             help="/plugin/azure-vm-agents/help-imageReference.html">
-                        <f:textbox/>
-                    </f:entry>
-                    <f:entry title="${%Image_Sku}" field="imageSku" help="/plugin/azure-vm-agents/help-imageReference.html">
-                        <f:textbox/>
-                    </f:entry>
-                    <f:entry title="${%Image_Version}" field="imageVersion"
-                             help="/plugin/azure-vm-agents/help-imageReference.html">
-                        <f:textbox default="latest"/>
-                    </f:entry>
-                </f:radioBlock>
-                </f:nested>
 
 
                 <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
