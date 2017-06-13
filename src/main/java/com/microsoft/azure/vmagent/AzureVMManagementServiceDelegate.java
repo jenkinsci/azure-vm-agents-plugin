@@ -131,9 +131,9 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final Map<String, String> DEFAULT_IMAGE_VERSION = getDefaultImageVersion();
 
-    private static final Map<String, String> DEFAULT_OS_TYPE = getDefaultOsType();
+    public static final Map<String, String> DEFAULT_OS_TYPE = getDefaultOsType();
 
-    private static final Map<String, String> DEFAULT_LAUNCH_METHOD = getDefaultLaunchMethod();
+    public static final Map<String, String> DEFAULT_LAUNCH_METHOD = getDefaultLaunchMethod();
 
     private static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
 
@@ -197,8 +197,6 @@ public final class AzureVMManagementServiceDelegate {
             String imagePublisher = template.getImagePublisher();
             String imageOffer = template.getImageOffer();
             String imageSku = template.getImageSku();
-            String osType = template.getOsType();
-            String agentLaunchMethod = template.getAgentLaunchMethod();
             String initScript = template.getInitScript();
             //if chosen buildIn, use default image setting
             if (template.getImageReferenceType().equals(IMAGE_BUILD_IN)) {
@@ -208,15 +206,13 @@ public final class AzureVMManagementServiceDelegate {
                     imagePublisher = DEFAULT_IMAGE_PUBLISHER.get(template.getBuildInImage());
                     imageOffer = DEFAULT_IMAGE_OFFER.get(template.getBuildInImage());
                     imageSku = DEFAULT_IMAGE_SKU.get(template.getBuildInImage());
-                    osType = DEFAULT_OS_TYPE.get(template.getBuildInImage());
-                    agentLaunchMethod = DEFAULT_LAUNCH_METHOD.get(template.getBuildInImage());
                     initScript = DEFAULT_INIT_SCRIPT.get(template.getBuildInImage());
                 }
             }
 
             final boolean useCustomScriptExtension
-                    = osType.equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(initScript)
-                    && agentLaunchMethod.equals(Constants.LAUNCH_METHOD_JNLP);
+                    = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(initScript)
+                    && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
             if (template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
@@ -267,8 +263,8 @@ public final class AzureVMManagementServiceDelegate {
                 ObjectNode.class.cast(tmp.get("variables")).put("imageSku", imageSku);
             }
 
-            if (StringUtils.isNotBlank(osType)) {
-                ObjectNode.class.cast(tmp.get("variables")).put("osType", osType);
+            if (StringUtils.isNotBlank(template.getOsType())) {
+                ObjectNode.class.cast(tmp.get("variables")).put("osType", template.getOsType());
             }
 
             if (StringUtils.isNotBlank(template.getImage())) {

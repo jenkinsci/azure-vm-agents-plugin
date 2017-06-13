@@ -101,6 +101,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     private final boolean shutdownOnIdle;
 
     // Image Configuration
+    private final String imageTopLevelType;
+
     private final String imageReferenceType;
 
     private final String buildInImage;
@@ -172,6 +174,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String buildInImage,
             final String image,
             final String osType,
+            final String  imageTopLevelType,
             final boolean imageReference,
             final String imagePublisher,
             final String imageOffer,
@@ -212,17 +215,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             this.noOfParallelJobs = Integer.parseInt(noOfParallelJobs);
         }
         setUsageMode(usageMode);
+        this.imageTopLevelType = imageTopLevelType;
         this.imageReferenceType = imageReferenceType;
         this.buildInImage = buildInImage;
         this.image = image;
-        this.osType = osType;
+        this.osType = imageReferenceType.equals("buildIn") ? AzureVMManagementServiceDelegate.DEFAULT_OS_TYPE.get(buildInImage) : osType;
         this.imagePublisher = imagePublisher;
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
         this.imageVersion = imageVersion;
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
-        this.agentLaunchMethod = agentLaunchMethod;
+        this.agentLaunchMethod = imageReferenceType.equals("buildIn") ? AzureVMManagementServiceDelegate.DEFAULT_LAUNCH_METHOD.get(buildInImage) : agentLaunchMethod;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
@@ -250,10 +254,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
 
     public Boolean isType(final String type) {
-        if (this.imageReferenceType == null && type.equals("buildIn")) {
+        if (this.imageReferenceType == null && type.equals("reference")) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType);
+    }
+
+    public Boolean isTopLevelType(final String type) {
+        if (this.imageTopLevelType == null && type.equals("base")) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.imageTopLevelType);
     }
 
     private Object readResolve() {
@@ -861,7 +872,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             */
             ImageReferenceType referenceType = ImageReferenceType.UNKNOWN;
             if (imageReferenceType != null) {
-                referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE;
+                referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
+                        : (imageReferenceType.equalsIgnoreCase("buildIn") ? ImageReferenceType.BUILDIN
+                        : ImageReferenceType.REFERENCE);
             }
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
@@ -884,22 +897,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "virtualMachineSize: {8};\n\t"
                             + "storageAccountName: {9};\n\t"
                             + "noOfParallelJobs: {10};\n\t"
-                            + "image: {11};\n\t"
-                            + "osType: {12};\n\t"
-                            + "imagePublisher: {13};\n\t"
-                            + "imageOffer: {14};\n\t"
-                            + "imageSku: {15};\n\t"
-                            + "imageVersion: {16};\n\t"
-                            + "agentLaunchMethod: {17};\n\t"
-                            + "initScript: {18};\n\t"
-                            + "credentialsId: {19};\n\t"
-                            + "virtualNetworkName: {20};\n\t"
-                            + "virtualNetworkResourceGroupName: {21};\n\t"
-                            + "subnetName: {22};\n\t"
-                            + "privateIP: {23};\n\t"
-                            + "nsgName: {24};\n\t"
-                            + "retentionTimeInMin: {25};\n\t"
-                            + "jvmOptions: {26};",
+                            + "buildInImage: {11};\n\t"
+                            + "image: {12};\n\t"
+                            + "osType: {13};\n\t"
+                            + "imagePublisher: {14};\n\t"
+                            + "imageOffer: {15};\n\t"
+                            + "imageSku: {16};\n\t"
+                            + "imageVersion: {17};\n\t"
+                            + "agentLaunchMethod: {18};\n\t"
+                            + "initScript: {19};\n\t"
+                            + "credentialsId: {20};\n\t"
+                            + "virtualNetworkName: {21};\n\t"
+                            + "virtualNetworkResourceGroupName: {22};\n\t"
+                            + "subnetName: {23};\n\t"
+                            + "privateIP: {24};\n\t"
+                            + "nsgName: {25};\n\t"
+                            + "retentionTimeInMin: {26};\n\t"
+                            + "jvmOptions: {27};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -912,6 +926,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             virtualMachineSize,
                             storageAccountName,
                             noOfParallelJobs,
+                            buildInImage,
                             image,
                             osType,
                             imagePublisher,
