@@ -1778,8 +1778,7 @@ public final class AzureVMManagementServiceDelegate {
                     Messages.Azure_GC_Template_ImageURI_Not_Valid();
                 }
                 return Constants.OP_SUCCESS;
-            } else if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN || referenceType == AzureVMAgentTemplate.ImageReferenceType.REFERENCE)
-                    && StringUtils.isNotBlank(imagePublisher)
+            } else if (StringUtils.isNotBlank(imagePublisher)
                     && StringUtils.isNotBlank(imageOffer)
                     && StringUtils.isNotBlank(imageSku)
                     && StringUtils.isNotBlank(imageVersion)) {
