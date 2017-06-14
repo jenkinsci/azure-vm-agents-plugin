@@ -134,11 +134,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     private final boolean shutdownOnIdle;
 
     // Image Configuration
-    private final String imageTopLevelType;
+    private String imageTopLevelType;
 
     private final String imageReferenceType;
 
-    private final String buildInImage;
+    private String buildInImage;
 
     private final String image;
 
@@ -332,6 +332,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             storageAccountNameReferenceType = "new";
         }
         storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
+
+        if (StringUtils.isBlank(imageTopLevelType)) {
+            if (StringUtils.isNotBlank(image)
+                    || StringUtils.isNotBlank(imageOffer)
+                    || StringUtils.isNotBlank(imageSku)
+                    || StringUtils.isNotBlank(imagePublisher)) {
+                imageTopLevelType = "advanced";
+            } else {
+                imageTopLevelType = "base";
+            }
+            buildInImage = Constants.WINDOWS_SERVER_2016;
+        }
         return this;
     }
 

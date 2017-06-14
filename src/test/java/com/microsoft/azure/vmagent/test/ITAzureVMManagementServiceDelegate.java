@@ -700,31 +700,31 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void verifyVirtualMachineImageTest() {
         try{
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "","",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "","",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "latest"));
 
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, ""));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "wrong_version"));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation +"wrong", "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation +"wrong", "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, ""));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher + "wrong", testEnv.azureImageOffer, testEnv.azureImageSku, "latest"));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer + "wrong", testEnv.azureImageSku, ""));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", "advanced", AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku + "wrong", "latest"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
