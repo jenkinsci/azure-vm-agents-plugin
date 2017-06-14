@@ -286,7 +286,8 @@ public class IntegrationTest {
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
-        when(templateMock.getImageReferenceType()).thenReturn("");
+        when(templateMock.getImageTopLevelType()).thenReturn("advanced");
+        when(templateMock.getImageReferenceType()).thenReturn("reference");
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
         when(templateMock.getImageSku()).thenReturn(testEnv.azureImageSku);
