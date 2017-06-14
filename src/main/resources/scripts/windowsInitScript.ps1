@@ -5,49 +5,59 @@ $client = new-object System.Net.WebClient
 $cookie = "oraclelicense=accept-securebackup-cookie"
 $client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
 $client.downloadFile($source, $destination)
-$proc = Start-Process -FilePath $destination -ArgumentList "/s"m -Wait -PassThru
+$proc = Start-Process -FilePath $destination -ArgumentList "/s" -Wait -PassThru
 $proc.WaitForExit()
 [System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
 [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")
 
 Set-ExecutionPolicy Unrestricted
-$jenkinsServerUrl = $args[0]
-$vmName = $args[1]
+# Jenkins plugin will dynamically pass the server name and vm name.
+# If your jenkins server is configured for security , make sure to edit command for how slave executes
+$jenkinsserverurl = $args[0]
+$vmname = $args[1]
 $secret = $args[2]
 
-$baseDir = 'C:\Jenkins'
-mkdir $baseDir
-# Download the JDK
-$source = "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-windows-x64.exe"
-$destination = "$baseDir\jdk.exe"
-$client = new-object System.Net.WebClient
-$cookie = "oraclelicense=accept-securebackup-cookie"
-$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
-$client.downloadFile([string]$source, [string]$destination)
+#Default workspace location
+Set-Location d:\
 
-# Execute the unattended install
-$jdkInstallDir=$baseDir + '\jdk\'
-$jreInstallDir=$baseDir + '\jre\'
-C:\Jenkins\jdk.exe /s INSTALLDIR=$jdkInstallDir /INSTALLDIRPUBJRE=$jdkInstallDir
+# Download the file to a specific location
+Write-Output "Downloading zulu SDK "
+$source = "http://azure.azulsystems.com/zulu/zulu1.7.0_51-7.3.0.4-win64.zip?jenkins"
+mkdir d:\azurecsdir
+$destination = "d:\azurecsdir\zuluJDK.zip"
+$wc = New-Object System.Net.WebClient
+$wc.DownloadFile($source, $destination)
 
-$javaExe=$jdkInstallDir + '\bin\java.exe'
-$jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/slave.jar"
-$destinationSlaveJarPath = $baseDir + '\slave.jar'
+Write-Output "Unzipping JDK "
+# Unzip the file to specified location
+$shell_app=new-object -com shell.application
+$zip_file = $shell_app.namespace($destination)
+mkdir d:\java
+$destination = $shell_app.namespace("d:\java")
+$destination.Copyhere($zip_file.items())
+Write-Output "Successfully downloaded and extracted JDK "
 
-# Download the jar file
-$client = new-object System.Net.WebClient
-$client.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)
+# Downloading jenkins slaves jar
+Write-Output "Downloading jenkins slave jar "
+$slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
+$destSource = "d:\java\slave.jar"
+$wc = New-Object System.Net.WebClient
+$wc.DownloadFile($slaveSource, $destSource)
 
-# Calculate the jnlpURL
-$jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/slave-agent.jnlp'
-
+# execute agent
+Write-Output "Executing agent process "
+$java="d:\java\zulu1.7.0_51-7.3.0.4-win64\bin\java.exe"
+$jar="-jar"
+$jnlpUrl="-jnlpUrl"
+$secretFlag="-secret"
+$serverURL=$jenkinsserverurl+"computer/" + $vmname + "/slave-agent.jnlp"
 while ($true) {
-    try {
-        # Launch
-        & $javaExe -jar $destinationSlaveJarPath -secret $secret -jnlpUrl $jnlpUrl -noReconnect
-    }
-    catch [System.Exception] {
-        Write-Output $_.Exception.ToString()
-    }
-    sleep 10
+  try {
+    # Launch
+    & $java -jar $destSource $secretFlag  $secret $jnlpUrl $serverURL -noReconnect
+  }
+  catch [System.Exception] {
+    Write-Output $_.Exception.ToString()
+  }
+  Start-Sleep 10
 }
