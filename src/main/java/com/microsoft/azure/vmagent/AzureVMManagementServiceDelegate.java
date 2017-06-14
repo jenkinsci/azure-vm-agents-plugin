@@ -113,8 +113,6 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
-    private static final String IMAGE_BUILD_IN = "buildIn";
-
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
 
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
@@ -1583,10 +1581,10 @@ public final class AzureVMManagementServiceDelegate {
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
             final String buildInImage,
             final String image,
-            String imagePublisher,
-            String imageOffer,
-            String imageSku,
-            String imageVersion) {
+            final String imagePublisher,
+            final String imageOffer,
+            final String imageSku,
+            final String imageVersion) {
         if (imageTopLevelType == null || imageTopLevelType.equals("base")) {
             if (StringUtils.isNotBlank(buildInImage)) {
                 //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
@@ -1761,10 +1759,14 @@ public final class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ((imageTopLevelType == null || imageTopLevelType.equals("base")) && StringUtils.isNotBlank(buildInImage)) {
+        if (imageTopLevelType == null || imageTopLevelType.equals("base")) {
             //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
-            return Constants.OP_SUCCESS;
-        } else if (imageTopLevelType == null || imageTopLevelType.equals("advanced")) {
+            if (StringUtils.isNotBlank(buildInImage)) {
+                return Constants.OP_SUCCESS;
+            } else {
+                return "Azure build-in image is not valid";
+            }
+        } else {
             if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)))
                     || referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
                 // Check that the image string is a URI by attempting to create
@@ -1785,8 +1787,6 @@ public final class AzureVMManagementServiceDelegate {
             } else {
                 return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
             }
-        } else {
-            return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
         }
     }
 

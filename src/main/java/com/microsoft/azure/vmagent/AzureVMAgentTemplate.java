@@ -246,12 +246,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.imageTopLevelType = imageTopLevelType;
         this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
         this.buildInImage = buildInImage;
-        this.image = imageReferenceTypeClass.image;
+        this.image = imageReferenceTypeClass.getImage();
         this.osType = osType;
-        this.imagePublisher = imageReferenceTypeClass.imagePublisher;
-        this.imageOffer = imageReferenceTypeClass.imageOffer;
-        this.imageSku = imageReferenceTypeClass.imageSku;
-        this.imageVersion = imageReferenceTypeClass.imageVersion;
+        this.imagePublisher = imageReferenceTypeClass.getImagePublisher();
+        this.imageOffer = imageReferenceTypeClass.getImageOffer();
+        this.imageSku = imageReferenceTypeClass.getImageSku();
+        this.imageVersion = imageReferenceTypeClass.getImageVersion();
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -970,23 +970,24 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "virtualMachineSize: {8};\n\t"
                             + "storageAccountName: {9};\n\t"
                             + "noOfParallelJobs: {10};\n\t"
-                            + "buildInImage: {11};\n\t"
-                            + "image: {12};\n\t"
-                            + "osType: {13};\n\t"
-                            + "imagePublisher: {14};\n\t"
-                            + "imageOffer: {15};\n\t"
-                            + "imageSku: {16};\n\t"
-                            + "imageVersion: {17};\n\t"
-                            + "agentLaunchMethod: {18};\n\t"
-                            + "initScript: {19};\n\t"
-                            + "credentialsId: {20};\n\t"
-                            + "virtualNetworkName: {21};\n\t"
-                            + "virtualNetworkResourceGroupName: {22};\n\t"
-                            + "subnetName: {23};\n\t"
-                            + "privateIP: {24};\n\t"
-                            + "nsgName: {25};\n\t"
-                            + "retentionTimeInMin: {26};\n\t"
-                            + "jvmOptions: {27};",
+                            + "imageTopLevelType: {11};\n\t"
+                            + "buildInImage: {12};\n\t"
+                            + "image: {13};\n\t"
+                            + "osType: {14};\n\t"
+                            + "imagePublisher: {15};\n\t"
+                            + "imageOffer: {16};\n\t"
+                            + "imageSku: {17};\n\t"
+                            + "imageVersion: {18};\n\t"
+                            + "agentLaunchMethod: {19};\n\t"
+                            + "initScript: {20};\n\t"
+                            + "credentialsId: {21};\n\t"
+                            + "virtualNetworkName: {22};\n\t"
+                            + "virtualNetworkResourceGroupName: {23};\n\t"
+                            + "subnetName: {24};\n\t"
+                            + "privateIP: {25};\n\t"
+                            + "nsgName: {26};\n\t"
+                            + "retentionTimeInMin: {27};\n\t"
+                            + "jvmOptions: {28};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -999,6 +1000,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             virtualMachineSize,
                             storageAccountName,
                             noOfParallelJobs,
+                            imageTopLevelType,
                             buildInImage,
                             image,
                             osType,
