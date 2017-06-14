@@ -101,8 +101,8 @@ public final class Constants {
     /**
      * Build In Image.
      */
-    public static final String WINDOWS_SERVER_2012 = "Windows Server 2012";
-    public static final String UBUNTU_1404_LTS = "Ubuntu 14.04 LTS";
+    public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
+    public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
 
     /**
      * Error codes.

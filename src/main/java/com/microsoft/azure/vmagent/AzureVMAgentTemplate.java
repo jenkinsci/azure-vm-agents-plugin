@@ -63,7 +63,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         UNKNOWN,
         CUSTOM,
         REFERENCE,
-        BUILDIN,
     }
 
     public static class ImageReferenceTypeClass {
@@ -647,8 +646,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 noOfParallelJobs + "",
                 imageTopLevelType,
                 (imageReferenceType == null) ? ImageReferenceType.UNKNOWN
-                        : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
-                        : (imageReferenceType.equalsIgnoreCase("buildIn") ? ImageReferenceType.BUILDIN
+                        : ((imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
                         : ImageReferenceType.REFERENCE)),
                 buildInImage,
                 image,
@@ -790,8 +788,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillBuildInImageItems() {
             ListBoxModel model = new ListBoxModel();
-            model.add(Constants.WINDOWS_SERVER_2012);
-            model.add(Constants.UBUNTU_1404_LTS);
+            model.add(Constants.WINDOWS_SERVER_2016);
+            model.add(Constants.UBUNTU_1604_LTS);
             return model;
         }
 
@@ -912,13 +910,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String existingStorageAccountName,
                 @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
+                @QueryParameter String imageTopLevelType,
                 @QueryParameter String buildInImage,
-                @QueryParameter String image,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String image,
                 @QueryParameter String osType,
-                @QueryParameter String imagePublisher,
-                @QueryParameter String imageOffer,
-                @QueryParameter String imageSku,
-                @QueryParameter String imageVersion,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String imagePublisher,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageOffer,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageSku,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageVersion,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
@@ -939,8 +938,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             if (imageReferenceType != null) {
                 referenceType = imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE;
             }
-            String imageTopLevelType = null;
-
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
             String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
             String storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);

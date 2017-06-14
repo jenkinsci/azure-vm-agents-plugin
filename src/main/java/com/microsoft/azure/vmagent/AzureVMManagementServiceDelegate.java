@@ -312,11 +312,11 @@ public final class AzureVMManagementServiceDelegate {
 
             // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
-            if (!isBase && StringUtils.isNotBlank(template.getVirtualNetworkName())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
-                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
-                if (StringUtils.isNotBlank(template.getVirtualNetworkResourceGroupName())) {
-                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
+            if (!isBase && StringUtils.isNotBlank((String) properties.get("virtualNetworkName"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", (String) properties.get("virtualNetworkName"));
+                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", (String) properties.get("subnetName"));
+                if (StringUtils.isNotBlank((String) properties.get("virtualNetworkResourceGroupName"))) {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", (String) properties.get("virtualNetworkResourceGroupName"));
                 } else {
                     ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
                 }
@@ -324,12 +324,12 @@ public final class AzureVMManagementServiceDelegate {
                 addDefaultVNetResourceNode(tmp, mapper, resourceGroupName);
             }
 
-            if (isBase || !template.getUsePrivateIP()) {
+            if (!(Boolean) properties.get("usePrivateIP")) {
                 addPublicIPResourceNode(tmp, mapper);
             }
 
-            if (!isBase && StringUtils.isNotBlank(template.getNsgName())) {
-                addNSGNode(tmp, mapper, template.getNsgName());
+            if (StringUtils.isNotBlank((String) properties.get("nsgName"))) {
+                addNSGNode(tmp, mapper, (String) properties.get("nsgName"));
             }
 
             // Register the deployment for cleanup
@@ -782,51 +782,51 @@ public final class AzureVMManagementServiceDelegate {
 
     private static Map<String, String> getDefaultImagePublisher() {
         final Map<String, String> imagePublisher = new HashMap<>();
-        imagePublisher.put(Constants.WINDOWS_SERVER_2012, "MicrosoftWindowsServer");
-        imagePublisher.put(Constants.UBUNTU_1404_LTS, "Canonical");
+        imagePublisher.put(Constants.WINDOWS_SERVER_2016, "MicrosoftWindowsServer");
+        imagePublisher.put(Constants.UBUNTU_1604_LTS, "Canonical");
         return imagePublisher;
     }
 
     private static Map<String, String> getDefaultImageOffer() {
         final Map<String, String> imageOffer = new HashMap<>();
-        imageOffer.put(Constants.WINDOWS_SERVER_2012, "WindowsServer");
-        imageOffer.put(Constants.UBUNTU_1404_LTS, "UbuntuServer");
+        imageOffer.put(Constants.WINDOWS_SERVER_2016, "WindowsServer");
+        imageOffer.put(Constants.UBUNTU_1604_LTS, "UbuntuServer");
         return imageOffer;
     }
 
     private static Map<String, String> getDefaultImageSku() {
         final Map<String, String> imageSku = new HashMap<>();
-        imageSku.put(Constants.WINDOWS_SERVER_2012, "2012-R2-Datacenter");
-        imageSku.put(Constants.UBUNTU_1404_LTS, "14.04.5-LTS");
+        imageSku.put(Constants.WINDOWS_SERVER_2016, "2016-Datacenter");
+        imageSku.put(Constants.UBUNTU_1604_LTS, "16.04-LTS");
         return imageSku;
     }
 
     private static Map<String, String> getDefaultImageVersion() {
         final Map<String, String> imageVersion = new HashMap<>();
-        imageVersion.put(Constants.WINDOWS_SERVER_2012, "latest");
-        imageVersion.put(Constants.UBUNTU_1404_LTS, "latest");
+        imageVersion.put(Constants.WINDOWS_SERVER_2016, "latest");
+        imageVersion.put(Constants.UBUNTU_1604_LTS, "latest");
         return imageVersion;
     }
 
     private static Map<String, String> getDefaultOsType() {
         final Map<String, String> osType = new HashMap<>();
-        osType.put(Constants.WINDOWS_SERVER_2012, "Windows");
-        osType.put(Constants.UBUNTU_1404_LTS, "Linux");
+        osType.put(Constants.WINDOWS_SERVER_2016, "Windows");
+        osType.put(Constants.UBUNTU_1604_LTS, "Linux");
         return osType;
     }
 
     private static Map<String, String> getDefaultLaunchMethod() {
         final Map<String, String> launchMethod = new HashMap<>();
-        launchMethod.put(Constants.WINDOWS_SERVER_2012, "JNLP");
-        launchMethod.put(Constants.UBUNTU_1404_LTS, "SSH");
+        launchMethod.put(Constants.WINDOWS_SERVER_2016, "JNLP");
+        launchMethod.put(Constants.UBUNTU_1604_LTS, "SSH");
         return launchMethod;
     }
 
     private static Map<String, String> getDefaultInitScript() {
         final Map<String, String> initScript = new HashMap<>();
         try {
-            initScript.put(Constants.WINDOWS_SERVER_2012, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
-            initScript.put(Constants.UBUNTU_1404_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
+            initScript.put(Constants.WINDOWS_SERVER_2016, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
+            initScript.put(Constants.UBUNTU_1604_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
             return initScript;
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getDefaultInitScript: cannot get init script {0}. Deployment may fail if using build-in image", e);
@@ -1587,8 +1587,9 @@ public final class AzureVMManagementServiceDelegate {
             String imageOffer,
             String imageSku,
             String imageVersion) {
-        if (imageTopLevelType.equals("base")) {
+        if (imageTopLevelType == null || imageTopLevelType.equals("base")) {
             if (StringUtils.isNotBlank(buildInImage)) {
+                //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
                 return Constants.OP_SUCCESS;
             } else {
                 return "Azure build-in image is not valid";
@@ -1761,6 +1762,7 @@ public final class AzureVMManagementServiceDelegate {
             final String imageSku,
             final String imageVersion) {
         if ((imageTopLevelType == null || imageTopLevelType.equals("base")) && StringUtils.isNotBlank(buildInImage)) {
+            //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
             return Constants.OP_SUCCESS;
         } else if (imageTopLevelType == null || imageTopLevelType.equals("advanced")) {
             if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)))
