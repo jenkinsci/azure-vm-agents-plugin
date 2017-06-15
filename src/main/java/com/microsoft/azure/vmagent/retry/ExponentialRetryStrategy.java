@@ -57,7 +57,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     public boolean canRetry(final int currentRetryCount, final Exception e)
             throws AzureCloudException {
         if (currentRetryCount >= maxRetries) {
-            throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);
+            throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
         } else {
             return AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage());
         }

@@ -15,24 +15,43 @@
  */
 package com.microsoft.azure.vmagent.exceptions;
 
-public class AzureCloudException extends Exception {
+import com.microsoft.azure.CloudException;
 
-    public AzureCloudException(final String message) {
-        super(message);
-    }
-
-    public AzureCloudException() {
-        super();
-    }
-
-    public AzureCloudException(final String msg, final Exception excep) {
-        super(msg, excep);
-    }
-
-    public AzureCloudException(final Exception excep) {
-        super(excep);
-    }
+public final class AzureCloudException extends Exception {
 
     private static final long serialVersionUID = -8157417759485046943L;
 
+    private AzureCloudException(final String msg) {
+        super(msg);
+    }
+
+    private AzureCloudException(final String msg, final Exception ex) {
+        super(msg, ex);
+    }
+
+    public static AzureCloudException create(final Exception ex) {
+        return create(null, ex);
+    }
+
+    public static AzureCloudException create(final String msg) {
+        return new AzureCloudException(msg);
+    }
+
+    public static AzureCloudException create(final String msg, final Exception ex) {
+        if (ex instanceof CloudException) {
+            // Drop stacktrace of CloudException and throw its message only
+            //
+            // Fields in CloudException contain details of HTTP requests and responses. Their types are in okhttp
+            // package. Once serialized and persisted, these fields may not be recognized and unmarshalled properly
+            // when Cloud Statistics Plugin loads next time, as okhttp related classes haven't loaded yet at that
+            // point. This can cause crash of the plugin and makes Jenkins unusable.
+            if (msg != null) {
+                return new AzureCloudException(String.format("%s: %s", msg, ex.getMessage()));
+            } else {
+                return new AzureCloudException(ex.getMessage());
+            }
+        } else {
+            return new AzureCloudException(msg, ex);
+        }
+    }
 }

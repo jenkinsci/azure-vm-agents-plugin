@@ -44,7 +44,7 @@ public class NoRetryStrategy implements RetryStrategy {
 
     @Override
     public void handleRetry(Exception e) throws AzureCloudException {
-        throw new AzureCloudException(e.getMessage(), e);
+        throw AzureCloudException.create(e.getMessage(), e);
     }
 
     @Override

@@ -26,7 +26,7 @@ public class LinearRetryForAllExceptions extends DefaultRetryStrategy {
     @Override
     public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
         if (currentRetryCount >= maxRetries) {
-            throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);
+            throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
         } else {
             return true;
         }

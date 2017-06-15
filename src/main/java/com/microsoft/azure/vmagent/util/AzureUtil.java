@@ -384,7 +384,7 @@ public final class AzureUtil {
                 CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {
-            throw new AzureCloudException("Could not find credentials with id: " + credentialsId);
+            throw AzureCloudException.create("Could not find credentials with id: " + credentialsId);
         }
 
         return creds;
