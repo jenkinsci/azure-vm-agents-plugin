@@ -561,7 +561,7 @@ public class AzureVMCloud extends Cloud {
                                 if (statusMessage != null) {
                                     finalStatusMessage += " - " + statusMessage.toString();
                                 }
-                                throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
+                                throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
                             } else if (state.equalsIgnoreCase("succeeded")) {
                                 LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
 
@@ -583,7 +583,7 @@ public class AzureVMCloud extends Cloud {
             }
         } while (triesLeft > 0);
 
-        throw new AzureCloudException(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)", deploymentName, sleepTimeInSeconds));
+        throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)", deploymentName, sleepTimeInSeconds));
     }
 
     @Override
@@ -810,7 +810,7 @@ public class AzureVMCloud extends Cloud {
             String result = future.get(timeoutInMinutes, TimeUnit.MINUTES);
             LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node is alive , result {0}", result);
         } catch (Exception ex) {
-            throw new AzureCloudException("Azure Cloud: waitUntilOnline: Failure waiting till online", ex);
+            throw AzureCloudException.create("Azure Cloud: waitUntilOnline: Failure waiting till online", ex);
         } finally {
             future.cancel(true);
         }
