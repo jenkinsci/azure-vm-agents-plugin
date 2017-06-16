@@ -99,10 +99,20 @@ public final class Constants {
     public static final int MAX_PROV_RETRIES = 20;
 
     /**
-     * Build In Image.
+     * Built In Image.
      */
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
     public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
+
+    /**
+     * Default Image Properties.
+     */
+    public static final String DEFAULT_IMAGE_PUBLISHER = "defaultImagePublisher";
+    public static final String DEFAULT_IMAGE_OFFER = "defaultImageOffer";
+    public static final String DEFAULT_IMAGE_SKU = "defaultImageSku";
+    public static final String DEFAULT_IMAGE_VERSION = "defaultImageVersion";
+    public static final String DEFAULT_OS_TYPE = "defaultOsType";
+    public static final String DEFAULT_LAUNCH_METHOD = "defaultLaunchMethod";
 
     /**
      * Error codes.
