@@ -71,6 +71,20 @@
                 <f:entry field="buildInImage">
                     <f:select/>
                 </f:entry>
+
+                <f:section title="Configure Init Tools">
+                    <f:entry title="Install Git" field="isInstallGit">
+                        <f:checkbox/>
+                    </f:entry>
+
+                    <f:entry title="Install Maven" field="isInstallMvn">
+                        <f:checkbox/>
+                    </f:entry>
+
+                    <f:entry title="Install Docker(Only for Linux)" field="isInstallDocker">
+                        <f:checkbox/>
+                    </f:entry>
+                </f:section>
             </f:radioBlock>
 
             <f:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">

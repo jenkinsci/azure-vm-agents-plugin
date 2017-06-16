@@ -105,6 +105,15 @@ public final class Constants {
     public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
 
     /**
+     * Build In Tools.
+     */
+    public static final String INSTALL_JAVA = "Java";
+    public static final String INSTALL_MAVEN = "Maven";
+    public static final String INSTALL_GIT = "Git";
+    public static final String INSTALL_DOCKER = "Docker";
+    public static final String INSTALL_JNLP = "Jnlp";
+
+    /**
      * Error codes.
      */
     public static final String ERROR_CODE_RESOURCE_NF = "ResourceNotFound";

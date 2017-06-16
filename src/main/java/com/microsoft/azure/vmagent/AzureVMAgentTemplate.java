@@ -29,6 +29,7 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.*;
@@ -140,6 +141,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String buildInImage;
 
+    private final Boolean isInstallGit;
+
+    private final Boolean isInstallMaven;
+
+    private final Boolean isInstallDocker;
+
     private final String image;
 
     private final String osType;
@@ -204,6 +211,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String noOfParallelJobs,
             final String usageMode,
             final String buildInImage,
+            final Boolean isInstallGit,
+            final Boolean isInstallMaven,
+            final Boolean isInstallDocker,
             final String osType,
             final String  imageTopLevelType,
             final boolean imageReference,
@@ -246,6 +256,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.imageTopLevelType = imageTopLevelType;
         this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
         this.buildInImage = buildInImage;
+        this.isInstallDocker = isInstallDocker;
+        this.isInstallGit = isInstallGit;
+        this.isInstallMaven = isInstallMaven;
         this.image = imageReferenceTypeClass.getImage();
         this.osType = osType;
         this.imagePublisher = imageReferenceTypeClass.getImagePublisher();
@@ -290,7 +303,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         properties.put("imageVersion", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_VERSION.get(buildInImage) : template.getImageVersion());
         properties.put("osType", isBase ? AzureVMManagementServiceDelegate.DEFAULT_OS_TYPE.get(buildInImage) : template.getOsType());
         properties.put("agentLaunchMethod", isBase ? AzureVMManagementServiceDelegate.DEFAULT_LAUNCH_METHOD.get(buildInImage) : template.getAgentLaunchMethod());
-        properties.put("initScript", isBase ? AzureVMManagementServiceDelegate.DEFAULT_INIT_SCRIPT.get(buildInImage) : template.getInitScript());
+        properties.put("initScript", isBase ? getInitScriptWithTools(template) : template.getInitScript());
         properties.put("virtualNetworkName", isBase ? "" : template.getVirtualNetworkName());
         properties.put("virtualNetworkResourceGroupName", isBase ? "" : template.getVirtualNetworkResourceGroupName());
         properties.put("subnetName", isBase ? "" : template.getSubnetName());
@@ -302,6 +315,29 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         properties.put("executeInitScriptAsRoot", isBase ? true : template.getExecuteInitScriptAsRoot());
         properties.put("doNotUseMachineIfInitFails", isBase ? true : template.getDoNotUseMachineIfInitFails());
         return properties;
+    }
+
+    public static String getInitScriptWithTools(AzureVMAgentTemplate template)
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuildInImage()).get(Constants.INSTALL_JAVA));
+        if (template.getIsInstallMaven()) {
+            stringBuilder.append('\n');
+            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuildInImage()).get(Constants.INSTALL_MAVEN));
+        }
+        if (template.getIsInstallGit()) {
+            stringBuilder.append('\n');
+            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuildInImage()).get(Constants.INSTALL_GIT));
+        }
+        if (template.getBuildInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
+            stringBuilder.append('\n');
+            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuildInImage()).get(Constants.INSTALL_DOCKER));
+        }
+        if (template.getBuildInImage().equals(Constants.WINDOWS_SERVER_2016)) {
+            stringBuilder.append('\n');
+            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuildInImage()).get(Constants.INSTALL_JNLP));
+        }
+        return stringBuilder.toString();
     }
 
 
@@ -439,6 +475,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public String getBuildInImage() {
         return buildInImage;
+    }
+
+    public Boolean getIsInstallGit() {
+        return isInstallGit;
+    }
+
+    public Boolean getIsInstallMaven() {
+        return isInstallMaven;
+    }
+
+    public Boolean getIsInstallDocker() {
+        return isInstallDocker;
     }
 
     public String getImage() {
