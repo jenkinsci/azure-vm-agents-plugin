@@ -1,5 +1,6 @@
+#Install Git
 $source = "https://github.com/git-for-windows/git/releases/latest"
-$latestRelease = Invoke-WebRequest $source -Headers @{"Accept"="application/json"}
+$latestRelease = Invoke-WebRequest -UseBasicParsing $source -Headers @{"Accept"="application/json"}
 $json = $latestRelease.Content | ConvertFrom-Json
 $latestVersion = $json.tag_name
 $versionHead = $latestVersion.Substring(1, $latestVersion.IndexOf("windows")-2)
@@ -7,6 +8,6 @@ $source = "https://github.com/git-for-windows/git/releases/download/v${versionHe
 $destination = "C:\Git-${versionHead}-64-bit.exe"
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($source, $destination)
-
 $proc = Start-Process -FilePath $destination -ArgumentList "/VERYSILENT" -Wait -PassThru
 $proc.WaitForExit()
+$Env:Path += ";C:\Program Files\Git\cmd"

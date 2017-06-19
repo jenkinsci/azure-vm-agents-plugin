@@ -9,3 +9,4 @@ $proc = Start-Process -FilePath $destination -ArgumentList "/s" -Wait -PassThru
 $proc.WaitForExit()
 [System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
 [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")
+$Env:Path += ";c:\Program Files\Java\jdk1.8.0_131\bin"

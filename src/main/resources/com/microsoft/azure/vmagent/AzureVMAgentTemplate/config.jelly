@@ -72,16 +72,16 @@
                     <f:select/>
                 </f:entry>
 
-                <f:section title="Configure Init Tools">
-                    <f:entry title="Install Git" field="isInstallGit">
+                <f:section title="${%Pre_Installed_Tools}">
+                    <f:entry title="Install Git (Latest)" field="isInstallGit">
                         <f:checkbox/>
                     </f:entry>
 
-                    <f:entry title="Install Maven" field="isInstallMvn">
+                    <f:entry title="Install Maven (V3.5.0)" field="isInstallMaven">
                         <f:checkbox/>
                     </f:entry>
 
-                    <f:entry title="Install Docker(Only for Linux)" field="isInstallDocker">
+                    <f:entry title="Install Docker (Only for Linux)" field="isInstallDocker">
                         <f:checkbox/>
                     </f:entry>
                 </f:section>
