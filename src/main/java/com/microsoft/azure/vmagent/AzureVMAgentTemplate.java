@@ -29,7 +29,6 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.*;
@@ -305,7 +304,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         templateProperties.put("imageVersion", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
         templateProperties.put("osType", isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
         templateProperties.put("agentLaunchMethod", isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
-        templateProperties.put("initScript", isBasic ? getInitScriptWithTools(template) : template.getInitScript());
+        templateProperties.put("initScript", isBasic ? getBasicInitScript(template) : template.getInitScript());
         templateProperties.put("virtualNetworkName", isBasic ? "" : template.getVirtualNetworkName());
         templateProperties.put("virtualNetworkResourceGroupName", isBasic ? "" : template.getVirtualNetworkResourceGroupName());
         templateProperties.put("subnetName", isBasic ? "" : template.getSubnetName());
@@ -320,27 +319,34 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return templateProperties;
     }
 
-    public static String getInitScriptWithTools(AzureVMAgentTemplate template)
-    {
+    public static String getBasicInitScript(AzureVMAgentTemplate template) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
+        stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
         if (template.getIsInstallMaven()) {
-            stringBuilder.append('\n');
-            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
+            stringBuilder.append(getSeparator(template.getOsType()));
+            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
         }
         if (template.getIsInstallGit()) {
-            stringBuilder.append('\n');
-            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
+            stringBuilder.append(getSeparator(template.getOsType()));
+            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
         }
         if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
-            stringBuilder.append('\n');
-            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER));
+            stringBuilder.append(getSeparator(template.getOsType()));
+            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER));
         }
         if (template.getBuiltInImage().equals(Constants.WINDOWS_SERVER_2016)) {
-            stringBuilder.append('\n');
-            stringBuilder.append(AzureVMManagementServiceDelegate.DEFAULT_INSTALL_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JNLP));
+            stringBuilder.append(getSeparator(template.getOsType()));
+            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JNLP));
         }
         return stringBuilder.toString();
+    }
+
+    public static String getSeparator(final String osType) {
+        if (osType.equals(Constants.OS_TYPE_WINDOWS)) {
+            return "\r\n";
+        } else {
+            return "\n";
+        }
     }
 
 
