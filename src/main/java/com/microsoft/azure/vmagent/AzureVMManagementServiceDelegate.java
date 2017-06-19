@@ -777,15 +777,15 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_OFFER, "WindowsServer");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, "Windows");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, "JNLP");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_JNLP);
 
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_SKU, "16.04-LTS");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, "Linux");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_LAUNCH_METHOD, "SSH");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_LINUX);
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
         return imageProperties;
     }
 

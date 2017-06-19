@@ -281,27 +281,30 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> templateProperties = new HashMap<>();
         String builtInImage = template.getBuiltInImage();
+        Map<String, String> defaultProperties = AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
         Boolean isBasic = template.isTopLevelType("basic");
-        properties.put("imagePublisher", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
-        properties.put("imageOffer", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
-        properties.put("imageSku", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_IMAGE_SKU) : template.getImageSku());
-        properties.put("imageVersion", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
-        properties.put("osType", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
-        properties.put("agentLaunchMethod", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage).get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
-        properties.put("initScript", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_INIT_SCRIPT.get(builtInImage) : template.getInitScript());
-        properties.put("virtualNetworkName", isBasic ? "" : template.getVirtualNetworkName());
-        properties.put("virtualNetworkResourceGroupName", isBasic ? "" : template.getVirtualNetworkResourceGroupName());
-        properties.put("subnetName", isBasic ? "" : template.getSubnetName());
-        properties.put("usePrivateIP", isBasic ? false : template.getUsePrivateIP());
-        properties.put("nsgName", isBasic ? "" : template.getNsgName());
-        properties.put("jvmOptions", isBasic ? "" : template.getJvmOptions());
-        properties.put("noOfParallelJobs", isBasic ? 1 : template.getNoOfParallelJobs());
-        properties.put("templateDisabled", isBasic ? false : template.isTemplateDisabled());
-        properties.put("executeInitScriptAsRoot", isBasic ? true : template.getExecuteInitScriptAsRoot());
-        properties.put("doNotUseMachineIfInitFails", isBasic ? true : template.getDoNotUseMachineIfInitFails());
-        return properties;
+
+        templateProperties.put("imagePublisher", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
+        templateProperties.put("imageOffer", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
+        templateProperties.put("imageSku", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_SKU) : template.getImageSku());
+        templateProperties.put("imageVersion", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
+        templateProperties.put("osType", isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
+        templateProperties.put("agentLaunchMethod", isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
+        templateProperties.put("initScript", isBasic ? AzureVMManagementServiceDelegate.DEFAULT_INIT_SCRIPT.get(builtInImage) : template.getInitScript());
+        templateProperties.put("virtualNetworkName", isBasic ? "" : template.getVirtualNetworkName());
+        templateProperties.put("virtualNetworkResourceGroupName", isBasic ? "" : template.getVirtualNetworkResourceGroupName());
+        templateProperties.put("subnetName", isBasic ? "" : template.getSubnetName());
+        templateProperties.put("usePrivateIP", isBasic ? false : template.getUsePrivateIP());
+        templateProperties.put("nsgName", isBasic ? "" : template.getNsgName());
+        templateProperties.put("jvmOptions", isBasic ? "" : template.getJvmOptions());
+        templateProperties.put("noOfParallelJobs", isBasic ? 1 : template.getNoOfParallelJobs());
+        templateProperties.put("templateDisabled", isBasic ? false : template.isTemplateDisabled());
+        templateProperties.put("executeInitScriptAsRoot", isBasic ? true : template.getExecuteInitScriptAsRoot());
+        templateProperties.put("doNotUseMachineIfInitFails", isBasic ? true : template.getDoNotUseMachineIfInitFails());
+
+        return templateProperties;
     }
 
 
