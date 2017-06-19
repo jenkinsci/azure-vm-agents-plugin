@@ -139,7 +139,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String imageReferenceType;
 
-    private String buildInImage;
+    private String builtInImage;
 
     private final Boolean isInstallGit;
 
@@ -210,10 +210,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String existingStorageAccountName,
             final String noOfParallelJobs,
             final String usageMode,
-            final String buildInImage,
             final Boolean isInstallGit,
             final Boolean isInstallMaven,
             final Boolean isInstallDocker,
+            final String builtInImage,
             final String osType,
             final String  imageTopLevelType,
             final boolean imageReference,
@@ -255,7 +255,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
         this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
-        this.buildInImage = buildInImage;
+        this.builtInImage = builtInImage;
         this.isInstallDocker = isInstallDocker;
         this.isInstallGit = isInstallGit;
         this.isInstallMaven = isInstallMaven;
@@ -294,27 +294,29 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
-        Map<String, Object> properties = new HashMap<>();
-        String buildInImage = template.getBuildInImage();
-        Boolean isBase = template.getImageTopLevelType().equals("base");
-        properties.put("imagePublisher", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PUBLISHER.get(buildInImage) : template.getImagePublisher());
-        properties.put("imageOffer", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_OFFER.get(buildInImage) : template.getImageOffer());
-        properties.put("imageSku", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_SKU.get(buildInImage) : template.getImageSku());
-        properties.put("imageVersion", isBase ? AzureVMManagementServiceDelegate.DEFAULT_IMAGE_VERSION.get(buildInImage) : template.getImageVersion());
-        properties.put("osType", isBase ? AzureVMManagementServiceDelegate.DEFAULT_OS_TYPE.get(buildInImage) : template.getOsType());
-        properties.put("agentLaunchMethod", isBase ? AzureVMManagementServiceDelegate.DEFAULT_LAUNCH_METHOD.get(buildInImage) : template.getAgentLaunchMethod());
-        properties.put("initScript", isBase ? getInitScriptWithTools(template) : template.getInitScript());
-        properties.put("virtualNetworkName", isBase ? "" : template.getVirtualNetworkName());
-        properties.put("virtualNetworkResourceGroupName", isBase ? "" : template.getVirtualNetworkResourceGroupName());
-        properties.put("subnetName", isBase ? "" : template.getSubnetName());
-        properties.put("usePrivateIP", isBase ? false : template.getUsePrivateIP());
-        properties.put("nsgName", isBase ? "" : template.getNsgName());
-        properties.put("jvmOptions", isBase ? "" : template.getJvmOptions());
-        properties.put("noOfParallelJobs", isBase ? 1 : template.getNoOfParallelJobs());
-        properties.put("templateDisabled", isBase ? false : template.isTemplateDisabled());
-        properties.put("executeInitScriptAsRoot", isBase ? true : template.getExecuteInitScriptAsRoot());
-        properties.put("doNotUseMachineIfInitFails", isBase ? true : template.getDoNotUseMachineIfInitFails());
-        return properties;
+        Map<String, Object> templateProperties = new HashMap<>();
+        String builtInImage = template.getBuiltInImage();
+        Map<String, String> defaultProperties = AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
+        Boolean isBasic = template.isTopLevelType("basic");
+
+        templateProperties.put("imagePublisher", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
+        templateProperties.put("imageOffer", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
+        templateProperties.put("imageSku", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_SKU) : template.getImageSku());
+        templateProperties.put("imageVersion", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
+        templateProperties.put("osType", isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
+        templateProperties.put("agentLaunchMethod", isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
+        templateProperties.put("initScript", isBasic ? getInitScriptWithTools(template) : template.getInitScript());
+        templateProperties.put("virtualNetworkName", isBasic ? "" : template.getVirtualNetworkName());
+        templateProperties.put("virtualNetworkResourceGroupName", isBasic ? "" : template.getVirtualNetworkResourceGroupName());
+        templateProperties.put("subnetName", isBasic ? "" : template.getSubnetName());
+        templateProperties.put("usePrivateIP", isBasic ? false : template.getUsePrivateIP());
+        templateProperties.put("nsgName", isBasic ? "" : template.getNsgName());
+        templateProperties.put("jvmOptions", isBasic ? "" : template.getJvmOptions());
+        templateProperties.put("noOfParallelJobs", isBasic ? 1 : template.getNoOfParallelJobs());
+        templateProperties.put("templateDisabled", isBasic ? false : template.isTemplateDisabled());
+        templateProperties.put("executeInitScriptAsRoot", isBasic ? true : template.getExecuteInitScriptAsRoot());
+        templateProperties.put("doNotUseMachineIfInitFails", isBasic ? true : template.getDoNotUseMachineIfInitFails());
+        return templateProperties;
     }
 
     public static String getInitScriptWithTools(AzureVMAgentTemplate template)
@@ -349,7 +351,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public Boolean isTopLevelType(final String type) {
-        if (this.imageTopLevelType == null && type.equals("base")) {
+        if (this.imageTopLevelType == null && type.equals("basic")) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageTopLevelType);
@@ -376,9 +378,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     || StringUtils.isNotBlank(imagePublisher)) {
                 imageTopLevelType = "advanced";
             } else {
-                imageTopLevelType = "base";
+                imageTopLevelType = "basic";
             }
-            buildInImage = Constants.WINDOWS_SERVER_2016;
+            builtInImage = Constants.WINDOWS_SERVER_2016;
         }
         return this;
     }
@@ -473,8 +475,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return "reference";
     }
 
-    public String getBuildInImage() {
-        return buildInImage;
+    public String getBuiltInImage() {
+        return builtInImage;
     }
 
     public Boolean getIsInstallGit() {
@@ -708,7 +710,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 (imageReferenceType == null) ? ImageReferenceType.UNKNOWN
                         : ((imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM
                         : ImageReferenceType.REFERENCE)),
-                buildInImage,
+                builtInImage,
                 image,
                 osType,
                 imagePublisher,
@@ -846,7 +848,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
         }
 
-        public ListBoxModel doFillBuildInImageItems() {
+        public ListBoxModel doFillBuiltInImageItems() {
             ListBoxModel model = new ListBoxModel();
             model.add(Constants.WINDOWS_SERVER_2016);
             model.add(Constants.UBUNTU_1604_LTS);
@@ -971,7 +973,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String imageTopLevelType,
-                @QueryParameter String buildInImage,
+                @QueryParameter String builtInImage,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String image,
                 @QueryParameter String osType,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String imagePublisher,
@@ -1019,7 +1021,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "storageAccountName: {9};\n\t"
                             + "noOfParallelJobs: {10};\n\t"
                             + "imageTopLevelType: {11};\n\t"
-                            + "buildInImage: {12};\n\t"
+                            + "builtInImage: {12};\n\t"
                             + "image: {13};\n\t"
                             + "osType: {14};\n\t"
                             + "imagePublisher: {15};\n\t"
@@ -1049,7 +1051,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             storageAccountName,
                             noOfParallelJobs,
                             imageTopLevelType,
-                            buildInImage,
+                            builtInImage,
                             image,
                             osType,
                             imagePublisher,
@@ -1086,7 +1088,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     noOfParallelJobs,
                     imageTopLevelType,
                     referenceType,
-                    buildInImage,
+                    builtInImage,
                     image,
                     osType,
                     imagePublisher,
