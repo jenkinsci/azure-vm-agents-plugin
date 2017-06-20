@@ -47,6 +47,7 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import jenkins.model.Jenkins;
 
 import org.apache.commons.io.IOUtils;
@@ -54,43 +55,42 @@ import org.apache.commons.lang.StringUtils;
 import org.jvnet.localizer.Localizable;
 
 /**
- * SSH Launcher class
+ * SSH Launcher class.
  *
  * @author Suresh nallamilli (snallami@gmail.com)
- *
  */
 public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentSSHLauncher.class.getName());
 
-    private static final String remoteInitFileName = "init.sh";
+    private static final String REMOTE_INIT_FILE_NAME = "init.sh";
 
     @Override
     public void launch(final SlaveComputer agentComputer, final TaskListener listener) {
-        if (agentComputer == null || !( agentComputer instanceof AzureVMComputer )) {
-            LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}", agentComputer);
+        if (agentComputer == null || !(agentComputer instanceof AzureVMComputer)) {
+            LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}", agentComputer);
             return;
         }
         AzureVMComputer computer = (AzureVMComputer) agentComputer;
         AzureVMAgent agent = computer.getNode();
-        if(agent == null) {
-            LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: Agent Node is null");
+        if (agent == null) {
+            LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: Agent Node is null");
             return;
         }
-        LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: launch method called for agent {0}", computer.getName());
+        LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launch method called for agent {0}", computer.getName());
 
         // Check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
         // Added this check - since after restarting jenkins master, jenkins is trying to connect to all the agents although agents are suspended.
         // This still means that a delete agent will eventually get cleaned up.
         try {
             if (!agent.isVMAliveOrHealthy()) {
-                LOGGER.log(Level.INFO,"AzureVMAgentSSHLauncher: launch: Agent {0} is shut down, deleted, etc.  Not attempting to connect", computer.getName());
+                LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: Agent {0} is shut down, deleted, etc.  Not attempting to connect", computer.getName());
                 return;
             }
         } catch (Exception e1) {
             // ignoring exception purposefully
         }
-        
+
         // Block cleanup while we attempt to start.
         agent.blockCleanUpAction();
 
@@ -112,14 +112,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             if (e.getMessage() != null && e.getMessage().equalsIgnoreCase("Auth fail")) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMAgentSSHLauncher: launch: "
-                        + "Authentication failure. Image may not be supporting password authentication", e);
+                                + "Authentication failure. Image may not be supporting password authentication", e);
                 handleLaunchFailure(agent, Constants.AGENT_POST_PROV_AUTH_FAIL);
             } else {
                 LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: Got  exception", e);
                 handleLaunchFailure(agent, Constants.AGENT_POST_PROV_CONN_FAIL + e.getMessage());
             }
-        }
-        finally {
+        } finally {
             if (session == null) {
                 agent.getComputer().setAcceptingTasks(false);
                 agent.setCleanUpAction(CleanUpAction.DELETE, Messages._Agent_Failed_To_Connect());
@@ -128,7 +127,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
 
         Localizable cleanUpReason = null;
-        
+
         try {
             final Session cleanupSession = session;
             String initScript = agent.getInitScript();
@@ -137,23 +136,22 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             if (StringUtils.isNotBlank(initScript)
                     && executeRemoteCommand(session, "test -e ~/.azure-agent-init", logger) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Init script is not null, preparing to execute script remotely");
-                copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), remoteInitFileName);
+                copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), REMOTE_INIT_FILE_NAME);
 
                 // Execute initialization script
                 // Make sure to change file permission for execute if needed. TODO: need to test
 
                 // Grab the username/pass
                 StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
-            
-                String command = "sh " + remoteInitFileName;
+
+                String command = "sh " + REMOTE_INIT_FILE_NAME;
                 int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
                 if (exitStatus != 0) {
                     if (agent.getDoNotUseMachineIfInitFails()) {
                         LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: init script failed: exit code={0} (marking agent for deletion)", exitStatus);
                         cleanUpReason = Messages._Agent_Failed_Init_Script();
                         return;
-                    }
-                    else {
+                    } else {
                         LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: init script failed: exit code={0} (ignoring)", exitStatus);
                     }
                 } else {
@@ -165,9 +163,9 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                  *
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
-                 session.disconnect();
-                 session = connectToSsh(agent);
- 
+                session.disconnect();
+                session = connectToSsh(agent);
+
                 // Create tracking file
                 executeRemoteCommand(session, "touch ~/.azure-agent-init", logger);
             }
@@ -233,23 +231,24 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws Exception {
         LOGGER.log(Level.INFO,
                 "AzureVMAgentSSHLauncher: getRemoteSession: getting remote session for user {0} to host {1}:{2}",
-                new Object[] { userName, dnsName, sshPort });
+                new Object[]{userName, dnsName, sshPort});
         JSch remoteClient = new JSch();
         try {
             final Session session = remoteClient.getSession(userName, dnsName, sshPort);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setPassword(password);
             // pinging server for every 1 minutes to keep the connection alive
-            session.setServerAliveInterval(60 * 1000);
+            final int serverAliveIntervalInMillis = 60 * 1000;
+            session.setServerAliveInterval(serverAliveIntervalInMillis);
             session.connect();
             LOGGER.log(Level.INFO,
                     "AzureVMAgentSSHLauncher: getRemoteSession: Got remote session for user {0} to host {1}:{2}",
-                    new Object[] { userName, dnsName, sshPort });
+                    new Object[]{userName, dnsName, sshPort});
             return session;
         } catch (JSchException e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMAgentSSHLauncher: getRemoteSession: Got exception while connecting to remote host {0}:{1} {2}",
-                    new Object[] { dnsName, sshPort, e.getMessage() });
+                    new Object[]{dnsName, sshPort, e.getMessage()});
             throw e;
         }
     }
@@ -267,7 +266,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 try {
                     LOGGER.warning(
                             "AzureVMAgentSSHLauncher: copyFileToRemote: Channel is not yet closed , waiting for 10 seconds");
-                    Thread.sleep(10 * 1000);
+                    final int sleepInMills = 10 * 1000;
+                    Thread.sleep(sleepInMills);
                 } catch (InterruptedException e) {
                     //ignore error
                 }
@@ -288,20 +288,22 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             }
         }
     }
-    
+
     /**
-     * Helper method for most common call (without root)
+     * Helper method for most common call (without root).
+     *
      * @param jschSession
      * @param command
      * @param logger
-     * @return 
+     * @return
      */
     private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger) {
         return executeRemoteCommand(jschSession, command, logger, false, null);
     }
 
     /**
-     * Executes a remote command, as root if desired
+     * Executes a remote command, as root if desired.
+     *
      * @param jschSession
      * @param command
      * @param logger
@@ -316,8 +318,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             String finalCommand = null;
             if (executeAsRoot) {
                 finalCommand = "sudo -S -p '' " + command;
-            }
-            else {
+            } else {
                 finalCommand = command;
             }
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: executeRemoteCommand: starting {0}", command);
@@ -329,7 +330,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             final InputStream inputStream = channel.getInputStream();
             final InputStream errorStream = channel.getErrStream();
             final OutputStream outputStream = channel.getOutputStream();
-            channel.connect(60 * 1000);
+            final int connectTimeoutInMillis = 60 * 1000;
+            channel.connect(connectTimeoutInMillis);
 
             // If as root, push the password
             if (executeAsRoot) {
@@ -344,7 +346,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 IOUtils.closeQuietly(inputStream);
             }
 
-            // Read from error stream	
+            // Read from error stream
             try {
                 IOUtils.copy(errorStream, logger);
             } finally {
@@ -356,7 +358,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                     LOGGER.log(Level.WARNING,
                             "{0}: executeRemoteCommand: Channel is not yet closed, waiting for 10 seconds",
                             this.getClass().getSimpleName());
-                    Thread.sleep(10 * 1000);
+                    final int sleepInMillis = 10 * 1000;
+                    Thread.sleep(sleepInMillis);
                 } catch (InterruptedException e) {
                     //ignore error
                 }
@@ -384,7 +387,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     private Session connectToSsh(final AzureVMAgent agent) throws Exception {
         LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: start");
         Session session = null;
-        int maxRetryCount = 6;
+        final int maxRetryCount = 6;
         int currRetryCount = 0;
 
         while (true) {
@@ -392,7 +395,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             try {
                 // Grab the username/pass
                 StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
-                
+
                 session = getRemoteSession(creds.getUsername(), creds.getPassword().getPlainText(), agent.getPublicDNSName(),
                         agent.getSshPort());
                 LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: Got remote connection");
@@ -404,8 +407,9 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 // keep retrying till time out
                 LOGGER.log(Level.SEVERE,
                         "AzureVMAgentSSHLauncher: connectToSsh: Got exception while connecting to remote host. "
-                        + "Will be trying again after 1 minute {0}", e.getMessage());
-                Thread.sleep(1 * 60 * 1000);
+                                + "Will be trying again after 1 minute {0}", e.getMessage());
+                final int sleepInMills = 60 * 1000;
+                Thread.sleep(sleepInMills);
                 // continue again
                 continue;
             }
@@ -414,9 +418,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     }
 
     /**
-     * Mark the agent for deletion and queue the corresponding template for verification
+     * Mark the agent for deletion and queue the corresponding template for verification.
+     *
      * @param agent
-     * @param message 
+     * @param message
      */
     private void handleLaunchFailure(AzureVMAgent agent, String message) {
         // Queue the template for verification in case something happened there.

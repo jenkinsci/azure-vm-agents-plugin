@@ -16,6 +16,7 @@
 package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMCloud;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -43,9 +44,9 @@ public class ExecutionEngine {
                 return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
             }
         } catch (TimeoutException timeoutException) {
-            throw new AzureCloudException("Operation timed out: ", timeoutException);
+            throw AzureCloudException.create("Operation timed out: ", timeoutException);
         } catch (Exception ex) {
-            throw new AzureCloudException(ex);
+            throw AzureCloudException.create(ex);
         }
     }
 

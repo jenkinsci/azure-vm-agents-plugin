@@ -21,8 +21,9 @@ import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class NoRetryStrategy implements RetryStrategy {
+    private static final int DEFAULT_TIMEOUT_IN_SECONDS = 4 * 60; // 4 minutes
 
-    private int defaultTimeoutInSeconds = 4 * 60; // 4 minutes
+    private int defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
 
     public NoRetryStrategy() {
     }
@@ -43,7 +44,7 @@ public class NoRetryStrategy implements RetryStrategy {
 
     @Override
     public void handleRetry(Exception e) throws AzureCloudException {
-        throw new AzureCloudException(e.getMessage(), e);
+        throw AzureCloudException.create(e.getMessage(), e);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class NoRetryStrategy implements RetryStrategy {
     @Override
     public void reset() {
         // Resetting back to default values
-        defaultTimeoutInSeconds = 4 * 60; // 4 minutes
+        defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
     }
 
 }

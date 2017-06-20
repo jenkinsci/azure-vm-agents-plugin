@@ -15,10 +15,10 @@
  */
 package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
+
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -67,7 +67,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                         agent.deprovision(Messages._User_Delete());
                     } catch (Exception e) {
                         LOGGER.log(Level.INFO, "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
-                        throw new AzureCloudException("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
+                        throw AzureCloudException.create("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
                     }
                     return null;
                 }
@@ -95,7 +95,8 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     }
 
     /**
-     * Wait until the node is online
+     * Wait until the node is online.
+     *
      * @throws InterruptedException
      */
     @Override
@@ -108,6 +109,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
      * To avoid deletion, we assume this came through a user call and set a bit.  Where
      * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
      * after calling setTemporarilyOffline
+     *
      * @param setOffline
      * @param oc
      */
@@ -122,6 +124,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
      * To avoid deletion, we assume this came through a user call and set a bit.  Where
      * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
      * after calling setTemporarilyOffline
+     *
      * @param setOffline
      * @param oc
      */

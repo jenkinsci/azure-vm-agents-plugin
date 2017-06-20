@@ -9,7 +9,8 @@
                 "10.0.0.0/16"
             ]
         },
-        "subnets": [{
+        "subnets": [
+            {
                 "name": "[variables('subnetName')]",
                 "properties": {
                     "addressPrefix": "10.0.0.0/24"

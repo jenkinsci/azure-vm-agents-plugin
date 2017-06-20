@@ -18,23 +18,27 @@ package com.microsoft.azure.vmagent.retry;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 
+import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
+
 /**
  * @author Suresh Nallamilli (snallami@gmail.com)
  */
 public class ExponentialRetryStrategy implements RetryStrategy {
+    private static final int DEFAULT_MAX_RETRIES = 5;
+    private static final int DEFAULT_MAX_WAIT_INTERVAL_IN_SECONDS = 10;
 
     int currentRetryCount = 0;
 
-    private int maxRetries = 5;
+    private int maxRetries = DEFAULT_MAX_RETRIES;
 
-    private int MaxWaitIntervalInSec = 10; // 10 seconds
+    private int maxWaitIntervalInSec = DEFAULT_MAX_WAIT_INTERVAL_IN_SECONDS;
 
     public ExponentialRetryStrategy() {
     }
 
-    public ExponentialRetryStrategy(int maxRetries, int MaxWaitIntervalInSec) {
+    public ExponentialRetryStrategy(int maxRetries, int maxWaitIntervalInSec) {
         this.maxRetries = maxRetries;
-        this.MaxWaitIntervalInSec = MaxWaitIntervalInSec;
+        this.maxWaitIntervalInSec = maxWaitIntervalInSec;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
 
         if (canRetry(currentRetryCount, e)) {
             try {
-                Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * 1000);
+                Thread.sleep(getWaitPeriodInSeconds(currentRetryCount, e) * MILLIS_IN_SECOND);
             } catch (InterruptedException e1) {
             }
         }
@@ -53,11 +57,9 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     public boolean canRetry(final int currentRetryCount, final Exception e)
             throws AzureCloudException {
         if (currentRetryCount >= maxRetries) {
-            throw new AzureCloudException("Exceeded maximum retry count " + maxRetries, e);
-        } else if (AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage())) {
-            return true;
+            throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
         } else {
-            return false;
+            return AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage());
         }
     }
 
@@ -74,14 +76,14 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     @Override
     public void reset() {
         currentRetryCount = 0;
-        maxRetries = 5;
-        MaxWaitIntervalInSec = 10; // 1 hour
+        maxRetries = DEFAULT_MAX_RETRIES;
+        maxWaitIntervalInSec = DEFAULT_MAX_WAIT_INTERVAL_IN_SECONDS;
     }
 
     public int calculateWaitInterval(int currentRetryCount) {
         int incrementDelta = (int) (Math.pow(2, currentRetryCount) - 1);
 
-        return Math.min(incrementDelta, MaxWaitIntervalInSec);
+        return Math.min(incrementDelta, maxWaitIntervalInSec);
     }
 
 }

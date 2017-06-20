@@ -31,10 +31,10 @@ import java.util.logging.Logger;
 /**
  * Performs a few types of verification: 1. Overall subscription verification.
  * 2. Approximate VM count verification 3. Template verification.
- *
+ * <p>
  * When a new AzureVMCloud is constructed or a new template is added via CLI
  * interface, then we will manually trigger this workload.
- *
+ * <p>
  * This thread serves as a gate for whether we can create VMs from a certain
  * template
  *
@@ -44,6 +44,8 @@ import java.util.logging.Logger;
 public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMCloudVerificationTask.class.getName());
+
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * 60 * 1000;  // every 5 minutes
 
     // Templates that need verification
     private static Set<AbstractMap.SimpleEntry<String, String>> cloudTemplates;
@@ -55,14 +57,14 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         super("AzureVMCloudVerificationTask");
     }
 
-    private static final Object cloudNamesLock = new Object();
-    private static final Object templatesLock = new Object();
-    
+    private static final Object CLOUD_NAMES_LOCK = new Object();
+    private static final Object TEMPLATES_LOCK = new Object();
+
     private void verify() {
         if (cloudNames != null && !cloudNames.isEmpty()) {
             // Walk the list of clouds and verify the configuration. If an element
             // is not found (perhaps a removed cloud, removes from the list)
-            synchronized (cloudNamesLock) {
+            synchronized (CLOUD_NAMES_LOCK) {
                 List<String> toRemove = new ArrayList<String>();
                 for (String cloudName : cloudNames) {
                     LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verify: verifying cloud {0}", cloudName);
@@ -73,7 +75,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                     // was registered.  Remove from the list
                     if (cloud == null) {
                         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verify: subscription {0} not found, skipping", cloudName);
-                        // Remove 
+                        // Remove
                         toRemove.add(cloudName);
                         continue;
                     }
@@ -91,7 +93,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
                         // Update the count
                         cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
-                        // We grab the current VM count and 
+                        // We grab the current VM count and
                         cloud.setConfigurationValid(true);
                         continue;
                     }
@@ -111,7 +113,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             // Now walk the templates and verify.
             // Unlike the clouds, verified templates are removed from the list upon
             // verification (or left if they do not verify)
-            synchronized (templatesLock) {
+            synchronized (TEMPLATES_LOCK) {
                 List<AbstractMap.SimpleEntry<String, String>> toRemove = new ArrayList<>();
 
                 LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verify: verifying {0} template(s)", cloudTemplates.size());
@@ -157,8 +159,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                             agentTemplate.setTemplateVerified(true);
                             // Reset the status details
                             agentTemplate.setTemplateStatusDetails("");
-                        }
-                        else {
+                        } else {
                             String details = StringUtils.join(errors, "\n");
                             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verify: {0} could not be verified:\n{1}",
                                     new Object[]{templateName, details});
@@ -179,7 +180,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             }
         }
     }
-    
+
     @Override
     public void execute(final TaskListener arg0) throws IOException, InterruptedException {
         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: start");
@@ -191,13 +192,14 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                 return null;
             }
         };
-        
+
         Future<Void> result = AzureVMCloud.getThreadPool().submit(callVerify);
-                
+
         try {
             LOGGER.info("AzureVMCloudVerificationTask: execute: Running verification with 15 minute timeout");
             // Get will block until time expires or until task completes
-            result.get(15, TimeUnit.MINUTES);
+            final int timeout = 15;
+            result.get(timeout, TimeUnit.MINUTES);
         } catch (ExecutionException executionException) {
             LOGGER.log(Level.SEVERE, "AzureVMCloudVerificationTask: execute: Got execution exception while verifying", executionException);
         } catch (TimeoutException timeoutException) {
@@ -210,7 +212,8 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     /**
-     * Checks the subscription for validity if needed
+     * Checks the subscription for validity if needed.
+     *
      * @param cloud
      * @return True if the subscription is valid, false otherwise. Updates the
      * cloud state if it is. If subscription is not valid, then we can just
@@ -221,7 +224,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
         // Check the sub and off we go
         String result = AzureVMManagementServiceDelegate.verifyConfiguration(cloud.getServicePrincipal(), cloud.getResourceGroupName(),
-                        Integer.toString(cloud.getMaxVirtualMachinesLimit()), Integer.toString(cloud.getDeploymentTimeout()));
+                Integer.toString(cloud.getMaxVirtualMachinesLimit()), Integer.toString(cloud.getDeploymentTimeout()));
         if (result != Constants.OP_SUCCESS) {
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationValid(false);
@@ -233,6 +236,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     /**
      * Retrieve the current VM count.
+     *
      * @param cloud
      * @return
      */
@@ -252,11 +256,12 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     /**
-     * Register more than one template at once
+     * Register more than one template at once.
+     *
      * @param templatesToRegister List of templates to register
      */
     public static void registerTemplates(final List<AzureVMAgentTemplate> templatesToRegister) {
-        synchronized (templatesLock) {
+        synchronized (TEMPLATES_LOCK) {
             for (AzureVMAgentTemplate template : templatesToRegister) {
                 registerTemplateHelper(template);
             }
@@ -264,11 +269,12 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     /**
-     * Registers a template for verification
+     * Registers a template for verification.
+     *
      * @param template Template to register
      */
     public static void registerTemplate(final AzureVMAgentTemplate template) {
-        synchronized (templatesLock) {
+        synchronized (TEMPLATES_LOCK) {
             registerTemplateHelper(template);
         }
     }
@@ -280,7 +286,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      * @param template Template to register
      */
     private static void registerTemplateHelper(final AzureVMAgentTemplate template) {
-        synchronized (templatesLock) {
+        synchronized (TEMPLATES_LOCK) {
             final String cloudName = template.getAzureCloud().name;
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: registerTemplateHelper: Registering template {0} on {1} for verification",
                     new Object[]{template.getTemplateName(), cloudName});
@@ -292,13 +298,14 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     /**
-     * Register a cloud for verification
+     * Register a cloud for verification.
+     *
      * @param cloudName
      */
     public static void registerCloud(final String cloudName) {
         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: registerCloud: Registering cloud {0} for verification",
                 cloudName);
-        synchronized (cloudNamesLock) {
+        synchronized (CLOUD_NAMES_LOCK) {
             if (cloudNames == null) {
                 cloudNames = new HashSet<String>();
             }
@@ -308,8 +315,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     @Override
     public long getRecurrencePeriod() {
-        // Every 5 minutes
-        return 5 * 60 * 1000;
+        return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
     public AzureVMCloud getCloud(final String cloudName) {

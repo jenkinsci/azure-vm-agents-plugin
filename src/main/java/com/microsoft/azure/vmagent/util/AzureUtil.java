@@ -21,14 +21,16 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import hudson.security.ACL;
+
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
-public class AzureUtil {
+public final class AzureUtil {
 
     private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 
@@ -53,21 +55,39 @@ public class AzureUtil {
 
     public static final String VAL_TEMPLATE = "^[a-z][a-z0-9-]*[a-z0-9]$";
 
-    /** Converts bytes to hex representation */
-    public static String hexify(byte bytes[]) {
-        char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'a', 'b', 'c', 'd', 'e', 'f' };
+    public static final int STORAGE_ACCOUNT_MIN_LENGTH = 3;
+    public static final int STORAGE_ACCOUNT_MAX_LENGTH = 24;
+
+    public static final int PASSWORD_MIN_COMBINATION = 3;
+    public static final int PASSWORD_MIN_LENGTH = 8;
+    public static final int PASSWORD_MAX_LENGTH = 123;
+
+    public static final int TEMPLATE_NAME_MAX_LENGTH_LINUX = 63;
+    public static final int TEMPLATE_NAME_MAX_LENGTH_WIN = 15;
+    public static final int TEMPLATE_NAME_MAX_LENGTH_DEPLOYMENT = 64;
+
+    /**
+     * Converts bytes to hex representation.
+     */
+    public static String hexify(byte[] bytes) {
+        final int byteHigherHalfMask = 0xF0;
+        final int byteLowerHalfMask = 0x0F;
+        final int byteHalfLength = 4;
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'a', 'b', 'c', 'd', 'e', 'f'};
         StringBuffer buf = new StringBuffer(bytes.length * 2);
         for (int i = 0; i < bytes.length; ++i) {
-            buf.append(hexDigits[(bytes[i] & 0xf0) >> 4]);
-            buf.append(hexDigits[bytes[i] & 0x0f]);
+            buf.append(hexDigits[(bytes[i] & byteHigherHalfMask) >> byteHalfLength]);
+            buf.append(hexDigits[bytes[i] & byteLowerHalfMask]);
         }
         return buf.toString();
     }
 
-    /** Validates storage account name */
+    /**
+     * Validates storage account name.
+     */
     public static boolean validateStorageAccountName(String storageAccountName) {
-        if (storageAccountName.length() < 3 || storageAccountName.length() > 24) {
+        if (storageAccountName.length() < STORAGE_ACCOUNT_MIN_LENGTH || storageAccountName.length() > STORAGE_ACCOUNT_MAX_LENGTH) {
             return false;
         }
         if (!storageAccountName.matches(STORAGE_ACCOUNT_NAME_PATTERN)) {
@@ -81,7 +101,8 @@ public class AzureUtil {
         return !value.matches(NOT_A_NUMBER_FORMAT);
     }
 
-    /** Checks for validity of cloud service name.
+    /**
+     * Checks for validity of cloud service name.
      * Rules for cloud service name
      * 1.Cloud service names must start with a letter or number, and can contain only letters, numbers, and the dash (-)
      * character.
@@ -138,11 +159,11 @@ public class AzureUtil {
             matchCount++;
         }
 
-        if (matchCount < 3) {
+        if (matchCount < PASSWORD_MIN_COMBINATION) {
             return false;
         }
 
-        return value.length() >= 8 && value.matches(VAL_PASSWORD_REGEX) && value.length() < 123;
+        return value.length() >= PASSWORD_MIN_LENGTH && value.matches(VAL_PASSWORD_REGEX) && value.length() < PASSWORD_MAX_LENGTH;
     }
 
     public static boolean isValidUserName(String value) {
@@ -232,7 +253,7 @@ public class AzureUtil {
 
         return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && errorMessage.contains(
                 Constants.ERROR_CODE_RESOURCE_NF) && errorMessage.contains("The deployment name '" + deploymentName
-                        + "' does not exist");
+                + "' does not exist");
     }
 
     public static boolean isDeploymentAlreadyOccupied(String errorMessage) {
@@ -244,8 +265,9 @@ public class AzureUtil {
     }
 
     /**
-     * Retrieves the name of the cloud for registering with Jenkins
-     * @param subscriptionId Subscription id
+     * Retrieves the name of the cloud for registering with Jenkins.
+     *
+     * @param subscriptionId    Subscription id
      * @param resourceGroupName Resource group name
      * @return Name of the cloud
      */
@@ -254,12 +276,13 @@ public class AzureUtil {
     }
 
     /**
-     * Returns a template name that can be used for the base of a VM name
+     * Returns a template name that can be used for the base of a VM name.
+     *
      * @return A shortened template name if required, the full name otherwise
      */
     private static String getShortenedTemplateName(String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
         // We'll be adding on 10 characters for the deployment ID (which is a formatted date)
-        // Plus an index of the 
+        // Plus an index of the
         // The template name should already be valid at least, so check that first
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Template name is not valid");
@@ -270,17 +293,14 @@ public class AzureUtil {
         int maxLength;
         if (usageType.equals(Constants.OS_TYPE_LINUX)) {
             // Linux, length <= 63 characters, 10 characters for the date
-            maxLength = 63;
-        }
-        else if (usageType.equals(Constants.OS_TYPE_WINDOWS)) {
+            maxLength = TEMPLATE_NAME_MAX_LENGTH_LINUX;
+        } else if (usageType.equals(Constants.OS_TYPE_WINDOWS)) {
             // Windows, length is 15 characters.  10 characters for the date
-            maxLength = 15;
-        }
-        else if (usageType.equals(Constants.USAGE_TYPE_DEPLOYMENT)) {
+            maxLength = TEMPLATE_NAME_MAX_LENGTH_WIN;
+        } else if (usageType.equals(Constants.USAGE_TYPE_DEPLOYMENT)) {
             // Maximum is 64 characters
-            maxLength = 64;
-        }
-        else {
+            maxLength = TEMPLATE_NAME_MAX_LENGTH_DEPLOYMENT;
+        } else {
             throw new IllegalArgumentException("Unknown OS/Usage type");
         }
 
@@ -290,12 +310,12 @@ public class AzureUtil {
         maxLength -= extraSuffixDigits;
 
         // Shorten the name
-        String shortenedName = templateName.substring(0,Math.min(templateName.length(), maxLength));
+        String shortenedName = templateName.substring(0, Math.min(templateName.length(), maxLength));
 
         // If the name ends in a digit, either append or replace the last char with a - so it's
         // not confusing
-        if (StringUtils.isNumeric(shortenedName.substring(shortenedName.length()-1))) {
-            shortenedName = shortenedName.substring(0, Math.min(templateName.length(), maxLength-1));
+        if (StringUtils.isNumeric(shortenedName.substring(shortenedName.length() - 1))) {
+            shortenedName = shortenedName.substring(0, Math.min(templateName.length(), maxLength - 1));
             shortenedName += '-';
         }
 
@@ -303,7 +323,8 @@ public class AzureUtil {
     }
 
     /**
-     * Returns true if the template name is valid, false otherwise
+     * Returns true if the template name is valid, false otherwise.
+     *
      * @param templateName Template name to validate
      * @return True if the template is valid, false otherwise
      */
@@ -312,9 +333,10 @@ public class AzureUtil {
     }
 
     /**
-     * Creates a deployment given a template name and OS type
+     * Creates a deployment given a template name and OS type.
+     *
      * @param templateName Valid template name
-     * @param osType Valid os type
+     * @param osType       Valid os type
      * @return Valid deployment name to use for a new deployment
      */
     public static String getDeploymentName(String templateName, Date timestamp) {
@@ -324,16 +346,17 @@ public class AzureUtil {
 
         Format formatter = new SimpleDateFormat(Constants.DEPLOYMENT_NAME_DATE_FORMAT);
         return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT,
-            Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0),
+                Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0),
                 formatter.format(timestamp));
     }
 
     /**
      * Creates a new VM base name given the input parameters.
-     * @param templateName Template name
-     * @param osType Type of OS
+     *
+     * @param templateName        Template name
+     * @param osType              Type of OS
      * @param numberOfVmsToCreate Number of VMs that will be created
-     *       (which is added to the suffix of the VM name by azure)
+     *                            (which is added to the suffix of the VM name by azure)
      * @return
      */
     public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
@@ -341,74 +364,82 @@ public class AzureUtil {
             throw new IllegalArgumentException("Invalid template name");
         }
 
-        // For VM names, we use a simpler form.  VM names are pretty short 
-        int numberOfDigits = (int)Math.floor(Math.log10((double)numberOfVMs))+1;
+        // For VM names, we use a simpler form.  VM names are pretty short
+        int numberOfDigits = (int) Math.floor(Math.log10((double) numberOfVMs)) + 1;
         // Get the hash of the deployment name
         Integer deploymentHashCode = deploymentName.hashCode();
         // Convert the int into a hex string and do a substring
         String shortenedDeploymentHash =
-            Integer.toHexString(deploymentHashCode).substring(0, Constants.VM_NAME_HASH_LENGTH - 1);
+                Integer.toHexString(deploymentHashCode).substring(0, Constants.VM_NAME_HASH_LENGTH - 1);
         return String.format("%s%s", getShortenedTemplateName(templateName, osType,
-            Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
+                Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
                 shortenedDeploymentHash);
     }
 
     public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) throws AzureCloudException {
         // Grab the pass
         StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(
-            StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
+                StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
                 Collections.<DomainRequirement>emptyList()),
-            CredentialsMatchers.withId(credentialsId));
+                CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {
-            throw new AzureCloudException("Could not find credentials with id: " + credentialsId);
+            throw AzureCloudException.create("Could not find credentials with id: " + credentialsId);
         }
 
         return creds;
     }
 
     /**
-     * Checks if the ResourceGroup Name is valid with Azure Standards
+     * Checks if the ResourceGroup Name is valid with Azure Standards.
+     *
      * @param resourceGroupName Resource Group Name
      * @return true if the name is valid else return false
      */
     public static boolean isValidResourceGroupName(String resourceGroupName) {
-        if (resourceGroupName.matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN))
+        if (resourceGroupName.matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
             return true;
+        }
         return false;
     }
+
     /**
-     * Checks if the maximum virtual machines limit is valid
+     * Checks if the maximum virtual machines limit is valid.
+     *
      * @param maxVMLimit Maximum Virtual Limit
      * @return true if it is valid else return false
      */
     public static boolean isValidMAxVMLimit(String maxVMLimit) {
-        if (StringUtils.isBlank(maxVMLimit) || !maxVMLimit.matches(Constants.REG_EX_DIGIT))
+        if (StringUtils.isBlank(maxVMLimit) || !maxVMLimit.matches(Constants.REG_EX_DIGIT)) {
             return false;
+        }
         return true;
     }
+
     /**
-     * Checks if the deployment Timeout is valid
+     * Checks if the deployment Timeout is valid.
+     *
      * @param deploymentTimeout Deployment Timeout
      * @return true if it is valid else return false
      */
     public static boolean isValidTimeOut(String deploymentTimeout) {
         if ((StringUtils.isBlank(deploymentTimeout) || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)
-                || Integer.parseInt(deploymentTimeout) < Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC))
+                || Integer.parseInt(deploymentTimeout) < Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC)) {
             return false;
+        }
         return true;
     }
 
     public static class DeploymentTag {
 
         public DeploymentTag() {
-            this(System.currentTimeMillis() / 1000);
+            this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
         /*  Expects a string in this format: "<id>/<timestamp>".
             If id is ommited it will be replaced with an empty string
             If timestamp is ommited or it's a negative number than it will be replaced with 0 */
-        public DeploymentTag(final String tag){
+        public DeploymentTag(final String tag) {
             String id = "";
             long ts = 0;
 
@@ -440,9 +471,10 @@ public class AzureUtil {
         }
 
         public boolean matches(final DeploymentTag rhs, long timeout) {
-            if (!instanceId.equals(rhs.instanceId))
+            if (!instanceId.equals(rhs.instanceId)) {
                 return false;
-             return Math.abs(timestamp - rhs.timestamp) > timeout;
+            }
+            return Math.abs(timestamp - rhs.timestamp) > timeout;
         }
 
         public boolean isFromSameInstance(final DeploymentTag rhs) {
@@ -462,5 +494,9 @@ public class AzureUtil {
 
         private final String instanceId;
         private final long timestamp;
+    }
+
+    private AzureUtil() {
+        // hide constructor
     }
 }

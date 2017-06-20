@@ -19,14 +19,16 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.storage.SkuName;
-import com.microsoft.azure.vmagent.Messages;
+import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.*;
@@ -54,10 +56,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class defines the configuration of Azure instance templates
+ * This class defines the configuration of Azure instance templates.
  *
  * @author Suresh Nallamilli
- *
  */
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
@@ -68,6 +69,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
+
+    private static final int GEN_STORAGE_ACCOUNT_UID_LENGTH = 22;
 
     // General Configuration
     private final String templateName;
@@ -80,7 +83,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String virtualMachineSize;
 
-    private String storageAccountName;
+    private String storageAccountNameReferenceType;
+
+    private transient String storageAccountName;
+
+    private String newStorageAccountName;
+
+    private String existingStorageAccountName;
 
     private String storageAccountType;
 
@@ -150,8 +159,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String labels,
             final String location,
             final String virtualMachineSize,
+            final String storageAccountNameReferenceType,
             final String storageAccountType,
-            final String storageAccountName,
+            final String newStorageAccountName,
+            final String existingStorageAccountName,
             final String noOfParallelJobs,
             final String usageMode,
             final String imageReferenceType,
@@ -184,11 +195,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.location = location;
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
-        this.storageAccountName = storageAccountName;
+        this.storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
+        this.newStorageAccountName = newStorageAccountName;
+        this.existingStorageAccountName = existingStorageAccountName;
+        this.storageAccountNameReferenceType = storageAccountNameReferenceType;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
-                        trim().equals("0")) {
+                trim().equals("0")) {
             this.noOfParallelJobs = 1;
         } else {
             this.noOfParallelJobs = Integer.parseInt(noOfParallelJobs);
@@ -226,14 +240,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.templateVerified = false;
 
         // Forms data which is not persisted
-        readResolve();
+        labelDataSet = Label.parse(labels);
     }
 
-    public String isType(final String type) {
-        if(this.imageReferenceType == null && type.equals("reference")) {
-            return "true";
+
+    public Boolean isType(final String type) {
+        if (this.imageReferenceType == null && type.equals("reference")) {
+            return true;
         }
-        return type != null && type.equalsIgnoreCase(this.imageReferenceType) ? "true" : "false";
+        return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
 
     private Object readResolve() {
@@ -242,6 +257,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         if (StringUtils.isBlank(storageAccountType)) {
             storageAccountType = SkuName.STANDARD_LRS.toString();
         }
+
+        if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existingStorageAccountName)
+                && StringUtils.isNotBlank(storageAccountName)) {
+            newStorageAccountName = storageAccountName;
+            storageAccountNameReferenceType = "new";
+        }
+        storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
         return this;
     }
 
@@ -265,12 +287,40 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return storageAccountName;
     }
 
+    public static String getStorageAccountName(final String type, final String newName, final String existingName) {
+        //type maybe null in this version, so we can guess according to whether newName is blank or not
+        if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
+                || StringUtils.isNotBlank(type) && type.equalsIgnoreCase("new")) {
+            return newName;
+        }
+        return existingName;
+    }
+
+    public String getStorageAccountNameReferenceType() {
+        return storageAccountNameReferenceType;
+    }
+
     public void setStorageAccountName(final String storageAccountName) {
         this.storageAccountName = storageAccountName;
     }
 
+    public String getNewStorageAccountName() {
+        return newStorageAccountName;
+    }
+
+    public String getExistingStorageAccountName() {
+        return existingStorageAccountName;
+    }
+
     public Node.Mode getUseAgentAlwaysIfAvail() {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
+    }
+
+    public Boolean isStorageAccountNameReferenceTypeEquals(final String type) {
+        if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.storageAccountNameReferenceType);
     }
 
     public String getUsageMode() {
@@ -279,7 +329,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public void setUsageMode(final String mode) {
         Node.Mode val = Node.Mode.NORMAL;
-        for(Node.Mode m : hudson.Functions.getNodeModes()) {
+        for (Node.Mode m : hudson.Functions.getNodeModes()) {
             if (mode.equalsIgnoreCase(m.getDescription())) {
                 val = m;
                 break;
@@ -380,7 +430,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
-
+            newStorageAccountName = storageAccountName;
+            //if storageAccountNameReferenceType equals existing, we help to choose new directly
+            storageAccountNameReferenceType = "new";
         }
     }
 
@@ -420,7 +472,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     /**
-     * Set the template verification status
+     * Set the template verification status.
      *
      * @param isValid True for verified + valid, false otherwise.
      */
@@ -482,7 +534,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * If provisioning failed, handle the status and queue the template for
      * verification.
      *
-     * @param message Failure message
+     * @param message     Failure message
      * @param failureStep Stage that failure occurred
      */
     public void handleTemplateProvisioningFailure(final String message, final FailureStage failureStep) {
@@ -509,7 +561,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 storageAccountName,
                 storageAccountType,
                 noOfParallelJobs + "",
-                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : ( imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
+                (imageReferenceType == null) ? ImageReferenceType.UNKNOWN : (imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE),
                 image,
                 osType,
                 imagePublisher,
@@ -594,7 +646,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             model.add(SkuName.STANDARD_LRS.toString());
 
             /*As introduced in Azure Docs, VmSize among DS/GS/FS/LS supports premium storage*/
-            if(virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
+            if (virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
                 model.add(SkuName.PREMIUM_LRS.toString());
             }
             return model;
@@ -603,7 +655,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
-            for(Node.Mode m : hudson.Functions.getNodeModes()) {
+            for (Node.Mode m : hudson.Functions.getNodeModes()) {
                 model.add(m.getDescription());
             }
             return model;
@@ -615,6 +667,36 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             model.add(Constants.LAUNCH_METHOD_JNLP);
 
             return model;
+        }
+
+        public ListBoxModel doFillExistingStorageAccountNameItems(
+                @RelativePath("..") @QueryParameter final String azureCredentialsId,
+                @RelativePath("..") @QueryParameter final String resourceGroupReferenceType,
+                @RelativePath("..") @QueryParameter final String newResourceGroupName,
+                @RelativePath("..") @QueryParameter final String existingResourceGroupName,
+                @QueryParameter final String storageAccountType) throws IOException, ServletException {
+            ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
+
+            try {
+                AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
+                Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+
+                String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+                List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
+                for (StorageAccount storageAccount : storageAccountList) {
+                    if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {
+                        model.add(storageAccount.name());
+                    }
+                }
+
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Cannot list storage account: {0}", e);
+            } finally {
+                return model;
+            }
         }
 
         public FormValidation doCheckInitScript(
@@ -644,9 +726,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
          * Check the template's name. Name must conform to restrictions on VM
          * naming
          *
-         * @param value Current name
+         * @param value            Current name
          * @param templateDisabled Is the template disabled
-         * @param osType OS type
+         * @param osType           OS type
          * @return
          */
         public FormValidation doCheckTemplateName(
@@ -720,14 +802,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public FormValidation doVerifyConfiguration(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
-                @RelativePath("..") @QueryParameter String resourceGroupName,
+                @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
+                @RelativePath("..") @QueryParameter String newResourceGroupName,
+                @RelativePath("..") @QueryParameter String existingResourceGroupName,
                 @RelativePath("..") @QueryParameter String maxVirtualMachinesLimit,
                 @RelativePath("..") @QueryParameter String deploymentTimeout,
                 @QueryParameter String templateName,
                 @QueryParameter String labels,
                 @QueryParameter String location,
                 @QueryParameter String virtualMachineSize,
-                @QueryParameter String storageAccountName,
+                @QueryParameter String storageAccountNameReferenceType,
+                @QueryParameter String newStorageAccountName,
+                @QueryParameter String existingStorageAccountName,
                 @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String image,
@@ -758,8 +844,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
 
             AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
-            if(storageAccountName.trim().isEmpty())
+            String resourceGroupName = AzureVMCloud.getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+            String storageAccountName = getStorageAccountName(storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
+            if (storageAccountName.trim().isEmpty()) {
                 storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(resourceGroupName, servicePrincipal);
+            }
 
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t"
@@ -882,15 +971,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     public static String generateUniqueStorageAccountName(final String resourceGroupName, final ServicePrincipal servicePrincipal) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId()))
+            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId())) {
                 md.update(servicePrincipal.getSubscriptionId().getBytes("UTF-8"));
-            if (null != resourceGroupName)
+            }
+            if (null != resourceGroupName) {
                 md.update(resourceGroupName.getBytes("UTF-8"));
+            }
 
             String uid = DatatypeConverter.printBase64Binary(md.digest());
-            uid = uid.substring(0, 22);
+            uid = uid.substring(0, GEN_STORAGE_ACCOUNT_UID_LENGTH);
             uid = uid.toLowerCase();
-            uid = uid.replaceAll("[^a-z0-9]","a");
+            uid = uid.replaceAll("[^a-z0-9]", "a");
             return "jn" + uid;
         } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             LOGGER.log(Level.WARNING, "Could not genetare UID from the resource group name. Will fallback on using the resource group name.", e);

@@ -199,8 +199,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 numExecutors,
                 mode,
                 label,
-                agentLaunchMethod.equalsIgnoreCase("SSH") ?
-                        new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
+                agentLaunchMethod.equalsIgnoreCase("SSH")
+                        ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 new AzureVMCloudRetensionStrategy(retentionTimeInMin),
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
@@ -239,8 +239,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     public AzureCredentials.ServicePrincipal getServicePrincipal() {
-        if (credentials == null && azureCredentialsId != null)
+        if (credentials == null && azureCredentialsId != null) {
             return AzureCredentials.getServicePrincipal(azureCredentialsId);
+        }
         return credentials;
     }
 
@@ -292,7 +293,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * Clear the cleanup action and reset to the default behavior
+     * Clear the cleanup action and reset to the default behavior.
      */
     public void clearCleanUpAction() {
         setCleanUpAction(CleanUpAction.DEFAULT);
@@ -300,7 +301,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * Block any cleanup from happening
+     * Block any cleanup from happening.
      */
     public void blockCleanUpAction() {
         setCleanUpAction(CleanUpAction.BLOCK);
@@ -443,7 +444,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * Delete node in Azure and in Jenkins
+     * Delete node in Azure and in Jenkins.
      *
      * @throws Exception
      */

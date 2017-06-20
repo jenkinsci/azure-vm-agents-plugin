@@ -44,7 +44,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final String deploymentName = "fakeDeployment";
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, "xyz", "42", "0", testEnv.azureResourceGroup, null));
+            AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, "xyz", "42", "0", "new", testEnv.azureResourceGroup, null,null));
 
             when(templateMock.getAzureCloud()).thenReturn(cloudMock);
             when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
@@ -86,7 +86,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, credentialsId, "42", "30", testEnv.azureResourceGroup, null));
+            AzureVMCloud cloudMock = spy( new AzureVMCloud(servicePrincipal, credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
 
             when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
             when(templateMock.getAzureCloud()).thenReturn(cloudMock);
