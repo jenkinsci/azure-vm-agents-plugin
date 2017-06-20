@@ -1,4 +1,4 @@
-#Install Maven
+# Install Maven
 $source = "http://mirror.reverse.net/pub/apache/maven/maven-3/3.5.0/binaries/apache-maven-3.5.0-bin.zip"
 $destination = "C:\maven.zip"
 $webClient = New-Object System.Net.WebClient

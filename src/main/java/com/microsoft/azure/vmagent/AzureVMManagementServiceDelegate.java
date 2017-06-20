@@ -127,8 +127,6 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_JNLP_WINDOWS_FILENAME = "/scripts/windowsInstallJnlpScript.ps1";
 
-    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/scripts/ubuntuInstallJavaScript.sh";
-
     private static final String INSTALL_GIT_WINDOWS_FILENAME = "/scripts/windowsInstallGitScript.ps1";
 
     private static final String INSTALL_JAVA_WINDOWS_FILENAME = "/scripts/windowsInstallJavaScript.ps1";

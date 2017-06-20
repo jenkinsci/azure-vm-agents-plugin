@@ -1,4 +1,4 @@
-#Install Git
+# Install Git
 $source = "https://github.com/git-for-windows/git/releases/latest"
 $latestRelease = Invoke-WebRequest -UseBasicParsing $source -Headers @{"Accept"="application/json"}
 $json = $latestRelease.Content | ConvertFrom-Json
