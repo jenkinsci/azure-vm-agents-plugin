@@ -425,8 +425,7 @@ public class AzureVMCloud extends Cloud {
                     new Object[]{approximateVirtualMachineCount, delta});
                 approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount + delta);
                 return 0;
-            }
-            else {
+            } else {
                 LOGGER.log(Level.FINE, "Current estimated VM count: {0}, quantity desired {1}",
                     new Object[]{approximateVirtualMachineCount, delta});
                 if (approximateVirtualMachineCount + delta <= getMaxVirtualMachinesLimit()) {
@@ -545,7 +544,7 @@ public class AzureVMCloud extends Cloud {
                     .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
                     .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
             Deployment dep = azureClient.deployments().getByName(deploymentName);
-            // Might find no deployment.  
+            // Might find no deployment.
             if (dep == null) {
                 throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Could not find deployment %s", new Object[]{deploymentName}));
             }
@@ -741,8 +740,7 @@ public class AzureVMCloud extends Cloud {
                                                 // Wait until node is online
                                                 waitUntilJNLPNodeIsOnline(agent);
                                             }
-                                        }
-                                        finally {
+                                        } finally {
                                             // Place node in default state, now can be
                                             // dealt with by the cleanup task.
                                             agent.clearCleanUpAction();
