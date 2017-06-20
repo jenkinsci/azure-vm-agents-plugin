@@ -1,4 +1,4 @@
-Set-ExecutionPolicy Unrestricted
+# Install Slaves jar and connect via JNLP
 # Jenkins plugin will dynamically pass the server name and vm name.
 # If your jenkins server is configured for security , make sure to edit command for how slave executes
 $jenkinsserverurl = $args[0]
