@@ -550,40 +550,40 @@ public class AzureVMCloud extends Cloud {
                 throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Could not find deployment %s", new Object[]{deploymentName}));
             }
             PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
-			for (DeploymentOperation op : ops) {
-				if (op.targetResource() == null) {
-					continue;
-				}
-				final String resource = op.targetResource().resourceName();
-				final String type = op.targetResource().resourceType();
-				final String state = op.provisioningState();
-				if (op.targetResource().resourceType().contains("virtualMachine")) {
-					if (resource.equalsIgnoreCase(vmName)) {
+            for (DeploymentOperation op : ops) {
+                if (op.targetResource() == null) {
+                    continue;
+                }
+                final String resource = op.targetResource().resourceName();
+                final String type = op.targetResource().resourceType();
+                final String state = op.provisioningState();
+                if (op.targetResource().resourceType().contains("virtualMachine")) {
+                    if (resource.equalsIgnoreCase(vmName)) {
 
-						if (!state.equalsIgnoreCase("creating")
-								&& !state.equalsIgnoreCase("succeeded")
-								&& !state.equalsIgnoreCase("running")) {
-							final String statusCode = op.statusCode();
-							final Object statusMessage = op.statusMessage();
-							String finalStatusMessage = statusCode;
-							if (statusMessage != null) {
-								finalStatusMessage += " - " + statusMessage.toString();
-							}
-							throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
-						} else if (state.equalsIgnoreCase("succeeded")) {
-							LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
+                        if (!state.equalsIgnoreCase("creating")
+                                && !state.equalsIgnoreCase("succeeded")
+                                && !state.equalsIgnoreCase("running")) {
+                            final String statusCode = op.statusCode();
+                            final Object statusMessage = op.statusMessage();
+                            String finalStatusMessage = statusCode;
+                            if (statusMessage != null) {
+                                finalStatusMessage += " - " + statusMessage.toString();
+                            }
+                            throw AzureCloudException.create(String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s", new Object[]{state, type, resource, finalStatusMessage}));
+                        } else if (state.equalsIgnoreCase("succeeded")) {
+                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: VM available: {0}", resource);
 
-							final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
-							final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
+                            final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
+                            final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
 
-							AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(provisioningId, vmName, deploymentName, template, osType);
-							AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
-							return newAgent;
-						} else {
-							LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
-									new Object[]{deploymentName, state, type, resource,
-											(maxTries - triesLeft) * sleepTimeInSeconds});
-						}
+                            AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(provisioningId, vmName, deploymentName, template, osType);
+                            AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
+                            return newAgent;
+                        } else {
+                            LOGGER.log(Level.INFO, "AzureVMCloud: createProvisionedAgent: Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
+                                    new Object[]{deploymentName, state, type, resource,
+                                            (maxTries - triesLeft) * sleepTimeInSeconds});
+                        }
                     }
                 }
             }
