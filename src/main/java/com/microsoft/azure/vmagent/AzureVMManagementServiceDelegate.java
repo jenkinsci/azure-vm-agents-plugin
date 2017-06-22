@@ -86,6 +86,7 @@ import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.IOUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 
 /**
@@ -119,6 +120,13 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final List<String> DEFAULT_VM_SIZES = Arrays.asList(new String[]{"Standard_A0", "Standard_A1", "Standard_A2", "Standard_A3", "Standard_A5", "Standard_A4", "Standard_A6", "Standard_A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4", "Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS15_v2", "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4", "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_F1s", "Standard_F2s", "Standard_F4s", "Standard_F8s", "Standard_F16s", "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4", "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14", "Standard_A1_v2", "Standard_A2m_v2", "Standard_A2_v2", "Standard_A4m_v2", "Standard_A4_v2", "Standard_A8m_v2", "Standard_A8_v2", "Standard_D1_v2", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D15_v2", "Standard_F1", "Standard_F2", "Standard_F4", "Standard_F8", "Standard_F16"});
 
+    public static final Map<String, Map<String, String>> DEFAULT_IMAGE_PROPERTIES = getDefaultImageProperties();
+
+    public static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
+
+    private static final String INIT_SCRIPT_WINDOWS_FILENAME = "/scripts/windowsInitScript.ps1";
+
+    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/scripts/ubuntuInitScript.sh";
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -172,12 +180,16 @@ public final class AzureVMManagementServiceDelegate {
             createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
+
+            Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
+            Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
+
             final boolean useCustomScriptExtension
-                    = template.getOsType().equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank(template.getInitScript())
-                    && template.getAgentLaunchMethod().equals(Constants.LAUNCH_METHOD_JNLP);
+                    = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
+                    && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
-            if (template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
+            if (!isBasic && template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
                 if (useCustomScriptExtension) {
                     LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME);
                     embeddedTemplate
@@ -213,20 +225,20 @@ public final class AzureVMManagementServiceDelegate {
             ObjectNode.class.cast(tmp.get("variables")).put("jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             ObjectNode.class.cast(tmp.get("variables")).put("resourceTag", deploymentRegistrar.getDeploymentTag().get());
 
-            if (StringUtils.isNotBlank(template.getImagePublisher())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imagePublisher", template.getImagePublisher());
+            if (StringUtils.isNotBlank((String) properties.get("imagePublisher"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imagePublisher", (String) properties.get("imagePublisher"));
             }
 
-            if (StringUtils.isNotBlank(template.getImageOffer())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imageOffer", template.getImageOffer());
+            if (StringUtils.isNotBlank((String) properties.get("imageOffer"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imageOffer", (String) properties.get("imageOffer"));
             }
 
-            if (StringUtils.isNotBlank(template.getImageSku())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("imageSku", template.getImageSku());
+            if (StringUtils.isNotBlank((String) properties.get("imageSku"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("imageSku", (String) properties.get("imageSku"));
             }
 
-            if (StringUtils.isNotBlank(template.getOsType())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("osType", template.getOsType());
+            if (StringUtils.isNotBlank((String) properties.get("osType"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("osType", (String) properties.get("osType"));
             }
 
             if (StringUtils.isNotBlank(template.getImage())) {
@@ -245,7 +257,7 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
-                String scriptUri = uploadCustomScript(template, scriptName, tokenCache);
+                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, (String) properties.get("initScript"));
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptURI", scriptUri);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
@@ -287,11 +299,11 @@ public final class AzureVMManagementServiceDelegate {
 
             // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
-            if (StringUtils.isNotBlank(template.getVirtualNetworkName())) {
-                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", template.getVirtualNetworkName());
-                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", template.getSubnetName());
-                if (StringUtils.isNotBlank(template.getVirtualNetworkResourceGroupName())) {
-                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
+            if (!isBasic && StringUtils.isNotBlank((String) properties.get("virtualNetworkName"))) {
+                ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkName", (String) properties.get("virtualNetworkName"));
+                ObjectNode.class.cast(tmp.get("variables")).put("subnetName", (String) properties.get("subnetName"));
+                if (StringUtils.isNotBlank((String) properties.get("virtualNetworkResourceGroupName"))) {
+                    ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", (String) properties.get("virtualNetworkResourceGroupName"));
                 } else {
                     ObjectNode.class.cast(tmp.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
                 }
@@ -299,12 +311,12 @@ public final class AzureVMManagementServiceDelegate {
                 addDefaultVNetResourceNode(tmp, mapper, resourceGroupName);
             }
 
-            if (!template.getUsePrivateIP()) {
+            if (!(Boolean) properties.get("usePrivateIP")) {
                 addPublicIPResourceNode(tmp, mapper);
             }
 
-            if (StringUtils.isNotBlank(template.getNsgName())) {
-                addNSGNode(tmp, mapper, template.getNsgName());
+            if (StringUtils.isNotBlank((String) properties.get("nsgName"))) {
+                addNSGNode(tmp, mapper, (String) properties.get("nsgName"));
             }
 
             // Register the deployment for cleanup
@@ -482,10 +494,11 @@ public final class AzureVMManagementServiceDelegate {
      * @param template         Template containing script to upload
      * @param targetScriptName Script to upload
      * @param tokenCache       TokenCache
+     * @param initScript       Specify initScript
      * @return URI of script
      * @throws java.lang.Exception
      */
-    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
+    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache, String initScript) throws Exception {
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
@@ -502,7 +515,7 @@ public final class AzureVMManagementServiceDelegate {
         CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
         container.createIfNotExists();
         CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
-        String scriptText = paddedScriptForPageBlob(template.getInitScript());
+        String scriptText = paddedScriptForPageBlob(initScript);
         int scriptLength = scriptText.getBytes(StandardCharsets.UTF_8).length;
         try {
             blob.create(scriptLength);
@@ -513,6 +526,10 @@ public final class AzureVMManagementServiceDelegate {
         ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));
         blob.upload(stream, scriptText.length(), AccessCondition.generateEmptyCondition(), null, null);
         return blob.getUri().toString();
+    }
+
+    public static String uploadCustomScript(final AzureVMAgentTemplate template, final String targetScriptName, TokenCache tokenCache) throws Exception {
+        return uploadCustomScript(template, targetScriptName, tokenCache, template.getInitScript());
     }
 
     /**
@@ -641,6 +658,8 @@ public final class AzureVMManagementServiceDelegate {
 
             AzureVMCloud azureCloud = template.getAzureCloud();
 
+            Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
+
             return new AzureVMAgent(
                     id,
                     vmname,
@@ -648,27 +667,27 @@ public final class AzureVMManagementServiceDelegate {
                     template.getTemplateDesc(),
                     osType,
                     template.getAgentWorkspace(),
-                    template.getNoOfParallelJobs(),
+                    (int) properties.get("noOfParallelJobs"),
                     template.getUseAgentAlwaysIfAvail(),
                     template.getLabels(),
                     template.getAzureCloud().getDisplayName(),
                     template.getCredentialsId(),
                     null,
                     null,
-                    template.getJvmOptions(),
+                    (String) properties.get("jvmOptions"),
                     template.isShutdownOnIdle(),
                     false,
                     deploymentName,
                     template.getRetentionTimeInMin(),
-                    template.getInitScript(),
+                    (String) properties.get("initScript"),
                     azureCloud.getAzureCredentialsId(),
                     azureCloud.getServicePrincipal(),
-                    template.getAgentLaunchMethod(),
+                    (String) properties.get("agentLaunchMethod"),
                     CleanUpAction.DEFAULT,
                     null,
                     template.getResourceGroupName(),
-                    template.getExecuteInitScriptAsRoot(),
-                    template.getDoNotUseMachineIfInitFails());
+                    (Boolean) properties.get("executeInitScriptAsRoot"),
+                    (Boolean) properties.get("doNotUseMachineIfInitFails"));
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);
@@ -748,6 +767,38 @@ public final class AzureVMManagementServiceDelegate {
         return sizes;
     }
 
+    private static Map<String, Map<String, String>> getDefaultImageProperties() {
+        final Map<String, Map<String, String>> imageProperties = new HashMap<>();
+        imageProperties.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
+        imageProperties.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
+
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_PUBLISHER, "MicrosoftWindowsServer");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_OFFER, "WindowsServer");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_JNLP);
+
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_SKU, "16.04-LTS");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_LINUX);
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
+        return imageProperties;
+    }
+
+    private static Map<String, String> getDefaultInitScript() {
+        final Map<String, String> initScript = new HashMap<>();
+        try {
+            initScript.put(Constants.WINDOWS_SERVER_2016, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
+            initScript.put(Constants.UBUNTU_1604_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
+            return initScript;
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getDefaultInitScript: cannot get init script {0}. Deployment may fail if using build-in image", e);
+            return initScript;
+        }
+    }
     /**
      * Gets map of Azure datacenter locations which supports Persistent VM role.
      * If it can't fetch the data then it will return a default hardcoded set
@@ -1231,7 +1282,9 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountName,
             final String storageAccountType,
             final String noOfParallelJobs,
+            final String imageTopLevelType,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String builtInImage,
             final String image,
             final String osType,
             final String imagePublisher,
@@ -1293,7 +1346,7 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyImageParameters(referenceType, image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
+            validationResult = verifyImageParameters(imageTopLevelType, referenceType, builtInImage, image, osType, imagePublisher, imageOffer, imageSku, imageVersion);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -1308,7 +1361,9 @@ public final class AzureVMManagementServiceDelegate {
             verifyTemplateAsync(
                     servicePrincipal,
                     location,
+                    imageTopLevelType,
                     referenceType,
+                    builtInImage,
                     image,
                     imagePublisher,
                     imageOffer,
@@ -1336,7 +1391,9 @@ public final class AzureVMManagementServiceDelegate {
     private static void verifyTemplateAsync(
             final ServicePrincipal servicePrincipal,
             final String location,
+            final String imageTopLevelType,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String builtInImage,
             final String image,
             final String imagePublisher,
             final String imageOffer,
@@ -1370,7 +1427,7 @@ public final class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyVirtualMachineImage(servicePrincipal,
-                        location, storageAccountName, referenceType, image, imagePublisher, imageOffer, imageSku, imageVersion);
+                        location, storageAccountName, imageTopLevelType, referenceType, builtInImage, image, imagePublisher, imageOffer, imageSku, imageVersion);
             }
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
@@ -1481,13 +1538,22 @@ public final class AzureVMManagementServiceDelegate {
             final ServicePrincipal servicePrincipal,
             final String location,
             final String storageAccountName,
+            final String imageTopLevelType,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String builtInImage,
             final String image,
             final String imagePublisher,
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image))
+        if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
+            if (StringUtils.isNotBlank(builtInImage)) {
+                //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
+                return Constants.OP_SUCCESS;
+            } else {
+                return Messages.Azure_GC_Template_BuiltIn_Not_Valid();
+            }
+        } else if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(image))
                 || referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
             try {
                 // Custom image verification.  We must verify that the VM image
@@ -1569,7 +1635,7 @@ public final class AzureVMManagementServiceDelegate {
             CheckNameAvailabilityResult checkResult = azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
             if (!isAvailable && checkResult.reason().equals(Reason.ACCOUNT_NAME_INVALID)) {
-                return "The storage account name is not valid, a valid name can contain only lowercase letters and numbers, and must between 3 and 24 characters";
+                return Messages.Azure_GC_Template_SA_Not_Valid();
             } else if (!isAvailable) {
                 /*if it's not available we need to check if it's already in our resource group*/
                 StorageAccount checkAccount = azureClient.storageAccounts().getByGroup(resourceGroupName, storageAccountName);
@@ -1580,8 +1646,7 @@ public final class AzureVMManagementServiceDelegate {
                     if (checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType)) {
                         return Constants.OP_SUCCESS;
                     } else {
-                        return String.format("The chosen storage type: %s doesn't match existing account type: %s",
-                                storageAccountType, checkAccount.inner().sku().name().toString());
+                        return Messages.Azure_GC_Template_SA_Type_Not_Match(storageAccountType, checkAccount.inner().sku().name().toString());
                     }
                 }
             } else {
@@ -1645,31 +1710,42 @@ public final class AzureVMManagementServiceDelegate {
      * @return
      */
     private static String verifyImageParameters(
+            final String imageTopLevelType,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
+            final String builtInImage,
             final String image,
             final String osType,
             final String imagePublisher,
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)))
-                || referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
-            // Check that the image string is a URI by attempting to create
-            // a URI
-            final URI u;
-            try {
-                URI.create(image);
-            } catch (Exception e) {
-                Messages.Azure_GC_Template_ImageURI_Not_Valid();
+        if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
+            //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
+            if (StringUtils.isNotBlank(builtInImage)) {
+                return Constants.OP_SUCCESS;
+            } else {
+                return Messages.Azure_GC_Template_BuiltIn_Not_Valid();
             }
-            return Constants.OP_SUCCESS;
-        } else if (StringUtils.isNotBlank(imagePublisher)
-                && StringUtils.isNotBlank(imageOffer)
-                && StringUtils.isNotBlank(imageSku)
-                && StringUtils.isNotBlank(imageVersion)) {
-            return Constants.OP_SUCCESS;
         } else {
-            return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
+            if ((referenceType == AzureVMAgentTemplate.ImageReferenceType.UNKNOWN && (StringUtils.isNotBlank(image) && StringUtils.isNotBlank(osType)))
+                    || referenceType == AzureVMAgentTemplate.ImageReferenceType.CUSTOM) {
+                // Check that the image string is a URI by attempting to create
+                // a URI
+                final URI u;
+                try {
+                    URI.create(image);
+                } catch (Exception e) {
+                    Messages.Azure_GC_Template_ImageURI_Not_Valid();
+                }
+                return Constants.OP_SUCCESS;
+            } else if (StringUtils.isNotBlank(imagePublisher)
+                    && StringUtils.isNotBlank(imageOffer)
+                    && StringUtils.isNotBlank(imageSku)
+                    && StringUtils.isNotBlank(imageVersion)) {
+                return Constants.OP_SUCCESS;
+            } else {
+                return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
+            }
         }
     }
 
