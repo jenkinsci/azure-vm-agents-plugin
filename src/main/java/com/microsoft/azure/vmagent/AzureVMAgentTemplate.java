@@ -284,7 +284,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         Map<String, Object> templateProperties = new HashMap<>();
         String builtInImage = template.getBuiltInImage();
         Map<String, String> defaultProperties = AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
-        Boolean isBasic = template.isTopLevelType("basic");
+        Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
         templateProperties.put("imagePublisher", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
         templateProperties.put("imageOffer", isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
@@ -316,7 +316,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
     public Boolean isTopLevelType(final String type) {
-        if (this.imageTopLevelType == null && type.equals("basic")) {
+        if (this.imageTopLevelType == null && type.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageTopLevelType);
@@ -341,9 +341,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     || StringUtils.isNotBlank(imageOffer)
                     || StringUtils.isNotBlank(imageSku)
                     || StringUtils.isNotBlank(imagePublisher)) {
-                imageTopLevelType = "advanced";
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
             } else {
-                imageTopLevelType = "basic";
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
             }
             builtInImage = Constants.WINDOWS_SERVER_2016;
         }

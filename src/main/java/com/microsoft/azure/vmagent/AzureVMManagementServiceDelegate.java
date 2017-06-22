@@ -183,7 +183,7 @@ public final class AzureVMManagementServiceDelegate {
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
-            Boolean isBasic = template.isTopLevelType("basic");
+            Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
             final boolean useCustomScriptExtension
                     = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
@@ -1554,7 +1554,7 @@ public final class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if (imageTopLevelType == null || imageTopLevelType.equals("basic")) {
+        if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             if (StringUtils.isNotBlank(builtInImage)) {
                 //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
                 return Constants.OP_SUCCESS;
@@ -1727,7 +1727,7 @@ public final class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion) {
-        if (imageTopLevelType == null || imageTopLevelType.equals("basic")) {
+        if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             //As imageTopLevelType have to be null before save the template, so the verifyImageParameters always return success.
             if (StringUtils.isNotBlank(builtInImage)) {
                 return Constants.OP_SUCCESS;

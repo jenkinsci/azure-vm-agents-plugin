@@ -99,6 +99,12 @@ public final class Constants {
     public static final int MAX_PROV_RETRIES = 20;
 
     /**
+     * Image top level type.
+     */
+    public static final String IMAGE_TOP_LEVEL_BASIC = "basic";
+    public static final String IMAGE_TOP_LEVEL_ADVANCED = "advanced";
+
+    /**
      * Built In Image.
      */
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
