@@ -2,7 +2,7 @@
   <p><b>At a minimum, the init script needs to install a Java runtime.</b></p>
   <p>Custom prepared images are recommended if the initialization script is taking more than 20 minutes to execute.</p>
   <p>
-    Below are examples of initialization scripts:
+    Below are examples of initialization scripts, Java is <b>required</b>, others are optional:
     <ol>
       <li>
         <b>Ubuntu</b>
@@ -10,15 +10,29 @@
           <pre><code># Install Java
 sudo apt-get -y update
 sudo apt-get install -y default-jdk
+
 # Install Git
-sudo apt-get install -y git</code></pre>
+sudo apt-get install -y git
+
+# Install Maven
+sudo curl -O http://www-eu.apache.org/dist/maven/maven-3/3.5.0/binaries/apache-maven-3.5.0-bin.tar.gz
+sudo tar zxvf apache-maven-3.5.0-bin.tar.gz -C /opt/
+sudo ln -s /opt/apache-maven-3.5.0/bin/mvn /usr/bin/mvn
+
+# Install Docker
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get -y update
+sudo apt-get install -y docker-ce</code></pre>
         </p>
       </li>
       <li>
         <b>Windows w/JNLP</b>
         <p>
           For Windows agents with JNLP launch, this script is a powershell script.
-          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1">sample</a>.<br>
+          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1">sample</a>.<br/>
+          Java, slaves and connection are <b>required</b>, others are optional.<br/>
         </p>
         <p>
           Arguments automatically passed to this script are:
@@ -27,20 +41,6 @@ sudo apt-get install -y git</code></pre>
             <li>Second argument - VMName</li>
             <li>Third argument - JNLP secret, required if the server has security enabled.</li>
           </ul>
-        </p>
-        <p>
-          You need to install Java, download the slave jar file from: '<code>[server url]jnlpJars/slave.jar</code>'.
-          <pre><code># Download and Install Java
-$source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"
-$destination = "C:\jdk-8u131-windows-x64.exe"
-$client = new-object System.Net.WebClient
-$cookie = "oraclelicense=accept-securebackup-cookie"
-$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
-$client.downloadFile($source, $destination)
-$proc = Start-Process -FilePath $destination -ArgumentList "/s"m -Wait -PassThru
-$proc.WaitForExit()
-[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
-[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")</code></pre>
         </p>
         <p>
           The server url should already have a trailing slash.  Then execute the following to connect:

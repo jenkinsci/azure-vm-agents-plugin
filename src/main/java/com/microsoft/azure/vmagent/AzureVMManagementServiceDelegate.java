@@ -122,11 +122,24 @@ public final class AzureVMManagementServiceDelegate {
 
     public static final Map<String, Map<String, String>> DEFAULT_IMAGE_PROPERTIES = getDefaultImageProperties();
 
-    public static final Map<String, String> DEFAULT_INIT_SCRIPT = getDefaultInitScript();
+    public static final Map<String, Map<String, String>> PRE_INSTALLED_TOOLS_SCRIPT = getPreInstalledToolsScript();
 
-    private static final String INIT_SCRIPT_WINDOWS_FILENAME = "/scripts/windowsInitScript.ps1";
+    private static final String INSTALL_JNLP_WINDOWS_FILENAME = "/scripts/windowsInstallJnlpScript.ps1";
 
-    private static final String INIT_SCRIPT_UBUNTU_FILENAME = "/scripts/ubuntuInitScript.sh";
+    private static final String INSTALL_GIT_WINDOWS_FILENAME = "/scripts/windowsInstallGitScript.ps1";
+
+    private static final String INSTALL_JAVA_WINDOWS_FILENAME = "/scripts/windowsInstallJavaScript.ps1";
+
+    private static final String INSTALL_MAVEN_WINDOWS_FILENAME = "/scripts/windowsInstallMavenScript.ps1";
+
+    private static final String INSTALL_GIT_UBUNTU_FILENAME = "/scripts/ubuntuInstallGitScript.sh";
+
+    private static final String INSTALL_JAVA_UBUNTU_FILENAME = "/scripts/ubuntuInstallJavaScript.sh";
+
+    private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "/scripts/ubuntuInstallMavenScript.sh";
+
+    private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
+
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -788,15 +801,24 @@ public final class AzureVMManagementServiceDelegate {
         return imageProperties;
     }
 
-    private static Map<String, String> getDefaultInitScript() {
-        final Map<String, String> initScript = new HashMap<>();
+    private static Map<String, Map<String, String>> getPreInstalledToolsScript() {
+        final Map<String, Map<String, String>> tools = new HashMap<>();
+        tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
+        tools.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
         try {
-            initScript.put(Constants.WINDOWS_SERVER_2016, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_WINDOWS_FILENAME), "UTF-8"));
-            initScript.put(Constants.UBUNTU_1604_LTS, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INIT_SCRIPT_UBUNTU_FILENAME), "UTF-8"));
-            return initScript;
+            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_JAVA, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JAVA_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_MAVEN, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_MAVEN_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_GIT, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_GIT_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_JNLP, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JNLP_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_JAVA, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JAVA_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_MAVEN, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_MAVEN_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_GIT, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_GIT_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_DOCKER, IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_DOCKER_UBUNTU_FILENAME), "UTF-8"));
+
+            return tools;
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getDefaultInitScript: cannot get init script {0}. Deployment may fail if using build-in image", e);
-            return initScript;
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: cannot get pre-installed tools script {0}. Deployment may fail if using build-in image", e);
+            return tools;
         }
     }
     /**
