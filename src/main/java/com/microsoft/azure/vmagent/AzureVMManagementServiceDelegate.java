@@ -818,7 +818,7 @@ public final class AzureVMManagementServiceDelegate {
 
             return tools;
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: cannot get pre-installed tools script {0}. Deployment may fail if using build-in image", e);
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: Get pre-installed tools script {0} failed.", e);
             return tools;
         }
     }

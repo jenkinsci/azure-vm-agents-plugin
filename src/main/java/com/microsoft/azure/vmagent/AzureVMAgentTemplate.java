@@ -321,24 +321,30 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public static String getBasicInitScript(AzureVMAgentTemplate template) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
-        if (template.getIsInstallMaven()) {
-            stringBuilder.append(getSeparator(template.getOsType()));
-            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
+        try {
+            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
+            if (template.getIsInstallMaven()) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
+            }
+            if (template.getIsInstallGit()) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
+            }
+            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER)
+                        .replace("${ADMIN}", AzureUtil.getCredentials(template.getCredentialsId()).getUsername()));
+            }
+            if (template.getBuiltInImage().equals(Constants.WINDOWS_SERVER_2016)) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JNLP));
+            }
+            return stringBuilder.toString();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "AzureVMTemplate: getBasicInitScript: Get pre-installed tools script {0} failed.", e);
+            return stringBuilder.toString();
         }
-        if (template.getIsInstallGit()) {
-            stringBuilder.append(getSeparator(template.getOsType()));
-            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
-        }
-        if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
-            stringBuilder.append(getSeparator(template.getOsType()));
-            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER));
-        }
-        if (template.getBuiltInImage().equals(Constants.WINDOWS_SERVER_2016)) {
-            stringBuilder.append(getSeparator(template.getOsType()));
-            stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JNLP));
-        }
-        return stringBuilder.toString();
     }
 
     public static String getSeparator(final String osType) {

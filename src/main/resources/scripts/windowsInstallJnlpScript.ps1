@@ -5,13 +5,10 @@ $jenkinsserverurl = $args[0]
 $vmname = $args[1]
 $secret = $args[2]
 
-#Default workspace location
-Set-Location d:\
-
 # Downloading jenkins slaves jar
 Write-Output "Downloading jenkins slave jar "
 $slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
-$destSource = "d:\slave.jar"
+$destSource = "C:\slave.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
