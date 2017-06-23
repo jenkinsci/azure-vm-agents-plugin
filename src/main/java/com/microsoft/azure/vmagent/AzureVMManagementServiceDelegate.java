@@ -107,6 +107,10 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME = "/customImageTemplateWithScript.json";
 
+    private static final String EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME = "/referenceImageTemplateWithManagedDisk.json";
+
+    private static final String EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME = "/referenceImageTemplateWithScriptAndManagedDisk.json";
+
     private static final String VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME = "/virtualNetworkFragment.json";
 
     private static final String PUBLIC_IP_FRAGMENT_FILENAME = "/publicIPFragment.json";
@@ -177,6 +181,7 @@ public final class AzureVMManagementServiceDelegate {
             final String locationName = getLocationName(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
+            final String diskType = template.getDiskType();
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
@@ -215,13 +220,25 @@ public final class AzureVMManagementServiceDelegate {
                 }
             } else {
                 if (useCustomScriptExtension) {
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME);
-                    embeddedTemplate
-                            = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME);
+                    if (diskType.equals(Constants.DISK_MANAGED)) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME);
+                    } else {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME);
+                    }
                 } else {
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_FILENAME);
-                    embeddedTemplate
-                            = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_FILENAME);
+                    if (diskType.equals(Constants.DISK_MANAGED)) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME);
+                    } else {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_FILENAME);
+                    }
                 }
             }
 
@@ -1104,8 +1121,13 @@ public final class AzureVMManagementServiceDelegate {
                 if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
                     final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
                     List<URI> diskUrisToRemove = new ArrayList<>();
-                    // Mark OS disk for removal
-                    diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
+                    List<String> diskIdToRemove = new ArrayList<>();
+                    if (!azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).isManagedDiskEnabled()) {
+                        // Mark OS disk for removal
+                        diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
+                    } else {
+                        diskIdToRemove.add(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osDiskId());
+                    }
                     // TODO: Remove data disks or add option to do so?
 
                     // Remove the VM
@@ -1115,6 +1137,10 @@ public final class AzureVMManagementServiceDelegate {
                     // Now remove the disks
                     for (URI diskUri : diskUrisToRemove) {
                         AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, diskUri, resourceGroupName);
+                    }
+                    for (String id : diskIdToRemove) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing managed disk with id: {0}", id);
+                        azureClient.disks().deleteById(id);
                     }
                 }
             } catch (Exception e) {

@@ -50,6 +50,10 @@
                 </f:radioBlock>
             </f:entry>
 
+            <f:entry title="Choose disks type" field="diskType">
+                <f:select/>
+            </f:entry>
+
             <f:entry title="${%RetentionTimeInMin}" field="retentionTimeInMin"
                      help="/plugin/azure-vm-agents/help-retentionTimeInMin.html">
                 <f:textbox default="60"/>

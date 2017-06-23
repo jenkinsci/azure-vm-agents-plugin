@@ -72,6 +72,13 @@ public final class Constants {
     public static final String STORAGE_ACCOUNT_PREFIX = "jenkins";
 
     /**
+     * Managed disks.
+     */
+    public static final String DISK_MANAGED = "managed";
+
+    public static final String DISK_UNMANAGED = "unmanaged";
+
+    /**
      * OS Types.
      */
     public static final String OS_TYPE_WINDOWS = "Windows";
