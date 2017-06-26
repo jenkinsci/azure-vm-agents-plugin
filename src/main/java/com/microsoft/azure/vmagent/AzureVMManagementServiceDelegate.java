@@ -111,6 +111,10 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME = "/referenceImageTemplateWithScriptAndManagedDisk.json";
 
+    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME = "/customImageTemplateWithManagedDisk.json";
+
+    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME = "/customImageTemplateWithScriptAndManagedDisk.json";
+
     private static final String VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME = "/virtualNetworkFragment.json";
 
     private static final String PUBLIC_IP_FRAGMENT_FILENAME = "/publicIPFragment.json";
@@ -208,20 +212,33 @@ public final class AzureVMManagementServiceDelegate {
                     && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
+            Boolean useManagedDisk = diskType.equals(Constants.DISK_MANAGED);
             if (!isBasic && template.getImageReferenceType().equals(IMAGE_CUSTOM_REFERENCE)) {
                 if (useCustomScriptExtension) {
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME);
-                    embeddedTemplate
-                            = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME);
+                    if (useManagedDisk) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script and managed) {0}", EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME);
+                    } else {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME);
+                    }
                 } else {
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_IMAGE_FILENAME);
-                    embeddedTemplate
-                            = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_FILENAME);
+                    if (useManagedDisk) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with managed) {0}", EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME);
+                    } else {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_IMAGE_FILENAME);
+                        embeddedTemplate
+                                = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_IMAGE_FILENAME);
+                    }
                 }
             } else {
                 if (useCustomScriptExtension) {
-                    if (diskType.equals(Constants.DISK_MANAGED)) {
-                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script) {0}", EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME);
+                    if (useManagedDisk) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with script and managed) {0}", EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME);
                         embeddedTemplate
                                 = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME);
                     } else {
@@ -230,8 +247,8 @@ public final class AzureVMManagementServiceDelegate {
                                 = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME);
                     }
                 } else {
-                    if (diskType.equals(Constants.DISK_MANAGED)) {
-                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template {0}", EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME);
+                    if (useManagedDisk) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: createDeployment: Use embedded deployment template (with managed) {0}", EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME);
                         embeddedTemplate
                                 = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME);
                     } else {

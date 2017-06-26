@@ -319,7 +319,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     public AzureVMCloud getCloud(final String cloudName) {
-        return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+        return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
     /**

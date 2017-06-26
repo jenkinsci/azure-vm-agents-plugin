@@ -845,7 +845,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillExistingStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter final String azureCredentialsId,
-                @RelativePath("..") @QueryParameter final String resourceGroupReferenceType,
+                @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
                 @RelativePath("..") @QueryParameter final String newResourceGroupName,
                 @RelativePath("..") @QueryParameter final String existingResourceGroupName,
                 @QueryParameter final String storageAccountType) throws IOException, ServletException {
@@ -853,6 +853,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
+            //resourceGroupReferenceType passed wrong value in 2.60.2-LTS, we won't use this value until bug resolved.
+            resourceGroupReferenceType = null;
 
             try {
                 AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
