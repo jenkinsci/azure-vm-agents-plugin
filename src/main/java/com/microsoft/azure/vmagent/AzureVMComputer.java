@@ -67,7 +67,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                         agent.deprovision(Messages._User_Delete());
                     } catch (Exception e) {
                         LOGGER.log(Level.INFO, "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
-                        throw new AzureCloudException("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
+                        throw AzureCloudException.create("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
                     }
                     return null;
                 }

@@ -7,7 +7,7 @@
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
-    <version>0.4.5-SNAPSHOT</version>
+    <version>0.4.7-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Azure VM Agents</name>
     <description>Provisions agents on Azure cloud</description>
@@ -24,7 +24,7 @@
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>1.0</azure-credentials.version>
+        <azure-credentials.version>1.2</azure-credentials.version>
     </properties>
 
     <licenses>

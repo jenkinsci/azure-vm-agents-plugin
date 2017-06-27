@@ -44,9 +44,9 @@ public class ExecutionEngine {
                 return result.get(retryStrategy.getMaxTimeoutInSeconds(), TimeUnit.SECONDS);
             }
         } catch (TimeoutException timeoutException) {
-            throw new AzureCloudException("Operation timed out: ", timeoutException);
+            throw AzureCloudException.create("Operation timed out: ", timeoutException);
         } catch (Exception ex) {
-            throw new AzureCloudException(ex);
+            throw AzureCloudException.create(ex);
         }
     }
 

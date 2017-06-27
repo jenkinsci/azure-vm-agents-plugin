@@ -44,7 +44,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.azure.vmagent.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
@@ -306,7 +305,7 @@ public final class AzureVMManagementServiceDelegate {
                         .getByGroup(template.getResourceGroupName(), storageAccountName)
                         .getKeys();
                 if (storageKeys.isEmpty()) {
-                    throw new AzureCloudException("AzureVMManagementServiceDelegate: createDeployment: "
+                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
                             + "Exception occured while fetching the storage account key");
                 }
                 String storageAccountKey = storageKeys.get(0).value();
@@ -374,7 +373,7 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: deployment: Unable to deploy", e);
             // Pass the info off to the template so that it can be queued for update.
             template.handleTemplateProvisioningFailure(e.getMessage(), FailureStage.PROVISIONING);
-            throw new AzureCloudException(e);
+            throw AzureCloudException.create(e);
         } finally {
             if (embeddedTemplate != null) {
                 embeddedTemplate.close();
@@ -561,7 +560,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             blob.create(scriptLength);
         } catch (Exception e) {
-            throw new AzureCloudException(String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
+            throw AzureCloudException.create(String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
         }
 
         ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));
@@ -730,10 +729,10 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"));
         } catch (FormException e) {
-            throw new AzureCloudException("AzureVMManagementServiceDelegate: parseResponse: "
+            throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);
         } catch (IOException e) {
-            throw new AzureCloudException("AzureVMManagementServiceDelegate: parseResponse: "
+            throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);
         }
     }
@@ -1127,7 +1126,6 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName,
             ExecutionEngine executionEngine) throws Exception {
         try {
-            try {
                 if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
                     final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
                     List<URI> diskUrisToRemove = new ArrayList<>();
@@ -1170,21 +1168,16 @@ public final class AzureVMManagementServiceDelegate {
                     throw e;
                 }
             } finally {
-                LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
-                executionEngine.executeAsync(new Callable<Void>() {
-
-                    @Override
-                    public Void call() throws Exception {
-                        removeIPName(servicePrincipal, resourceGroupName, vmName);
-                        return null;
-                    }
-                }, new NoRetryStrategy());
-            }
-        } catch (UnrecoverableCloudException uce) {
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: terminateVirtualMachine: unrecoverable exception deleting VM",
-                    uce);
+            LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
+            executionEngine.executeAsync(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    removeIPName(servicePrincipal, resourceGroupName, vmName);
+                    return null;
+                }
+            }, new NoRetryStrategy());
         }
+
     }
 
     public static void removeStorageBlob(final Azure azureClient, final URI blobURI, final String resourceGroupName) throws Exception {
@@ -1854,7 +1847,7 @@ public final class AzureVMManagementServiceDelegate {
                     .create();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
-            throw new AzureCloudException(String.format(" Failed to create resource group with group name %s, location %s",
+            throw AzureCloudException.create(String.format(" Failed to create resource group with group name %s, location %s",
                     resourceGroupName, locationName), e);
         }
     }
@@ -1877,7 +1870,7 @@ public final class AzureVMManagementServiceDelegate {
                     .create();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
-            throw new AzureCloudException(String.format("Failed to create storage account with account name %s, location %s, resourceGroupName %s",
+            throw AzureCloudException.create(String.format("Failed to create storage account with account name %s, location %s, resourceGroupName %s",
                     targetStorageAccount, location, resourceGroupName), e);
         }
     }
@@ -1969,7 +1962,7 @@ public final class AzureVMManagementServiceDelegate {
     public static CloudStorageAccount getCloudStorageAccount(StorageAccount storageAccount) throws AzureCloudException {
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
-            throw new AzureCloudException("AzureVMManagementServiceDelegate: uploadCustomScript: "
+            throw AzureCloudException.create("AzureVMManagementServiceDelegate: uploadCustomScript: "
                     + "Exception occured while fetching the storage account key");
         }
 
@@ -1977,7 +1970,7 @@ public final class AzureVMManagementServiceDelegate {
         String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: getCloudStorageAccount: the suffix for contruct CloudStorageCloud is {0}", blobSuffix);
         if (StringUtils.isEmpty(blobSuffix)) {
-            throw new AzureCloudException("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
+            throw AzureCloudException.create("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
                     + "Exception occured while getting blobSuffix, it's empty'");
         }
         try {
@@ -1985,7 +1978,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: GetCloudStorageAccount: unable to get CloudStorageAccount with storage account {0} and blob Suffix {1}",
                     new Object[]{storageAccount.name(), blobSuffix});
-            throw new AzureCloudException(e);
+            throw AzureCloudException.create(e);
         }
     }
 
@@ -2002,7 +1995,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getCloudBlobContainer: unable to get CloudStorageAccount with container name {1}",
                     new Object[]{containerName});
-            throw new AzureCloudException(e);
+            throw AzureCloudException.create(e);
         }
     }
 
