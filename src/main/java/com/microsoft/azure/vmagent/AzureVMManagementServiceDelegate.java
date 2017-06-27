@@ -1126,48 +1126,48 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName,
             ExecutionEngine executionEngine) throws Exception {
         try {
-                if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
-                    final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-                    List<URI> diskUrisToRemove = new ArrayList<>();
-                    List<String> diskIdToRemove = new ArrayList<>();
-                    if (!azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).isManagedDiskEnabled()) {
-                        // Mark OS disk for removal
-                        diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
-                    } else {
-                        diskIdToRemove.add(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osDiskId());
-                    }
-                    // TODO: Remove data disks or add option to do so?
+            if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
+                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+                List<URI> diskUrisToRemove = new ArrayList<>();
+                List<String> diskIdToRemove = new ArrayList<>();
+                if (!azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).isManagedDiskEnabled()) {
+                    // Mark OS disk for removal
+                    diskUrisToRemove.add(new URI(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
+                } else {
+                    diskIdToRemove.add(azureClient.virtualMachines().getByGroup(resourceGroupName, vmName).osDiskId());
+                }
+                // TODO: Remove data disks or add option to do so?
 
-                    // Remove the VM
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing virtual machine {0}", vmName);
-                    azureClient.virtualMachines().deleteByGroup(resourceGroupName, vmName);
+                // Remove the VM
+                LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing virtual machine {0}", vmName);
+                azureClient.virtualMachines().deleteByGroup(resourceGroupName, vmName);
 
-                    // Now remove the disks
-                    for (URI diskUri : diskUrisToRemove) {
-                        AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, diskUri, resourceGroupName);
-                    }
-                    for (String id : diskIdToRemove) {
-                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing managed disk with id: {0}", id);
-                        azureClient.disks().deleteById(id);
-                    }
+                // Now remove the disks
+                for (URI diskUri : diskUrisToRemove) {
+                    AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, diskUri, resourceGroupName);
+                }
+                for (String id : diskIdToRemove) {
+                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing managed disk with id: {0}", id);
+                    azureClient.disks().deleteById(id);
+                }
 
-                    List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages().listByGroup(resourceGroupName);
-                    for (VirtualMachineCustomImage image : customImages) {
-                        String prefix = StringUtils.substringBefore(image.name(), "Image");
-                        if (StringUtils.contains(vmName, prefix)) {
-                            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing image with name: {0}", image.name());
-                            azureClient.virtualMachineCustomImages().deleteById(image.id());
-                        }
+                List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages().listByGroup(resourceGroupName);
+                for (VirtualMachineCustomImage image : customImages) {
+                    String prefix = StringUtils.substringBefore(image.name(), "Image");
+                    if (StringUtils.contains(vmName, prefix)) {
+                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing image with name: {0}", image.name());
+                        azureClient.virtualMachineCustomImages().deleteById(image.id());
                     }
                 }
-            } catch (Exception e) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM", e);
-                // Check if VM is already deleted: if VM is already deleted then just ignore exception.
-                if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
-                    throw e;
-                }
-            } finally {
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO,
+                    "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM", e);
+            // Check if VM is already deleted: if VM is already deleted then just ignore exception.
+            if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
+                throw e;
+            }
+        } finally {
             LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
             executionEngine.executeAsync(new Callable<Void>() {
                 @Override
