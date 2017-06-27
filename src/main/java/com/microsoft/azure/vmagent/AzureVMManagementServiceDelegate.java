@@ -17,6 +17,7 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.microsoft.azure.management.compute.*;
 import com.microsoft.azure.management.storage.*;
 import com.microsoft.azure.storage.blob.CloudPageBlob;
 import hudson.model.Descriptor.FormException;
@@ -45,14 +46,6 @@ import java.util.logging.Logger;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.exceptions.UnrecoverableCloudException;
 import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.OperatingSystemTypes;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineImage;
-import com.microsoft.azure.management.compute.VirtualMachineOffer;
-import com.microsoft.azure.management.compute.VirtualMachinePublisher;
-import com.microsoft.azure.management.compute.VirtualMachineSize;
-import com.microsoft.azure.management.compute.VirtualMachineSku;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIpAddress;
@@ -1158,6 +1151,15 @@ public final class AzureVMManagementServiceDelegate {
                     for (String id : diskIdToRemove) {
                         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing managed disk with id: {0}", id);
                         azureClient.disks().deleteById(id);
+                    }
+
+                    List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages().listByGroup(resourceGroupName);
+                    for (VirtualMachineCustomImage image : customImages) {
+                        String prefix = StringUtils.substringBefore(image.name(), "Image");
+                        if (StringUtils.contains(vmName, prefix)) {
+                            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing image with name: {0}", image.name());
+                            azureClient.virtualMachineCustomImages().deleteById(image.id());
+                        }
                     }
                 }
             } catch (Exception e) {

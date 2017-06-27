@@ -50,7 +50,7 @@
                 </f:radioBlock>
             </f:entry>
 
-            <f:entry title="Choose disks type" field="diskType">
+            <f:entry title="${Disk_Type}" field="diskType" help="/plugin/azure-vm-agents/help-diskType.html">
                 <f:select/>
             </f:entry>
 
