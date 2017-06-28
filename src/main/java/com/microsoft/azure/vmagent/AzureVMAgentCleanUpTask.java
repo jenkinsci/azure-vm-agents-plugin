@@ -312,14 +312,23 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     }
 
                     URI osDiskURI = null;
+                    String managedOsDiskId = null;
                     if (StringUtils.containsIgnoreCase(resource.type(), "virtualMachine")) {
-                        osDiskURI = new URI(azureClient.virtualMachines().getById(resource.id()).osUnmanagedDiskVhdUri());
+                        if (!azureClient.virtualMachines().getById(resource.id()).isManagedDiskEnabled()) {
+                            osDiskURI = new URI(azureClient.virtualMachines().getById(resource.id()).osUnmanagedDiskVhdUri());
+                        } else {
+                            managedOsDiskId = azureClient.virtualMachines().getById(resource.id()).osDiskId();
+                        }
                     }
 
                     LOGGER.log(Level.INFO, "cleanLeakedResources: deleting {0} from resource group {1}", new Object[]{resource.name(), resourceGroup});
                     azureClient.genericResources().deleteById(resource.id());
                     if (osDiskURI != null) {
                         AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, osDiskURI, resourceGroup);
+                    }
+                    if (managedOsDiskId != null) {
+                        azureClient.disks().deleteById(managedOsDiskId);
+                        AzureVMManagementServiceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
                     }
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean resource ", e);

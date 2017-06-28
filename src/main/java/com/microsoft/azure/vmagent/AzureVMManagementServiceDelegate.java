@@ -1151,13 +1151,9 @@ public final class AzureVMManagementServiceDelegate {
                     azureClient.disks().deleteById(id);
                 }
 
-                List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages().listByGroup(resourceGroupName);
-                for (VirtualMachineCustomImage image : customImages) {
-                    String prefix = StringUtils.substringBefore(image.name(), "Image");
-                    if (StringUtils.contains(vmName, prefix)) {
-                        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing image with name: {0}", image.name());
-                        azureClient.virtualMachineCustomImages().deleteById(image.id());
-                    }
+                //If used managed Disk with custom vhd, we need to delete the temporary image.
+                if (!diskIdToRemove.isEmpty()) {
+                    removeImage(azureClient, vmName, resourceGroupName);
                 }
             }
         } catch (Exception e) {
@@ -1178,6 +1174,17 @@ public final class AzureVMManagementServiceDelegate {
             }, new NoRetryStrategy());
         }
 
+    }
+
+    public static void removeImage(final Azure azureClient, final String vmName, final String resourceGroupName) {
+        List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages().listByGroup(resourceGroupName);
+        for (VirtualMachineCustomImage image : customImages) {
+            String prefix = StringUtils.substringBefore(image.name(), "Image");
+            if (StringUtils.contains(vmName, prefix)) {
+                LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: Removing image with name: {0}", image.name());
+                azureClient.virtualMachineCustomImages().deleteById(image.id());
+            }
+        }
     }
 
     public static void removeStorageBlob(final Azure azureClient, final URI blobURI, final String resourceGroupName) throws Exception {

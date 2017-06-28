@@ -39,6 +39,10 @@
             "storageAccountType": "[variables('storageAccountType')]"
           }
         }
+      },
+      "tags": {
+        "JenkinsManagedTag": "[variables('jenkinsTag')]",
+        "JenkinsResourceTag": "[variables('resourceTag')]"
       }
     },
     {
