@@ -65,12 +65,17 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     private static final String REMOTE_INIT_FILE_NAME = "init.sh";
 
+    private static final String REMOTE_INIT_FILE_NAME_WINDOWS = "C:\\init.ps1";
+
+    private Boolean isUnix = true;
+
     @Override
     public void launch(final SlaveComputer agentComputer, final TaskListener listener) {
         if (agentComputer == null || !(agentComputer instanceof AzureVMComputer)) {
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}", agentComputer);
             return;
         }
+        isUnix = agentComputer.isUnix();
         AzureVMComputer computer = (AzureVMComputer) agentComputer;
         AzureVMAgent agent = computer.getNode();
         if (agent == null) {
@@ -133,18 +138,31 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             String initScript = agent.getInitScript();
 
             // Executing script only if script is not executed even once
+            String command;
+            if (isUnix) {
+                command = "test -e ~/.azure-agent-init";
+            } else {
+                command = "dir C:\\azure-agent-init";
+            }
             if (StringUtils.isNotBlank(initScript)
-                    && executeRemoteCommand(session, "test -e ~/.azure-agent-init", logger) != 0) {
+                    && executeRemoteCommand(session, command, logger) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Init script is not null, preparing to execute script remotely");
-                copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), REMOTE_INIT_FILE_NAME);
-
+                if (isUnix) {
+                    copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), REMOTE_INIT_FILE_NAME);
+                } else {
+                    copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), REMOTE_INIT_FILE_NAME_WINDOWS);
+                }
                 // Execute initialization script
                 // Make sure to change file permission for execute if needed. TODO: need to test
 
                 // Grab the username/pass
                 StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
 
-                String command = "sh " + REMOTE_INIT_FILE_NAME;
+                if (isUnix) {
+                    command = "sh " + REMOTE_INIT_FILE_NAME;
+                } else {
+                    command = "powershell " + REMOTE_INIT_FILE_NAME_WINDOWS;
+                }
                 int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
                 if (exitStatus != 0) {
                     if (agent.getDoNotUseMachineIfInitFails()) {
@@ -167,7 +185,12 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 session = connectToSsh(agent);
 
                 // Create tracking file
-                executeRemoteCommand(session, "touch ~/.azure-agent-init", logger);
+                if (isUnix) {
+                    command = "touch ~/.azure-agent-init";
+                } else {
+                    command = "copy NUL C:\\azure-agent-init";
+                }
+                executeRemoteCommand(session, command, logger);
             }
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: checking for java runtime");
@@ -316,7 +339,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         try {
             // If root, modify the command to set up sudo -S
             String finalCommand = null;
-            if (executeAsRoot) {
+            if (isUnix && executeAsRoot) {
                 finalCommand = "sudo -S -p '' " + command;
             } else {
                 finalCommand = command;
