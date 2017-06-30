@@ -21,6 +21,7 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMComputer;
@@ -65,7 +66,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     private static final String REMOTE_INIT_FILE_NAME = "init.sh";
 
-    private static final String REMOTE_INIT_FILE_NAME_WINDOWS = "C:\\init.ps1";
+    private static final String REMOTE_INIT_FILE_NAME_WINDOWS = "/init.ps1";
 
     private Boolean isUnix = true;
 
@@ -75,7 +76,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}", agentComputer);
             return;
         }
-        isUnix = agentComputer.isUnix();
         AzureVMComputer computer = (AzureVMComputer) agentComputer;
         AzureVMAgent agent = computer.getNode();
         if (agent == null) {
@@ -84,6 +84,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
         LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launch method called for agent {0}", computer.getName());
 
+        isUnix = agent.getOsType().equals(OperatingSystemTypes.LINUX);
         // Check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
         // Added this check - since after restarting jenkins master, jenkins is trying to connect to all the agents although agents are suspended.
         // This still means that a delete agent will eventually get cleaned up.
@@ -182,6 +183,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
                 session.disconnect();
+                final int sleepInMillis = 5 * 1000;
+                Thread.sleep(sleepInMillis);
                 session = connectToSsh(agent);
 
                 // Create tracking file
@@ -194,6 +197,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             }
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: checking for java runtime");
+
+            executeRemoteCommand(session, "echo %PATH%>/log.txt", logger);
 
             if (executeRemoteCommand(session, "java -fullversion", logger) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Java not found. "
@@ -357,7 +362,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             channel.connect(connectTimeoutInMillis);
 
             // If as root, push the password
-            if (executeAsRoot) {
+            if (isUnix && executeAsRoot) {
                 outputStream.write((passwordIfRoot + "\n").getBytes("UTF-8"));
                 outputStream.flush();
             }
