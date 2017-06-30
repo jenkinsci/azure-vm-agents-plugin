@@ -199,8 +199,10 @@ public final class AzureVMManagementServiceDelegate {
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
             Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
+            final Boolean useSshInWindows = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_SSH);
             final boolean useCustomScriptExtension
-                    = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
+                    = useSshInWindows
+                    || ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
                     && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
@@ -287,7 +289,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
-            if (useCustomScriptExtension) {
+            if (useCustomScriptExtension || useSshInWindows) {
                 ObjectNode.class.cast(tmp.get("variables")).put("jenkinsServerURL", Jenkins.getInstance().getRootUrl());
                 // Calculate the client secrets.  The secrets are based off the machine name,
                 ArrayNode clientSecretsNode = ObjectNode.class.cast(tmp.get("variables")).putArray("clientSecrets");
@@ -297,7 +299,13 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
-                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, (String) properties.get("initScript"));
+                String initScript;
+                if (useSshInWindows) {
+                    initScript = IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream("/scripts/sshInit.ps1"), "UTF-8");
+                } else {
+                    initScript = (String) properties.get("initScript");
+                }
+                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, initScript);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptURI", scriptUri);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
