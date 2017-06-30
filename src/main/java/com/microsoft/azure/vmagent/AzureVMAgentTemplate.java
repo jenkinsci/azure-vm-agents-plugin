@@ -121,6 +121,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private transient String storageAccountName;
 
+    private String diskType;
+
     private String newStorageAccountName;
 
     private String existingStorageAccountName;
@@ -207,6 +209,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String storageAccountType,
             final String newStorageAccountName,
             final String existingStorageAccountName,
+            final String diskType,
             final String noOfParallelJobs,
             final String usageMode,
             final String builtInImage,
@@ -243,6 +246,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.newStorageAccountName = newStorageAccountName;
         this.existingStorageAccountName = existingStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
+        this.diskType = diskType;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
@@ -395,6 +399,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             }
             builtInImage = Constants.WINDOWS_SERVER_2016;
         }
+
+        if (StringUtils.isBlank(diskType)) {
+            diskType = Constants.DISK_UNMANAGED;
+        }
         return this;
     }
 
@@ -425,6 +433,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return newName;
         }
         return existingName;
+    }
+
+    public String getDiskType() {
+        return diskType;
     }
 
     public String getStorageAccountNameReferenceType() {
@@ -833,7 +845,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public ListBoxModel doFillExistingStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter final String azureCredentialsId,
-                @RelativePath("..") @QueryParameter final String resourceGroupReferenceType,
+                @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
                 @RelativePath("..") @QueryParameter final String newResourceGroupName,
                 @RelativePath("..") @QueryParameter final String existingResourceGroupName,
                 @QueryParameter final String storageAccountType) throws IOException, ServletException {
@@ -841,6 +853,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
+            //resourceGroupReferenceType passed wrong value in 2.60.1-LTS, we won't use this value until bug resolved.
+            resourceGroupReferenceType = null;
 
             try {
                 AzureCredentials.ServicePrincipal servicePrincipal = AzureCredentials.getServicePrincipal(azureCredentialsId);
@@ -882,6 +896,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 return FormValidation.ok(Messages.SA_Blank_Create_New());
             }
             return FormValidation.ok();
+        }
+
+        public ListBoxModel doFillDiskTypeItems() {
+            ListBoxModel model = new ListBoxModel();
+            model.add("Managed Disk", Constants.DISK_MANAGED);
+            model.add("Unmanaged Disk", Constants.DISK_UNMANAGED);
+            return model;
         }
 
         public FormValidation doAgentLaunchMethod(@QueryParameter final String value) {

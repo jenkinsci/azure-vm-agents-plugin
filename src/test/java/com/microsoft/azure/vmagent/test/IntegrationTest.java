@@ -287,6 +287,7 @@ public class IntegrationTest {
         when(templateMock.getInitScript()).thenReturn(initScript);
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
+        when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
         when(templateMock.getImageReferenceType()).thenReturn("reference");
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
@@ -298,6 +299,7 @@ public class IntegrationTest {
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
+        when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();

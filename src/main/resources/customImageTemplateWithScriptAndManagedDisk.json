@@ -1,0 +1,150 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountKey": {
+      "type": "secureString"
+    }
+  },
+  "variables": {
+    "virtualNetworkName": "",
+    "virtualNetworkResourceGroupName": "",
+    "subnetName": "",
+    "nsgName": "",
+    "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
+    "vnetID": "[resourceId(variables('virtualNetworkResourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    "publicIPAddressType": "Dynamic",
+    "storageAccountContainerName": "[concat('jnk',uniqueString(resourceGroup().id, deployment().name))]",
+    "storageAccountType": "Standard_LRS",
+    "startupScriptURI": "",
+    "startupScriptName": "",
+    "jenkinsServerURL": "",
+    "clientSecrets": [],
+    "jenkinsTag": "ManagedByAzureVMAgents",
+    "resourceTag": "AzureJenkins",
+    "blobEndpointSuffix": ".blob.core.windows.net/"
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-04-30-preview",
+      "type": "Microsoft.Compute/images",
+      "name": "[concat(variables('vmName'), 'Image')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "[variables('osType')]",
+            "blobUri": "[variables('image')]",
+            "storageAccountType": "[variables('storageAccountType')]"
+          }
+        }
+      },
+      "tags": {
+        "JenkinsManagedTag": "[variables('jenkinsTag')]",
+        "JenkinsResourceTag": "[variables('resourceTag')]"
+      }
+    },
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('vmName'), copyIndex(), 'NIC')]",
+      "location": "[variables('location')]",
+      "copy": {
+        "name": "vmcopy",
+        "count": "[parameters('count')]"
+      },
+      "dependsOn": [],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ]
+      },
+      "tags": {
+        "JenkinsManagedTag": "[variables('jenkinsTag')]",
+        "JenkinsResourceTag": "[variables('resourceTag')]"
+      }
+    },
+    {
+      "apiVersion": "2016-04-30-preview",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[concat(variables('vmName'), copyIndex())]",
+      "location": "[variables('location')]",
+      "copy": {
+        "name": "vmcopy",
+        "count": "[parameters('count')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', variables('vmName'), copyIndex(), 'NIC')]",
+        "[concat('Microsoft.Compute/images/', variables('vmName'), 'Image')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+        "osProfile": {
+          "computername": "[concat(variables('vmName'), copyIndex())]",
+          "adminUsername": "[variables('adminUsername')]",
+          "adminPassword": "[variables('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "id": "[resourceId('Microsoft.Compute/images', concat(variables('vmName'), 'Image'))]"
+          },
+          "osDisk": {
+            "createOption": "fromImage",
+            "managedDisk": {
+              "storageAccountType": "[variables('storageAccountType')]"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmName'), copyIndex(), 'NIC'))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "extensions",
+          "name": "[concat('customScript', variables('vmName'), copyIndex())]",
+          "apiVersion": "2015-05-01-preview",
+          "location": "[variables('location')]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex())]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Compute",
+            "type": "CustomScriptExtension",
+            "typeHandlerVersion": "1.7",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "[variables('startupScriptURI')]"
+              ],
+              "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File ', variables('startupScriptName'),' ', variables('jenkinsServerURL'),' ', variables('vmName'),copyIndex(),' ', variables('clientSecrets')[copyIndex()])]"
+            },
+            "protectedSettings": {
+              "storageAccountName": "[variables('storageAccountName')]",
+              "storageAccountKey": "[parameters('storageAccountKey')]"
+            }
+          }
+        }
+      ],
+      "tags": {
+        "JenkinsManagedTag": "[variables('jenkinsTag')]",
+        "JenkinsResourceTag": "[variables('resourceTag')]"
+      }
+    }
+  ]
+}
