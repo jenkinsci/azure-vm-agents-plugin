@@ -179,6 +179,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                  *
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
+                if (isUnix) {
+                    //Restart sshd to get new system environment variables
+                    executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger);
+                }
                 session.disconnect();
                 session = connectToSsh(agent);
 
