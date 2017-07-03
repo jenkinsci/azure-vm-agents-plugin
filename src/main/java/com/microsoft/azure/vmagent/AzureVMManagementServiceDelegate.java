@@ -997,6 +997,8 @@ public final class AzureVMManagementServiceDelegate {
     private static class VMStatus extends PowerState {
         public static final VMStatus PROVISIONING_OR_DEPROVISIONING = new VMStatus(Constants.PROVISIONING_OR_DEPROVISIONING_VM_STATUS);
 
+        public static final VMStatus UPDATING = new VMStatus(Constants.UPDATING_VM_STATUS);
+
         public VMStatus(PowerState p) {
             super(p.toString());
         }
@@ -1020,7 +1022,11 @@ public final class AzureVMManagementServiceDelegate {
         final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, vmName);
         final String provisioningState = vm.provisioningState();
         if (!provisioningState.equalsIgnoreCase("succeeded")) {
-            return new VMStatus(VMStatus.PROVISIONING_OR_DEPROVISIONING);
+            if (provisioningState.equalsIgnoreCase("updating")) {
+                return new VMStatus(VMStatus.UPDATING);
+            } else {
+                return new VMStatus(VMStatus.PROVISIONING_OR_DEPROVISIONING);
+            }
         } else {
             return new VMStatus(vm.powerState());
         }
@@ -1036,8 +1042,18 @@ public final class AzureVMManagementServiceDelegate {
      */
     public static boolean isVMAliveOrHealthy(final AzureVMAgent agent) throws Exception {
         VMStatus status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+        final int maxRetryCount = 6;
+        int currentRetryCount = 0;
+        while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
+            status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: Status is updating, wait for another 30 seconds");
+            final int sleepInMills = 30 * 1000;
+            Thread.sleep(sleepInMills);
+            currentRetryCount++;
+        }
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: status {0}", status.toString());
         return !(VMStatus.PROVISIONING_OR_DEPROVISIONING.equals(status)
+                || VMStatus.UPDATING.equals(status)
                 || VMStatus.DEALLOCATING.equals(status)
                 || VMStatus.STOPPED.equals(status)
                 || VMStatus.DEALLOCATED.equals(status));

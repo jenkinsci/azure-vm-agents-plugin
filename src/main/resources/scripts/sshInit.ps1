@@ -14,6 +14,8 @@ $destination.Copyhere($zip_file.items(), 0x14)
 [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${dir}", "Machine")
 
 Set-Location $dir
+(Get-Content ".\sshd_config").Replace("#PermitUserEnvironment no", "PermitUserEnvironment yes").Replace("#UsePrivilegeSeparation yes", "UsePrivilegeSeparation no") | Set-Content ".\sshd_config"
+
 .\install-sshd.ps1
 .\ssh-keygen.exe -A
 .\FixHostFilePermissions.ps1 -Confirm:$false

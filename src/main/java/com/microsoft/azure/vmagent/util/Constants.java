@@ -190,6 +190,8 @@ public final class Constants {
      */
     public static final String PROVISIONING_OR_DEPROVISIONING_VM_STATUS = "PROVISIONING_OR_DEPROVISIONING";
 
+    public static final String UPDATING_VM_STATUS = "UPDATING";
+
     public static final String DEFAULT_RESOURCE_GROUP_NAME = "jenkins";
 
     public static final String DEFAULT_VNET_ADDRESS_MASK = "10.0.0.0/16";

@@ -27,10 +27,7 @@ import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMComputer;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.Messages;
-import com.microsoft.azure.vmagent.util.AzureUtil;
-import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.FailureStage;
+import com.microsoft.azure.vmagent.util.*;
 
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
@@ -183,8 +180,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
                 session.disconnect();
-                final int sleepInMillis = 5 * 1000;
-                Thread.sleep(sleepInMillis);
                 session = connectToSsh(agent);
 
                 // Create tracking file
@@ -198,8 +193,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: checking for java runtime");
 
-            executeRemoteCommand(session, "echo %PATH%>/log.txt", logger);
-
             if (executeRemoteCommand(session, "java -fullversion", logger) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Java not found. "
                         + "At a minimum init script should ensure that java runtime is installed");
@@ -207,13 +200,20 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 return;
             }
 
+            String filePath;
+            if (isUnix) {
+                filePath = "slave.jar";
+            } else {
+                filePath = "/slave.jar";
+            }
+
             LOGGER.info("AzureVMAgentSSHLauncher: launch: java runtime present, copying slave.jar to remote");
             InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").
                     readFully());
-            copyFileToRemote(session, inputStream, "slave.jar");
+            copyFileToRemote(session, inputStream, filePath);
 
             String jvmopts = agent.getJvmOptions();
-            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar slave.jar";
+            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar " + filePath;
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launching agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");
@@ -415,7 +415,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     private Session connectToSsh(final AzureVMAgent agent) throws Exception {
         LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: start");
         Session session = null;
-        final int maxRetryCount = 6;
+        final int maxRetryCount = 10;
         int currRetryCount = 0;
 
         while (true) {
