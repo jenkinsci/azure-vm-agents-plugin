@@ -179,8 +179,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                  *
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
-                if (isUnix) {
-                    //Restart sshd to get new system environment variables
+                if (!isUnix) {
+                    //In Windows, restart sshd to get new system environment variables
                     executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger);
                 }
                 session.disconnect();
@@ -204,20 +204,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 return;
             }
 
-            String filePath;
-            if (isUnix) {
-                filePath = "slave.jar";
-            } else {
-                filePath = "/slave.jar";
-            }
-
             LOGGER.info("AzureVMAgentSSHLauncher: launch: java runtime present, copying slave.jar to remote");
             InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").
                     readFully());
-            copyFileToRemote(session, inputStream, filePath);
+            copyFileToRemote(session, inputStream, "slave.jar");
 
             String jvmopts = agent.getJvmOptions();
-            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar " + filePath;
+            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar slave.jar";
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launching agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");

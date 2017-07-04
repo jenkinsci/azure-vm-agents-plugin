@@ -300,6 +300,7 @@ public class IntegrationTest {
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
         when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
+        when(templateMock.getPreInstallSsh()).thenReturn(true);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();

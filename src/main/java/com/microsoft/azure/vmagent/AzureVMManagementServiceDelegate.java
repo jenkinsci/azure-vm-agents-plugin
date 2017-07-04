@@ -113,6 +113,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
+    private static final String IMAGE_REFERENCE = "reference";
+
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
 
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
@@ -199,9 +201,12 @@ public final class AzureVMManagementServiceDelegate {
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
             Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
-            final Boolean useSshInWindows = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_SSH);
+            final Boolean preInstallSshInWindows = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS)
+                    && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_SSH)
+                    && (isBasic || template.getImageReferenceType().equals(IMAGE_REFERENCE) || template.getPreInstallSsh());
+
             final boolean useCustomScriptExtension
-                    = useSshInWindows
+                    = preInstallSshInWindows
                     || ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
                     && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
@@ -289,7 +294,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
-            if (useCustomScriptExtension || useSshInWindows) {
+            if (useCustomScriptExtension) {
                 ObjectNode.class.cast(tmp.get("variables")).put("jenkinsServerURL", Jenkins.getInstance().getRootUrl());
                 // Calculate the client secrets.  The secrets are based off the machine name,
                 ArrayNode clientSecretsNode = ObjectNode.class.cast(tmp.get("variables")).putArray("clientSecrets");
@@ -300,7 +305,7 @@ public final class AzureVMManagementServiceDelegate {
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
                 String initScript;
-                if (useSshInWindows) {
+                if (preInstallSshInWindows) {
                     initScript = IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream("/scripts/sshInit.ps1"), "UTF-8");
                 } else {
                     initScript = (String) properties.get("initScript");
@@ -825,7 +830,7 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_JNLP);
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
 
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
@@ -1046,7 +1051,7 @@ public final class AzureVMManagementServiceDelegate {
         int currentRetryCount = 0;
         while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
             status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: Status is updating, wait for another 30 seconds");
+            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: Status is Updating, wait for another 30 seconds");
             final int sleepInMills = 30 * 1000;
             Thread.sleep(sleepInMills);
             currentRetryCount++;

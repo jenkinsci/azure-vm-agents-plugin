@@ -162,6 +162,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String agentLaunchMethod;
 
+    private Boolean preInstallSsh;
+
     private final String initScript;
 
     private final String credentialsId;
@@ -221,6 +223,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final boolean imageReference,
             final ImageReferenceTypeClass imageReferenceTypeClass,
             final String agentLaunchMethod,
+            final Boolean preInstallSsh,
             final String initScript,
             final String credentialsId,
             final String virtualNetworkName,
@@ -271,6 +274,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
+        this.preInstallSsh = preInstallSsh;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
@@ -340,10 +344,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER)
                         .replace("${ADMIN}", AzureUtil.getCredentials(template.getCredentialsId()).getUsername()));
             }
-            if (template.getBuiltInImage().equals(Constants.WINDOWS_SERVER_2016)) {
-                stringBuilder.append(getSeparator(template.getOsType()));
-                stringBuilder.append(AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT.get(template.getBuiltInImage()).get(Constants.INSTALL_JNLP));
-            }
             return stringBuilder.toString();
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "AzureVMTemplate: getBasicInitScript: Get pre-installed tools script {0} failed.", e);
@@ -402,6 +402,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         if (StringUtils.isBlank(diskType)) {
             diskType = Constants.DISK_UNMANAGED;
+        }
+
+        if (preInstallSsh == null) {
+            preInstallSsh = true;
         }
         return this;
     }
@@ -522,6 +526,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public String getOsType() {
         return osType;
+    }
+
+    public Boolean getPreInstallSsh() {
+        return preInstallSsh;
     }
 
     public String getImagePublisher() {

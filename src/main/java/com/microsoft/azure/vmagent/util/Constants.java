@@ -126,6 +126,7 @@ public final class Constants {
     public static final String DEFAULT_IMAGE_VERSION = "defaultImageVersion";
     public static final String DEFAULT_OS_TYPE = "defaultOsType";
     public static final String DEFAULT_LAUNCH_METHOD = "defaultLaunchMethod";
+    public static final String DEFAULT_PRE_INSTALL_SSH = "defaultPreInstallSsh";
 
     /**
      * Build In Tools.
