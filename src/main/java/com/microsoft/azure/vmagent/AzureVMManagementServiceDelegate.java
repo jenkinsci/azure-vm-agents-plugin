@@ -143,6 +143,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
 
+    private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
+
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -306,7 +308,7 @@ public final class AzureVMManagementServiceDelegate {
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
                 String initScript;
                 if (preInstallSshInWindows) {
-                    initScript = IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream("/scripts/sshInit.ps1"), "UTF-8");
+                    initScript = IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(PRE_INSTALL_SSH_FILENAME), "UTF-8");
                 } else {
                     initScript = (String) properties.get("initScript");
                 }
@@ -1049,6 +1051,8 @@ public final class AzureVMManagementServiceDelegate {
         VMStatus status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
         final int maxRetryCount = 6;
         int currentRetryCount = 0;
+        //When launching Windows via SSH, this function will be executed before extension done.
+        //Thus status will be "Updating".
         while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
             status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
             LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: Status is Updating, wait for another 30 seconds");

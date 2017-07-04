@@ -173,16 +173,18 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 } else {
                     LOGGER.info("AzureVMAgentSSHLauncher: launch: init script got executed successfully");
                 }
+
+                //In Windows, restart sshd to get new system environment variables
+                if (!isUnix) {
+                    executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger);
+                }
+
                 /* Create a new session after the init script has executed to
                  * make sure we pick up whatever new settings have been set up
                  * for our user
                  *
                  * https://issues.jenkins-ci.org/browse/JENKINS-40291
                  */
-                if (!isUnix) {
-                    //In Windows, restart sshd to get new system environment variables
-                    executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger);
-                }
                 session.disconnect();
                 session = connectToSsh(agent);
 
@@ -412,7 +414,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     private Session connectToSsh(final AzureVMAgent agent) throws Exception {
         LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: start");
         Session session = null;
-        final int maxRetryCount = 10;
+        final int maxRetryCount = 6;
         int currRetryCount = 0;
 
         while (true) {
