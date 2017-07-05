@@ -299,7 +299,7 @@ public class IntegrationTest {
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
-        when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
+        when(templateMock.getDiskType()).thenReturn(Constants.DISK_UNMANAGED);
         when(templateMock.getPreInstallSsh()).thenReturn(true);
 
         AzureVMDeploymentInfo ret = AzureVMManagementServiceDelegate.createDeployment(templateMock, numberOfAgents, customTokenCache,deploymentRegistrar);
