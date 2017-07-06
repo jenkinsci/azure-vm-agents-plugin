@@ -1404,7 +1404,6 @@ public final class AzureVMManagementServiceDelegate {
      * @param storageAccountName
      * @param noOfParallelJobs
      * @param referenceType
-     * @param isCustomReferenceUsed
      * @param image
      * @param osType
      * @param imagePublisher
@@ -1422,7 +1421,10 @@ public final class AzureVMManagementServiceDelegate {
      * @param returnOnSingleError
      * @param resourceGroupName
      * @param usePrivateIP
+     * @param nsgName
      * @param availabilitySetName
+     * @param loadBalancerName
+     * @param backendPoolName
      * @return
      */
     public static List<String> verifyTemplate(
