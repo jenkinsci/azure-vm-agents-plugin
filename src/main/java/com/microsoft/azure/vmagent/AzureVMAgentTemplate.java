@@ -180,6 +180,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String nsgName;
 
+    private String availabilitySetName;
+
+    private String loadBalancerName;
+
+    private String backendPoolName;
+
     private final String jvmOptions;
 
     // Indicates whether the template is disabled.
@@ -228,6 +234,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             final String subnetName,
             final boolean usePrivateIP,
             final String nsgName,
+            final String availabilitySetName,
+            final String loadBalancerName,
+            final String backendPoolName,
             final String agentWorkspace,
             final String jvmOptions,
             final String retentionTimeInMin,
@@ -277,6 +286,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.subnetName = subnetName;
         this.usePrivateIP = usePrivateIP;
         this.nsgName = nsgName;
+        this.availabilitySetName = availabilitySetName;
+        this.loadBalancerName = loadBalancerName;
+        this.backendPoolName = backendPoolName;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
@@ -314,6 +326,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         templateProperties.put("subnetName", isBasic ? "" : template.getSubnetName());
         templateProperties.put("usePrivateIP", isBasic ? false : template.getUsePrivateIP());
         templateProperties.put("nsgName", isBasic ? "" : template.getNsgName());
+        templateProperties.put("availabilitySetName", isBasic ? "" : template.getAvailabilitySetName());
+        templateProperties.put("loadBalancerName", isBasic ? "" : template.getLoadBalancerName());
+        templateProperties.put("backendPoolName", isBasic ? "" : template.getBackendPoolName());
         templateProperties.put("jvmOptions", isBasic ? "" : template.getJvmOptions());
         templateProperties.put("noOfParallelJobs", isBasic ? 1 : template.getNoOfParallelJobs());
         templateProperties.put("templateDisabled", isBasic ? false : template.isTemplateDisabled());
@@ -580,6 +595,30 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return nsgName;
     }
 
+    public String getLoadBalancerName() {
+        return loadBalancerName;
+    }
+
+    public void setLoadBalancerName(String loadBalancerName) {
+        this.loadBalancerName = loadBalancerName;
+    }
+
+    public String getAvailabilitySetName() {
+        return availabilitySetName;
+    }
+
+    public void setAvailabilitySetName(String availabilitySetName) {
+        this.availabilitySetName = availabilitySetName;
+    }
+
+    public String getBackendPoolName() {
+        return backendPoolName;
+    }
+
+    public void setBackendPoolName(String backendPoolName) {
+        this.backendPoolName = backendPoolName;
+    }
+
     public String getAgentWorkspace() {
         return agentWorkspace;
     }
@@ -753,7 +792,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 getResourceGroupName(),
                 true,
                 usePrivateIP,
-                nsgName);
+                nsgName,
+                availabilitySetName,
+                loadBalancerName,
+                backendPoolName);
     }
 
     @Extension
@@ -1024,6 +1066,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String nsgName,
                 @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions,
+                @QueryParameter String availabilitySetName,
+                @QueryParameter String loadBalancerName,
+                @QueryParameter String backendPoolName,
                 @QueryParameter String imageReferenceType) {
 
             /*
@@ -1071,7 +1116,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "privateIP: {25};\n\t"
                             + "nsgName: {26};\n\t"
                             + "retentionTimeInMin: {27};\n\t"
-                            + "jvmOptions: {28};",
+                            + "jvmOptions: {28};\n\t"
+                            + "availabilitySetName: {29};\n\t"
+                            + "loadBalancerName: {30};\n\t"
+                            + "backendPoolName: {31};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -1101,7 +1149,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             usePrivateIP,
                             nsgName,
                             retentionTimeInMin,
-                            jvmOptions});
+                            jvmOptions,
+                            availabilitySetName,
+                            loadBalancerName,
+                            backendPoolName});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1140,7 +1191,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     resourceGroupName,
                     false,
                     usePrivateIP,
-                    nsgName);
+                    nsgName,
+                    availabilitySetName,
+                    loadBalancerName,
+                    backendPoolName);
 
             if (errors.size() > 0) {
                 StringBuilder errorString = new StringBuilder(Messages.Azure_GC_Template_Error_List()).append("\n");
