@@ -138,7 +138,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             if (isUnix) {
                 command = "test -e ~/.azure-agent-init";
             } else {
-                command = "dir C:\\azure-agent-init";
+                command = "dir C:\\.azure-agent-init";
             }
             if (StringUtils.isNotBlank(initScript)
                     && executeRemoteCommand(session, command, logger, isUnix) != 0) {
