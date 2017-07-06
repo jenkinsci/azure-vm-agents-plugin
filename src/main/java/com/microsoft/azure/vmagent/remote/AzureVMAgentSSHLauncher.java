@@ -65,8 +65,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     private static final String REMOTE_INIT_FILE_NAME_WINDOWS = "/init.ps1";
 
-    private Boolean isUnix = true;
-
     @Override
     public void launch(final SlaveComputer agentComputer, final TaskListener listener) {
         if (agentComputer == null || !(agentComputer instanceof AzureVMComputer)) {
@@ -81,7 +79,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
         LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launch method called for agent {0}", computer.getName());
 
-        isUnix = agent.getOsType().equals(OperatingSystemTypes.LINUX);
+        final boolean isUnix = agent.getOsType().equals(OperatingSystemTypes.LINUX);
         // Check if VM is already stopped or stopping or getting deleted , if yes then there is no point in trying to connect
         // Added this check - since after restarting jenkins master, jenkins is trying to connect to all the agents although agents are suspended.
         // This still means that a delete agent will eventually get cleaned up.
@@ -143,7 +141,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 command = "dir C:\\azure-agent-init";
             }
             if (StringUtils.isNotBlank(initScript)
-                    && executeRemoteCommand(session, command, logger) != 0) {
+                    && executeRemoteCommand(session, command, logger, isUnix) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Init script is not null, preparing to execute script remotely");
                 if (isUnix) {
                     copyFileToRemote(session, new ByteArrayInputStream(initScript.getBytes("UTF-8")), REMOTE_INIT_FILE_NAME);
@@ -161,7 +159,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 } else {
                     command = "powershell " + REMOTE_INIT_FILE_NAME_WINDOWS;
                 }
-                int exitStatus = executeRemoteCommand(session, command, logger, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
+                int exitStatus = executeRemoteCommand(session, command, logger, isUnix, agent.getExecuteInitScriptAsRoot(), creds.getPassword().getPlainText());
                 if (exitStatus != 0) {
                     if (agent.getDoNotUseMachineIfInitFails()) {
                         LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: init script failed: exit code={0} (marking agent for deletion)", exitStatus);
@@ -176,7 +174,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
                 //In Windows, restart sshd to get new system environment variables
                 if (!isUnix) {
-                    executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger);
+                    executeRemoteCommand(session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger, isUnix);
                 }
 
                 /* Create a new session after the init script has executed to
@@ -192,14 +190,14 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 if (isUnix) {
                     command = "touch ~/.azure-agent-init";
                 } else {
-                    command = "copy NUL C:\\azure-agent-init";
+                    command = "copy NUL C:\\.azure-agent-init";
                 }
-                executeRemoteCommand(session, command, logger);
+                executeRemoteCommand(session, command, logger, isUnix);
             }
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: checking for java runtime");
 
-            if (executeRemoteCommand(session, "java -fullversion", logger) != 0) {
+            if (executeRemoteCommand(session, "java -fullversion", logger, isUnix) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Java not found. "
                         + "At a minimum init script should ensure that java runtime is installed");
                 handleLaunchFailure(agent, Constants.AGENT_POST_PROV_JAVA_NOT_FOUND);
@@ -324,8 +322,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
      * @param logger
      * @return
      */
-    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger) {
-        return executeRemoteCommand(jschSession, command, logger, false, null);
+    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger, final boolean isUnix) {
+        return executeRemoteCommand(jschSession, command, logger, isUnix, false, null);
     }
 
     /**
@@ -338,7 +336,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
      * @param passwordIfRoot
      * @return
      */
-    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger, boolean executeAsRoot, String passwordIfRoot) {
+    private int executeRemoteCommand(final Session jschSession, final String command, final PrintStream logger, final boolean isUnix, boolean executeAsRoot, String passwordIfRoot) {
         ChannelExec channel = null;
         try {
             // If root, modify the command to set up sudo -S
