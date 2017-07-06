@@ -1989,7 +1989,7 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName,
             final String loadBalancerName,
             final String backendPoolName) {
-        if (StringUtils.isNotBlank(backendPoolName)) {
+        if (StringUtils.isNotBlank(loadBalancerName) && StringUtils.isNotBlank(backendPoolName)) {
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             LoadBalancerBackend backend = azureClient.loadBalancers().getByGroup(resourceGroupName, loadBalancerName).backends().get(backendPoolName);
             if (backend == null) {
