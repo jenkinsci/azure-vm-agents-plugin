@@ -172,6 +172,17 @@
                         <f:textbox/>
                     </f:entry>
 
+                    <f:entry title="${%AvailabilitySet_Name}" field="availabilitySetName" help="/plugin/azure-vm-agents/help-availabilitySetName.html">
+                        <f:textbox/>
+                    </f:entry>
+
+                    <f:entry title="${%LoadBalancer_Name}" field="loadBalancerName" help="/plugin/azure-vm-agents/help-loadBalancerName.html">
+                        <f:textbox/>
+                    </f:entry>
+
+                    <f:entry title="${%BackendPool_Name}" field="backendPoolName" help="/plugin/azure-vm-agents/help-backendPoolName.html">
+                        <f:textbox/>
+                    </f:entry>
 
                     <f:entry title="${%JVM_Options}" field="jvmOptions" help="/plugin/azure-vm-agents/help-jvmOptions.html">
                         <f:textbox/>
