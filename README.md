@@ -49,7 +49,7 @@ Refer to
 6. Select the desired VM size.
 7. Select the Storage type, either Standard_LRS or Premium_LRS. Note that some VM size only support Standard_LRS.
 8. Specify the Azure Storage account name or select a existing Storage account name. Alternatively you can leave it blank to let Jenkins create a storage
-   account by using a unique generative name.
+   account by using a generated unique name.
 9. Select the disk type between Managed Disk or Unmanaged Disk. <b>We recommend Managed Disk</b>.
 10. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically
    deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
@@ -61,8 +61,8 @@ Refer to
 12. Select built-in image or use advanced image configurations.
   * When using built-in image, you can select Windows Server 2016 or Ubuntu 16.04 with some pre-installed tools.
   * When using advanced image configurations. Choose between two possible alternatives:
-    * use a custom user image (provide image URL and os type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
-    * give an image reference (provide image reference by publisher, offer, sku and version).
+    * Use a custom user image (provide image URL and os type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
+    * Give an image reference (provide image reference by publisher, offer, sku and version).
 13. For the launch method, select SSH or JNLP.
   * Linux agents can be launched only using SSH.
   * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then
