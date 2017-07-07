@@ -47,22 +47,26 @@ Refer to
    used during a job configuration.
 5. Select the desired region from the combo box.
 6. Select the desired VM size.
-7. Specify the Azure Storage account name. Alternatively you can leave it blank to let Jenkins create a storage
-   account by using the default name "jenkinsarmst".
-8. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically
+7. Select the Storage type, either Standard_LRS or Premium_LRS. Note that some VM size only support Standard_LRS.
+8. Specify the Azure Storage account name or select a existing Storage account name. Alternatively you can leave it blank to let Jenkins create a storage
+   account by using a generated unique name.
+9. Select the disk type between Managed Disk or Unmanaged Disk. <b>We recommend Managed Disk</b>.
+10. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically
    deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
-9. Select a usage option:
+11. Select a usage option:
   * If "Utilize this node as much as possible" is selected, then Jenkins may run any job on the agent as long as it
     is available.
   * If "Leave this node for tied jobs only" is selected, Jenkins will only build a project (or job) on this node
     when that project specifically was tied to that node. This allows a agent to be reserved for certain kinds of jobs.
-10. Specify your Image Family. Choose between two possible alternatives:
-  * use a custom user image (provide image URL and os type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
-  * give an image reference (provide image reference by publisher, offer, sku and version).
-11. For the launch method, select SSH or JNLP.
-  * Linux agents can be launched using SSH or JNLP, though no startup script is available through JNLP.
+12. Select built-in image or use advanced image configurations.
+  * When using built-in image, you can select Windows Server 2016 or Ubuntu 16.04 with some pre-installed tools.
+  * When using advanced image configurations. Choose between two possible alternatives:
+    * Use a custom user image (provide image URL and os type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
+    * Give an image reference (provide image reference by publisher, offer, sku and version).
+13. For the launch method, select SSH or JNLP.
+  * Linux agents can be launched only using SSH.
   * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then
-    image needs to be custom-prepared with an SSH server pre-installed.<br>
+    check Pre-Install SSH in Windows Slave or image needs to be custom-prepared with an SSH server pre-installed. We recommend to use SSH rather than JNLP. For you need less init codes and get much clearer logs <br>
 
 
   When using the JNLP launch option, ensure the following:
@@ -73,71 +77,17 @@ Refer to
 
       If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and, in case of
       Windows, add the necessary firewall rules inside virtual machine (Run --> firewall.cpl).
-12. For the Init script, provide a script to install at least a Java runtime if the image does not have Java
-      pre-installed.
-
-    For the Windows JNLP launch method, the init script must be in PowerShell.
-        Automatically passed to this script is:
-            First argument - Jenkins server URL
-            Second argument - VMName
-            Third argument - JNLP secret, required if the server has security enabled.
-    You need to install Java, download the agent jar file from: '[server url]jnlpJars/slave.jar'.
-    The server url should already have a trailing slash.  Then execute the following to connect:
-    `java.exe -jar [agent jar location] [-secret [client secret if required]] [server url]computer/[vm name]/agent-agent.jnlp`
-
-    Example script
-    ```
-    Set-ExecutionPolicy Unrestricted
-    $jenkinsServerUrl = $args[0]
-    $vmName = $args[1]
-    $secret = $args[2]
-
-    $baseDir = 'C:\Jenkins'
-    mkdir $baseDir
-    # Download the JDK
-    $source = "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-windows-x64.exe"
-    $destination = "$baseDir\jdk.exe"
-    $client = new-object System.Net.WebClient
-    $cookie = "oraclelicense=accept-securebackup-cookie"
-    $client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
-    $client.downloadFile([string]$source, [string]$destination)
-
-    # Execute the unattended install
-    $jdkInstallDir=$baseDir + '\jdk\'
-    $jreInstallDir=$baseDir + '\jre\'
-    C:\Jenkins\jdk.exe /s INSTALLDIR=$jdkInstallDir /INSTALLDIRPUBJRE=$jdkInstallDir
-
-    $javaExe=$jdkInstallDir + '\bin\java.exe'
-    $jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/slave.jar"
-    $destinationSlaveJarPath = $baseDir + '\slave.jar'
-
-    # Download the jar file
-    $client = new-object System.Net.WebClient
-    $client.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)
-
-    # Calculate the jnlpURL
-    $jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/slave-agent.jnlp'
-
-    while ($true) {
-        try {
-            # Launch
-            & $javaExe -jar $destinationSlaveJarPath -secret $secret -jnlpUrl $jnlpUrl -noReconnect
-        }
-        catch [System.Exception] {
-            Write-Output $_.Exception.ToString()
-        }
-        sleep 10
-    }
-    ```
-
+14. For the Init script, provide a script to install at least a Java runtime if the image does not have Java pre-installed.<br/>
+    We prepare sample for Linux via SSH, Windows via SSH and Windows via JNLP. Please find details in help button.
+      
       If you hit the [storage scalability limits](https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets) for your custom images on the storage account where the VHD resides, you should consider using the agent's [temporary storage](https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines) or copy your custom image in multiple storage accounts and use multiple VM templates with the same label within the same agent cloud.
 
       For more details about how to prepare custom images, refer to the below links:
       * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
       * [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
 
-13. Specify a user name and a password as per the rules explained in the help text.
-14. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect
+15. Specify a user name and a password as per the rules explained in the help text.
+16. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect
       to your Azure account to verify the correctness of the supplied information.
 
 ## Template Configuration for Ubuntu images.

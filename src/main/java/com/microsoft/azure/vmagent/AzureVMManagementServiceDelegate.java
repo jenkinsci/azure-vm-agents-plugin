@@ -113,6 +113,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String IMAGE_CUSTOM_REFERENCE = "custom";
 
+    private static final String IMAGE_REFERENCE = "reference";
+
     private static final Map<String, List<String>> AVAILABLE_ROLE_SIZES = getAvailableRoleSizes();
 
     private static final Set<String> AVAILABLE_LOCATIONS_STD = getAvailableLocationsStandard();
@@ -140,6 +142,8 @@ public final class AzureVMManagementServiceDelegate {
     private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "/scripts/ubuntuInstallMavenScript.sh";
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
+
+    private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
     /**
      * Creates a new deployment of VMs based on the provided template.
@@ -199,8 +203,13 @@ public final class AzureVMManagementServiceDelegate {
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
             Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
+            final Boolean preInstallSshInWindows = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS)
+                    && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_SSH)
+                    && (isBasic || template.getImageReferenceType().equals(IMAGE_REFERENCE) || template.getPreInstallSsh());
+
             final boolean useCustomScriptExtension
-                    = ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
+                    = preInstallSshInWindows
+                    || ((String) properties.get("osType")).equals(Constants.OS_TYPE_WINDOWS) && !StringUtils.isBlank((String) properties.get("initScript"))
                     && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
             // check if a custom image id has been provided otherwise work with publisher and offer
@@ -297,7 +306,13 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
-                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, (String) properties.get("initScript"));
+                String initScript;
+                if (preInstallSshInWindows) {
+                    initScript = IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(PRE_INSTALL_SSH_FILENAME), "UTF-8");
+                } else {
+                    initScript = (String) properties.get("initScript");
+                }
+                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, initScript);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptURI", scriptUri);
                 ObjectNode.class.cast(tmp.get("variables")).put("startupScriptName", scriptName);
 
@@ -817,7 +832,7 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_JNLP);
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
 
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
@@ -989,6 +1004,8 @@ public final class AzureVMManagementServiceDelegate {
     private static class VMStatus extends PowerState {
         public static final VMStatus PROVISIONING_OR_DEPROVISIONING = new VMStatus(Constants.PROVISIONING_OR_DEPROVISIONING_VM_STATUS);
 
+        public static final VMStatus UPDATING = new VMStatus(Constants.UPDATING_VM_STATUS);
+
         public VMStatus(PowerState p) {
             super(p.toString());
         }
@@ -1012,7 +1029,11 @@ public final class AzureVMManagementServiceDelegate {
         final VirtualMachine vm = azureClient.virtualMachines().getByGroup(resourceGroupName, vmName);
         final String provisioningState = vm.provisioningState();
         if (!provisioningState.equalsIgnoreCase("succeeded")) {
-            return new VMStatus(VMStatus.PROVISIONING_OR_DEPROVISIONING);
+            if (provisioningState.equalsIgnoreCase("updating")) {
+                return new VMStatus(VMStatus.UPDATING);
+            } else {
+                return new VMStatus(VMStatus.PROVISIONING_OR_DEPROVISIONING);
+            }
         } else {
             return new VMStatus(vm.powerState());
         }
@@ -1028,8 +1049,20 @@ public final class AzureVMManagementServiceDelegate {
      */
     public static boolean isVMAliveOrHealthy(final AzureVMAgent agent) throws Exception {
         VMStatus status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+        final int maxRetryCount = 6;
+        int currentRetryCount = 0;
+        //When launching Windows via SSH, this function will be executed before extension done.
+        //Thus status will be "Updating".
+        while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
+            status = getVirtualMachineStatus(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: Status is Updating, wait for another 30 seconds");
+            final int sleepInMills = 30 * 1000;
+            Thread.sleep(sleepInMills);
+            currentRetryCount++;
+        }
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: status {0}", status.toString());
         return !(VMStatus.PROVISIONING_OR_DEPROVISIONING.equals(status)
+                || VMStatus.UPDATING.equals(status)
                 || VMStatus.DEALLOCATING.equals(status)
                 || VMStatus.STOPPED.equals(status)
                 || VMStatus.DEALLOCATED.equals(status));

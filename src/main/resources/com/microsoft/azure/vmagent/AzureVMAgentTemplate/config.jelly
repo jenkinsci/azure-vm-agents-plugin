@@ -121,9 +121,15 @@
                 <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
                     <f:select/>
                 </f:entry>
+
                 <f:entry title="${%Launch_Method}" field="agentLaunchMethod"
                          help="/plugin/azure-vm-agents/help-agentLaunchMethod.html">
                     <f:select/>
+                </f:entry>
+
+                <f:entry title="${%Pre_Install_Ssh}" field="preInstallSsh"
+                                         help="/plugin/azure-vm-agents/help-preInstallSsh.html">
+                    <f:checkbox default="true"/>
                 </f:entry>
 
                 <f:section title="${%Initialization_Configuration}">

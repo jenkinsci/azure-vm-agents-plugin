@@ -5,7 +5,7 @@
     Below are examples of initialization scripts, Java is <b>required</b>, others are optional:
     <ol>
       <li>
-        <b>Ubuntu</b>
+        <b>Ubuntu (Only support SSH)</b>
         <p>
           <pre><code># Install Java
 sudo add-apt-repository ppa:openjdk-r/ppa -y
@@ -29,6 +29,14 @@ sudo apt-get install -y docker-ce
 # Replace ${ADMIN} with admin username.
 sudo gpasswd -a ${ADMIN} docker
 sudo chmod g+rw /var/run/docker.sock</code></pre>
+        </p>
+      </li>
+      <li>
+        <b>Windows via SSH</b>
+        <p>
+          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-SSH.ps1">sample</a>.<br/>
+          Java is <b>required</b>, others are optional.<br/>
+          We recommend to use SSH rather than JNLP. For you need less init codes and get much clearer logs.
         </p>
       </li>
       <li>
