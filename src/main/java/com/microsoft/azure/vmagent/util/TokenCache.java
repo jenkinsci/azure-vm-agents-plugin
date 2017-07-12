@@ -23,6 +23,7 @@ import com.microsoft.azure.util.AzureCredentials;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -91,12 +92,16 @@ public class TokenCache {
         );
     }
 
-    public Azure getAzureClient() {
-        return Azure
-                .configure()
-                .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-                .withUserAgent(getUserAgent())
-                .authenticate(get(credentials))
-                .withSubscription(credentials.getSubscriptionId());
+    public Azure getAzureClient() throws AzureCloudException {
+        try {
+            return Azure
+                    .configure()
+                    .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                    .withUserAgent(getUserAgent())
+                    .authenticate(get(credentials))
+                    .withSubscription(credentials.getSubscriptionId());
+        } catch (Exception e) {
+            throw AzureCloudException.create(e);
+        }
     }
 }

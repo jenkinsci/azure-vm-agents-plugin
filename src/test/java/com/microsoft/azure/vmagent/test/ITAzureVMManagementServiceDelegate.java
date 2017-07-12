@@ -15,7 +15,6 @@
  */
 package com.microsoft.azure.vmagent.test;
 
-import com.microsoft.azure.CloudException;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.network.Network;
@@ -32,11 +31,17 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.Messages;
+import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import edu.emory.mathcs.backport.java.util.Arrays;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Random;
@@ -45,10 +50,11 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
@@ -556,34 +562,29 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void restartVMTest() {
-        try{
-            final String vmName = "vmrestart";
-            VirtualMachine vm = createAzureVM(vmName);
-            Assert.assertEquals(PowerState.RUNNING, vm.powerState());
+    public void restartVMTest() throws IOException, AzureCloudException {
+        final String vmName = "vmrestart";
+        VirtualMachine vm = createAzureVM(vmName);
+        Assert.assertEquals(PowerState.RUNNING, vm.powerState());
 
-            AzureVMAgent agentMock = mock(AzureVMAgent.class);
-            when(agentMock.getNodeName()).thenReturn(vmName);
-            when(agentMock.getServicePrincipal()).thenReturn(servicePrincipal);
-            when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+        AzureVMAgent agentMock = mock(AzureVMAgent.class);
+        when(agentMock.getNodeName()).thenReturn(vmName);
+        when(agentMock.getServicePrincipal()).thenReturn(servicePrincipal);
+        when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
 
-            AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock);
-            PowerState state = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
-            Assert.assertTrue(state.equals(PowerState.RUNNING) || state.equals(PowerState.STARTING));
+        AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock);
+        PowerState state = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
+        Assert.assertTrue(state.equals(PowerState.RUNNING) || state.equals(PowerState.STARTING));
 
-           customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerOff();
-           PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
-           Assert.assertTrue(state2.toString(),state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
+       customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerOff();
+       PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
+       Assert.assertTrue(state2.toString(),state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
 
-            try {
-                AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock); // restart throws exception when the VM is already stopped
-                Assert.assertTrue(false);
-            } catch (CloudException ex) {
-                Assert.assertTrue(true);
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+        try {
+            AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock); // restart throws exception when the VM is already stopped
+            Assert.fail("Expect throwing AzureCloudException but not");
+        } catch (AzureCloudException ex) {
+            // Expect exception
         }
     }
 
