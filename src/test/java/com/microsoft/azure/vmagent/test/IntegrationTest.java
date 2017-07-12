@@ -174,11 +174,14 @@ public class IntegrationTest {
             if (e.response().code() != 404) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
+        } catch (AzureCloudException e) {
+            LOGGER.log(Level.SEVERE, null, e);
         }
-        
+
     }
 
-    protected String downloadFromAzure(final String resourceGroup, final String storageAccountName, final String containerName, final String fileName) throws URISyntaxException, StorageException, IOException {
+    protected String downloadFromAzure(final String resourceGroup, final String storageAccountName, final String containerName, final String fileName)
+            throws URISyntaxException, StorageException, IOException, AzureCloudException {
         List<StorageAccountKey> storageKeys = customTokenCache.getAzureClient().storageAccounts().getByGroup(resourceGroup, storageAccountName).getKeys();
         String storageAccountKey = storageKeys.get(0).value();
         CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
@@ -324,7 +327,7 @@ public class IntegrationTest {
         throw new Exception("Deployment is not completed after 10 minutes");
     }
     
-    protected boolean areAllVMsDeployed(final List<String> vmNames) {
+    protected boolean areAllVMsDeployed(final List<String> vmNames) throws AzureCloudException {
         int deployedVMs = 0;
         PagedList<Deployment> deployments= customTokenCache.getAzureClient().deployments().listByGroup(testEnv.azureResourceGroup);
         for (Deployment dep : deployments) {
@@ -357,10 +360,12 @@ public class IntegrationTest {
         return deployedVMs == vmNames.size();
     }
 
-    protected VirtualMachine createAzureVM(final String vmName) throws CloudException, IOException {
+    protected VirtualMachine createAzureVM(final String vmName)
+            throws CloudException, IOException, AzureCloudException {
         return createAzureVM(vmName, "JenkinsTag", "testing");
     }
-    protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue) throws CloudException, IOException {
+    protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue)
+            throws CloudException, IOException, AzureCloudException {
         return customTokenCache.getAzureClient().virtualMachines()
                 .define(vmName)
                 .withRegion(testEnv.azureLocation)
