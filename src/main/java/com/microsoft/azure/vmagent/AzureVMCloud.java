@@ -213,8 +213,6 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-        cloudName = getOrGenerateCloudName(cloudName, credentials.getSubscriptionId(), resourceGroupName);
-
         return this;
     }
 
