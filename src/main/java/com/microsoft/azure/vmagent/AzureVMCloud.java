@@ -81,6 +81,8 @@ public class AzureVMCloud extends Cloud {
 
     public static final Logger LOGGER = Logger.getLogger(AzureVMCloud.class.getName());
 
+    private String cloudName;
+
     private transient final AzureCredentials.ServicePrincipal credentials;
 
     private final String credentialsId;
@@ -116,6 +118,7 @@ public class AzureVMCloud extends Cloud {
 
     @DataBoundConstructor
     public AzureVMCloud(
+            final String cloudName,
             final String id,
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
@@ -124,11 +127,12 @@ public class AzureVMCloud extends Cloud {
             final String newResourceGroupName,
             final String existingResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        this(AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit,
+        this(cloudName, AzureCredentials.getServicePrincipal(azureCredentialsId), azureCredentialsId, maxVirtualMachinesLimit,
                 deploymentTimeout, resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName, vmTemplates);
     }
 
     public AzureVMCloud(
+            String cloudName,
             AzureCredentials.ServicePrincipal credentials,
             final String azureCredentialsId,
             final String maxVirtualMachinesLimit,
@@ -137,13 +141,14 @@ public class AzureVMCloud extends Cloud {
             final String newResourceGroupName,
             final String existingResourceGroupName,
             final List<AzureVMAgentTemplate> vmTemplates) {
-        super(AzureUtil.getCloudName(credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName)));
+        super(getOrGenerateCloudName(cloudName, credentials.getSubscriptionId(), getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName)));
         this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
         this.resourceGroupReferenceType = resourceGroupReferenceType;
         this.newResourceGroupName = newResourceGroupName;
         this.existingResourceGroupName = existingResourceGroupName;
         this.resourceGroupName = getResourceGroupName(resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+        this.cloudName = getOrGenerateCloudName(cloudName, credentials.getSubscriptionId(), this.resourceGroupName);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -268,6 +273,16 @@ public class AzureVMCloud extends Cloud {
             return newName;
         }
         return existingName;
+    }
+
+    public String getCloudName() {
+        return cloudName;
+    }
+
+    public static String getOrGenerateCloudName(final String cloudName, final String subscriptionId, final String resourceGroupName) {
+        return StringUtils.isBlank(cloudName)
+                ? AzureUtil.getCloudName(subscriptionId, resourceGroupName)
+                : cloudName;
     }
 
     public String getNewResourceGroupName() {

@@ -5,6 +5,10 @@
         <f:link href="${rootURL}/log/${descriptor.logRecorderName}/">${%Azure_VM_Agent_Log_Link}</f:link>
     </f:block>
     <f:section title="${%Azure_Profile_Configuration}">
+        <f:entry title="${%Cloud_Name}" field="cloudName"
+                 help="/plugin/azure-vm-agents/help-cloudName.html">
+            <f:textbox/>
+        </f:entry>
         <f:entry title="${%Azure_Credentials}" field="azureCredentialsId"
                  help="/plugin/azure-vm-agents/help-azureCredentials.html">
             <c:select expressionAllowed="false"/>
