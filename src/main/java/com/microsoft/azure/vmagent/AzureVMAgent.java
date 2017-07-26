@@ -42,7 +42,9 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -270,7 +272,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * @param cleanUpReason
+     * @param cleanUpAction
      */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular
@@ -441,6 +443,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
+
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("Reason", reason.toString());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
     /**
@@ -462,6 +468,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         }
 
         Jenkins.getInstance().removeNode(this);
+
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("Reason", reason.toString());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {

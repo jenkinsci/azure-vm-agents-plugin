@@ -16,41 +16,31 @@
 package com.microsoft.azure.vmagent.remote;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
-import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.AzureVMAgent;
-import com.microsoft.azure.vmagent.AzureVMComputer;
-import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-import com.microsoft.azure.vmagent.Messages;
-import com.microsoft.azure.vmagent.util.*;
-
+import com.microsoft.azure.vmagent.*;
+import com.microsoft.azure.vmagent.util.AzureUtil;
+import com.microsoft.azure.vmagent.util.CleanUpAction;
+import com.microsoft.azure.vmagent.util.Constants;
+import com.microsoft.azure.vmagent.util.FailureStage;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.remoting.Channel.Listener;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import jenkins.model.Jenkins;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jvnet.localizer.Localizable;
+
+import java.io.*;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SSH Launcher class.
@@ -238,6 +228,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             // state to the default for the node.
             agent.clearCleanUpAction();
             successful = true;
+
+            // send AI event
+            final Map<String, String> properties = new HashMap<>();
+            properties.put("OSType", agent.getOsType().toString());
+            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunch", properties);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: got exception ", e);
         } finally {

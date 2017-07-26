@@ -16,45 +16,27 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.PagedList;
-
-import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.logging.Logger;
-
-import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.GenericResource;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.DefaultRetryStrategy;
-import com.microsoft.azure.vmagent.util.AzureUtil;
-import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.TokenCache;
-
-import jenkins.model.Jenkins;
+import com.microsoft.azure.vmagent.util.*;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
-import hudson.model.TaskListener;
 import hudson.model.Computer;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-
+import hudson.model.TaskListener;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_MINUTE;
 
@@ -152,7 +134,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //    being accepted by Azure.
                 // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
                 // of retries.  If we hit 0, we remove the deployment from our list.
-                Deployment deployment = azureClient.deployments().getByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                Deployment deployment = azureClient.deployments().getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 if (deployment == null) {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
                     continue;
@@ -176,12 +158,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Failed deployment older than {0} minutes, deleting",
                             failTimeoutInMinutes);
                     // Delete the deployment
-                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                    azureClient.deployments().deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 } else if (state.equalsIgnoreCase("succeeded") && diffTimeInMinutes > successTimeoutInMinutes) {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Succesfull deployment older than {0} minutes, deleting",
                             successTimeoutInMinutes);
                     // Delete the deployment
-                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                    azureClient.deployments().deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 } else {
                     LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");
 
@@ -252,7 +234,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             final List<String> validVMs = getValidVMs(cloudName);
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             //can't use listByTag because for some reason that method strips all the tags from the outputted resources (https://github.com/Azure/azure-sdk-for-java/issues/1436)
-            final PagedList<GenericResource> resources = azureClient.genericResources().listByGroup(resourceGroup);
+            final PagedList<GenericResource> resources = azureClient.genericResources().listByResourceGroup(resourceGroup);
 
             if (resources == null || resources.isEmpty()) {
                 return;

@@ -19,13 +19,14 @@ import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureCredentials;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TokenCache {
 
@@ -78,17 +79,19 @@ public class TokenCache {
         return Constants.PLUGIN_NAME + "/" + version + "/" + instanceId;
     }
 
-    public static ApplicationTokenCredentials get(AzureCredentials.ServicePrincipal servicePrincipal) {
+    public static ApplicationTokenCredentials get(final AzureCredentials.ServicePrincipal servicePrincipal) {
         return new ApplicationTokenCredentials(
                 servicePrincipal.getClientId(),
                 servicePrincipal.getTenant(),
                 servicePrincipal.getClientSecret(),
-                new AzureEnvironment(
-                        servicePrincipal.getAuthenticationEndpoint(),
-                        servicePrincipal.getServiceManagementURL(),
-                        servicePrincipal.getResourceManagerEndpoint(),
-                        servicePrincipal.getGraphEndpoint()
-                )
+                new AzureEnvironment(new HashMap<String, String>() {
+                    {
+                        this.put("activeDirectoryEndpointUrl", servicePrincipal.getAuthenticationEndpoint());
+                        this.put("activeDirectoryGraphResourceId", servicePrincipal.getGraphEndpoint());
+                        this.put("managementEndpointUrl", servicePrincipal.getServiceManagementURL());
+                        this.put("resourceManagerEndpointUrl", servicePrincipal.getResourceManagerEndpoint());
+                    }
+                })
         );
     }
 
@@ -96,6 +99,7 @@ public class TokenCache {
         try {
             return Azure
                     .configure()
+                    .withInterceptor(new AzureVMAgentPlugin.TelemetryInterceptor())
                     .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
                     .withUserAgent(getUserAgent())
                     .authenticate(get(credentials))

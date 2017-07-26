@@ -215,6 +215,11 @@ public final class Constants {
 
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
+    /**
+     * AI constants.
+     */
+    public static final String AI_VM_AGENT = "VMAgent";
+
     private Constants() {
         // hide constructor
     }
