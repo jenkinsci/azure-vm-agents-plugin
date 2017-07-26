@@ -19,13 +19,13 @@ import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureCredentials;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TokenCache {
 
@@ -96,6 +96,7 @@ public class TokenCache {
         try {
             return Azure
                     .configure()
+                    .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
                     .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
                     .withUserAgent(getUserAgent())
                     .authenticate(get(credentials))

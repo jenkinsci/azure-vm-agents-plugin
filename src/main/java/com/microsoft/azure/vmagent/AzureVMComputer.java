@@ -126,7 +126,6 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
      * after calling setTemporarilyOffline
      *
      * @param setOffline
-     * @param oc
      */
     @Override
     public void setTemporarilyOffline(boolean setOffline) {

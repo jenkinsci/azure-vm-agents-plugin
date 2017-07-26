@@ -23,13 +23,7 @@ import com.microsoft.azure.vmagent.util.Constants;
 import hudson.Extension;
 import hudson.model.Descriptor.FormException;
 import hudson.model.TaskListener;
-import hudson.slaves.AbstractCloudComputer;
-import hudson.slaves.AbstractCloudSlave;
-import hudson.slaves.ComputerLauncher;
-import hudson.slaves.JNLPLauncher;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.OfflineCause;
-import hudson.slaves.RetentionStrategy;
+import hudson.slaves.*;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
@@ -42,7 +36,9 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -270,7 +266,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * @param cleanUpReason
+     * @param cleanUpAction
      */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular
@@ -441,6 +437,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
+
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("Reason", reason.toString());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
     /**
@@ -462,6 +462,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         }
 
         Jenkins.getInstance().removeNode(this);
+
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("Reason", reason.toString());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "deprovision", properties);
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {

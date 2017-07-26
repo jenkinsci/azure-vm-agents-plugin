@@ -28,21 +28,14 @@ import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.vmagent.util.AzureUtil;
-import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.FailureStage;
-import com.microsoft.azure.vmagent.util.TokenCache;
+import com.microsoft.azure.vmagent.util.*;
+import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
 import hudson.Extension;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
 import hudson.logging.LogRecorderManager;
-import hudson.model.Computer;
-import hudson.model.Descriptor;
-import hudson.model.Item;
-import hudson.model.Label;
-import hudson.model.Node;
+import hudson.model.*;
 import hudson.security.ACL;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
@@ -60,17 +53,8 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -446,12 +430,12 @@ public class AzureVMCloud extends Cloud {
         synchronized (this) {
             if (delta < 0) {
                 LOGGER.log(Level.FINE, "Current estimated VM count: {0}, reducing by {1}",
-                    new Object[]{approximateVirtualMachineCount, delta});
+                        new Object[]{approximateVirtualMachineCount, delta});
                 approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount + delta);
                 return 0;
             } else {
                 LOGGER.log(Level.FINE, "Current estimated VM count: {0}, quantity desired {1}",
-                    new Object[]{approximateVirtualMachineCount, delta});
+                        new Object[]{approximateVirtualMachineCount, delta});
                 if (approximateVirtualMachineCount + delta <= getMaxVirtualMachinesLimit()) {
                     // Enough available, return the desired quantity, and update the number we think we
                     // have laying around.
@@ -564,6 +548,7 @@ public class AzureVMCloud extends Cloud {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
                 final Azure azureClient = Azure.configure()
+                        .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
                         .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
                         .withUserAgent(TokenCache.getUserAgent())
                         .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
@@ -841,6 +826,15 @@ public class AzureVMCloud extends Cloud {
 
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: provision: asynchronous provision finished, returning {0} planned node(s)", plannedNodes.size());
+
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
+        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID,
+                template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
+        properties.put("AgentOS", template.getOsType());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Provision", properties);
+
         return plannedNodes;
     }
 
@@ -983,7 +977,9 @@ public class AzureVMCloud extends Cloud {
         }
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
-            return new StandardListBoxModel().withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
+            return new StandardListBoxModel()
+                    .withEmptySelection()
+                    .withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class, owner, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()));
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId) throws IOException, ServletException {

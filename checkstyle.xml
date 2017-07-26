@@ -50,10 +50,10 @@
     </module>
 
     <!-- Checks for line endings -->
-    <module name="RegexpMultiline">
-        <property name="format" value="\r"/>
-        <property name="message" value="Should use LF as the line ending."/>
-    </module>
+    <!--<module name="RegexpMultiline">-->
+        <!--<property name="format" value="\r"/>-->
+        <!--<property name="message" value="Should use LF as the line ending."/>-->
+    <!--</module>-->
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
