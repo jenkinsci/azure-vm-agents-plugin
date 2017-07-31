@@ -465,7 +465,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         final Map<String, String> properties = new HashMap<>();
         properties.put("Reason", reason.toString());
-        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "deprovision", properties);
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {

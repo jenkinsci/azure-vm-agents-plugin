@@ -681,6 +681,14 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
+        // AI events to send
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
+        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID,
+                template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
+        properties.put("AgentOS", template.getOsType());
+
         // provision new nodes if required
         if (numberOfAgents > 0) {
             try {
@@ -821,20 +829,15 @@ public class AzureVMCloud extends Cloud {
                         Level.SEVERE,
                         String.format("Failure provisioning agents about '%s'", template.getLabels()),
                         e);
+
+                properties.put("Message", e.getMessage());
+                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ProvisionFailed", properties);
             }
         }
 
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: provision: asynchronous provision finished, returning {0} planned node(s)", plannedNodes.size());
-
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
-        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID,
-                template.getAzureCloud().getServicePrincipal().getSubscriptionId());
-        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
-        properties.put("AgentOS", template.getOsType());
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Provision", properties);
-
         return plannedNodes;
     }
 

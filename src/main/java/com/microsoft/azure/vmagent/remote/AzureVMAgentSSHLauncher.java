@@ -235,6 +235,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunch", properties);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: got exception ", e);
+
+            final Map<String, String> properties = new HashMap<>();
+            properties.put("OSType", agent.getOsType().toString());
+            properties.put("Message", e.getMessage());
+            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunchFailed", properties);
         } finally {
             if (!successful) {
                 session.disconnect();
@@ -248,7 +253,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
     }
 
-    private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws Exception {
+    private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws JSchException {
         LOGGER.log(Level.INFO,
                 "AzureVMAgentSSHLauncher: getRemoteSession: getting remote session for user {0} to host {1}:{2}",
                 new Object[]{userName, dnsName, sshPort});
