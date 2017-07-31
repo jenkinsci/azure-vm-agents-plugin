@@ -37,19 +37,9 @@
 
     <developers>
         <developer>
-            <id>arroyc_microsoft</id>
-            <name>Arjun Roy Chaudhuri</name>
-            <email>arroyc@microsoft.com</email>
-        </developer>
-        <developer>
-            <id>antifun</id>
-            <name>Matt Mitchell</name>
-            <email>mmitche@microsoft.com</email>
-        </developer>
-        <developer>
-            <id>clguiman</id>
-            <name>Claudiu Guiman</name>
-            <email>clguiman@microsoft.com</email>
+            <id>vscjenkins</id>
+            <name>Visual Studio China Jenkins Team</name>
+            <email>vscjenkins@microsoft.com</email>
         </developer>
     </developers>
 
