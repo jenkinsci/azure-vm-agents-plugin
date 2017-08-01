@@ -17,7 +17,7 @@ package com.microsoft.azure.vmagent.exceptions;
 
 public class AzureCredentialsValidationException extends Exception {
 
-    public AzureCredentialsValidationException(final String message) {
+    public AzureCredentialsValidationException(String message) {
         super(message);
     }
 
@@ -25,11 +25,11 @@ public class AzureCredentialsValidationException extends Exception {
         super();
     }
 
-    public AzureCredentialsValidationException(final String msg, final Exception excep) {
+    public AzureCredentialsValidationException(String msg, Exception excep) {
         super(msg, excep);
     }
 
-    public AzureCredentialsValidationException(final Exception excep) {
+    public AzureCredentialsValidationException(Exception excep) {
         super(excep);
     }
 

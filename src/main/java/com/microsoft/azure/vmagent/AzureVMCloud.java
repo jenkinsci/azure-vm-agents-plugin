@@ -118,15 +118,15 @@ public class AzureVMCloud extends Cloud {
 
     @DataBoundConstructor
     public AzureVMCloud(
-            final String cloudName,
-            final String id,
-            final String azureCredentialsId,
-            final String maxVirtualMachinesLimit,
-            final String deploymentTimeout,
-            final String resourceGroupReferenceType,
-            final String newResourceGroupName,
-            final String existingResourceGroupName,
-            final List<AzureVMAgentTemplate> vmTemplates) {
+            String cloudName,
+            String id,
+            String azureCredentialsId,
+            String maxVirtualMachinesLimit,
+            String deploymentTimeout,
+            String resourceGroupReferenceType,
+            String newResourceGroupName,
+            String existingResourceGroupName,
+            List<AzureVMAgentTemplate> vmTemplates) {
         this(
                 cloudName,
                 AzureCredentials.getServicePrincipal(azureCredentialsId),
@@ -142,13 +142,13 @@ public class AzureVMCloud extends Cloud {
     public AzureVMCloud(
             String cloudName,
             AzureCredentials.ServicePrincipal credentials,
-            final String azureCredentialsId,
-            final String maxVirtualMachinesLimit,
-            final String deploymentTimeout,
-            final String resourceGroupReferenceType,
-            final String newResourceGroupName,
-            final String existingResourceGroupName,
-            final List<AzureVMAgentTemplate> vmTemplates) {
+            String azureCredentialsId,
+            String maxVirtualMachinesLimit,
+            String deploymentTimeout,
+            String resourceGroupReferenceType,
+            String newResourceGroupName,
+            String existingResourceGroupName,
+            List<AzureVMAgentTemplate> vmTemplates) {
         super(
                 getOrGenerateCloudName(
                         cloudName,
@@ -234,7 +234,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     @Override
-    public boolean canProvision(final Label label) {
+    public boolean canProvision(Label label) {
         registerVerificationIfNeeded();
 
         if (!this.isConfigurationValid()) {
@@ -273,7 +273,7 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
-    public Boolean isResourceGroupReferenceTypeEquals(final String type) {
+    public Boolean isResourceGroupReferenceTypeEquals(String type) {
         if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
             return true;
         }
@@ -505,7 +505,7 @@ public class AzureVMCloud extends Cloud {
      * @param label
      * @return
      */
-    public AzureVMAgentTemplate getAzureAgentTemplate(final Label label) {
+    public AzureVMAgentTemplate getAzureAgentTemplate(Label label) {
         LOGGER.log(Level.FINE,
                 "AzureVMCloud: getAzureAgentTemplate: Retrieving agent template with label {0}",
                 label);
@@ -541,7 +541,7 @@ public class AzureVMCloud extends Cloud {
      * @param name
      * @return
      */
-    public AzureVMAgentTemplate getAzureAgentTemplate(final String name) {
+    public AzureVMAgentTemplate getAzureAgentTemplate(String name) {
         if (StringUtils.isBlank(name)) {
             return null;
         }
@@ -567,10 +567,10 @@ public class AzureVMCloud extends Cloud {
      * @throws AzureCloudException
      */
     public AzureVMAgent createProvisionedAgent(
-            final ProvisioningActivity.Id provisioningId,
-            final AzureVMAgentTemplate template,
-            final String vmName,
-            final String deploymentName) throws AzureCloudException {
+            ProvisioningActivity.Id provisioningId,
+            AzureVMAgentTemplate template,
+            String vmName,
+            String deploymentName) throws AzureCloudException {
 
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed",
@@ -663,7 +663,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     @Override
-    public Collection<PlannedNode> provision(final Label label, int workLoad) {
+    public Collection<PlannedNode> provision(Label label, int workLoad) {
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: provision: start for label {0} workLoad {1}", new Object[]{label, workLoad});
 

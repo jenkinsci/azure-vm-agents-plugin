@@ -39,7 +39,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
 
     private boolean setOfflineByUser = false;
 
-    public AzureVMComputer(final AzureVMAgent agent) {
+    public AzureVMComputer(AzureVMAgent agent) {
         super(agent);
         this.provisioningId = agent.getId();
     }

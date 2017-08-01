@@ -19,13 +19,12 @@ import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureCredentials;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TokenCache {
 
@@ -37,7 +36,7 @@ public class TokenCache {
 
     private final AzureCredentials.ServicePrincipal credentials;
 
-    public static TokenCache getInstance(final AzureCredentials.ServicePrincipal servicePrincipal) {
+    public static TokenCache getInstance(AzureCredentials.ServicePrincipal servicePrincipal) {
         synchronized (TSAFE) {
             if (cache == null) {
                 cache = new TokenCache(servicePrincipal);
@@ -52,7 +51,7 @@ public class TokenCache {
                     || !cache.credentials.getTenant().equals(servicePrincipal.getTenant())
                     || !StringUtils.isEmpty(cache.credentials.getServiceManagementURL())
                     || !cache.credentials.getServiceManagementURL().equals(
-                            servicePrincipal.getServiceManagementURL())) {
+                    servicePrincipal.getServiceManagementURL())) {
                 cache = new TokenCache(servicePrincipal);
             }
         }
@@ -60,7 +59,7 @@ public class TokenCache {
         return cache;
     }
 
-    protected TokenCache(final AzureCredentials.ServicePrincipal servicePrincipal) {
+    protected TokenCache(AzureCredentials.ServicePrincipal servicePrincipal) {
         LOGGER.log(Level.FINEST, "TokenCache: TokenCache: Instantiate new cache manager");
         this.credentials = servicePrincipal;
     }

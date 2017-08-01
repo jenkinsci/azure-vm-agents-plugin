@@ -66,7 +66,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     private static final String REMOTE_INIT_FILE_NAME_WINDOWS = "/init.ps1";
 
     @Override
-    public void launch(final SlaveComputer agentComputer, final TaskListener listener) {
+    public void launch(SlaveComputer agentComputer, TaskListener listener) {
         if (agentComputer == null || !(agentComputer instanceof AzureVMComputer)) {
             LOGGER.log(Level.INFO,
                     "AzureVMAgentSSHLauncher: launch: AgentComputer is invalid {0}",
@@ -449,7 +449,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         return -1;
     }
 
-    private Session connectToSsh(final AzureVMAgent agent) throws Exception {
+    private Session connectToSsh(AzureVMAgent agent) throws Exception {
         LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: start");
         Session session = null;
         final int maxRetryCount = 6;

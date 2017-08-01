@@ -125,7 +125,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         cleanDeployments(SUCCESFULL_DEPLOYMENT_TIMEOUT_IN_MINUTES, FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES);
     }
 
-    public void cleanDeployments(final long successTimeoutInMinutes, final long failTimeoutInMinutes) {
+    public void cleanDeployments(long successTimeoutInMinutes, long failTimeoutInMinutes) {
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Cleaning deployments");
         // Walk the queue, popping and pushing until we reach an item that we've already
         // dealt with or the queue is empty.
@@ -239,7 +239,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
     }
 
-    public List<String> getValidVMs(final String cloudName) {
+    public List<String> getValidVMs(String cloudName) {
         List<String> vms = new ArrayList<>();
         Jenkins instance = Jenkins.getInstance();
         if (instance != null) {
@@ -258,10 +258,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public void cleanLeakedResources(
-            final String resourceGroup,
-            final ServicePrincipal servicePrincipal,
-            final String cloudName,
-            final DeploymentRegistrar deploymentRegistrar) {
+            String resourceGroup,
+            ServicePrincipal servicePrincipal,
+            String cloudName,
+            DeploymentRegistrar deploymentRegistrar) {
         try {
             final List<String> validVMs = getValidVMs(cloudName);
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
@@ -285,7 +285,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                             return (o1Priority < o2Priority) ? -1 : 1;
                         }
 
-                        private int getPriority(final GenericResource resource) {
+                        private int getPriority(GenericResource resource) {
                             //suppress magic number check
                             //CHECKSTYLE:OFF
                             final String type = resource.type();
@@ -473,7 +473,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
     }
 
-    public AzureVMCloud getCloud(final String cloudName) {
+    public AzureVMCloud getCloud(String cloudName) {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 

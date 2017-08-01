@@ -48,7 +48,7 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
      * @return Number of minutes before node will be checked again.
      */
     @Override
-    public long check(final AzureVMComputer agentNode) {
+    public long check(AzureVMComputer agentNode) {
         return check(agentNode, new ExecutionEngine());
     }
 

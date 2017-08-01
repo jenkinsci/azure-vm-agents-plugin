@@ -21,14 +21,13 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import hudson.security.ACL;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 
 public final class AzureUtil {
 
@@ -116,7 +115,7 @@ public final class AzureUtil {
      * @param cloudServiceName Name of the Windows Azure cloud service
      * @return true if cloudServiceName name is valid else returns false
      */
-    public static boolean validateCloudServiceName(final String cloudServiceName) {
+    public static boolean validateCloudServiceName(String cloudServiceName) {
         boolean isValid = false;
 
         if (cloudServiceName != null) {
@@ -276,7 +275,7 @@ public final class AzureUtil {
      * @param resourceGroupName Resource group name
      * @return Name of the cloud
      */
-    public static String getCloudName(final String subscriptionId, final String resourceGroupName) {
+    public static String getCloudName(String subscriptionId, String resourceGroupName) {
         return Constants.AZURE_CLOUD_PREFIX + subscriptionId + "-" + resourceGroupName;
     }
 
@@ -448,7 +447,7 @@ public final class AzureUtil {
         /*  Expects a string in this format: "<id>/<timestamp>".
             If id is ommited it will be replaced with an empty string
             If timestamp is ommited or it's a negative number than it will be replaced with 0 */
-        public DeploymentTag(final String tag) {
+        public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
 
@@ -476,18 +475,18 @@ public final class AzureUtil {
 
         // two tags match if they have the same instance id and the timestamp diff is greater than
         // Constants.AZURE_DEPLOYMENT_TIMEOUT
-        public boolean matches(final DeploymentTag rhs) {
+        public boolean matches(DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }
 
-        public boolean matches(final DeploymentTag rhs, long timeout) {
+        public boolean matches(DeploymentTag rhs, long timeout) {
             if (!instanceId.equals(rhs.instanceId)) {
                 return false;
             }
             return Math.abs(timestamp - rhs.timestamp) > timeout;
         }
 
-        public boolean isFromSameInstance(final DeploymentTag rhs) {
+        public boolean isFromSameInstance(DeploymentTag rhs) {
             return instanceId.equals(rhs.instanceId);
         }
 

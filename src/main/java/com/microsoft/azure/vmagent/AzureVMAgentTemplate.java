@@ -84,11 +84,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         @DataBoundConstructor
         public ImageReferenceTypeClass(
-                final String image,
-                final String imagePublisher,
-                final String imageOffer,
-                final String imageSku,
-                final String imageVersion) {
+                String image,
+                String imagePublisher,
+                String imageOffer,
+                String imageSku,
+                String imageVersion) {
             this.image = image;
             this.imagePublisher = imagePublisher;
             this.imageOffer = imageOffer;
@@ -217,43 +217,43 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(
-            final String templateName,
-            final String templateDesc,
-            final String labels,
-            final String location,
-            final String virtualMachineSize,
-            final String storageAccountNameReferenceType,
-            final String storageAccountType,
-            final String newStorageAccountName,
-            final String existingStorageAccountName,
-            final String diskType,
-            final String noOfParallelJobs,
-            final String usageMode,
-            final String builtInImage,
-            final Boolean isInstallGit,
-            final Boolean isInstallMaven,
-            final Boolean isInstallDocker,
-            final String osType,
-            final String imageTopLevelType,
-            final boolean imageReference,
-            final ImageReferenceTypeClass imageReferenceTypeClass,
-            final String agentLaunchMethod,
-            final Boolean preInstallSsh,
-            final String initScript,
-            final String credentialsId,
-            final String virtualNetworkName,
-            final String virtualNetworkResourceGroupName,
-            final String subnetName,
-            final boolean usePrivateIP,
-            final String nsgName,
-            final String agentWorkspace,
-            final String jvmOptions,
-            final String retentionTimeInMin,
-            final boolean shutdownOnIdle,
-            final boolean templateDisabled,
-            final String templateStatusDetails,
-            final boolean executeInitScriptAsRoot,
-            final boolean doNotUseMachineIfInitFails) {
+            String templateName,
+            String templateDesc,
+            String labels,
+            String location,
+            String virtualMachineSize,
+            String storageAccountNameReferenceType,
+            String storageAccountType,
+            String newStorageAccountName,
+            String existingStorageAccountName,
+            String diskType,
+            String noOfParallelJobs,
+            String usageMode,
+            String builtInImage,
+            Boolean isInstallGit,
+            Boolean isInstallMaven,
+            Boolean isInstallDocker,
+            String osType,
+            String imageTopLevelType,
+            boolean imageReference,
+            ImageReferenceTypeClass imageReferenceTypeClass,
+            String agentLaunchMethod,
+            Boolean preInstallSsh,
+            String initScript,
+            String credentialsId,
+            String virtualNetworkName,
+            String virtualNetworkResourceGroupName,
+            String subnetName,
+            boolean usePrivateIP,
+            String nsgName,
+            String agentWorkspace,
+            String jvmOptions,
+            String retentionTimeInMin,
+            boolean shutdownOnIdle,
+            boolean templateDisabled,
+            String templateStatusDetails,
+            boolean executeInitScriptAsRoot,
+            boolean doNotUseMachineIfInitFails) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -396,7 +396,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
     }
 
-    public static String getSeparator(final String osType) {
+    public static String getSeparator(String osType) {
         if (osType.equals(Constants.OS_TYPE_WINDOWS)) {
             return "\r\n";
         } else {
@@ -405,14 +405,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
 
-    public Boolean isType(final String type) {
+    public Boolean isType(String type) {
         if (this.imageReferenceType == null && type.equals("reference")) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
 
-    public Boolean isTopLevelType(final String type) {
+    public Boolean isTopLevelType(String type) {
         if (this.imageTopLevelType == null && type.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             return true;
         }
@@ -476,7 +476,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return storageAccountName;
     }
 
-    public static String getStorageAccountName(final String type, final String newName, final String existingName) {
+    public static String getStorageAccountName(String type, String newName, String existingName) {
         //type maybe null in this version, so we can guess according to whether newName is blank or not
         if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
                 || StringUtils.isNotBlank(type) && type.equalsIgnoreCase("new")) {
@@ -493,7 +493,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return storageAccountNameReferenceType;
     }
 
-    public void setStorageAccountName(final String storageAccountName) {
+    public void setStorageAccountName(String storageAccountName) {
         this.storageAccountName = storageAccountName;
     }
 
@@ -509,7 +509,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
     }
 
-    public Boolean isStorageAccountNameReferenceTypeEquals(final String type) {
+    public Boolean isStorageAccountNameReferenceTypeEquals(String type) {
         if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
             return true;
         }
@@ -520,7 +520,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return getUseAgentAlwaysIfAvail().getDescription();
     }
 
-    public void setUsageMode(final String mode) {
+    public void setUsageMode(String mode) {
         Node.Mode val = Node.Mode.NORMAL;
         for (Node.Mode m : hudson.Functions.getNodeModes()) {
             if (mode.equalsIgnoreCase(m.getDescription())) {
@@ -751,7 +751,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * @return New deployment info if the provisioning was successful.
      * @throws Exception May throw if provisioning was not successful.
      */
-    public AzureVMDeploymentInfo provisionAgents(final TaskListener listener, int numberOfAgents) throws Exception {
+    public AzureVMDeploymentInfo provisionAgents(TaskListener listener, int numberOfAgents) throws Exception {
         return AzureVMManagementServiceDelegate.createDeployment(this, numberOfAgents);
     }
 
@@ -762,7 +762,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
      * @param message     Failure message
      * @param failureStep Stage that failure occurred
      */
-    public void handleTemplateProvisioningFailure(final String message, final FailureStage failureStep) {
+    public void handleTemplateProvisioningFailure(String message, FailureStage failureStep) {
         // The template is bad.  It should have already been verified, but
         // perhaps something changed (VHD gone, etc.).  Queue for verification.
         setTemplateVerified(false);
@@ -820,8 +820,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillVirtualMachineSizeItems(
-                @RelativePath("..") @QueryParameter final String azureCredentialsId,
-                @QueryParameter final String location)
+                @RelativePath("..") @QueryParameter String azureCredentialsId,
+                @QueryParameter String location)
                 throws IOException, ServletException {
 
             AzureCredentials.ServicePrincipal servicePrincipal =
@@ -857,7 +857,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillLocationItems(
-                @RelativePath("..") @QueryParameter final String azureCredentialsId)
+                @RelativePath("..") @QueryParameter String azureCredentialsId)
                 throws IOException, ServletException {
             AzureCredentials.ServicePrincipal servicePrincipal =
                     AzureCredentials.getServicePrincipal(azureCredentialsId);
@@ -874,7 +874,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillStorageAccountTypeItems(
-                @QueryParameter final String virtualMachineSize)
+                @QueryParameter String virtualMachineSize)
                 throws IOException, ServletException {
 
             ListBoxModel model = new ListBoxModel();
@@ -906,11 +906,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public ListBoxModel doFillExistingStorageAccountNameItems(
-                @RelativePath("..") @QueryParameter final String azureCredentialsId,
+                @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
-                @RelativePath("..") @QueryParameter final String newResourceGroupName,
-                @RelativePath("..") @QueryParameter final String existingResourceGroupName,
-                @QueryParameter final String storageAccountType) throws IOException, ServletException {
+                @RelativePath("..") @QueryParameter String newResourceGroupName,
+                @RelativePath("..") @QueryParameter String existingResourceGroupName,
+                @QueryParameter String storageAccountType) throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
@@ -947,15 +947,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
 
         public FormValidation doCheckInitScript(
-                @QueryParameter final String value,
-                @QueryParameter final String agentLaunchMethod) {
+                @QueryParameter String value,
+                @QueryParameter String agentLaunchMethod) {
             if (StringUtils.isBlank(value)) {
                 return FormValidation.warningWithMarkup(Messages.Azure_GC_InitScript_Warn_Msg());
             }
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckStorageAccountName(@QueryParameter final String value) {
+        public FormValidation doCheckStorageAccountName(@QueryParameter String value) {
             if (StringUtils.isBlank(value)) {
                 return FormValidation.ok(Messages.SA_Blank_Create_New());
             }
@@ -969,7 +969,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return model;
         }
 
-        public FormValidation doAgentLaunchMethod(@QueryParameter final String value) {
+        public FormValidation doAgentLaunchMethod(@QueryParameter String value) {
             if (Constants.LAUNCH_METHOD_JNLP.equals(value)) {
                 return FormValidation.warning(Messages.Azure_GC_LaunchMethod_Warn_Msg());
             }
@@ -986,8 +986,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
          * @return
          */
         public FormValidation doCheckTemplateName(
-                @QueryParameter final String value, @QueryParameter final boolean templateDisabled,
-                @QueryParameter final String osType) {
+                @QueryParameter String value,
+                @QueryParameter boolean templateDisabled,
+                @QueryParameter String osType) {
             List<FormValidation> errors = new ArrayList<>();
             // Check whether the template name is valid, and then check
             // whether it would be shortened on VM creation.
@@ -1006,7 +1007,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckNoOfParallelJobs(@QueryParameter final String value) {
+        public FormValidation doCheckNoOfParallelJobs(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 String result = AzureVMManagementServiceDelegate.verifyNoOfExecutors(value);
 
@@ -1019,7 +1020,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckRetentionTimeInMin(@QueryParameter final String value) {
+        public FormValidation doCheckRetentionTimeInMin(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 String result = AzureVMManagementServiceDelegate.verifyRetentionTime(value);
 
@@ -1032,7 +1033,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckAdminPassword(@QueryParameter final String value) {
+        public FormValidation doCheckAdminPassword(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidPassword(value)) {
                     return FormValidation.ok();
@@ -1043,7 +1044,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckJvmOptions(@QueryParameter final String value) {
+        public FormValidation doCheckJvmOptions(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidJvmOption(value)) {
                     return FormValidation.ok();
@@ -1231,7 +1232,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         }
     }
 
-    public void setVirtualMachineDetails(final AzureVMAgent agent) throws Exception {
+    public void setVirtualMachineDetails(AzureVMAgent agent) throws Exception {
         AzureVMManagementServiceDelegate.setVirtualMachineDetails(agent, this);
     }
 

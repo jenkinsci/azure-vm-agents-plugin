@@ -209,7 +209,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     @Override
-    public void execute(final TaskListener arg0) throws IOException, InterruptedException {
+    public void execute(TaskListener arg0) throws IOException, InterruptedException {
         LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: execute: start");
 
         Callable<Void> callVerify = new Callable<Void>() {
@@ -300,7 +300,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      *
      * @param templatesToRegister List of templates to register
      */
-    public static void registerTemplates(final List<AzureVMAgentTemplate> templatesToRegister) {
+    public static void registerTemplates(List<AzureVMAgentTemplate> templatesToRegister) {
         synchronized (TEMPLATES_LOCK) {
             for (AzureVMAgentTemplate template : templatesToRegister) {
                 registerTemplateHelper(template);
@@ -313,7 +313,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      *
      * @param template Template to register
      */
-    public static void registerTemplate(final AzureVMAgentTemplate template) {
+    public static void registerTemplate(AzureVMAgentTemplate template) {
         synchronized (TEMPLATES_LOCK) {
             registerTemplateHelper(template);
         }
@@ -325,7 +325,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      *
      * @param template Template to register
      */
-    private static void registerTemplateHelper(final AzureVMAgentTemplate template) {
+    private static void registerTemplateHelper(AzureVMAgentTemplate template) {
         synchronized (TEMPLATES_LOCK) {
             final String cloudName = template.getAzureCloud().name;
             LOGGER.log(Level.INFO,
@@ -344,7 +344,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      *
      * @param cloudName
      */
-    public static void registerCloud(final String cloudName) {
+    public static void registerCloud(String cloudName) {
         LOGGER.log(Level.INFO,
                 "AzureVMCloudVerificationTask: registerCloud: Registering cloud {0} for verification",
                 cloudName);
@@ -361,7 +361,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
-    public AzureVMCloud getCloud(final String cloudName) {
+    public AzureVMCloud getCloud(String cloudName) {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 

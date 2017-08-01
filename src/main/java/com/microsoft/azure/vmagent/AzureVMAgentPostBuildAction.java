@@ -48,7 +48,7 @@ public class AzureVMAgentPostBuildAction extends Recorder {
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentPostBuildAction.class.getName());
 
     @DataBoundConstructor
-    public AzureVMAgentPostBuildAction(final String agentPostBuildAction) {
+    public AzureVMAgentPostBuildAction(String agentPostBuildAction) {
         super();
         this.agentPostBuildAction = agentPostBuildAction;
     }

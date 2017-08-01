@@ -15,10 +15,9 @@
  */
 package com.microsoft.azure.vmagent.retry;
 
-import java.util.concurrent.Callable;
-
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
