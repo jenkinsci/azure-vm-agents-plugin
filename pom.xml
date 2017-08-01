@@ -249,8 +249,14 @@
 
                     We cannot use pattern like **/generated-sources/**/* here as the generated source directory
                     belongs to the base directory, which the excludes pattern doesn't apply to.
+
+                    TODO: Fix style for AzureVMManagementServiceDelegate and AzureVMAgentSSHLauncher
                     -->
-                    <excludes>com/microsoftopentechnologies/windowsazurestorage/Messages.java</excludes>
+                    <excludes>
+                        com/microsoft/azure/vmagent/Messages.java,
+                        com/microsoft/azure/vmagent/AzureVMManagementServiceDelegate.java,
+                        com/microsoft/azure/vmagent/remote/AzureVMAgentSSHLauncher.java
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>
