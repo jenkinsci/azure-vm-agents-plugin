@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,9 +32,9 @@ import org.apache.commons.lang.StringUtils;
 
 public final class AzureUtil {
 
-    private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
+    private static final String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 
-    private final static String NOT_A_NUMBER_FORMAT = ".*[^0-9].*";
+    private static final String NOT_A_NUMBER_FORMAT = ".*[^0-9].*";
 
     /* Regular expression for valid cloud name */
     public static final String VAL_CLOUD_SERVICE_NAME = "^(([a-z\\d]((-(?=[a-z\\d]))|([a-z\\d])){2,62}))$";
@@ -47,9 +47,11 @@ public final class AzureUtil {
     public static final String VAL_UPPER_CASE_REGEX = "(?=.*[A-Z]).{1,}";
 
 
-    public static final String VAL_SPECIAL_CHAR_REGEX = "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
+    public static final String VAL_SPECIAL_CHAR_REGEX =
+            "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
 
-    public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']*{8,123})";
+    public static final String VAL_PASSWORD_REGEX =
+            "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']{8,123})";
 
     public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
 
@@ -87,7 +89,8 @@ public final class AzureUtil {
      * Validates storage account name.
      */
     public static boolean validateStorageAccountName(String storageAccountName) {
-        if (storageAccountName.length() < STORAGE_ACCOUNT_MIN_LENGTH || storageAccountName.length() > STORAGE_ACCOUNT_MAX_LENGTH) {
+        if (storageAccountName.length() < STORAGE_ACCOUNT_MIN_LENGTH
+                || storageAccountName.length() > STORAGE_ACCOUNT_MAX_LENGTH) {
             return false;
         }
         if (!storageAccountName.matches(STORAGE_ACCOUNT_NAME_PATTERN)) {
@@ -163,7 +166,9 @@ public final class AzureUtil {
             return false;
         }
 
-        return value.length() >= PASSWORD_MIN_LENGTH && value.matches(VAL_PASSWORD_REGEX) && value.length() < PASSWORD_MAX_LENGTH;
+        return value.length() >= PASSWORD_MIN_LENGTH
+                && value.matches(VAL_PASSWORD_REGEX)
+                && value.length() < PASSWORD_MAX_LENGTH;
     }
 
     public static boolean isValidUserName(String value) {
@@ -280,7 +285,8 @@ public final class AzureUtil {
      *
      * @return A shortened template name if required, the full name otherwise
      */
-    private static String getShortenedTemplateName(String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
+    private static String getShortenedTemplateName(
+            String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
         // We'll be adding on 10 characters for the deployment ID (which is a formatted date)
         // Plus an index of the
         // The template name should already be valid at least, so check that first
@@ -378,9 +384,12 @@ public final class AzureUtil {
 
     public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) throws AzureCloudException {
         // Grab the pass
-        StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(
-                StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
-                Collections.<DomainRequirement>emptyList()),
+        StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                        StandardUsernamePasswordCredentials.class,
+                        Jenkins.getInstance(),
+                        ACL.SYSTEM,
+                        Collections.<DomainRequirement>emptyList()),
                 CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {
@@ -465,7 +474,8 @@ public final class AzureUtil {
             return instanceId + "/" + Long.toString(timestamp);
         }
 
-        // two tags match if they have the same instance id and the timestamp diff is greater than Constants.AZURE_DEPLOYMENT_TIMEOUT
+        // two tags match if they have the same instance id and the timestamp diff is greater than
+        // Constants.AZURE_DEPLOYMENT_TIMEOUT
         public boolean matches(final DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }

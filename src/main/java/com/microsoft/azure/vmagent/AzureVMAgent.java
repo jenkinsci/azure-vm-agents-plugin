@@ -58,7 +58,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final String azureCredentialsId;
 
-    private transient final AzureCredentials.ServicePrincipal credentials;
+    private final transient AzureCredentials.ServicePrincipal credentials;
 
     private final String sshPrivateKey;
 
@@ -156,7 +156,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.mode = mode;
         this.agentLaunchMethod = agentLaunchMethod;
         this.setCleanUpAction(cleanUpAction);
-        this.setCleanupReason(cleanUpReason);
+        this.setCleanUpReason(cleanUpReason);
         this.resourceGroupName = resourceGroupName;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
@@ -288,7 +288,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     /**
      * @param cleanUpReason
      */
-    private void setCleanupReason(Localizable cleanUpReason) {
+    private void setCleanUpReason(Localizable cleanUpReason) {
         this.cleanUpReason = cleanUpReason;
     }
 
@@ -297,7 +297,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public void clearCleanUpAction() {
         setCleanUpAction(CleanUpAction.DEFAULT);
-        setCleanupReason(null);
+        setCleanUpReason(null);
     }
 
     /**
@@ -305,26 +305,26 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public void blockCleanUpAction() {
         setCleanUpAction(CleanUpAction.BLOCK);
-        setCleanupReason(null);
+        setCleanUpReason(null);
     }
 
     public boolean isCleanUpBlocked() {
         return getCleanUpAction() == CleanUpAction.BLOCK;
     }
 
-    public void setCleanUpAction(CleanUpAction cleanUpAction, Localizable cleanUpReason) {
-        if (cleanUpAction != CleanUpAction.DELETE && cleanUpAction != CleanUpAction.SHUTDOWN) {
+    public void setCleanUpAction(CleanUpAction action, Localizable reason) {
+        if (action != CleanUpAction.DELETE && action != CleanUpAction.SHUTDOWN) {
             throw new IllegalStateException("Only use this method to set explicit cleanup operations");
         }
         AzureVMComputer computer = (AzureVMComputer) this.toComputer();
         if (computer != null) {
             // Set the machine temporarily offline machine with an offline reason.
-            computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
+            computer.setTemporarilyOffline(true, OfflineCause.create(reason));
             // Reset the "by user" bit.
             computer.setSetOfflineByUser(false);
         }
-        setCleanUpAction(cleanUpAction);
-        setCleanupReason(cleanUpReason);
+        setCleanUpAction(action);
+        setCleanUpReason(reason);
     }
 
     public String getJvmOptions() {
@@ -481,8 +481,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 AzureVMCloud azureVMCloud = (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
                 AzureVMManagementServiceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
             } catch (Exception e) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}", new Object[]{getNodeName(), e});
+                LOGGER.log(
+                        Level.INFO,
+                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}",
+                        new Object[]{getNodeName(), e});
             }
             return publicIP;
         }

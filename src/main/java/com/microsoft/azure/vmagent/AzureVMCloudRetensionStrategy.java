@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,21 +15,18 @@
  */
 package com.microsoft.azure.vmagent;
 
-import java.util.logging.Logger;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.LinearRetryForAllExceptions;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-
 import hudson.model.Descriptor;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.TimeUnit2;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComputer> {
 
@@ -79,7 +76,8 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
         final AzureVMAgent agent = agentNode.getNode();
 
         if (canRecycle) {
-            LOGGER.log(Level.INFO, "AzureVMCloudRetensionStrategy: check: Idle timeout reached for agent: {0}, action: {1}",
+            LOGGER.log(Level.INFO,
+                    "AzureVMCloudRetensionStrategy: check: Idle timeout reached for agent: {0}, action: {1}",
                     new Object[]{agentNode.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"});
 
             java.util.concurrent.Callable<Void> task = new java.util.concurrent.Callable<Void>() {
@@ -110,18 +108,22 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
                                 defaultTimeoutInSeconds
                         ));
             } catch (AzureCloudException ae) {
-                LOGGER.log(Level.INFO, "AzureVMCloudRetensionStrategy: check: could not terminate or shutdown {0}: {1}",
+                LOGGER.log(Level.INFO,
+                        "AzureVMCloudRetensionStrategy: check: could not terminate or shutdown {0}: {1}",
                         new Object[]{agentNode.getName(), ae});
-                // If we have an exception, set the agent for deletion.  It's unlikely we'll be able to shut it down properly ever.
+                // If we have an exception, set the agent for deletion.
+                // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
                 if (node != null) {
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
-                        "AzureVMCloudRetensionStrategy: check: Exception occured while calling timeout on node {0}: {1}",
+                        "AzureVMCloudRetensionStrategy: check: "
+                                + "Exception occured while calling timeout on node {0}: {1}",
                         new Object[]{agentNode.getName(), e});
-                // If we have an exception, set the agent for deletion.  It's unlikely we'll be able to shut it down properly ever.
+                // If we have an exception, set the agent for deletion.
+                // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
                 if (node != null) {
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());

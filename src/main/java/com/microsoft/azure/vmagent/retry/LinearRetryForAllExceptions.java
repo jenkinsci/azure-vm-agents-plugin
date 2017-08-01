@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,9 +24,9 @@ public class LinearRetryForAllExceptions extends DefaultRetryStrategy {
     }
 
     @Override
-    public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
-        if (currentRetryCount >= maxRetries) {
-            throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
+    public boolean canRetry(int retryCount, Exception e) throws AzureCloudException {
+        if (retryCount >= getMaxRetries()) {
+            throw AzureCloudException.create("Exceeded maximum retry count " + getMaxRetries(), e);
         } else {
             return true;
         }
