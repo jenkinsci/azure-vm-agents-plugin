@@ -18,21 +18,18 @@ package com.microsoft.azure.vmagent;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-
-import java.io.IOException;
-import java.util.logging.Logger;
-
+import hudson.slaves.AbstractCloudComputer;
+import hudson.slaves.OfflineCause;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 
-import hudson.slaves.AbstractCloudComputer;
-import hudson.slaves.OfflineCause;
-
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> implements TrackedItem {
 
@@ -42,7 +39,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
 
     private boolean setOfflineByUser = false;
 
-    public AzureVMComputer(final AzureVMAgent agent) {
+    public AzureVMComputer(AzureVMAgent agent) {
         super(agent);
         this.provisioningId = agent.getId();
     }
@@ -66,8 +63,12 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                         // Deprovision
                         agent.deprovision(Messages._User_Delete());
                     } catch (Exception e) {
-                        LOGGER.log(Level.INFO, "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
-                        throw AzureCloudException.create("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
+                        LOGGER.log(Level.INFO,
+                                "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
+                                e);
+                        throw AzureCloudException.create(
+                                "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
+                                e);
                     }
                     return null;
                 }
@@ -126,7 +127,6 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
      * after calling setTemporarilyOffline
      *
      * @param setOffline
-     * @param oc
      */
     @Override
     public void setTemporarilyOffline(boolean setOffline) {

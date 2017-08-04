@@ -58,7 +58,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final String azureCredentialsId;
 
-    private transient final AzureCredentials.ServicePrincipal credentials;
+    private final transient AzureCredentials.ServicePrincipal credentials;
 
     private final String sshPrivateKey;
 
@@ -107,35 +107,35 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @DataBoundConstructor
     public AzureVMAgent(
-            final String name,
-            final String templateName,
-            final String nodeDescription,
-            final OperatingSystemTypes osType,
-            final String remoteFS,
-            final int numExecutors,
-            final Mode mode,
-            final String label,
-            final ComputerLauncher launcher,
-            final RetentionStrategy<AzureVMComputer> retentionStrategy,
-            final List<? extends NodeProperty<?>> nodeProperties,
-            final String cloudName,
-            final String vmCredentialsId,
-            final String sshPrivateKey,
-            final String sshPassPhrase,
-            final String jvmOptions,
-            final boolean shutdownOnIdle,
-            final boolean eligibleForReuse,
-            final String deploymentName,
-            final int retentionTimeInMin,
-            final String initScript,
-            final String azureCredentialsId,
-            final AzureCredentials.ServicePrincipal servicePrincipal,
-            final String agentLaunchMethod,
-            final CleanUpAction cleanUpAction,
-            final Localizable cleanUpReason,
-            final String resourceGroupName,
-            final boolean executeInitScriptAsRoot,
-            final boolean doNotUseMachineIfInitFails) throws FormException, IOException {
+            String name,
+            String templateName,
+            String nodeDescription,
+            OperatingSystemTypes osType,
+            String remoteFS,
+            int numExecutors,
+            Mode mode,
+            String label,
+            ComputerLauncher launcher,
+            RetentionStrategy<AzureVMComputer> retentionStrategy,
+            List<? extends NodeProperty<?>> nodeProperties,
+            String cloudName,
+            String vmCredentialsId,
+            String sshPrivateKey,
+            String sshPassPhrase,
+            String jvmOptions,
+            boolean shutdownOnIdle,
+            boolean eligibleForReuse,
+            String deploymentName,
+            int retentionTimeInMin,
+            String initScript,
+            String azureCredentialsId,
+            AzureCredentials.ServicePrincipal servicePrincipal,
+            String agentLaunchMethod,
+            CleanUpAction cleanUpAction,
+            Localizable cleanUpReason,
+            String resourceGroupName,
+            boolean executeInitScriptAsRoot,
+            boolean doNotUseMachineIfInitFails) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
 
@@ -156,40 +156,40 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.mode = mode;
         this.agentLaunchMethod = agentLaunchMethod;
         this.setCleanUpAction(cleanUpAction);
-        this.setCleanupReason(cleanUpReason);
+        this.setCleanUpReason(cleanUpReason);
         this.resourceGroupName = resourceGroupName;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
     public AzureVMAgent(
-            final ProvisioningActivity.Id id,
-            final String name,
-            final String templateName,
-            final String nodeDescription,
-            final OperatingSystemTypes osType,
-            final String remoteFS,
-            final int numExecutors,
-            final Mode mode,
-            final String label,
-            final String cloudName,
-            final String vmCredentialsId,
-            final String sshPrivateKey,
-            final String sshPassPhrase,
-            final String jvmOptions,
-            final boolean shutdownOnIdle,
-            final boolean eligibleForReuse,
-            final String deploymentName,
-            final int retentionTimeInMin,
-            final String initScript,
-            final String azureCredentialsId,
-            final AzureCredentials.ServicePrincipal servicePrincipal,
-            final String agentLaunchMethod,
-            final CleanUpAction cleanUpAction,
-            final Localizable cleanUpReason,
-            final String resourceGroupName,
-            final boolean executeInitScriptAsRoot,
-            final boolean doNotUseMachineIfInitFails) throws FormException, IOException {
+            ProvisioningActivity.Id id,
+            String name,
+            String templateName,
+            String nodeDescription,
+            OperatingSystemTypes osType,
+            String remoteFS,
+            int numExecutors,
+            Mode mode,
+            String label,
+            String cloudName,
+            String vmCredentialsId,
+            String sshPrivateKey,
+            String sshPassPhrase,
+            String jvmOptions,
+            boolean shutdownOnIdle,
+            boolean eligibleForReuse,
+            String deploymentName,
+            int retentionTimeInMin,
+            String initScript,
+            String azureCredentialsId,
+            AzureCredentials.ServicePrincipal servicePrincipal,
+            String agentLaunchMethod,
+            CleanUpAction cleanUpAction,
+            Localizable cleanUpReason,
+            String resourceGroupName,
+            boolean executeInitScriptAsRoot,
+            boolean doNotUseMachineIfInitFails) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -288,7 +288,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     /**
      * @param cleanUpReason
      */
-    private void setCleanupReason(Localizable cleanUpReason) {
+    private void setCleanUpReason(Localizable cleanUpReason) {
         this.cleanUpReason = cleanUpReason;
     }
 
@@ -297,7 +297,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public void clearCleanUpAction() {
         setCleanUpAction(CleanUpAction.DEFAULT);
-        setCleanupReason(null);
+        setCleanUpReason(null);
     }
 
     /**
@@ -305,26 +305,26 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public void blockCleanUpAction() {
         setCleanUpAction(CleanUpAction.BLOCK);
-        setCleanupReason(null);
+        setCleanUpReason(null);
     }
 
     public boolean isCleanUpBlocked() {
         return getCleanUpAction() == CleanUpAction.BLOCK;
     }
 
-    public void setCleanUpAction(CleanUpAction cleanUpAction, Localizable cleanUpReason) {
-        if (cleanUpAction != CleanUpAction.DELETE && cleanUpAction != CleanUpAction.SHUTDOWN) {
+    public void setCleanUpAction(CleanUpAction action, Localizable reason) {
+        if (action != CleanUpAction.DELETE && action != CleanUpAction.SHUTDOWN) {
             throw new IllegalStateException("Only use this method to set explicit cleanup operations");
         }
         AzureVMComputer computer = (AzureVMComputer) this.toComputer();
         if (computer != null) {
             // Set the machine temporarily offline machine with an offline reason.
-            computer.setTemporarilyOffline(true, OfflineCause.create(cleanUpReason));
+            computer.setTemporarilyOffline(true, OfflineCause.create(reason));
             // Reset the "by user" bit.
             computer.setSetOfflineByUser(false);
         }
-        setCleanUpAction(cleanUpAction);
-        setCleanupReason(cleanUpReason);
+        setCleanUpAction(action);
+        setCleanUpReason(reason);
     }
 
     public String getJvmOptions() {
@@ -367,7 +367,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return publicIP;
     }
 
-    public void setPublicIP(final String publicIP) {
+    public void setPublicIP(String publicIP) {
         this.publicIP = publicIP;
     }
 
@@ -375,7 +375,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return privateIP;
     }
 
-    public void setPrivateIP(final String privateIP) {
+    public void setPrivateIP(String privateIP) {
         this.privateIP = privateIP;
     }
 
@@ -412,7 +412,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     @Override
-    protected void _terminate(final TaskListener arg0) throws IOException, InterruptedException {
+    protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
         LOGGER.log(Level.INFO, "AzureVMAgent: _terminate: called for agent {0}", getNodeName());
 
@@ -481,8 +481,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 AzureVMCloud azureVMCloud = (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
                 AzureVMManagementServiceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
             } catch (Exception e) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}", new Object[]{getNodeName(), e});
+                LOGGER.log(
+                        Level.INFO,
+                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}",
+                        new Object[]{getNodeName(), e});
             }
             return publicIP;
         }

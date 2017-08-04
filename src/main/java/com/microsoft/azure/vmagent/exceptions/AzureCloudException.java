@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,23 +21,23 @@ public final class AzureCloudException extends Exception {
 
     private static final long serialVersionUID = -8157417759485046943L;
 
-    private AzureCloudException(final String msg) {
+    private AzureCloudException(String msg) {
         super(msg);
     }
 
-    private AzureCloudException(final String msg, final Exception ex) {
+    private AzureCloudException(String msg, Exception ex) {
         super(msg, ex);
     }
 
-    public static AzureCloudException create(final Exception ex) {
+    public static AzureCloudException create(Exception ex) {
         return create(null, ex);
     }
 
-    public static AzureCloudException create(final String msg) {
+    public static AzureCloudException create(String msg) {
         return new AzureCloudException(msg);
     }
 
-    public static AzureCloudException create(final String msg, final Exception ex) {
+    public static AzureCloudException create(String msg, Exception ex) {
         if (ex instanceof CloudException) {
             // Drop stacktrace of CloudException and throw its message only
             //

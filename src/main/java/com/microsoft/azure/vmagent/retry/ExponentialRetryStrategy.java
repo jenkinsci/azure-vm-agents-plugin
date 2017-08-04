@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     private static final int DEFAULT_MAX_RETRIES = 5;
     private static final int DEFAULT_MAX_WAIT_INTERVAL_IN_SECONDS = 10;
 
-    int currentRetryCount = 0;
+    private int currentRetryCount = 0;
 
     private int maxRetries = DEFAULT_MAX_RETRIES;
 
@@ -42,7 +42,7 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public void handleRetry(final Exception e) throws AzureCloudException {
+    public void handleRetry(Exception e) throws AzureCloudException {
         currentRetryCount++;
 
         if (canRetry(currentRetryCount, e)) {
@@ -54,9 +54,9 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public boolean canRetry(final int currentRetryCount, final Exception e)
+    public boolean canRetry(int retryCount, Exception e)
             throws AzureCloudException {
-        if (currentRetryCount >= maxRetries) {
+        if (retryCount >= maxRetries) {
             throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
         } else {
             return AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage());
@@ -64,8 +64,8 @@ public class ExponentialRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
-        return calculateWaitInterval(currentRetryCount);
+    public int getWaitPeriodInSeconds(int retryCount, Exception e) {
+        return calculateWaitInterval(retryCount);
     }
 
     @Override
@@ -80,8 +80,8 @@ public class ExponentialRetryStrategy implements RetryStrategy {
         maxWaitIntervalInSec = DEFAULT_MAX_WAIT_INTERVAL_IN_SECONDS;
     }
 
-    public int calculateWaitInterval(int currentRetryCount) {
-        int incrementDelta = (int) (Math.pow(2, currentRetryCount) - 1);
+    public int calculateWaitInterval(int retryCount) {
+        int incrementDelta = (int) (Math.pow(2, retryCount) - 1);
 
         return Math.min(incrementDelta, maxWaitIntervalInSec);
     }
