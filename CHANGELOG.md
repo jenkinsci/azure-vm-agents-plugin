@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.4.7.1, 2017-08-10
+* Fixed an issue that built-in init script cannot run correctly under Linux.
+
 ## Version 0.4.7, 2017-08-01
 * Built-in image support. Now besides manually fill in image reference and init script, you can select from two built-in images, Windows Server 2016 and Ubuntu 16.04 LTS.
 * Auto tool installation on VM agents. If you're using built-in image, you can choose to install Git, Maven or Docker.
