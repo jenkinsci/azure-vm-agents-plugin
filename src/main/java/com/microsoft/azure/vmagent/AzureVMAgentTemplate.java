@@ -969,6 +969,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return model;
         }
 
+        public String doFillImageReferenceTypeItems() {
+            return null;
+        }
+
         public FormValidation doAgentLaunchMethod(@QueryParameter String value) {
             if (Constants.LAUNCH_METHOD_JNLP.equals(value)) {
                 return FormValidation.warning(Messages.Azure_GC_LaunchMethod_Warn_Msg());
