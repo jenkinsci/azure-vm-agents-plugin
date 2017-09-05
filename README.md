@@ -184,5 +184,4 @@ def myCloud = new AzureVMCloudBuilder()
 Jenkins.getInstance().clouds.add(myCloud);
 ```
 
-
-This sample creates VM template with a built-in image, for more advanced usage, please look at the constructor of [AzureVMAgentTemplate](src/main/java/com/microsoft/azure/vmagent/AzureVMAgentTemplate.java).
+This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).
