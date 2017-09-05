@@ -119,41 +119,70 @@ If you choose Use Advanced Image Configurations, you can click on Advanced butto
 In some cases you may want to configure the VM template using script so it can be automated instead of manually configure it in UI. Jenkins supports groovy script that can automates such operation. Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
 
 ```groovy
-import com.microsoft.azure.vmagent.*;
+//Configure cloud with built-in image
+import com.microsoft.azure.vmagent.builders.*;
 
-def myVMTemplate = new AzureVMAgentTemplate(
-  "ubuntu", // template name
-  null,
-  "ubuntu", // template label
-  "West US 2", // VM region
-  "Standard_DS2_v2", // VM size
-  "new", // create a new storage account
-  "Standard_LRS", // storage account type
-  null, null,
-  "managed", // use managed disk
-  null,
-  "Use this node as much as possible", // usage mode
-  "Ubuntu 16.04 LTS", // use ubuntu built-in image
-  false, false, false, null,
-  "basic", // use basic (built-in) image
-  false,
-  new AzureVMAgentTemplate.ImageReferenceTypeClass(null, null, null, null, null),
-  null, false, null,
-  "<your admin credential ID>", // admin credentials
-  null, null, null, false, null, null, null, null, false, false, null, true, true
-)
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addNewTemplate()
+    .withName("ubuntu")
+    .withLabels("ubuntu")
+    .withLocation("East US")
+    .withVirtualMachineSize("Standard_DS2_v2")
+    .withNewStorageAccount("<your Storage Account Name>")
+    .addNewBuiltInImage()
+        .withBuiltInImageName("Ubuntu 16.14 LTS")
+        .withInstallGit(true)
+        .withInstallMaven(true)
+        .withInstallDocker(true)
+    .endBuiltInImage()
+    .withAdminCredential("<your admin credential ID>")
+.endTemplate()
+.build();
 
-def myCloud = new AzureVMCloud(
-  "myAzure", // cloud name
-  "",
-  "<your azure credential ID>", // Azure credential ID
-  null, null,
-  "new", // create a new resource group
-  null, null,
-  [ myVMTemplate ]
-)
-
-Jenkins.getInstance().clouds.add(myCloud)
+Jenkins.getInstance().clouds.add(myCloud);
 ```
+```groovy
+//Configure cloud with mutli-template of advanced images
+import com.microsoft.azure.vmagent.builders.*;
+
+def firstTemplate = new AzureVMTemplateBuilder()
+.withName("first-template")
+.withLabels("ubuntu")
+.withLocation("East US")
+.withVirtualMachineSize("Standard_DS2_v2")
+.withNewStorageAccount("<your Storage Account Name>")
+.addNewAdvancedImage()
+    .withReferenceImage("Canonical", "UbuntuServer", "16.04-LTS", "latest")
+    .withInitScript("sudo add-apt-repository ppa:openjdk-r/ppa -y \n" +
+                    "sudo apt-get -y update \n" +
+                    "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
+.endAdvancedImage()
+.withAdminCredential("<your admin credential ID>")
+.build();
+
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addToTemplates(firstTemplate)
+.addNewTemplate()
+    .withName("second-template")
+    .withLabels("windows")
+    .withLocation("Southeast Asia")
+    .withVirtualMachineSize("Standard_DS2_v2")
+    .withNewStorageAccount("<your Storage Account Name>")
+    .addNewAdvancedImage()
+        .withReferenceImage("MicrosoftWindowsServer", "WindowsServer", "2016-Datacenter", "latest")
+    .endAdvancedImage()
+    .withAdminCredential("<your admin credential ID>")
+.endTemplate()
+.build();
+
+Jenkins.getInstance().clouds.add(myCloud);
+```
+
 
 This sample creates VM template with a built-in image, for more advanced usage, please look at the constructor of [AzureVMAgentTemplate](src/main/java/com/microsoft/azure/vmagent/AzureVMAgentTemplate.java).

@@ -19,7 +19,8 @@ public class BuiltInImageBuilder {
         isInstallGit = false;
     }
 
-    public BuiltInImageBuilder withBuiltInImage(String builtInImage) {
+    //CHECKSTYLE:OFF
+    public BuiltInImageBuilder withBuiltInImageName(String builtInImage) {
         this.builtInImage = builtInImage;
         return this;
     }
@@ -38,6 +39,7 @@ public class BuiltInImageBuilder {
         this.isInstallDocker = installDocker;
         return this;
     }
+    //CHECKSTYLE:ON
 
     public BuiltInImage build() {
         return new BuiltInImage(builtInImage, isInstallGit, isInstallMaven, isInstallDocker);

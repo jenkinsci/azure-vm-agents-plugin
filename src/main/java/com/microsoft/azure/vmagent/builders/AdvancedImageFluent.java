@@ -1,7 +1,9 @@
 package com.microsoft.azure.vmagent.builders;
 
 
-public class AdvancedImage {
+import com.microsoft.azure.vmagent.util.Constants;
+
+public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String imageReferenceType;
 
@@ -43,47 +45,107 @@ public class AdvancedImage {
 
     private boolean templateDisabled;
 
-    public AdvancedImage(String imageReferenceType,
-                         String image,
-                         String osType,
-                         String imagePublisher,
-                         String imageOffer,
-                         String imageSku,
-                         String imageVersion,
-                         String agentLaunchMethod,
-                         boolean preInstallSsh,
-                         String initScript,
-                         boolean executeInitScriptAsRoot,
-                         boolean doNotUseMachineIfInitFails,
-                         String virtualNetworkName,
-                         String virtualNetworkResourceGroupName,
-                         String subnetName,
-                         boolean usePrivateIP,
-                         String nsgName,
-                         String jvmOptions,
-                         String noOfParallelJobs,
-                         boolean templateDisabled) {
-        this.imageReferenceType = imageReferenceType;
-        this.image = image;
-        this.osType = osType;
+    public AdvancedImageFluent() {
+        this.imageReferenceType = "reference";
+        this.imageVersion = "latest";
+        this.osType = Constants.OS_TYPE_LINUX;
+        this.agentLaunchMethod = Constants.LAUNCH_METHOD_SSH;
+        this.preInstallSsh = true;
+        this.executeInitScriptAsRoot = true;
+        this.doNotUseMachineIfInitFails = true;
+        this.usePrivateIP = false;
+        this.noOfParallelJobs = "1";
+        this.templateDisabled = false;
+    }
+
+    //CHECKSTYLE:OFF
+    public T withCustomerImage(String imageUrl) {
+        this.imageReferenceType = "custom";
+        this.image = imageUrl;
+        return (T) this;
+    }
+
+    public T withReferenceImage(String imagePublisher,
+                                String imageOffer,
+                                String imageSku,
+                                String imageVersion) {
+        this.imageReferenceType = "reference";
         this.imagePublisher = imagePublisher;
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
         this.imageVersion = imageVersion;
-        this.agentLaunchMethod = agentLaunchMethod;
-        this.preInstallSsh = preInstallSsh;
-        this.initScript = initScript;
-        this.executeInitScriptAsRoot = executeInitScriptAsRoot;
-        this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
-        this.virtualNetworkName = virtualNetworkName;
-        this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
-        this.subnetName = subnetName;
-        this.usePrivateIP = usePrivateIP;
-        this.nsgName = nsgName;
-        this.jvmOptions = jvmOptions;
-        this.noOfParallelJobs = noOfParallelJobs;
-        this.templateDisabled = templateDisabled;
+        return (T) this;
     }
+
+    public T withOsType(String osType) {
+        this.osType = osType;
+        return (T) this;
+    }
+
+    public T withLaunchMethod(String launchMethod) {
+        this.agentLaunchMethod = launchMethod;
+        return (T) this;
+    }
+
+    public T withPreInstallSsh(boolean preInstallSsh) {
+        this.preInstallSsh = preInstallSsh;
+        return (T) this;
+    }
+
+    public T withInitScript(String initScript) {
+        this.initScript = initScript;
+        return (T) this;
+    }
+
+    public T withRunScriptAsRoot(boolean executeInitScriptAsRoot) {
+        this.executeInitScriptAsRoot = executeInitScriptAsRoot;
+        return (T) this;
+    }
+
+    public T withDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
+        this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        return (T) this;
+    }
+
+    public T withVirtualNetworkName(String virtualNetworkName) {
+        this.virtualNetworkName = virtualNetworkName;
+        return (T) this;
+    }
+
+    public T withVirtualNetworkResourceGroupName(String virtualNetworkResourceGroupName) {
+        this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
+        return (T) this;
+    }
+
+    public T withSubnetName(String subnetName) {
+        this.subnetName = subnetName;
+        return (T) this;
+    }
+
+    public T withUsePrivateIP(boolean usePrivateIP) {
+        this.usePrivateIP = usePrivateIP;
+        return (T) this;
+    }
+
+    public T withNetworkSecurityGroupName(String nsgName) {
+        this.nsgName = nsgName;
+        return (T) this;
+    }
+
+    public T withJvmOptions(String jvmOptions) {
+        this.jvmOptions = jvmOptions;
+        return (T) this;
+    }
+
+    public T withNumberOfExecutors(String noOfParallelJobs) {
+        this.noOfParallelJobs = noOfParallelJobs;
+        return (T) this;
+    }
+    public T withDisableTemplate(boolean templateDisabled) {
+        this.templateDisabled = templateDisabled;
+        return (T) this;
+    }
+    //CHECKSTYLE:ON
 
     public String getImageReferenceType() {
         return imageReferenceType;
