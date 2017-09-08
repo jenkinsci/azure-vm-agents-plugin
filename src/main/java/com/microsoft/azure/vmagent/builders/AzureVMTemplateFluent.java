@@ -132,6 +132,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return new BuiltInImageNested();
     }
 
+    public BuiltInImageNested addNewBuiltInImageLike(BuiltInImage image) {
+        return new BuiltInImageNested(image);
+    }
+
     public T withAdvancedImage(AdvancedImage advancedImage) {
         this.imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
         this.advancedImage = advancedImage;
@@ -140,6 +144,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public AdvancedImageNested addNewAdvancedImage() {
         return new AdvancedImageNested();
+    }
+
+    public AdvancedImageNested addNewAdvancedImageLike(AdvancedImage image) {
+        return new AdvancedImageNested(image);
     }
 
     public T withAdminCredential(String credentialsId) {
@@ -220,32 +228,16 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return credentialsId;
     }
 
-    public class BuiltInImageNested {
+    public class BuiltInImageNested extends BuiltInImageFluent<BuiltInImageNested> {
 
         private final BuiltInImageBuilder builder;
 
         BuiltInImageNested() {
-            this.builder = new BuiltInImageBuilder();
+            this.builder = new BuiltInImageBuilder(this);
         }
 
-        public BuiltInImageNested withBuiltInImageName(String builtInImageName) {
-            builder.withBuiltInImageName(builtInImageName);
-            return this;
-        }
-
-        public BuiltInImageNested withInstallGit(boolean installGit) {
-            builder.withInstallGit(installGit);
-            return this;
-        }
-
-        public BuiltInImageNested withInstallMaven(boolean installMaven) {
-            builder.withInstallMaven(installMaven);
-            return this;
-        }
-
-        public BuiltInImageNested withInstallDocker(boolean installDocker) {
-            builder.withInstallDocker(installDocker);
-            return this;
+        BuiltInImageNested(BuiltInImage image) {
+            this.builder = new BuiltInImageBuilder(this, image);
         }
 
         public T endBuiltInImage() {
@@ -259,6 +251,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
         AdvancedImageNested() {
             this.builder = new AdvancedImageBuilder(this);
+        }
+
+        AdvancedImageNested(AdvancedImage image) {
+            this.builder = new AdvancedImageBuilder(this, image);
         }
 
         public T endAdvancedImage() {

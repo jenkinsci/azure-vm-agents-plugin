@@ -10,8 +10,62 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         this.fluent = this;
     }
 
+    public AzureVMTemplateBuilder(AzureVMAgentTemplate template) {
+        this.fluent = this;
+        fluent.withName(template.getTemplateName());
+        fluent.withDescription(template.getTemplateDesc());
+        fluent.withLabels(template.getLabels());
+        fluent.withLocation(template.getLocation());
+        fluent.withVirtualMachineSize(template.getVirtualMachineSize());
+        if (template.getStorageAccountNameReferenceType().equalsIgnoreCase("new")) {
+            fluent.withNewStorageAccount(template.getNewStorageAccountName());
+        } else {
+            fluent.withExistingStorageAccount(template.getExistingStorageAccountName());
+        }
+        fluent.withStorageAccountType(template.getStorageAccountType());
+        fluent.withDiskType(template.getDiskType());
+        fluent.withRetentionTime(String.valueOf(template.getRetentionTimeInMin()));
+        fluent.withUsageMode(template.getUsageMode());
+        fluent.withAdminCredential(template.getCredentialsId());
+        fluent.withWorkspace(template.getAgentWorkspace());
+        fluent.withShutdownOnIdle(template.isShutdownOnIdle());
+
+        if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
+            fluent.withBuiltInImage(template.getBuiltInImageInside());
+        } else {
+            fluent.withAdvancedImage(template.getAdvancedImageInside());
+        }
+    }
+
     public AzureVMTemplateBuilder(AzureVMTemplateFluent<?> fluent) {
         this.fluent = fluent;
+    }
+
+    public AzureVMTemplateBuilder(AzureVMTemplateFluent<?> fluent, AzureVMAgentTemplate template) {
+        this.fluent = fluent;
+        fluent.withName(template.getTemplateName());
+        fluent.withDescription(template.getTemplateDesc());
+        fluent.withLabels(template.getLabels());
+        fluent.withLocation(template.getLocation());
+        fluent.withVirtualMachineSize(template.getVirtualMachineSize());
+        if (template.getStorageAccountNameReferenceType().equalsIgnoreCase("new")) {
+            fluent.withNewStorageAccount(template.getNewStorageAccountName());
+        } else {
+            fluent.withExistingStorageAccount(template.getExistingStorageAccountName());
+        }
+        fluent.withStorageAccountType(template.getStorageAccountType());
+        fluent.withDiskType(template.getDiskType());
+        fluent.withRetentionTime(String.valueOf(template.getRetentionTimeInMin()));
+        fluent.withUsageMode(template.getUsageMode());
+        fluent.withAdminCredential(template.getCredentialsId());
+        fluent.withWorkspace(template.getAgentWorkspace());
+        fluent.withShutdownOnIdle(template.isShutdownOnIdle());
+
+        if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
+            fluent.withBuiltInImage(template.getBuiltInImageInside());
+        } else {
+            fluent.withAdvancedImage(template.getAdvancedImageInside());
+        }
     }
 
     public AzureVMAgentTemplate build() {

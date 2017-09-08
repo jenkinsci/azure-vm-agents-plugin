@@ -9,8 +9,55 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         this.fluent = fluent;
     }
 
+    public AdvancedImageBuilder(AdvancedImageFluent<?> fluent, AdvancedImage image) {
+        this.fluent = fluent;
+        fluent.withCustomerImage(image.getImage());
+        fluent.withReferenceImage(image.getImagePublisher(),
+                image.getImageOffer(),
+                image.getImageSku(),
+                image.getImageVersion());
+        fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
+        fluent.withOsType(image.getOsType());
+        fluent.withLaunchMethod(image.getAgentLaunchMethod());
+        fluent.withPreInstallSsh(image.isPreInstallSsh());
+        fluent.withInitScript(image.getInitScript());
+        fluent.withVirtualNetworkName(image.getVirtualNetworkName());
+        fluent.withVirtualNetworkResourceGroupName(image.getVirtualNetworkResourceGroupName());
+        fluent.withSubnetName(image.getSubnetName());
+        fluent.withUsePrivateIP(image.isUsePrivateIP());
+        fluent.withNetworkSecurityGroupName(image.getNsgName());
+        fluent.withJvmOptions(image.getJvmOptions());
+        fluent.withDisableTemplate(image.isTemplateDisabled());
+        fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
+        fluent.withDoNotUseMachineIfInitFails(image.isDoNotUseMachineIfInitFails());
+
+    }
+
     public AdvancedImageBuilder() {
         this.fluent = this;
+    }
+
+    public AdvancedImageBuilder(AdvancedImage image) {
+        this.fluent = this;
+        fluent.withCustomerImage(image.getImage());
+        fluent.withReferenceImage(image.getImagePublisher(),
+                image.getImageOffer(),
+                image.getImageSku(),
+                image.getImageVersion());
+        fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
+        fluent.withOsType(image.getOsType());
+        fluent.withLaunchMethod(image.getAgentLaunchMethod());
+        fluent.withPreInstallSsh(image.isPreInstallSsh());
+        fluent.withInitScript(image.getInitScript());
+        fluent.withVirtualNetworkName(image.getVirtualNetworkName());
+        fluent.withVirtualNetworkResourceGroupName(image.getVirtualNetworkResourceGroupName());
+        fluent.withSubnetName(image.getSubnetName());
+        fluent.withUsePrivateIP(image.isUsePrivateIP());
+        fluent.withNetworkSecurityGroupName(image.getNsgName());
+        fluent.withJvmOptions(image.getJvmOptions());
+        fluent.withDisableTemplate(image.isTemplateDisabled());
+        fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
+        fluent.withDoNotUseMachineIfInitFails(image.isDoNotUseMachineIfInitFails());
     }
 
     public AdvancedImage build() {
@@ -35,5 +82,4 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getNoOfParallelJobs(),
                 fluent.isTemplateDisabled());
     }
-
 }

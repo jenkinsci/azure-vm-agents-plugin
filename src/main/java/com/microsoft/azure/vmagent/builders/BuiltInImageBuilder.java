@@ -1,48 +1,38 @@
 package com.microsoft.azure.vmagent.builders;
 
-import com.microsoft.azure.vmagent.util.Constants;
 
-public class BuiltInImageBuilder {
+public class BuiltInImageBuilder extends BuiltInImageFluent<BuiltInImageBuilder> {
 
-    private String builtInImage;
-
-    private boolean isInstallGit;
-
-    private boolean isInstallMaven;
-
-    private boolean isInstallDocker;
+    private BuiltInImageFluent<?> fluent;
 
     public BuiltInImageBuilder() {
-        builtInImage = Constants.WINDOWS_SERVER_2016;
-        isInstallDocker = false;
-        isInstallMaven = false;
-        isInstallGit = false;
+        this.fluent = this;
     }
 
-    //CHECKSTYLE:OFF
-    public BuiltInImageBuilder withBuiltInImageName(String builtInImage) {
-        this.builtInImage = builtInImage;
-        return this;
+    public BuiltInImageBuilder(BuiltInImage image) {
+        this.fluent = this;
+        fluent.withBuiltInImageName(image.getBuiltInImage());
+        fluent.withInstallDocker(image.isInstallDocker());
+        fluent.withInstallGit(image.isInstallGit());
+        fluent.withInstallMaven(image.isInstallMaven());
     }
 
-    public BuiltInImageBuilder withInstallGit(boolean installGit) {
-        this.isInstallGit = installGit;
-        return this;
+    public BuiltInImageBuilder(BuiltInImageFluent<?> fluent) {
+        this.fluent = fluent;
     }
 
-    public BuiltInImageBuilder withInstallMaven(boolean installMaven) {
-        this.isInstallMaven = installMaven;
-        return this;
+    public BuiltInImageBuilder(BuiltInImageFluent<?> fluent, BuiltInImage image) {
+        this.fluent = fluent;
+        fluent.withBuiltInImageName(image.getBuiltInImage());
+        fluent.withInstallDocker(image.isInstallDocker());
+        fluent.withInstallGit(image.isInstallGit());
+        fluent.withInstallMaven(image.isInstallMaven());
     }
-
-    public BuiltInImageBuilder withInstallDocker(boolean installDocker) {
-        this.isInstallDocker = installDocker;
-        return this;
-    }
-    //CHECKSTYLE:ON
 
     public BuiltInImage build() {
-        return new BuiltInImage(builtInImage, isInstallGit, isInstallMaven, isInstallDocker);
+        return new BuiltInImage(fluent.getBuiltInImage(),
+                fluent.isInstallGit(),
+                fluent.isInstallMaven(),
+                fluent.isInstallDocker());
     }
 }
-

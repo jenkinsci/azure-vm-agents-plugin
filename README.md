@@ -183,5 +183,38 @@ def myCloud = new AzureVMCloudBuilder()
 
 Jenkins.getInstance().clouds.add(myCloud);
 ```
+```groovy
+//inherit existing template
+import com.microsoft.azure.vmagent.builders.*;
+import com.microsoft.azure.vmagent.*;
 
+AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
+.withLocation("Southeast Asia")
+.withVirtualMachineSize("Standard_DS2_v2")
+.withStorageAccountType("Premium_LRS")
+.withNewStorageAccount("<your Storage Account Name>")
+    .addNewAdvancedImage()
+         .withReferenceImage("Canonical", "UbuntuServer", "16.04-LTS", "latest")
+    .endAdvancedImage()
+    .withAdminCredential("<your admin credential ID>")
+.build();
+
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addNewTemplateLike(baseTemplate)
+    .withName("inherit")
+    .withLabels("inherit")
+    .addNewAdvancedImageLike(baseTemplate.getAdvancedImageInside())
+        .withInitScript("sudo add-apt-repository ppa:openjdk-r/ppa -y \n" +
+                        "sudo apt-get -y update \n" +
+                        "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
+    .endAdvancedImage()
+.endTemplate()
+.build();
+
+Jenkins.getInstance().clouds.add(myCloud);
+
+```
 This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).

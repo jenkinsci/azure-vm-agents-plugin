@@ -31,6 +31,17 @@ public class AzureVMCloudBuilder {
         vmTemplates = new ArrayList<>();
     }
 
+    public AzureVMCloudBuilder(AzureVMCloud cloud) {
+        cloudName = cloud.getCloudName();
+        azureCredentialsId = cloud.getAzureCredentialsId();
+        maxVirtualMachinesLimit = String.valueOf(cloud.getMaxVirtualMachinesLimit());
+        deploymentTimeout = String.valueOf(cloud.getDeploymentTimeout());
+        resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
+        newResourceGroupName = cloud.getNewResourceGroupName();
+        existingResourceGroupName = cloud.getExistingResourceGroupName();
+        vmTemplates = cloud.getVmTemplates();
+    }
+
     //CHECKSTYLE:OFF
     public AzureVMCloudBuilder withCloudName(String cloudName) {
         this.cloudName = cloudName;
@@ -85,6 +96,10 @@ public class AzureVMCloudBuilder {
     public AzureVMTemplateNested addNewTemplate() {
         return new AzureVMTemplateNested();
     }
+
+    public AzureVMTemplateNested addNewTemplateLike(AzureVMAgentTemplate template) {
+        return new AzureVMTemplateNested(template);
+    }
     //CHECKSTYLE:ON
 
     public AzureVMCloud build() {
@@ -107,15 +122,12 @@ public class AzureVMCloudBuilder {
             this.builder = new AzureVMTemplateBuilder(this);
         }
 
+        AzureVMTemplateNested(AzureVMAgentTemplate template) {
+            this.builder = new AzureVMTemplateBuilder(this, template);
+        }
+
         public AzureVMCloudBuilder endTemplate() {
             return AzureVMCloudBuilder.this.addToTemplates(builder.build());
         }
     }
-
-
-
-
-
-
-
 }
