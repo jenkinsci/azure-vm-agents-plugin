@@ -32,6 +32,7 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.Extension;
 import hudson.init.InitMilestone;
@@ -771,7 +772,7 @@ public class AzureVMCloud extends Cloud {
         return plannedNodes;
     }
 
-    private void doProvision(
+    public void doProvision(
             final int numberOfNewAgents,
             List<PlannedNode> plannedNodes,
             final AzureVMAgentTemplate template) {
@@ -803,79 +804,84 @@ public class AzureVMCloud extends Cloud {
                         @Override
                         public Node call() throws AzureCloudException {
                             // Wait for the future to complete
-                            AzureVMDeploymentInfo info = null;
                             try {
-                                info = deploymentFuture.get();
-                            } catch (InterruptedException | ExecutionException e) {
-                                throw AzureCloudException.create(e);
-                            }
-
-                            final String deploymentName = info.getDeploymentName();
-                            final String vmBaseName = info.getVmBaseName();
-                            final String vmName = String.format("%s%d", vmBaseName, index);
-
-                            AzureVMAgent agent = null;
-                            try {
-                                agent = createProvisionedAgent(
-                                        provisioningId,
-                                        template,
-                                        vmName,
-                                        deploymentName);
-                            } catch (AzureCloudException e) {
-                                LOGGER.log(
-                                        Level.SEVERE,
-                                        String.format("Failure creating provisioned agent '%s'", vmName),
-                                        e);
-
-                                handleFailure(template, vmName, e, FailureStage.PROVISIONING);
-
-                                throw e;
-                            }
-
-                            try {
-                                LOGGER.log(Level.INFO,
-                                        "Azure Cloud: provision: Adding agent {0} to Jenkins nodes",
-                                        agent.getNodeName());
-                                // Place the node in blocked state while it starts.
+                                PoolLock.provisionLock(template);
+                                AzureVMDeploymentInfo info = null;
                                 try {
-                                    agent.blockCleanUpAction();
-                                    Jenkins.getInstance().addNode(agent);
-                                    Computer computer = agent.toComputer();
-                                    if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH")
-                                            && computer != null) {
-                                        computer.connect(false).get();
-                                    } else if (agent.getAgentLaunchMethod()
-                                            .equalsIgnoreCase("JNLP")) {
-                                        // Wait until node is online
-                                        waitUntilJNLPNodeIsOnline(agent);
-                                    }
-                                } finally {
-                                    // Place node in default state, now can be
-                                    // dealt with by the cleanup task.
-                                    agent.clearCleanUpAction();
+                                    info = deploymentFuture.get();
+                                } catch (InterruptedException | ExecutionException e) {
+                                    throw AzureCloudException.create(e);
                                 }
-                            } catch (Exception e) {
-                                LOGGER.log(
-                                        Level.SEVERE,
-                                        String.format("Failure to in post-provisioning for '%s'", vmName),
-                                        e);
 
-                                handleFailure(template, vmName, e, FailureStage.POSTPROVISIONING);
+                                final String deploymentName = info.getDeploymentName();
+                                final String vmBaseName = info.getVmBaseName();
+                                final String vmName = String.format("%s%d", vmBaseName, index);
 
-                                // Remove the node from jenkins
+                                AzureVMAgent agent = null;
                                 try {
-                                    Jenkins.getInstance().removeNode(agent);
-                                } catch (IOException nodeRemoveEx) {
+                                    agent = createProvisionedAgent(
+                                            provisioningId,
+                                            template,
+                                            vmName,
+                                            deploymentName);
+                                } catch (AzureCloudException e) {
                                     LOGGER.log(
                                             Level.SEVERE,
-                                            String.format("Failure removing Jenkins node for '%s'", vmName),
-                                            nodeRemoveEx);
-                                    // Do not throw to avoid it being recorded
+                                            String.format("Failure creating provisioned agent '%s'", vmName),
+                                            e);
+
+                                    handleFailure(template, vmName, e, FailureStage.PROVISIONING);
+
+                                    throw e;
                                 }
 
-                                throw AzureCloudException.create(e);
+                                try {
+                                    LOGGER.log(Level.INFO,
+                                            "Azure Cloud: provision: Adding agent {0} to Jenkins nodes",
+                                            agent.getNodeName());
+                                    // Place the node in blocked state while it starts.
+                                    try {
+                                        agent.blockCleanUpAction();
+                                        Jenkins.getInstance().addNode(agent);
+                                        Computer computer = agent.toComputer();
+                                        if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH")
+                                                && computer != null) {
+                                            computer.connect(false).get();
+                                        } else if (agent.getAgentLaunchMethod()
+                                                .equalsIgnoreCase("JNLP")) {
+                                            // Wait until node is online
+                                            waitUntilJNLPNodeIsOnline(agent);
+                                        }
+                                    } finally {
+                                        // Place node in default state, now can be
+                                        // dealt with by the cleanup task.
+                                        agent.clearCleanUpAction();
+                                    }
+                                } catch (Exception e) {
+                                    LOGGER.log(
+                                            Level.SEVERE,
+                                            String.format("Failure to in post-provisioning for '%s'", vmName),
+                                            e);
+
+                                    handleFailure(template, vmName, e, FailureStage.POSTPROVISIONING);
+
+                                    // Remove the node from jenkins
+                                    try {
+                                        Jenkins.getInstance().removeNode(agent);
+                                    } catch (IOException nodeRemoveEx) {
+                                        LOGGER.log(
+                                                Level.SEVERE,
+                                                String.format("Failure removing Jenkins node for '%s'", vmName),
+                                                nodeRemoveEx);
+                                        // Do not throw to avoid it being recorded
+                                    }
+
+                                    throw AzureCloudException.create(e);
+                                }
+                                return agent;
+                            } finally {
+                                PoolLock.provisionUnlock(template);
                             }
-                            return agent;
                         }
 
                         private void handleFailure(

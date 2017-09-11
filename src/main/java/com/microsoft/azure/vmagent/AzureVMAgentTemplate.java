@@ -43,6 +43,7 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
+import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
@@ -219,6 +220,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private boolean doNotUseMachineIfInitFails;
 
+    private RetentionStrategy<AzureVMComputer> retentionStrategy;
+
     @DataBoundConstructor
     public AzureVMAgentTemplate(
             String templateName,
@@ -315,6 +318,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         // Reset the template verification status.
         this.templateVerified = false;
+        final int poolsize = 3;
+        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(1, poolsize);
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -774,6 +779,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public Set<LabelAtom> getLabelDataSet() {
         return labelDataSet;
+    }
+
+    public RetentionStrategy<AzureVMComputer> getRetentionStrategy() {
+        return retentionStrategy;
     }
 
     /**
