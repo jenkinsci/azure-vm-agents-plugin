@@ -162,11 +162,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String builtInImage;
 
-    private final Boolean isInstallGit;
+    private final boolean isInstallGit;
 
-    private final Boolean isInstallMaven;
+    private final boolean isInstallMaven;
 
-    private final Boolean isInstallDocker;
+    private final boolean isInstallDocker;
 
     private final String image;
 
@@ -182,7 +182,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String agentLaunchMethod;
 
-    private Boolean preInstallSsh;
+    private boolean preInstallSsh;
 
     private final String initScript;
 
@@ -237,15 +237,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             String noOfParallelJobs,
             String usageMode,
             String builtInImage,
-            Boolean isInstallGit,
-            Boolean isInstallMaven,
-            Boolean isInstallDocker,
+            boolean isInstallGit,
+            boolean isInstallMaven,
+            boolean isInstallDocker,
             String osType,
             String imageTopLevelType,
             boolean imageReference,
             ImageReferenceTypeClass imageReferenceTypeClass,
             String agentLaunchMethod,
-            Boolean preInstallSsh,
+            boolean preInstallSsh,
             String initScript,
             String credentialsId,
             String virtualNetworkName,
@@ -260,7 +260,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             boolean templateDisabled,
             String templateStatusDetails,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails) {
+            boolean doNotUseMachineIfInitFails,
+            RetentionStrategy<AzureVMComputer> retentionStrategy) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -319,7 +320,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         // Reset the template verification status.
         this.templateVerified = false;
         final int poolsize = 3;
-        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(1, poolsize);
+        this.retentionStrategy = retentionStrategy;
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -330,7 +331,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         String builtInImage = template.getBuiltInImage();
         Map<String, String> defaultProperties =
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
-        Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
+        boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
         templateProperties.put("imagePublisher",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
@@ -414,14 +415,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
 
-    public Boolean isType(String type) {
+    public boolean isType(String type) {
         if (this.imageReferenceType == null && type.equals("reference")) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
 
-    public Boolean isTopLevelType(String type) {
+    public boolean isTopLevelType(String type) {
         if (this.imageTopLevelType == null && type.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             return true;
         }
@@ -459,9 +460,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             diskType = Constants.DISK_UNMANAGED;
         }
 
-        if (preInstallSsh == null) {
-            preInstallSsh = true;
-        }
         return this;
     }
 
@@ -518,7 +516,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
     }
 
-    public Boolean isStorageAccountNameReferenceTypeEquals(String type) {
+    public boolean isStorageAccountNameReferenceTypeEquals(String type) {
         if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
             return true;
         }
@@ -563,15 +561,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return builtInImage;
     }
 
-    public Boolean getIsInstallGit() {
+    public boolean getIsInstallGit() {
         return isInstallGit;
     }
 
-    public Boolean getIsInstallMaven() {
+    public boolean getIsInstallMaven() {
         return isInstallMaven;
     }
 
-    public Boolean getIsInstallDocker() {
+    public boolean getIsInstallDocker() {
         return isInstallDocker;
     }
 
@@ -583,7 +581,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return osType;
     }
 
-    public Boolean getPreInstallSsh() {
+    public boolean getPreInstallSsh() {
         return preInstallSsh;
     }
 
@@ -859,6 +857,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         @Override
         public String getDisplayName() {
             return "";
+        }
+
+        public List<Descriptor<RetentionStrategy<?>>> getAzureVMRetentionStrategy() {
+            List<Descriptor<RetentionStrategy<?>>> list = new ArrayList<>();
+            list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
+            list.add(AzureVMCloudRetensionStrategy.DESCRIPTOR);
+            return list;
         }
 
         public ListBoxModel doFillVirtualMachineSizeItems(

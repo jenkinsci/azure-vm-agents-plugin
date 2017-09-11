@@ -24,7 +24,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
-        fluent.withRetentionTime(String.valueOf(template.getRetentionTimeInMin()));
+        fluent.withRetentionStrategy(template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
@@ -55,7 +55,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
-        fluent.withRetentionTime(String.valueOf(template.getRetentionTimeInMin()));
+        fluent.withRetentionStrategy(template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
@@ -104,11 +104,12 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().getNsgName(),
                 fluent.getWorkspace(),
                 fluent.getAdvancedImage().getJvmOptions(),
-                fluent.getRetentionTime(),
+                "0",
                 fluent.isShutdownOnIdle(),
                 fluent.getAdvancedImage().isTemplateDisabled(),
                 null,
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails());
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
+                fluent.getRetentionStrategy());
     }
 }

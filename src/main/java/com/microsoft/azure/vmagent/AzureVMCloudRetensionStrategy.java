@@ -18,8 +18,8 @@ package com.microsoft.azure.vmagent;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.LinearRetryForAllExceptions;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
+import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.TimeUnit2;
@@ -33,10 +33,13 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
     // Configured idle termination
     private final long idleTerminationMillis;
 
+    private final long idleTerminationMinutes;
+
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
     @DataBoundConstructor
     public AzureVMCloudRetensionStrategy(int idleTerminationMinutes) {
+        this.idleTerminationMinutes = idleTerminationMinutes;
         this.idleTerminationMillis = TimeUnit2.MINUTES.toMillis(idleTerminationMinutes);
     }
 
@@ -133,6 +136,10 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
         return 1;
     }
 
+    public long getIdleTerminationMinutes() {
+        return idleTerminationMinutes;
+    }
+
     @Override
     public void start(AzureVMComputer azureComputer) {
         //TODO: check when this method is getting called and add code accordingly
@@ -141,11 +148,18 @@ public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComp
         azureComputer.connect(false);
     }
 
-    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return DESCRIPTOR;
+    }
 
+    @Extension
+    public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
+
+    public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
         @Override
         public String getDisplayName() {
-            return Constants.AZURE_CLOUD_DISPLAY_NAME;
+            return "Azure VM Idle Retention Strategy";
         }
     }
 }
