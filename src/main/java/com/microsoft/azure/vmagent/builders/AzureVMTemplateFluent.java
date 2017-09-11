@@ -1,6 +1,10 @@
 package com.microsoft.azure.vmagent.builders;
 
+import com.microsoft.azure.vmagent.AzureVMCloudPoolRetentionStrategy;
+import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
+import com.microsoft.azure.vmagent.AzureVMComputer;
 import com.microsoft.azure.vmagent.util.Constants;
+import hudson.slaves.RetentionStrategy;
 
 public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
@@ -26,7 +30,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String existingStorageAccountName;
 
-    private String retentionTime;
+    private RetentionStrategy<AzureVMComputer> retentionStrategy;
 
     private boolean shutdownOnIdle;
 
@@ -46,7 +50,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         storageAccountType = "Standard_LRS";
         storageAccountNameReferenceType = "new";
         diskType = Constants.DISK_MANAGED;
-        retentionTime = "60";
+        retentionStrategy = new AzureVMCloudRetensionStrategy(Constants.DEFAULT_IDLE_RETENTION_TIME);
         shutdownOnIdle = false;
         usageMode = "Use this node as much as possible";
         imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
@@ -107,8 +111,19 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
 
-    public T withRetentionTime(String retentionTime) {
-        this.retentionTime = retentionTime;
+    public T withRetentionStrategy(RetentionStrategy<AzureVMComputer> retentionStrategy) {
+        this.retentionStrategy = retentionStrategy;
+        return (T) this;
+    }
+
+    public T addNewIdleRetentionStrategy(String retentionTime) {
+        this.retentionStrategy = new AzureVMCloudRetensionStrategy(Integer.parseInt(retentionTime));
+        return (T) this;
+    }
+
+    public T addNewPoolRetentionStrategy(String retentionTime, String poolSize) {
+        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
+                Integer.parseInt(poolSize));
         return (T) this;
     }
 
@@ -200,8 +215,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return existingStorageAccountName;
     }
 
-    public String getRetentionTime() {
-        return retentionTime;
+    public RetentionStrategy<AzureVMComputer> getRetentionStrategy() {
+        return retentionStrategy;
     }
 
     public boolean isShutdownOnIdle() {

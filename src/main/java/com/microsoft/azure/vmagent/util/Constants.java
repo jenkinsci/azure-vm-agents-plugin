@@ -216,6 +216,11 @@ public final class Constants {
 
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
+    /**
+     * Default parameters.
+     */
+    public static final int DEFAULT_IDLE_RETENTION_TIME = 60;
+
     private Constants() {
         // hide constructor
     }

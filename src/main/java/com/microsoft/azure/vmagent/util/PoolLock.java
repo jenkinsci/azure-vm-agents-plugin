@@ -33,7 +33,7 @@ public final class PoolLock {
     public static synchronized boolean checkDeprovisionLock(AzureVMAgentTemplate template) {
         return templateDeprovisionLock.contains(template);
     }
-    
+
     private PoolLock() {
 
     }

@@ -1,10 +1,8 @@
 package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.vmagent.retry.LinearRetryForAllExceptions;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
-import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.azure.vmagent.util.PoolLock;
+import com.microsoft.azure.vmagent.util.TemplateUtil;
+import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.slaves.Cloud;
@@ -15,7 +13,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,38 +26,58 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
     @DataBoundConstructor
-    public AzureVMCloudPoolRetentionStrategy(int idleTerminationHours, int poolSize) {
-        this.retentionMillis = TimeUnit2.HOURS.toMillis(idleTerminationHours);
+    public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
+        this.retentionMillis = TimeUnit2.HOURS.toMillis(retentionInHours);
         this.poolSize = poolSize > 1 ? poolSize : 1;
     }
 
-    public int getPoolSize() {
-        return poolSize;
-    }
-
     @Override
-    public long check(AzureVMComputer agentComputer) {
+    public long check(final AzureVMComputer agentComputer) {
         Cloud cloud = agentComputer.getNode().getCloud();
         if (cloud == null || !(cloud instanceof AzureVMCloud)) {
             //cloud has changed
+            LOGGER.log(Level.INFO, "Delete VM {0} for cloud not found", agentComputer);
             tryDeleteWhenIdle(agentComputer);
             return 1;
         }
 
         AzureVMCloud currentCloud = (AzureVMCloud) cloud;
-        if (!currentCloud.getVmTemplates().contains(agentComputer.getNode().getTemplate())) {
+        AzureVMAgentTemplate currentTemplate = null;
+        boolean isContainsTemplate = false;
+        for (AzureVMAgentTemplate template : currentCloud.getVmTemplates()) {
+            if (template.getRetentionStrategy() instanceof AzureVMCloudPoolRetentionStrategy
+                    && TemplateUtil.checkSame(template, agentComputer.getNode().getTemplate())) {
+                isContainsTemplate = true;
+                currentTemplate = template;
+                break;
+            }
+        }
+
+        if (!isContainsTemplate) {
             //template has changed
+            LOGGER.log(Level.INFO, "Delete VM {0} for template {1} not found",
+                    new Object[] {agentComputer, agentComputer.getNode().getTemplate().getTemplateName()});
             tryDeleteWhenIdle(agentComputer);
             return 1;
         }
 
         if (System.currentTimeMillis() - agentComputer.getNode().getCreationTime() > retentionMillis) {
             //exceed retention limit
+            LOGGER.log(Level.INFO, "Delete VM {0} for timeout", agentComputer);
             tryDeleteWhenIdle(agentComputer);
             return 1;
         }
 
-        checkPoolSizeAndDelete(agentComputer, poolSize);
+        final int currentPoolSize
+                = ((AzureVMCloudPoolRetentionStrategy) currentTemplate.getRetentionStrategy()).getPoolSize();
+
+        Computer.threadPoolForRemoting.submit(new Runnable() {
+            @Override
+            public void run() {
+                checkPoolSizeAndDelete(agentComputer, currentPoolSize);
+            }
+        });
+
         return 1;
     }
 
@@ -68,32 +85,8 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         final AzureVMAgent agentNode = agentComputer.getNode();
         if (agentComputer.isIdle() && agentNode != null) {
             if (System.currentTimeMillis() - agentComputer.getIdleStartMilliseconds() > IDLE_LIMIT_MILLIS) {
-                final AzureVMAgentTemplate template = agentNode.getTemplate();
-
-                final Callable<Void> task = new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        try {
-                            PoolLock.deprovisionLock(template);
-                            agentNode.blockCleanUpAction();
-                            agentNode.deprovision(Messages._Idle_Timeout_Delete());
-                            return null;
-                        } finally {
-                            PoolLock.deprovisionUnlock(template);
-                        }
-                    }
-                };
-
                 try {
-                    final int maxRetries = 30;
-                    final int waitInterval = 30;
-                    final int defaultTimeoutInSeconds = 30 * 60;
-                    new ExecutionEngine().executeAsync(task,
-                            new LinearRetryForAllExceptions(
-                                    maxRetries,
-                                    waitInterval,
-                                    defaultTimeoutInSeconds
-                            ));
+                    agentNode.deprovision(Messages._Idle_Timeout_Delete());
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO,
                             "AzureVMCloudRetensionStrategy: check: "
@@ -112,23 +105,31 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
     }
 
     private static synchronized void checkPoolSizeAndDelete(AzureVMComputer agentComputer, int poolSize) {
-        if (PoolLock.checkDeprovisionLock(agentComputer.getNode().getTemplate())) {
-            return;
-        }
         int count = 0;
         List<Computer> computers = Arrays.asList(Jenkins.getInstance().getComputers());
         for (Computer computer : computers) {
             if (computer instanceof AzureVMComputer
                     && ((AzureVMComputer) computer).getNode() != null
-                    && ((AzureVMComputer) computer).getNode().getTemplate()
-                    .equals(agentComputer.getNode().getTemplate())) {
+                    && TemplateUtil.checkSame(((AzureVMComputer) computer).getNode().getTemplate(),
+                        agentComputer.getNode().getTemplate())) {
                 count++;
-                if (count > poolSize) {
-                    tryDeleteWhenIdle(agentComputer);
-                    return;
-                }
             }
         }
+
+        if (count > poolSize) {
+            LOGGER.log(Level.INFO, "Delete VM {0} for pool size exceed limit: {1}",
+                    new Object[]{agentComputer, count});
+            tryDeleteWhenIdle(agentComputer);
+            return;
+        }
+    }
+
+    public long getRetentionInHours() {
+        return TimeUnit2.MILLISECONDS.toHours(retentionMillis);
+    }
+
+    public int getPoolSize() {
+        return poolSize;
     }
 
     @Override
@@ -139,11 +140,19 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         azureComputer.connect(false);
     }
 
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return DESCRIPTOR;
+    }
+
+    @Extension
+    public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
+
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
 
         @Override
         public String getDisplayName() {
-            return Constants.AZURE_CLOUD_DISPLAY_NAME;
+            return "Azure VM Pool Retention Strategy";
         }
     }
 }
