@@ -24,6 +24,10 @@ import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.vmagent.builders.AdvancedImage;
+import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
+import com.microsoft.azure.vmagent.builders.BuiltInImage;
+import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -732,6 +736,35 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+    }
+
+    public AdvancedImage getAdvancedImageInside() {
+        return new AdvancedImageBuilder()
+                .withCustomImage(getImage())
+                .withReferenceImage(getImagePublisher(), getImageOffer(), getImageSku(), getImageVersion())
+                .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
+                .withOsType(getOsType())
+                .withLaunchMethod(getAgentLaunchMethod())
+                .withPreInstallSsh(getPreInstallSsh())
+                .withInitScript(getInitScript())
+                .withVirtualNetworkName(getVirtualNetworkName())
+                .withVirtualNetworkResourceGroupName(getVirtualNetworkResourceGroupName())
+                .withSubnetName(getSubnetName())
+                .withUsePrivateIP(getUsePrivateIP())
+                .withNetworkSecurityGroupName(getNsgName())
+                .withJvmOptions(getJvmOptions())
+                .withDisableTemplate(isTemplateDisabled())
+                .withRunScriptAsRoot(getExecuteInitScriptAsRoot())
+                .withDoNotUseMachineIfInitFails(getDoNotUseMachineIfInitFails())
+                .build();
+    }
+
+    public BuiltInImage getBuiltInImageInside() {
+        return new BuiltInImageBuilder().withBuiltInImageName(getBuiltInImage())
+                .withInstallGit(getIsInstallGit())
+                .withInstallDocker(getIsInstallDocker())
+                .withInstallMaven(getIsInstallMaven())
+                .build();
     }
 
     @SuppressWarnings("unchecked")
