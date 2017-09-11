@@ -861,8 +861,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         public List<Descriptor<RetentionStrategy<?>>> getAzureVMRetentionStrategy() {
             List<Descriptor<RetentionStrategy<?>>> list = new ArrayList<>();
-            list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
             list.add(AzureVMCloudRetensionStrategy.DESCRIPTOR);
+            list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
             return list;
         }
 
