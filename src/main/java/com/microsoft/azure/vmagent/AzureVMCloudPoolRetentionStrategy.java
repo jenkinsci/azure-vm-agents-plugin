@@ -37,7 +37,12 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         if (cloud == null || !(cloud instanceof AzureVMCloud)) {
             //cloud has changed
             LOGGER.log(Level.INFO, "Delete VM {0} for cloud not found", agentComputer);
-            tryDeleteWhenIdle(agentComputer);
+            Computer.threadPoolForRemoting.submit(new Runnable() {
+                @Override
+                public void run() {
+                    tryDeleteWhenIdle(agentComputer);
+                }
+            });
             return 1;
         }
 
@@ -57,14 +62,24 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
             //template has changed
             LOGGER.log(Level.INFO, "Delete VM {0} for template {1} not found",
                     new Object[] {agentComputer, agentComputer.getNode().getTemplate().getTemplateName()});
-            tryDeleteWhenIdle(agentComputer);
+            Computer.threadPoolForRemoting.submit(new Runnable() {
+                @Override
+                public void run() {
+                    tryDeleteWhenIdle(agentComputer);
+                }
+            });
             return 1;
         }
 
         if (System.currentTimeMillis() - agentComputer.getNode().getCreationTime() > retentionMillis) {
             //exceed retention limit
             LOGGER.log(Level.INFO, "Delete VM {0} for timeout", agentComputer);
-            tryDeleteWhenIdle(agentComputer);
+            Computer.threadPoolForRemoting.submit(new Runnable() {
+                @Override
+                public void run() {
+                    tryDeleteWhenIdle(agentComputer);
+                }
+            });
             return 1;
         }
 
