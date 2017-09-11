@@ -24,6 +24,10 @@ import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.vmagent.builders.AdvancedImage;
+import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
+import com.microsoft.azure.vmagent.builders.BuiltInImage;
+import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -39,6 +43,7 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
+import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
@@ -215,6 +220,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private boolean doNotUseMachineIfInitFails;
 
+    private RetentionStrategy<AzureVMComputer> retentionStrategy;
+
     @DataBoundConstructor
     public AzureVMAgentTemplate(
             String templateName,
@@ -311,6 +318,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
         // Reset the template verification status.
         this.templateVerified = false;
+        final int poolsize = 3;
+        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(1, poolsize);
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -734,6 +743,35 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
+    public AdvancedImage getAdvancedImageInside() {
+        return new AdvancedImageBuilder()
+                .withCustomImage(getImage())
+                .withReferenceImage(getImagePublisher(), getImageOffer(), getImageSku(), getImageVersion())
+                .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
+                .withOsType(getOsType())
+                .withLaunchMethod(getAgentLaunchMethod())
+                .withPreInstallSsh(getPreInstallSsh())
+                .withInitScript(getInitScript())
+                .withVirtualNetworkName(getVirtualNetworkName())
+                .withVirtualNetworkResourceGroupName(getVirtualNetworkResourceGroupName())
+                .withSubnetName(getSubnetName())
+                .withUsePrivateIP(getUsePrivateIP())
+                .withNetworkSecurityGroupName(getNsgName())
+                .withJvmOptions(getJvmOptions())
+                .withDisableTemplate(isTemplateDisabled())
+                .withRunScriptAsRoot(getExecuteInitScriptAsRoot())
+                .withDoNotUseMachineIfInitFails(getDoNotUseMachineIfInitFails())
+                .build();
+    }
+
+    public BuiltInImage getBuiltInImageInside() {
+        return new BuiltInImageBuilder().withBuiltInImageName(getBuiltInImage())
+                .withInstallGit(getIsInstallGit())
+                .withInstallDocker(getIsInstallDocker())
+                .withInstallMaven(getIsInstallMaven())
+                .build();
+    }
+
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
         return Jenkins.getInstance().getDescriptor(getClass());
@@ -741,6 +779,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     public Set<LabelAtom> getLabelDataSet() {
         return labelDataSet;
+    }
+
+    public RetentionStrategy<AzureVMComputer> getRetentionStrategy() {
+        return retentionStrategy;
     }
 
     /**

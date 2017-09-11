@@ -105,6 +105,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private boolean eligibleForReuse;
 
+    private AzureVMAgentTemplate template;
+
+    private long creationTime;
+
     @DataBoundConstructor
     public AzureVMAgent(
             String name,
@@ -135,7 +139,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             Localizable cleanUpReason,
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails) throws FormException, IOException {
+            boolean doNotUseMachineIfInitFails,
+            AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
 
@@ -160,6 +165,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.resourceGroupName = resourceGroupName;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        this.template = template;
+        this.creationTime = System.currentTimeMillis();
     }
 
     public AzureVMAgent(
@@ -180,7 +187,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean shutdownOnIdle,
             boolean eligibleForReuse,
             String deploymentName,
-            int retentionTimeInMin,
+            RetentionStrategy<AzureVMComputer> retentionStrategy,
             String initScript,
             String azureCredentialsId,
             AzureCredentials.ServicePrincipal servicePrincipal,
@@ -189,7 +196,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             Localizable cleanUpReason,
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails) throws FormException, IOException {
+            boolean doNotUseMachineIfInitFails,
+            AzureVMAgentTemplate template) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -201,7 +209,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 label,
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
-                new AzureVMCloudRetensionStrategy(retentionTimeInMin),
+                //new AzureVMCloudRetensionStrategy(retentionTimeInMin),
+                retentionStrategy,
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
                 vmCredentialsId,
@@ -211,7 +220,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 shutdownOnIdle,
                 eligibleForReuse,
                 deploymentName,
-                retentionTimeInMin,
+                template.getRetentionTimeInMin(), //Note
                 initScript,
                 azureCredentialsId,
                 servicePrincipal,
@@ -220,7 +229,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 cleanUpReason,
                 resourceGroupName,
                 executeInitScriptAsRoot,
-                doNotUseMachineIfInitFails);
+                doNotUseMachineIfInitFails,
+                template);
 
         this.provisioningId = id;
     }
@@ -411,6 +421,14 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return doNotUseMachineIfInitFails;
     }
 
+    public AzureVMAgentTemplate getTemplate() {
+        return template;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
     @Override
     protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
@@ -450,8 +468,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public void deprovision(Localizable reason) throws Exception {
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}", this.getDisplayName());
-        this.getComputer().setAcceptingTasks(false);
-        this.getComputer().disconnect(OfflineCause.create(reason));
+        if (this.getComputer() != null) {
+            this.getComputer().setAcceptingTasks(false);
+            this.getComputer().disconnect(OfflineCause.create(reason));
+        }
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());

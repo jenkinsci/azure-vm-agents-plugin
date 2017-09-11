@@ -59,7 +59,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     }
 
     //CHECKSTYLE:OFF
-    public T withCustomerImage(String imageUrl) {
+    public T withCustomImage(String imageUrl) {
         this.imageReferenceType = "custom";
         this.image = imageUrl;
         return (T) this;

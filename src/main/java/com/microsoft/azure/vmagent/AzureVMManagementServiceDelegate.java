@@ -803,7 +803,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.isShutdownOnIdle(),
                     false,
                     deploymentName,
-                    template.getRetentionTimeInMin(),
+                    template.getRetentionStrategy(),
                     (String) properties.get("initScript"),
                     azureCloud.getAzureCredentialsId(),
                     azureCloud.getServicePrincipal(),
@@ -812,7 +812,8 @@ public final class AzureVMManagementServiceDelegate {
                     null,
                     template.getResourceGroupName(),
                     (Boolean) properties.get("executeInitScriptAsRoot"),
-                    (Boolean) properties.get("doNotUseMachineIfInitFails"));
+                    (Boolean) properties.get("doNotUseMachineIfInitFails"),
+                    template);
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);
