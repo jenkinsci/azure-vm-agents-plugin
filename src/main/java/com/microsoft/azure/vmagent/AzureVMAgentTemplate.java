@@ -55,6 +55,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.servlet.ServletException;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -72,7 +73,8 @@ import java.util.logging.Logger;
  *
  * @author Suresh Nallamilli
  */
-public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
+public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, Serializable {
+    private static final long serialVersionUID = 1574325691L;
 
     public enum ImageReferenceType {
         UNKNOWN,
@@ -220,7 +222,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private boolean doNotUseMachineIfInitFails;
 
-    private RetentionStrategy<AzureVMComputer> retentionStrategy;
+    private AzureVMCloudBaseRetentionStrategy retentionStrategy;
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(
@@ -255,7 +257,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            RetentionStrategy<AzureVMComputer> retentionStrategy,
+            AzureVMCloudBaseRetentionStrategy retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
             String templateStatusDetails,
@@ -776,7 +778,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return labelDataSet;
     }
 
-    public RetentionStrategy<AzureVMComputer> getRetentionStrategy() {
+    public AzureVMCloudBaseRetentionStrategy getRetentionStrategy() {
         return retentionStrategy;
     }
 

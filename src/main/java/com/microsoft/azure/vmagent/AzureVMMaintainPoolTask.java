@@ -38,10 +38,10 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
         for (Computer computer : Jenkins.getInstance().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureVMComputer = (AzureVMComputer) computer;
-                if (azureVMComputer.getNode() != null
-                        && azureVMComputer.getNode().getTemplate().getTemplateName()
-                        .equals(template.getTemplateName())
-                        && TemplateUtil.checkSame(azureVMComputer.getNode().getTemplate(), template)) {
+                AzureVMAgent agent = azureVMComputer.getNode();
+                if (agent != null
+                        && agent.getTemplate().getTemplateName().equals(template.getTemplateName())
+                        && TemplateUtil.checkSame(agent.getTemplate(), template)) {
                     currentSize++;
                 }
             }

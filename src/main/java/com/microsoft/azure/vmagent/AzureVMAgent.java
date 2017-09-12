@@ -105,7 +105,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private boolean eligibleForReuse;
 
-    private AzureVMAgentTemplate template;
+    private final AzureVMAgentTemplate template;
 
     private long creationTime;
 

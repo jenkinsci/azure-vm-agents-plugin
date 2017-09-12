@@ -62,7 +62,6 @@ import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.model.Descriptor.FormException;
-import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
 import org.apache.commons.io.IOUtils;
@@ -1789,7 +1788,7 @@ public final class AzureVMManagementServiceDelegate {
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
             String subnetName,
-            RetentionStrategy<AzureVMComputer> retentionStrategy,
+            AzureVMCloudBaseRetentionStrategy retentionStrategy,
             String jvmOptions,
             String resourceGroupName,
             boolean returnOnSingleError,
@@ -2009,7 +2008,7 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyRetentionTime(RetentionStrategy<AzureVMComputer> retentionStrategy) {
+    public static String verifyRetentionTime(AzureVMCloudBaseRetentionStrategy retentionStrategy) {
         try {
             if (retentionStrategy == null) {
                 return Messages.Azure_GC_Template_RT_Null_Or_Empty();

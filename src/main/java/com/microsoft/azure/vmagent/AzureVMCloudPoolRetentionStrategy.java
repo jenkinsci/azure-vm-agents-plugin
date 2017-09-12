@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVMComputer> {
+public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetentionStrategy {
+    private static final long serialVersionUID = 1577788691L;
+
     private final long retentionMillis;
 
     private final int poolSize;
@@ -34,8 +36,13 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
 
     @Override
     public long check(final AzureVMComputer agentComputer) {
-        Cloud cloud = agentComputer.getNode().getCloud();
-        if (cloud == null || !(cloud instanceof AzureVMCloud)) {
+        final AzureVMAgent agentNode = agentComputer.getNode();
+        if (agentNode == null) {
+            return 1;
+        }
+
+        final Cloud cloud = agentNode.getCloud();
+        if (cloud == null) {
             //cloud has changed
             LOGGER.log(Level.INFO, "Delete VM {0} for cloud not found", agentComputer);
             Computer.threadPoolForRemoting.submit(new Runnable() {
@@ -52,7 +59,7 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         boolean isContainsTemplate = false;
         for (AzureVMAgentTemplate template : currentCloud.getVmTemplates()) {
             if (template.getRetentionStrategy() instanceof AzureVMCloudPoolRetentionStrategy
-                    && TemplateUtil.checkSame(template, agentComputer.getNode().getTemplate())) {
+                    && TemplateUtil.checkSame(template, agentNode.getTemplate())) {
                 isContainsTemplate = true;
                 currentTemplate = template;
                 break;
@@ -62,7 +69,7 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         if (!isContainsTemplate) {
             //template has changed
             LOGGER.log(Level.INFO, "Delete VM {0} for template {1} not found",
-                    new Object[] {agentComputer, agentComputer.getNode().getTemplate().getTemplateName()});
+                    new Object[] {agentComputer, agentNode.getTemplate().getTemplateName()});
             Computer.threadPoolForRemoting.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -73,7 +80,7 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         }
 
         if (retentionMillis != 0
-                && System.currentTimeMillis() - agentComputer.getNode().getCreationTime() > retentionMillis) {
+                && System.currentTimeMillis() - agentNode.getCreationTime() > retentionMillis) {
             //exceed retention limit
             LOGGER.log(Level.INFO, "Delete VM {0} for timeout", agentComputer);
             Computer.threadPoolForRemoting.submit(new Runnable() {
@@ -125,11 +132,13 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
         int count = 0;
         List<Computer> computers = Arrays.asList(Jenkins.getInstance().getComputers());
         for (Computer computer : computers) {
-            if (computer instanceof AzureVMComputer
-                    && ((AzureVMComputer) computer).getNode() != null
-                    && TemplateUtil.checkSame(((AzureVMComputer) computer).getNode().getTemplate(),
-                        agentComputer.getNode().getTemplate())) {
-                count++;
+            if (computer instanceof AzureVMComputer) {
+                AzureVMAgent patternAgentNode = ((AzureVMComputer) computer).getNode();
+                AzureVMAgent templateAgentNode = agentComputer.getNode();
+                if (patternAgentNode != null && templateAgentNode != null
+                        && TemplateUtil.checkSame(patternAgentNode.getTemplate(), templateAgentNode.getTemplate())) {
+                    count++;
+                }
             }
         }
 

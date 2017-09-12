@@ -28,7 +28,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class AzureVMCloudRetensionStrategy extends RetentionStrategy<AzureVMComputer> {
+public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStrategy {
+    private static final long serialVersionUID = 15743279621L;
 
     // Configured idle termination
     private final long idleTerminationMillis;
