@@ -460,6 +460,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             diskType = Constants.DISK_UNMANAGED;
         }
 
+        if (retentionStrategy == null) {
+            retentionStrategy = new AzureVMCloudRetensionStrategy(retentionTimeInMin);
+        }
+
         return this;
     }
 
