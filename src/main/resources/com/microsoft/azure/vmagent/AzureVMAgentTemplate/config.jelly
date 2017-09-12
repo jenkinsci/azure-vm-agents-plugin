@@ -205,6 +205,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

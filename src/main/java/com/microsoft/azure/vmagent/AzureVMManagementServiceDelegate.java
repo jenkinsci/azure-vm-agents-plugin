@@ -62,6 +62,7 @@ import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.model.Descriptor.FormException;
+import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpSlaveAgentProtocol;
 import org.apache.commons.io.IOUtils;
@@ -1757,7 +1758,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param virtualNetworkName
      * @param virtualNetworkResourceGroupName
      * @param subnetName
-     * @param retentionTimeInMin
+     * @param retentionStrategy
      * @param jvmOptions
      * @param returnOnSingleError
      * @param resourceGroupName
@@ -1788,7 +1789,7 @@ public final class AzureVMManagementServiceDelegate {
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
             String subnetName,
-            String retentionTimeInMin,
+            RetentionStrategy<AzureVMComputer> retentionStrategy,
             String jvmOptions,
             String resourceGroupName,
             boolean returnOnSingleError,
@@ -1809,7 +1810,7 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyRetentionTime(retentionTimeInMin);
+            validationResult = verifyRetentionTime(retentionStrategy);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -2008,12 +2009,11 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyRetentionTime(String retentionTimeInMin) {
+    public static String verifyRetentionTime(RetentionStrategy<AzureVMComputer> retentionStrategy) {
         try {
-            if (StringUtils.isBlank(retentionTimeInMin)) {
+            if (retentionStrategy == null) {
                 return Messages.Azure_GC_Template_RT_Null_Or_Empty();
             } else {
-                AzureUtil.isNonNegativeInteger(retentionTimeInMin);
                 return Constants.OP_SUCCESS;
             }
         } catch (IllegalArgumentException e) {

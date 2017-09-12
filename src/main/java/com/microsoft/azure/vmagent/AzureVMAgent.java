@@ -209,7 +209,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 label,
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
-                //new AzureVMCloudRetensionStrategy(retentionTimeInMin),
                 retentionStrategy,
                 Collections.<NodeProperty<?>>emptyList(),
                 cloudName,
@@ -220,7 +219,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 shutdownOnIdle,
                 eligibleForReuse,
                 deploymentName,
-                template.getRetentionTimeInMin(), //Note
+                template.getRetentionTimeInMin(),
                 initScript,
                 azureCredentialsId,
                 servicePrincipal,
@@ -280,7 +279,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     /**
-     * @param cleanUpReason
+     * @param cleanUpAction
      */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular

@@ -190,7 +190,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String agentWorkspace;
 
-    private final int retentionTimeInMin;
+    private int retentionTimeInMin;
 
     private String virtualNetworkName;
 
@@ -255,13 +255,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            String retentionTimeInMin,
+            RetentionStrategy<AzureVMComputer> retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
             String templateStatusDetails,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails,
-            RetentionStrategy<AzureVMComputer> retentionStrategy) {
+            boolean doNotUseMachineIfInitFails) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -309,17 +308,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
-        if (StringUtils.isBlank(retentionTimeInMin) || !retentionTimeInMin.matches(Constants.REG_EX_DIGIT)) {
-            this.retentionTimeInMin = Constants.DEFAULT_IDLE_TIME;
-        } else {
-            this.retentionTimeInMin = Integer.parseInt(retentionTimeInMin);
-        }
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
         // Reset the template verification status.
         this.templateVerified = false;
-        final int poolsize = 3;
         this.retentionStrategy = retentionStrategy;
 
         // Forms data which is not persisted
@@ -847,7 +840,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 virtualNetworkName,
                 virtualNetworkResourceGroupName,
                 subnetName,
-                retentionTimeInMin + "",
+                retentionStrategy,
                 jvmOptions,
                 getResourceGroupName(),
                 true,
@@ -1075,19 +1068,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckRetentionTimeInMin(@QueryParameter String value) {
-            if (StringUtils.isNotBlank(value)) {
-                String result = AzureVMManagementServiceDelegate.verifyRetentionTime(value);
-
-                if (result.equalsIgnoreCase(Constants.OP_SUCCESS)) {
-                    return FormValidation.ok();
-                } else {
-                    return FormValidation.error(result);
-                }
-            }
-            return FormValidation.ok();
-        }
-
         public FormValidation doCheckAdminPassword(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidPassword(value)) {
@@ -1142,7 +1122,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions,
                 @QueryParameter String imageReferenceType) {
 
@@ -1196,8 +1175,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "subnetName: {24};\n\t"
                             + "privateIP: {25};\n\t"
                             + "nsgName: {26};\n\t"
-                            + "retentionTimeInMin: {27};\n\t"
-                            + "jvmOptions: {28};",
+                            + "jvmOptions: {27};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -1226,7 +1204,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             subnetName,
                             usePrivateIP,
                             nsgName,
-                            retentionTimeInMin,
                             jvmOptions});
 
             // First validate the subscription info.  If it is not correct,
@@ -1261,7 +1238,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     virtualNetworkName,
                     virtualNetworkResourceGroupName,
                     subnetName,
-                    retentionTimeInMin,
+                    new AzureVMCloudRetensionStrategy(0),
                     jvmOptions,
                     resourceGroupName,
                     false,

@@ -104,12 +104,11 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().getNsgName(),
                 fluent.getWorkspace(),
                 fluent.getAdvancedImage().getJvmOptions(),
-                "0",
+                fluent.getRetentionStrategy(),
                 fluent.isShutdownOnIdle(),
                 fluent.getAdvancedImage().isTemplateDisabled(),
                 null,
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
-                fluent.getRetentionStrategy());
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails());
     }
 }

@@ -27,8 +27,9 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
 
     @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
+        retentionInHours = retentionInHours >= 0 ? retentionInHours : 0;
         this.retentionMillis = TimeUnit2.HOURS.toMillis(retentionInHours);
-        this.poolSize = poolSize > 0 ? poolSize : 0;
+        this.poolSize = poolSize >= 0 ? poolSize : 0;
     }
 
     @Override
