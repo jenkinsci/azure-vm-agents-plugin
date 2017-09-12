@@ -54,7 +54,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     }
 
     public void provisionNodes(AzureVMCloud cloud, AzureVMAgentTemplate template, int newAgents) {
-        cloud.doProvision(newAgents, new ArrayList<NodeProvisioner.PlannedNode>(), template);
+        cloud.doProvision(newAgents, new ArrayList<NodeProvisioner.PlannedNode>(), template, true);
     }
 
     @Override

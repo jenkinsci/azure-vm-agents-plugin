@@ -52,6 +52,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
 import org.kohsuke.stapler.AncestorInPath;
@@ -772,10 +773,17 @@ public class AzureVMCloud extends Cloud {
         return plannedNodes;
     }
 
+    public void doProvision(final int numberOfNewAgents,
+                            List<PlannedNode> plannedNodes,
+                            final AzureVMAgentTemplate template) {
+        doProvision(numberOfNewAgents, plannedNodes, template, false);
+    }
+
     public void doProvision(
             final int numberOfNewAgents,
             List<PlannedNode> plannedNodes,
-            final AzureVMAgentTemplate template) {
+            final AzureVMAgentTemplate template,
+            final boolean isProvisionOutside) {
         Callable<AzureVMDeploymentInfo> callableTask = new Callable<AzureVMDeploymentInfo>() {
             @Override
             public AzureVMDeploymentInfo call() throws AzureCloudException {
@@ -789,6 +797,7 @@ public class AzureVMCloud extends Cloud {
                 }
             }
         };
+
         final Future<AzureVMDeploymentInfo> deploymentFuture = getThreadPool().submit(callableTask);
 
         for (int i = 0; i < numberOfNewAgents; i++) {
@@ -806,6 +815,9 @@ public class AzureVMCloud extends Cloud {
                             // Wait for the future to complete
                             try {
                                 PoolLock.provisionLock(template);
+                                if (isProvisionOutside) {
+                                    CloudStatistics.ProvisioningListener.get().onStarted(provisioningId);
+                                }
                                 AzureVMDeploymentInfo info = null;
                                 try {
                                     info = deploymentFuture.get();
@@ -878,7 +890,17 @@ public class AzureVMCloud extends Cloud {
 
                                     throw AzureCloudException.create(e);
                                 }
+
+                                if (isProvisionOutside) {
+                                    CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
+                                }
+
                                 return agent;
+                            } catch (AzureCloudException e) {
+                                if (isProvisionOutside) {
+                                    CloudStatistics.ProvisioningListener.get().onFailure(provisioningId, e);
+                                }
+                                throw e;
                             } finally {
                                 PoolLock.provisionUnlock(template);
                             }

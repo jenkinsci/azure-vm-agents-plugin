@@ -28,7 +28,7 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
     @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
         this.retentionMillis = TimeUnit2.HOURS.toMillis(retentionInHours);
-        this.poolSize = poolSize > 1 ? poolSize : 1;
+        this.poolSize = poolSize > 0 ? poolSize : 0;
     }
 
     @Override
@@ -71,7 +71,8 @@ public class AzureVMCloudPoolRetentionStrategy extends RetentionStrategy<AzureVM
             return 1;
         }
 
-        if (System.currentTimeMillis() - agentComputer.getNode().getCreationTime() > retentionMillis) {
+        if (retentionMillis != 0
+                && System.currentTimeMillis() - agentComputer.getNode().getCreationTime() > retentionMillis) {
             //exceed retention limit
             LOGGER.log(Level.INFO, "Delete VM {0} for timeout", agentComputer);
             Computer.threadPoolForRemoting.submit(new Runnable() {
