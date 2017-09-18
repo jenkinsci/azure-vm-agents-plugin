@@ -52,8 +52,12 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 6. Specify the Azure Storage account name or select an existing Storage account name for storing VM's OS disk.
    If you choose to create a new one but leave the name blank the plugin will generate a name for you.
 7. Select the disk type between Managed Disk (recommended) or Unmanaged Disk.
-8. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent.
-   Specify 0 if you do not want idle agents to be deleted automatically.
+8. Select the retention strategy
+   * Idle Retention Strategy. You can specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
+   * Pool Retention Strategy. This retention strategy help you to maintain amount of agents in a specific number. You can specify the retention time in hour and the pool size.
+   Retention time define the time of hour before automatically deleting since the agent created. And the pool size define the agent pool size you want to maintain.
+   If you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template.
+   But if you only change your Retention Time or Pool Size, we will only scale in, scale out or do nothing for you.
 9. Select a usage option:
    * If "Utilize this node as much as possible" is selected, then Jenkins may run any job on the agent as long as it is available.
    * If "Only build jobs with label expressions matching this node" is selected,

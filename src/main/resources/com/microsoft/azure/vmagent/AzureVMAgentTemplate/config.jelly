@@ -54,10 +54,7 @@
                 <f:select/>
             </f:entry>
 
-            <f:entry title="${%RetentionTimeInMin}" field="retentionTimeInMin"
-                     help="/plugin/azure-vm-agents/help-retentionTimeInMin.html">
-                <f:textbox default="60"/>
-            </f:entry>
+            <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}" descriptors="${descriptor.azureVMRetentionStrategy}"/>
 
             <f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"
                      help="/plugin/azure-vm-agents/help-shutdownOnIdle.html">
@@ -208,6 +205,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

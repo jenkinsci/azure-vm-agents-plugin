@@ -803,7 +803,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.isShutdownOnIdle(),
                     false,
                     deploymentName,
-                    template.getRetentionTimeInMin(),
+                    template.getRetentionStrategy(),
                     (String) properties.get("initScript"),
                     azureCloud.getAzureCredentialsId(),
                     azureCloud.getServicePrincipal(),
@@ -812,7 +812,8 @@ public final class AzureVMManagementServiceDelegate {
                     null,
                     template.getResourceGroupName(),
                     (Boolean) properties.get("executeInitScriptAsRoot"),
-                    (Boolean) properties.get("doNotUseMachineIfInitFails"));
+                    (Boolean) properties.get("doNotUseMachineIfInitFails"),
+                    template);
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);
@@ -1756,7 +1757,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param virtualNetworkName
      * @param virtualNetworkResourceGroupName
      * @param subnetName
-     * @param retentionTimeInMin
+     * @param retentionStrategy
      * @param jvmOptions
      * @param returnOnSingleError
      * @param resourceGroupName
@@ -1787,7 +1788,7 @@ public final class AzureVMManagementServiceDelegate {
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
             String subnetName,
-            String retentionTimeInMin,
+            AzureVMCloudBaseRetentionStrategy retentionStrategy,
             String jvmOptions,
             String resourceGroupName,
             boolean returnOnSingleError,
@@ -1808,7 +1809,7 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyRetentionTime(retentionTimeInMin);
+            validationResult = verifyRetentionTime(retentionStrategy);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -2007,12 +2008,11 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyRetentionTime(String retentionTimeInMin) {
+    public static String verifyRetentionTime(AzureVMCloudBaseRetentionStrategy retentionStrategy) {
         try {
-            if (StringUtils.isBlank(retentionTimeInMin)) {
+            if (retentionStrategy == null) {
                 return Messages.Azure_GC_Template_RT_Null_Or_Empty();
             } else {
-                AzureUtil.isNonNegativeInteger(retentionTimeInMin);
                 return Constants.OP_SUCCESS;
             }
         } catch (IllegalArgumentException e) {

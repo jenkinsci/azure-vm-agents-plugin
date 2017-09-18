@@ -43,6 +43,7 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
+import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
@@ -54,6 +55,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.servlet.ServletException;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -71,7 +73,8 @@ import java.util.logging.Logger;
  *
  * @author Suresh Nallamilli
  */
-public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
+public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, Serializable {
+    private static final long serialVersionUID = 1574325691L;
 
     public enum ImageReferenceType {
         UNKNOWN,
@@ -161,11 +164,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private String builtInImage;
 
-    private final Boolean isInstallGit;
+    private final boolean isInstallGit;
 
-    private final Boolean isInstallMaven;
+    private final boolean isInstallMaven;
 
-    private final Boolean isInstallDocker;
+    private final boolean isInstallDocker;
 
     private final String image;
 
@@ -181,7 +184,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String agentLaunchMethod;
 
-    private Boolean preInstallSsh;
+    private boolean preInstallSsh;
 
     private final String initScript;
 
@@ -189,7 +192,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private final String agentWorkspace;
 
-    private final int retentionTimeInMin;
+    private int retentionTimeInMin;
 
     private String virtualNetworkName;
 
@@ -219,6 +222,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
 
     private boolean doNotUseMachineIfInitFails;
 
+    private AzureVMCloudBaseRetentionStrategy retentionStrategy;
+
     @DataBoundConstructor
     public AzureVMAgentTemplate(
             String templateName,
@@ -234,15 +239,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             String noOfParallelJobs,
             String usageMode,
             String builtInImage,
-            Boolean isInstallGit,
-            Boolean isInstallMaven,
-            Boolean isInstallDocker,
+            boolean isInstallGit,
+            boolean isInstallMaven,
+            boolean isInstallDocker,
             String osType,
             String imageTopLevelType,
             boolean imageReference,
             ImageReferenceTypeClass imageReferenceTypeClass,
             String agentLaunchMethod,
-            Boolean preInstallSsh,
+            boolean preInstallSsh,
             String initScript,
             String credentialsId,
             String virtualNetworkName,
@@ -252,7 +257,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            String retentionTimeInMin,
+            AzureVMCloudBaseRetentionStrategy retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
             String templateStatusDetails,
@@ -305,16 +310,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
-        if (StringUtils.isBlank(retentionTimeInMin) || !retentionTimeInMin.matches(Constants.REG_EX_DIGIT)) {
-            this.retentionTimeInMin = Constants.DEFAULT_IDLE_TIME;
-        } else {
-            this.retentionTimeInMin = Integer.parseInt(retentionTimeInMin);
-        }
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
         // Reset the template verification status.
         this.templateVerified = false;
+        this.retentionStrategy = retentionStrategy;
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -325,7 +326,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         String builtInImage = template.getBuiltInImage();
         Map<String, String> defaultProperties =
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
-        Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
+        boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
 
         templateProperties.put("imagePublisher",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
@@ -409,14 +410,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
     }
 
 
-    public Boolean isType(String type) {
+    public boolean isType(String type) {
         if (this.imageReferenceType == null && type.equals("reference")) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.imageReferenceType);
     }
 
-    public Boolean isTopLevelType(String type) {
+    public boolean isTopLevelType(String type) {
         if (this.imageTopLevelType == null && type.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             return true;
         }
@@ -454,9 +455,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             diskType = Constants.DISK_UNMANAGED;
         }
 
-        if (preInstallSsh == null) {
-            preInstallSsh = true;
+        if (retentionStrategy == null) {
+            retentionStrategy = new AzureVMCloudRetensionStrategy(retentionTimeInMin);
         }
+
         return this;
     }
 
@@ -513,7 +515,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
     }
 
-    public Boolean isStorageAccountNameReferenceTypeEquals(String type) {
+    public boolean isStorageAccountNameReferenceTypeEquals(String type) {
         if (this.storageAccountNameReferenceType == null && type.equalsIgnoreCase("new")) {
             return true;
         }
@@ -558,15 +560,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return builtInImage;
     }
 
-    public Boolean getIsInstallGit() {
+    public boolean getIsInstallGit() {
         return isInstallGit;
     }
 
-    public Boolean getIsInstallMaven() {
+    public boolean getIsInstallMaven() {
         return isInstallMaven;
     }
 
-    public Boolean getIsInstallDocker() {
+    public boolean getIsInstallDocker() {
         return isInstallDocker;
     }
 
@@ -578,7 +580,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return osType;
     }
 
-    public Boolean getPreInstallSsh() {
+    public boolean getPreInstallSsh() {
         return preInstallSsh;
     }
 
@@ -776,6 +778,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         return labelDataSet;
     }
 
+    public AzureVMCloudBaseRetentionStrategy getRetentionStrategy() {
+        return retentionStrategy;
+    }
+
     /**
      * Provision new agents using this template.
      *
@@ -836,7 +842,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 virtualNetworkName,
                 virtualNetworkResourceGroupName,
                 subnetName,
-                retentionTimeInMin + "",
+                retentionStrategy,
                 jvmOptions,
                 getResourceGroupName(),
                 true,
@@ -850,6 +856,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
         @Override
         public String getDisplayName() {
             return "";
+        }
+
+        public List<Descriptor<RetentionStrategy<?>>> getAzureVMRetentionStrategy() {
+            List<Descriptor<RetentionStrategy<?>>> list = new ArrayList<>();
+            list.add(AzureVMCloudRetensionStrategy.DESCRIPTOR);
+            list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
+            return list;
         }
 
         public ListBoxModel doFillVirtualMachineSizeItems(
@@ -1057,19 +1070,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckRetentionTimeInMin(@QueryParameter String value) {
-            if (StringUtils.isNotBlank(value)) {
-                String result = AzureVMManagementServiceDelegate.verifyRetentionTime(value);
-
-                if (result.equalsIgnoreCase(Constants.OP_SUCCESS)) {
-                    return FormValidation.ok();
-                } else {
-                    return FormValidation.error(result);
-                }
-            }
-            return FormValidation.ok();
-        }
-
         public FormValidation doCheckAdminPassword(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidPassword(value)) {
@@ -1124,7 +1124,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String retentionTimeInMin,
                 @QueryParameter String jvmOptions,
                 @QueryParameter String imageReferenceType) {
 
@@ -1178,8 +1177,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             + "subnetName: {24};\n\t"
                             + "privateIP: {25};\n\t"
                             + "nsgName: {26};\n\t"
-                            + "retentionTimeInMin: {27};\n\t"
-                            + "jvmOptions: {28};",
+                            + "jvmOptions: {27};",
                     new Object[]{
                             servicePrincipal.getSubscriptionId(),
                             (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
@@ -1208,7 +1206,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                             subnetName,
                             usePrivateIP,
                             nsgName,
-                            retentionTimeInMin,
                             jvmOptions});
 
             // First validate the subscription info.  If it is not correct,
@@ -1243,7 +1240,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate> {
                     virtualNetworkName,
                     virtualNetworkResourceGroupName,
                     subnetName,
-                    retentionTimeInMin,
+                    new AzureVMCloudRetensionStrategy(0),
                     jvmOptions,
                     resourceGroupName,
                     false,
