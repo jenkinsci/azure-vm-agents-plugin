@@ -2,36 +2,35 @@ package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class PoolLock {
 
-    private static Set<AzureVMAgentTemplate> templateProvisionLock = new HashSet<>();
-    private static Set<AzureVMAgentTemplate> templateDeprovisionLock = new HashSet<>();
+    private static Map<AzureVMAgentTemplate, Integer> templateProvisionLock = new HashMap<>();
 
     public static synchronized void provisionLock(AzureVMAgentTemplate template) {
-        templateProvisionLock.add(template);
+        Integer value = templateProvisionLock.get(template);
+        if (value == null) {
+            value = 0;
+        }
+        templateProvisionLock.put(template, value + 1);
     }
 
     public static synchronized void provisionUnlock(AzureVMAgentTemplate template) {
-        templateProvisionLock.remove(template);
+        Integer value = templateProvisionLock.get(template);
+        if (value != null) {
+            value = value - 1;
+            if (value > 0) {
+                templateProvisionLock.put(template, value);
+            } else {
+                templateProvisionLock.remove(template);
+            }
+        }
     }
 
     public static synchronized boolean checkProvisionLock(AzureVMAgentTemplate template) {
-        return templateProvisionLock.contains(template);
-    }
-
-    public static synchronized void deprovisionLock(AzureVMAgentTemplate template) {
-        templateDeprovisionLock.add(template);
-    }
-
-    public static synchronized void deprovisionUnlock(AzureVMAgentTemplate template) {
-        templateDeprovisionLock.remove(template);
-    }
-
-    public static synchronized boolean checkDeprovisionLock(AzureVMAgentTemplate template) {
-        return templateDeprovisionLock.contains(template);
+        return templateProvisionLock.containsKey(template);
     }
 
     private PoolLock() {
