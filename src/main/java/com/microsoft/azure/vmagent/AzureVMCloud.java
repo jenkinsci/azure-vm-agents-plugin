@@ -637,8 +637,8 @@ public class AzureVMCloud extends Cloud {
                                         "AzureVMCloud: createProvisionedAgent: VM available: {0}",
                                         resource);
 
-                                final VirtualMachine vm =
-                                        azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
+                                final VirtualMachine vm = azureClient.virtualMachines()
+                                        .getByResourceGroup(resourceGroupName, resource);
                                 final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
 
                                 AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(
@@ -908,8 +908,6 @@ public class AzureVMCloud extends Cloud {
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
                                 }
-
-
                                 return agent;
                             } catch (AzureCloudException e) {
                                 if (isProvisionOutside) {
@@ -1099,11 +1097,11 @@ public class AzureVMCloud extends Cloud {
             return new StandardListBoxModel()
                     .withEmptySelection()
                     .withAll(
-                    CredentialsProvider.lookupCredentials(
-                            AzureCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+                            CredentialsProvider.lookupCredentials(
+                                    AzureCredentials.class,
+                                    owner,
+                                    ACL.SYSTEM,
+                                    Collections.<DomainRequirement>emptyList()));
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)

@@ -24,6 +24,7 @@ import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,17 +85,20 @@ public class TokenCache {
         return Constants.PLUGIN_NAME + "/" + version + "/" + instanceId;
     }
 
-    public static ApplicationTokenCredentials get(AzureCredentials.ServicePrincipal servicePrincipal) {
+    public static ApplicationTokenCredentials get(final AzureCredentials.ServicePrincipal servicePrincipal) {
         return new ApplicationTokenCredentials(
                 servicePrincipal.getClientId(),
                 servicePrincipal.getTenant(),
                 servicePrincipal.getClientSecret(),
-                new AzureEnvironment(
-                        servicePrincipal.getAuthenticationEndpoint(),
-                        servicePrincipal.getServiceManagementURL(),
-                        servicePrincipal.getResourceManagerEndpoint(),
-                        servicePrincipal.getGraphEndpoint()
-                )
+                new AzureEnvironment(new HashMap<String, String>() {
+                    {
+                        this.put("activeDirectoryEndpointUrl", servicePrincipal.getAuthenticationEndpoint());
+                        this.put("activeDirectoryGraphResourceId", servicePrincipal.getGraphEndpoint());
+                        this.put("managementEndpointUrl", servicePrincipal.getServiceManagementURL());
+                        this.put("resourceManagerEndpointUrl", servicePrincipal.getResourceManagerEndpoint());
+                        this.put("activeDirectoryResourceId", "https://management.core.windows.net/");
+                    }
+                })
         );
     }
 

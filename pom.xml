@@ -17,7 +17,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <azuresdk.version>1.0.0-beta5</azuresdk.version>
+        <azuresdk.version>1.2.1</azuresdk.version>
         <azure-storage.version>4.4.0</azure-storage.version>
         <jackson.version>2.7.2</jackson.version>
         <jenkins.version>1.653</jenkins.version>
@@ -27,6 +27,7 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>1.2</azure-credentials.version>
         <azure-commons.version>0.1.1</azure-commons.version>
+        <guava.version>19.0</guava.version>
     </properties>
 
     <licenses>
@@ -84,6 +85,12 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-commons</artifactId>
             <version>${azure-commons.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
@@ -206,6 +213,7 @@
                     <pluginFirstClassLoader>true</pluginFirstClassLoader>
                     <maskClasses>
                         com.microsoft.azure.management.
+                        com.microsoft.rest.
                         com.google.common.
                     </maskClasses>
                 </configuration>
