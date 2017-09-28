@@ -1,155 +1,159 @@
-# azure-vm-agents
+# Azure VM Agents Plugin
 
+A Jenkins Plugin to create Jenkins agents in Azure Virtual Machines (via Azure ARM template).
 
-Jenkins Plugin to create Azure VM agents (on Azure ARM).
-
-Supports creating
+Supported features:
 
 1. Windows Agents on Azure Cloud using SSH and JNLP
-  * For windows images to launch via SSH, the image needs to be preconfigured with ssh.
-   For preparing custom windows image, refer to [Azure documentation](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
+   * For Windows images to launch via SSH, the image needs to be preconfigured with SSH.
+   * For preparing custom windows image, refer to [Azure documentation](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
 2. Linux Agents on Azure Cloud using SSH
-  * For preparing custom linux image, refer to [Azure documentation]( http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
+   * For preparing custom linux image, refer to [Azure documentation]( http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
 
-## Pre-requirements
-Register and authorize your client application.
+## How to Install
 
-Retrieve and use Client ID and Client Secret to be sent to Azure AD during authentication.
+You can install/update this plugin in Jenkins update center (Manage Jenkins -> Manage Plugins, search Azure VM Agents Plugin).
 
-Refer to
-  * [Bash Script for creating a service principal](https://github.com/Azure/azure-devops-utils/blob/master/bash/create-service-principal.sh)
-  * [Further guidance on creating a service principal](https://github.com/Azure/azure-devops-utils#user-content-create-service-principal)
-  * [Adding, Updating, and Removing an Application](https://msdn.microsoft.com/en-us/library/azure/dn132599.aspx)
-  * [Register a client app](https://msdn.microsoft.com/en-us/dn877542.asp)
+You can also manually install the plugin if you want to try the latest feature before it's officially released.
+To manually install the plugin:
 
-## How to install the Azure VM Agents plugin
-1. Within the Jenkins dashboard, click Manage Jenkins.
-2. In the Manage Jenkins page, click Manage Plugins.
-3. Click the Available tab.
-4. In the "Cluster Management and Distributed Build" section, select the Azure VM Agents plugin.
-5. Click either “Install without restart” or “Download now and install after restart”.
-6. Restart Jenkins if necessary.
+1. Clone the repo and build:
+   ```
+   mvn package
+   ```
+2. Open your Jenkins dashboard, go to Manage Jenkins -> Manage Plugins.
+3. Go to Advanced tab, under Upload Plugin section, click Choose File.
+4. Select `azure-vm-agents.hpi` in `target` folder of your repo, click Upload.
+5. Restart your Jenkins instance after install is completed.
 
-## Configure the plugin : Azure profile configuration
-1. Within the Jenkins dashboard, click Manage Jenkins --> Configure System --> Scroll to the bottom of the page
-   and find the section with the dropdown "Add new cloud" --> click on it and select "Microsoft Azure VM Agents"
-2. Select an existing account from the Azure Credentials drop down or add new "Microsoft Azure Service Principal" credentials in the Credentials Management page by filling out the Subscription ID, Client ID, Client Secret and the OAuth 2.0 Token Endpoint.
-3. Click on “Verify configuration” to make sure that the profile configuration is done correctly.
-4. Save and continue with the template configuration (See instructions below)
+## Prerequisites
 
-## Configure the plugin : Template configuration.
-1. Click on the "Add" option to add a template. A template is used to define an Azure VM Agent configuration, like
-   its VM  size, its region, or its retention time.
-2. Provide a name for your new template. This field is not used for agent provisioning.
-3. For the description, provide any remarks you wish about this template configuration. This field is not
-   used for agent provisioning.
-4. For the label, provide any valid string. E.g. “windows” or “linux”. The label defined in a template can be
-   used during a job configuration.
-5. Select the desired region from the combo box.
-6. Select the desired VM size.
-7. Select the Storage type, either Standard_LRS or Premium_LRS. Note that some VM size only support Standard_LRS.
-8. Specify the Azure Storage account name or select a existing Storage account name. Alternatively you can leave it blank to let Jenkins create a storage
-   account by using a generated unique name.
-9. Select the disk type between Managed Disk or Unmanaged Disk. <b>We recommend Managed Disk</b>.
-10. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically
-   deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
-11. Select a usage option:
-  * If "Utilize this node as much as possible" is selected, then Jenkins may run any job on the agent as long as it
-    is available.
-  * If "Leave this node for tied jobs only" is selected, Jenkins will only build a project (or job) on this node
-    when that project specifically was tied to that node. This allows a agent to be reserved for certain kinds of jobs.
-12. Select built-in image or use advanced image configurations.
-  * When using built-in image, you can select Windows Server 2016 or Ubuntu 16.04 with some pre-installed tools.
-  * When using advanced image configurations. Choose between two possible alternatives:
-    * Use a custom user image (provide image URL and os type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
-    * Give an image reference (provide image reference by publisher, offer, sku and version).
-13. For the launch method, select SSH or JNLP.
-  * Linux agents can be launched only using SSH.
-  * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then
-    check Pre-Install SSH in Windows Slave or image needs to be custom-prepared with an SSH server pre-installed. We recommend to use SSH rather than JNLP. For you need less init codes and get much clearer logs <br>
+To use this plugin to create VM agents, first you need to have an Azure Service Principal in your Jenkins instance.
 
+1. Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli?toc=%2fazure%2fazure-resource-manager%2ftoc.json) or [Azure portal](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal).
+2. Open Jenkins dashboard, go to Credentials, add a new Microsoft Azure Service Principal with the credential information you just created.
 
-  When using the JNLP launch option, ensure the following:
-  * Jenkins URL (Manage Jenkins --> configure system --> Jenkins Location)
-    * The URL needs to be reachable by the Azure agent, so make sure to configure any relevant                                      firewall rules accordingly.
-  * TCP port for JNLP agent agents (Manage Jenkins --> configure global security --> Enable security --> TCP port for JNLP agents).
-    * The TCP port needs to be reachable from the Azure agent launched using JNLP. It is recommended to use a fixed port so         that any necessary firewall exceptions can be made.
+## Configure the Plugin
 
-      If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and, in case of
-      Windows, add the necessary firewall rules inside virtual machine (Run --> firewall.cpl).
-14. For the Init script, provide a script to install at least a Java runtime if the image does not have Java pre-installed.<br/>
-    We prepare sample for Linux via SSH, Windows via SSH and Windows via JNLP. Please find details in help button.
-      
-      If you hit the [storage scalability limits](https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets) for your custom images on the storage account where the VHD resides, you should consider using the agent's [temporary storage](https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines) or copy your custom image in multiple storage accounts and use multiple VM templates with the same label within the same agent cloud.
+### Add a New Azure VM Agents Cloud
+1. Within the Jenkins dashboard, click Manage Jenkins -> Configure System -> Scroll to the bottom of the page
+   and find the section with the dropdown "Add a new cloud" -> click on it and select "Microsoft Azure VM Agents"
+2. Provide a name for the cloud (plugin will generate one for you if you leave it empty, but it's recommended to give it a meaningful name).
+3. Select an existing account from the Azure Credentials dropdown or add new "Microsoft Azure Service Principal" credentials in the Credentials Management page by filling out the Subscription ID, Client ID, Client Secret and the OAuth 2.0 Token Endpoint.
+4. Click on “Verify configuration” to make sure that the profile configuration is done correctly.
+5. Save and continue with the template configuration (See instructions below).
 
-      For more details about how to prepare custom images, refer to the below links:
-      * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
-      * [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
+### Add a New Azure VM Agent Template
+1. Click the "Add" in "Add Azure Virtual Machine Template" to add a template. A template is used to define an Azure VM Agent configuration, like its VM size, region, or retention time.
+2. Provide meaningful name and description for your new template.
+3. Provide one or more meaningful labels, e.g. "Windows" or "Linux". Label is used by job to determine which agents will be selected to run the job, so please make sure you give it a meaningful label.
+4. Select the desired region, and VM size from dropdown list.
+5. Select the Storage Account Type, either Standard_LRS or Premium_LRS. Note that some VM size only supports Standard_LRS.
+6. Specify the Azure Storage account name or select an existing Storage account name for storing VM's OS disk.
+   If you choose to create a new one but leave the name blank the plugin will generate a name for you.
+7. Select the disk type between Managed Disk (recommended) or Unmanaged Disk.
+8. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent.
+   Specify 0 if you do not want idle agents to be deleted automatically.
+9. Select a usage option:
+   * If "Utilize this node as much as possible" is selected, then Jenkins may run any job on the agent as long as it is available.
+   * If "Only build jobs with label expressions matching this node" is selected,
+     Jenkins will only build a project on this node when that project is restricted to certain nodes using a label expression, and that expression matches this node's name and/or labels.
+     This allows an agent to be reserved for certain kinds of jobs.
+10. Select a built-in image, you can choose between Windows Server 2016 and Ubuntu 16.04 LTS. You can also choose to install some tools on the agent, including Git, Maven and Docker (JDK is always installed).
+11. Specify Admin Credentials (a username/password credentials), this is the username and password if you want to log into the agent VM.
+12. Click Verify Template to make sure all your configurations are correct, then Save.
 
-15. Specify a user name and a password as per the rules explained in the help text.
-16. Make sure to validate the template configuration by clicking on the link “Verify Template”. This will connect
-      to your Azure account to verify the correctness of the supplied information.
+### Run Jenkins Jobs on Azure VM Agents
+After you configured an Azure VM agent template, when you run a new Jenkins job, Jenkins will automatically provision a new Azure VM only if there is no executor available.
 
-## Template Configuration for Ubuntu images.
-1. Configure an Azure profile and Template as per the above instructions.
-2. If the init script is expected to take a long time to complete, it is recommended to use a custom-prepared Ubuntu
-   image that has the required software pre-installed, including a Java runtime
-3. For platform images, you may specify an Init script as below to install Java (may vary based on OS):
+A more common scenario is you want to restrict some jobs to always be running on a particular VM agent instead of Jenkins master. To achieve that:
+1. Open your Jenkins project, under General, check "Restrict where this project can be run".
+2. In Label Expression, fill in the label you assigned to your VM template.
+3. Save and run the job, you'll see your job is running on the VM agent even if Jenkins master is free.
 
+For how to select agent in pipeline, refer to this [doc](https://jenkins.io/doc/book/pipeline/syntax/#agent).
+
+## Use a Custom VM Image
+The built-in image only has a clean Windows or Ubuntu OS and some tools like Git and Maven installed, in some cases, you may want to have more customization on the image. To use a custom image:
+1. In Image Configuration, select "Use Advanced Image Configurations".
+2. Choose between two possible alternatives:
+   * Use a custom user image (provide image URL and OS type - note, your custom image has to be available into the same storage account in which you are going to create agent nodes);
+   * Using any marketplace image by specifying an image reference (provide image reference by publisher, offer, sku and version). You can get the publisher, offer and sku by looking at the ARM template of that image.
+3. For the launch method, select SSH or JNLP.
+   * Linux agents can be launched only using SSH.
+   * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then check Pre-Install SSH in Windows Slave or image needs to be custom-prepared with an SSH server pre-installed.
+
+   We recommend to use SSH rather than JNLP, for you need less init codes and get much clearer logs.
+   > When using the JNLP launch option, ensure the following:
+   > * Jenkins URL (Manage Jenkins -> Configure System -> Jenkins Location)
+   > * The URL needs to be reachable by the Azure agent, so make sure to configure any relevant firewall rules accordingly.
+   > * TCP port for JNLP agent agents (Manage Jenkins -> Configure Global Security -> Enable security -> TCP port for JNLP agents).
+   > * The TCP port needs to be reachable from the Azure agent launched using JNLP. It is recommended to use a fixed port so that any necessary firewall exceptions can be made.
+   > 
+   > If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and,
+   > in case of Windows, add the necessary firewall rules inside virtual machine (Run -> firewall.cpl).
+
+4. For the Initialization Script, you can provide a script that will be executed after the VM is provisioned. This allows to install any app/tool you need on the agent. Please be noted you need to at least install JRE if the image does not have Java pre-installed.
+   We prepared a sample script for Linux via SSH, Windows via SSH and Windows via JNLP. Please find details in help button.
+
+   If you hit the [storage scalability limits](https://docs.microsoft.com/en-us/azure/storage/storage-scalability-targets) for your custom images on the storage account where the VHD resides, you should consider using the agent's [temporary storage](https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines) or copy your custom image in multiple storage accounts and use multiple VM templates with the same label within the same agent cloud.
+
+   For more details about how to prepare custom images, refer to the below links:
+   * [Capture Windows Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-capture-image-windows-server/)
+   * [Capture Linux Image](http://azure.microsoft.com/en-us/documentation/articles/virtual-machines-linux-capture-image/)
+
+   Init script should finish in 20 minutes (this time can be configured in Deployment Timeout setting of Azure Profile Configuration). It's not recommended to run complex init script, if the init script is expected to take a long time to complete, it is recommended to use a custom-prepared image.
+
+## Advanced Configurations
+If you choose Use Advanced Image Configurations, you can click on Advanced button where you can find more VM configurations:
+1. Virtual Network Name, Virtual Network Resource Group Name and Subnet name: by default the VM does not belong to any virtual network, you can provide one if you want the VM to be in a virtual network for network security. Please be noted the virtual network must exist.
+2. Make VM agent IP private: by default the plugin will create a public IP for the VM so it's public accessible on internet. Check this option if you don't want the public IP to be created.
+   > Make VM agent IP private can make the VM more secure, but if you configured to use SSH to launch agent, Jenkins master needs to be able to access the VM. So in this case you need to also specify virtual network and subnet name so the agent and Jenkins master are in the same subnet.
+
+3. Network Security Group Name: add the VM to a network security group.
+4. JVM Options: specify JVM options.
+5. Number of Executors: specify the number concurrent builds that a VM agent can run at the same time.
+6. Disable template: disable this template temporarily.
+
+## Configure VM Template using Groovy Script
+In some cases you may want to configure the VM template using script so it can be automated instead of manually configure it in UI. Jenkins supports groovy script that can automates such operation. Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
+
+```groovy
+import com.microsoft.azure.vmagent.*;
+
+def myVMTemplate = new AzureVMAgentTemplate(
+  "ubuntu", // template name
+  null,
+  "ubuntu", // template label
+  "West US 2", // VM region
+  "Standard_DS2_v2", // VM size
+  "new", // create a new storage account
+  "Standard_LRS", // storage account type
+  null, null,
+  "managed", // use managed disk
+  null,
+  "Use this node as much as possible", // usage mode
+  "Ubuntu 16.04 LTS", // use ubuntu built-in image
+  false, false, false, null,
+  "basic", // use basic (built-in) image
+  false,
+  new AzureVMAgentTemplate.ImageReferenceTypeClass(null, null, null, null, null),
+  null, false, null,
+  "<your admin credential ID>", // admin credentials
+  null, null, null, false, null, null, null, null, false, false, null, true, true
+)
+
+def myCloud = new AzureVMCloud(
+  "myAzure", // cloud name
+  "",
+  "<your azure credential ID>", // Azure credential ID
+  null, null,
+  "new", // create a new resource group
+  null, null,
+  [ myVMTemplate ]
+)
+
+Jenkins.getInstance().clouds.add(myCloud)
 ```
-      #Install Java
-      sudo apt-get -y update
-      sudo apt-get install -y openjdk-8-jre
-```
 
-## Template configuration for Windows images with launch method JNLP.
-1. Make sure to follow the instructions specified above for JNLP.
-2. If the Jenkins master does not have a security configuration, leave the Init script blank for the default
-   script to execute on the agent.
-3. If the Jenkins master has a security configuration, then refer to the script at
-   https://raw.githubusercontent.com/Azure/azure-devops-utils/master/powershell/Jenkins-Windows-Init-Script-no-secrets.ps1
-
-   At a minimum, the script needs to be modified with the Jenkins user name and API token.
-   To get the API token, click on your username --> configure --> show api token<br>
-
-   The below statement in the script needs to be modified:
-   $credentials="username:apitoken"
-
-## Create a Jenkins job that runs on a Linux agent node on Azure
-1. In the Jenkins dashboard, click New Item/Job.
-2. Enter a name for the task/Job you are creating.
-3. For the project type, select Freestyle project and click OK.
-4. In the task configuration page, select Restrict where this project can be run.
-5. In the Label Expression field, enter label given during template configuration.
-6. In the Build section, click Add build step and select Execute shell.
-7. In the text area that appears, paste the following script.
-
- ````
-  # Clone from git repo
-  currentDir="$PWD"
-  if [ -e sample ]; then
-    cd sample
-    git pull origin master
-  else
-    git clone https://github.com/snallami/sample.git
-  fi
-
- # change directory to project
- cd $currentDir/sample/ACSFilter
-
- #Execute build task
- ant
- ````
-8. Save Job and click on Build now.
-9. Jenkins will create a agent node on Azure cloud using the template created in the previous section and
-   execute the script you specified in the build step for this task.
-10. Logs are available @ Manage Jenkins --> System logs --> All Jenkins logs.
-11. Once the node is provisined in Azure, which typically takes about 5 to 7 minutes, node gets added to Jenkins.
-
-## Provision an agent without a public IP
-> **Warning!** This will make the VM agents inaccessible, except by the Jenkins Master.
-1. Click the 'Advanced' button in your Azure VM Agent template configuration
-1. Update the Virtual Network Name and Subnet Name to match with the ones of the Jenkins master. This is required because otherwise the Jenkins master can't reach the agent.
-1. Enable the 'Make VM agent IP private' check box.
-1. If you need to access the provisioned agent, you can attach a public IP by going to the Nodes Management page ( < jenkins_master_url >/computer) and configure the desired node.
-1. Click 'Attach a public IP' and wait for the IP to get provisioned.
+This sample creates VM template with a built-in image, for more advanced usage, please look at the constructor of [AzureVMAgentTemplate](src/main/java/com/microsoft/azure/vmagent/AzureVMAgentTemplate.java).

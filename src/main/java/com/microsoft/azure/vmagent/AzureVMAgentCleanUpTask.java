@@ -225,18 +225,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
     }
 
-    public List<String> getValidVMs(final String cloudName) {
+    public List<String> getValidVMs() {
         List<String> vms = new ArrayList<>();
         Jenkins instance = Jenkins.getInstance();
         if (instance != null) {
             for (Computer computer : instance.getComputers()) {
                 if (computer instanceof AzureVMComputer) {
-                    AzureVMComputer azureComputer = (AzureVMComputer) computer;
-                    AzureVMAgent agent = azureComputer.getNode();
-                    if (agent != null && agent.getCloudName().equals(cloudName)) {
-                        final String vmName = computer.getName();
-                        vms.add(vmName);
-                    }
+                    vms.add(computer.getName());
                 }
             }
         }
@@ -249,7 +244,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             final String cloudName,
             final DeploymentRegistrar deploymentRegistrar) {
         try {
-            final List<String> validVMs = getValidVMs(cloudName);
+            final List<String> validVMs = getValidVMs();
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             //can't use listByTag because for some reason that method strips all the tags from the outputted resources (https://github.com/Azure/azure-sdk-for-java/issues/1436)
             final PagedList<GenericResource> resources = azureClient.genericResources().listByGroup(resourceGroup);
