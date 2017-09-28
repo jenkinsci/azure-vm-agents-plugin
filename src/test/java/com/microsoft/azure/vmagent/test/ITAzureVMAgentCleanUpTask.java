@@ -88,7 +88,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         final List<String> emptyValidVMsList = Arrays.asList(new Object[]{});
         try {
             AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
-            when(cleanUpTask.getValidVMs()).thenReturn(emptyValidVMsList);
+            when(cleanUpTask.getValidVMs(cloudName)).thenReturn(emptyValidVMsList);
 
             final DeploymentRegistrar deploymentRegistrarMock_nonMatching1 = mock(DeploymentRegistrar.class);
             when(deploymentRegistrarMock_nonMatching1.getDeploymentTag()).thenReturn(nonMatchingTagValue1);
@@ -129,7 +129,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
             final List<String> validVMs = Arrays.asList(new Object[]{deployment.getVmBaseName() + "0"});
 
             AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
-            when(cleanUpTask.getValidVMs()).thenReturn(validVMs);
+            when(cleanUpTask.getValidVMs(cloudName)).thenReturn(validVMs);
 
             cleanUpTask.cleanLeakedResources(testEnv.azureResourceGroup, servicePrincipal, cloudName, deploymentRegistrarMock_matching); //should remove second deployment
 

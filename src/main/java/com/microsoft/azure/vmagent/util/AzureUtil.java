@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,20 +21,19 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import hudson.security.ACL;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-
 public final class AzureUtil {
 
-    private final static String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
+    private static final String STORAGE_ACCOUNT_NAME_PATTERN = "^[a-z0-9]+$";
 
-    private final static String NOT_A_NUMBER_FORMAT = ".*[^0-9].*";
+    private static final String NOT_A_NUMBER_FORMAT = ".*[^0-9].*";
 
     /* Regular expression for valid cloud name */
     public static final String VAL_CLOUD_SERVICE_NAME = "^(([a-z\\d]((-(?=[a-z\\d]))|([a-z\\d])){2,62}))$";
@@ -47,9 +46,11 @@ public final class AzureUtil {
     public static final String VAL_UPPER_CASE_REGEX = "(?=.*[A-Z]).{1,}";
 
 
-    public static final String VAL_SPECIAL_CHAR_REGEX = "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
+    public static final String VAL_SPECIAL_CHAR_REGEX =
+            "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
 
-    public static final String VAL_PASSWORD_REGEX = "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']*{8,123})";
+    public static final String VAL_PASSWORD_REGEX =
+            "([0-9a-zA-Z@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']{8,123})";
 
     public static final String VAL_ADMIN_USERNAME = "([a-zA-Z0-9_-]{3,15})";
 
@@ -87,7 +88,8 @@ public final class AzureUtil {
      * Validates storage account name.
      */
     public static boolean validateStorageAccountName(String storageAccountName) {
-        if (storageAccountName.length() < STORAGE_ACCOUNT_MIN_LENGTH || storageAccountName.length() > STORAGE_ACCOUNT_MAX_LENGTH) {
+        if (storageAccountName.length() < STORAGE_ACCOUNT_MIN_LENGTH
+                || storageAccountName.length() > STORAGE_ACCOUNT_MAX_LENGTH) {
             return false;
         }
         if (!storageAccountName.matches(STORAGE_ACCOUNT_NAME_PATTERN)) {
@@ -113,7 +115,7 @@ public final class AzureUtil {
      * @param cloudServiceName Name of the Windows Azure cloud service
      * @return true if cloudServiceName name is valid else returns false
      */
-    public static boolean validateCloudServiceName(final String cloudServiceName) {
+    public static boolean validateCloudServiceName(String cloudServiceName) {
         boolean isValid = false;
 
         if (cloudServiceName != null) {
@@ -163,7 +165,9 @@ public final class AzureUtil {
             return false;
         }
 
-        return value.length() >= PASSWORD_MIN_LENGTH && value.matches(VAL_PASSWORD_REGEX) && value.length() < PASSWORD_MAX_LENGTH;
+        return value.length() >= PASSWORD_MIN_LENGTH
+                && value.matches(VAL_PASSWORD_REGEX)
+                && value.length() < PASSWORD_MAX_LENGTH;
     }
 
     public static boolean isValidUserName(String value) {
@@ -271,7 +275,7 @@ public final class AzureUtil {
      * @param resourceGroupName Resource group name
      * @return Name of the cloud
      */
-    public static String getCloudName(final String subscriptionId, final String resourceGroupName) {
+    public static String getCloudName(String subscriptionId, String resourceGroupName) {
         return Constants.AZURE_CLOUD_PREFIX + subscriptionId + "-" + resourceGroupName;
     }
 
@@ -280,7 +284,8 @@ public final class AzureUtil {
      *
      * @return A shortened template name if required, the full name otherwise
      */
-    private static String getShortenedTemplateName(String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
+    private static String getShortenedTemplateName(
+            String templateName, String usageType, int dateDigits, int extraSuffixDigits) {
         // We'll be adding on 10 characters for the deployment ID (which is a formatted date)
         // Plus an index of the
         // The template name should already be valid at least, so check that first
@@ -378,9 +383,12 @@ public final class AzureUtil {
 
     public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) throws AzureCloudException {
         // Grab the pass
-        StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(
-                StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
-                Collections.<DomainRequirement>emptyList()),
+        StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                        StandardUsernamePasswordCredentials.class,
+                        Jenkins.getInstance(),
+                        ACL.SYSTEM,
+                        Collections.<DomainRequirement>emptyList()),
                 CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {
@@ -439,7 +447,7 @@ public final class AzureUtil {
         /*  Expects a string in this format: "<id>/<timestamp>".
             If id is ommited it will be replaced with an empty string
             If timestamp is ommited or it's a negative number than it will be replaced with 0 */
-        public DeploymentTag(final String tag) {
+        public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
 
@@ -465,19 +473,20 @@ public final class AzureUtil {
             return instanceId + "/" + Long.toString(timestamp);
         }
 
-        // two tags match if they have the same instance id and the timestamp diff is greater than Constants.AZURE_DEPLOYMENT_TIMEOUT
-        public boolean matches(final DeploymentTag rhs) {
+        // two tags match if they have the same instance id and the timestamp diff is greater than
+        // Constants.AZURE_DEPLOYMENT_TIMEOUT
+        public boolean matches(DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }
 
-        public boolean matches(final DeploymentTag rhs, long timeout) {
+        public boolean matches(DeploymentTag rhs, long timeout) {
             if (!instanceId.equals(rhs.instanceId)) {
                 return false;
             }
             return Math.abs(timestamp - rhs.timestamp) > timeout;
         }
 
-        public boolean isFromSameInstance(final DeploymentTag rhs) {
+        public boolean isFromSameInstance(DeploymentTag rhs) {
             return instanceId.equals(rhs.instanceId);
         }
 

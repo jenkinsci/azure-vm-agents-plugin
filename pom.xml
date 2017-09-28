@@ -26,7 +26,7 @@
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>1.2</azure-credentials.version>
-        <azure-commons.version>1.0-SNAPSHOT</azure-commons.version>
+        <azure-commons.version>0.1.1</azure-commons.version>
     </properties>
 
     <licenses>
@@ -154,6 +154,11 @@
             <artifactId>cloud-stats</artifactId>
             <version>0.11</version>
         </dependency>
+        <dependency>
+            <groupId>albertxavier</groupId>
+            <artifactId>jenkins-dynamic-databinding-ui-control-library</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <scm>
@@ -177,6 +182,11 @@
             <id>com.springsource.repository.bundles.external</id>
             <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
             <url>http://repository.springsource.com/maven/bundles/external</url>
+        </repository>
+        <repository>
+            <id>tags</id>
+            <name>Custom Tags</name>
+            <url>https://raw.githubusercontent.com/t-wanl/Jenkins-Dynamic-Databinding-UI-Control-Library/master/jar/</url>
         </repository>
     </repositories>
 
@@ -224,7 +234,7 @@
                         <id>validate</id>
                         <phase>validate</phase>
                         <goals>
-                            <goal>checkstyle</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -232,14 +242,19 @@
                     <configLocation>checkstyle.xml</configLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
                     <!--
                     Exclude the generated sources.
 
                     We cannot use pattern like **/generated-sources/**/* here as the generated source directory
                     belongs to the base directory, which the excludes pattern doesn't apply to.
+
+                    TODO: Fix style for AzureVMManagementServiceDelegate and AzureVMAgentSSHLauncher
                     -->
-                    <excludes>com/microsoftopentechnologies/windowsazurestorage/Messages.java</excludes>
+                    <excludes>
+                        com/microsoft/azure/vmagent/Messages.java,
+                        com/microsoft/azure/vmagent/AzureVMManagementServiceDelegate.java,
+                        com/microsoft/azure/vmagent/remote/AzureVMAgentSSHLauncher.java
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

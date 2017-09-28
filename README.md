@@ -52,8 +52,12 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 6. Specify the Azure Storage account name or select an existing Storage account name for storing VM's OS disk.
    If you choose to create a new one but leave the name blank the plugin will generate a name for you.
 7. Select the disk type between Managed Disk (recommended) or Unmanaged Disk.
-8. Specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent.
-   Specify 0 if you do not want idle agents to be deleted automatically.
+8. Select the retention strategy
+   * Idle Retention Strategy. You can specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
+   * Pool Retention Strategy. This retention strategy help you to maintain amount of agents in a specific number. You can specify the retention time in hour and the pool size.
+   Retention time define the time of hour before automatically deleting since the agent created. And the pool size define the agent pool size you want to maintain.
+   If you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template.
+   But if you only change your Retention Time or Pool Size, we will only scale in, scale out or do nothing for you.
 9. Select a usage option:
    * If "Utilize this node as much as possible" is selected, then Jenkins may run any job on the agent as long as it is available.
    * If "Only build jobs with label expressions matching this node" is selected,
@@ -119,41 +123,102 @@ If you choose Use Advanced Image Configurations, you can click on Advanced butto
 In some cases you may want to configure the VM template using script so it can be automated instead of manually configure it in UI. Jenkins supports groovy script that can automates such operation. Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
 
 ```groovy
+//Configure cloud with built-in image
+import com.microsoft.azure.vmagent.builders.*;
+
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addNewTemplate()
+    .withName("ubuntu")
+    .withLabels("ubuntu")
+    .withLocation("East US")
+    .withVirtualMachineSize("Standard_DS2_v2")
+    .withNewStorageAccount("<your Storage Account Name>")
+    .addNewBuiltInImage()
+        .withBuiltInImageName("Ubuntu 16.14 LTS")
+        .withInstallGit(true)
+        .withInstallMaven(true)
+        .withInstallDocker(true)
+    .endBuiltInImage()
+    .withAdminCredential("<your admin credential ID>")
+.endTemplate()
+.build();
+
+Jenkins.getInstance().clouds.add(myCloud);
+```
+```groovy
+//Configure cloud with mutli-template of advanced images
+import com.microsoft.azure.vmagent.builders.*;
+
+def firstTemplate = new AzureVMTemplateBuilder()
+.withName("first-template")
+.withLabels("ubuntu")
+.withLocation("East US")
+.withVirtualMachineSize("Standard_DS2_v2")
+.withNewStorageAccount("<your Storage Account Name>")
+.addNewAdvancedImage()
+    .withReferenceImage("Canonical", "UbuntuServer", "16.04-LTS", "latest")
+    .withInitScript("sudo add-apt-repository ppa:openjdk-r/ppa -y \n" +
+                    "sudo apt-get -y update \n" +
+                    "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
+.endAdvancedImage()
+.withAdminCredential("<your admin credential ID>")
+.build();
+
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addToTemplates(firstTemplate)
+.addNewTemplate()
+    .withName("second-template")
+    .withLabels("windows")
+    .withLocation("Southeast Asia")
+    .withVirtualMachineSize("Standard_DS2_v2")
+    .withNewStorageAccount("<your Storage Account Name>")
+    .addNewAdvancedImage()
+        .withReferenceImage("MicrosoftWindowsServer", "WindowsServer", "2016-Datacenter", "latest")
+    .endAdvancedImage()
+    .withAdminCredential("<your admin credential ID>")
+.endTemplate()
+.build();
+
+Jenkins.getInstance().clouds.add(myCloud);
+```
+```groovy
+//inherit existing template
+import com.microsoft.azure.vmagent.builders.*;
 import com.microsoft.azure.vmagent.*;
 
-def myVMTemplate = new AzureVMAgentTemplate(
-  "ubuntu", // template name
-  null,
-  "ubuntu", // template label
-  "West US 2", // VM region
-  "Standard_DS2_v2", // VM size
-  "new", // create a new storage account
-  "Standard_LRS", // storage account type
-  null, null,
-  "managed", // use managed disk
-  null,
-  "Use this node as much as possible", // usage mode
-  "Ubuntu 16.04 LTS", // use ubuntu built-in image
-  false, false, false, null,
-  "basic", // use basic (built-in) image
-  false,
-  new AzureVMAgentTemplate.ImageReferenceTypeClass(null, null, null, null, null),
-  null, false, null,
-  "<your admin credential ID>", // admin credentials
-  null, null, null, false, null, null, null, null, false, false, null, true, true
-)
+AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
+.withLocation("Southeast Asia")
+.withVirtualMachineSize("Standard_DS2_v2")
+.withStorageAccountType("Premium_LRS")
+.withNewStorageAccount("<your Storage Account Name>")
+    .addNewAdvancedImage()
+         .withReferenceImage("Canonical", "UbuntuServer", "16.04-LTS", "latest")
+    .endAdvancedImage()
+    .withAdminCredential("<your admin credential ID>")
+.build();
 
-def myCloud = new AzureVMCloud(
-  "myAzure", // cloud name
-  "",
-  "<your azure credential ID>", // Azure credential ID
-  null, null,
-  "new", // create a new resource group
-  null, null,
-  [ myVMTemplate ]
-)
+def myCloud = new AzureVMCloudBuilder()
+.withCloudName("myAzure")
+.withAzureCredentialsId("<your azure credential ID>")
+.withNewResourceGroupName("<your Resource Group Name>")
+.addNewTemplateLike(baseTemplate)
+    .withName("inherit")
+    .withLabels("inherit")
+    .addNewAdvancedImageLike(baseTemplate.getAdvancedImageInside())
+        .withInitScript("sudo add-apt-repository ppa:openjdk-r/ppa -y \n" +
+                        "sudo apt-get -y update \n" +
+                        "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
+    .endAdvancedImage()
+.endTemplate()
+.build();
 
-Jenkins.getInstance().clouds.add(myCloud)
+Jenkins.getInstance().clouds.add(myCloud);
+
 ```
-
-This sample creates VM template with a built-in image, for more advanced usage, please look at the constructor of [AzureVMAgentTemplate](src/main/java/com/microsoft/azure/vmagent/AzureVMAgentTemplate.java).
+This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).

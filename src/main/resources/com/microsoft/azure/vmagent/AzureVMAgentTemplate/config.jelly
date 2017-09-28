@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:c="/lib/credentials"
-         xmlns:f="/lib/form">
+         xmlns:f="/lib/form" xmlns:ui="/ui">
     <table width="100%">
         <f:section title="${%General_Configuration}">
             <f:entry title="${%Template_Name}" field="templateName"
@@ -37,27 +37,24 @@
             </f:entry>
 
             <f:entry title="${%Storage_Account_Name}">
-                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new')}" inline="true">
+                <ui:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new')}" inline="true">
                     <f:entry field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:textbox/>
                     </f:entry>
-                </f:radioBlock>
+                </ui:radioBlock>
 
-                <f:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
+                <ui:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
                     <f:entry field="existingStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>
-                </f:radioBlock>
+                </ui:radioBlock>
             </f:entry>
 
             <f:entry title="${%Disk_Type}" field="diskType" help="/plugin/azure-vm-agents/help-diskType.html">
                 <f:select/>
             </f:entry>
 
-            <f:entry title="${%RetentionTimeInMin}" field="retentionTimeInMin"
-                     help="/plugin/azure-vm-agents/help-retentionTimeInMin.html">
-                <f:textbox default="60"/>
-            </f:entry>
+            <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}" descriptors="${descriptor.azureVMRetentionStrategy}"/>
 
             <f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"
                      help="/plugin/azure-vm-agents/help-shutdownOnIdle.html">
@@ -70,8 +67,8 @@
         </f:section>
 
         <f:section title="${%Image_Configuration}">
-            <f:radioBlock name="imageTopLevelType" value="basic" title="${%Built_In_Image}" checked="${instance == null || instance.isTopLevelType('basic')}"
-                          inline="true">
+            <ui:radioBlock name="imageTopLevelType" value="basic" title="${%Built_In_Image}" checked="${instance == null || instance.isTopLevelType('basic')}"
+                           inline="true">
                 <f:entry field="builtInImage">
                     <f:select/>
                 </f:entry>
@@ -89,10 +86,10 @@
                         <f:checkbox/>
                     </f:entry>
                 </f:section>
-            </f:radioBlock>
+            </ui:radioBlock>
 
-            <f:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
-                <f:dropdownList name="imageReferenceTypeClass">
+            <ui:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
+                <ui:dropdownList selectedName="imageReferenceType" name="imageReferenceTypeClass">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
                         <f:entry title="${%Image}" field="image" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
@@ -116,7 +113,7 @@
                             <f:textbox default="latest"/>
                         </f:entry>
                     </f:dropdownListBlock>
-                </f:dropdownList>
+                </ui:dropdownList>
 
                 <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
                     <f:select/>
@@ -128,7 +125,7 @@
                 </f:entry>
 
                 <f:entry title="${%Pre_Install_Ssh}" field="preInstallSsh"
-                                         help="/plugin/azure-vm-agents/help-preInstallSsh.html">
+                         help="/plugin/azure-vm-agents/help-preInstallSsh.html">
                     <f:checkbox default="true"/>
                 </f:entry>
 
@@ -192,7 +189,7 @@
                         <f:textarea/>
                     </f:entry>
                 </f:advanced>
-            </f:radioBlock>
+            </ui:radioBlock>
         </f:section>
 
         <f:section title="${%Admin_Credentials}">
@@ -208,6 +205,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,retentionTimeInMin,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>
