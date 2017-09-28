@@ -245,10 +245,16 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         if (instance != null) {
             for (Computer computer : instance.getComputers()) {
                 if (computer instanceof AzureVMComputer) {
-                    vms.add(computer.getName());
+                    AzureVMComputer azureComputer = (AzureVMComputer) computer;
+                    AzureVMAgent agent = azureComputer.getNode();
+                    if (agent != null && agent.getCloudName().equals(cloudName)) {
+                        final String vmName = computer.getName();
+                        vms.add(vmName);
+                    }
                 }
             }
         }
+
         return vms;
     }
 

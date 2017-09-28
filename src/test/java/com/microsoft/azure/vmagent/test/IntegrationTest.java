@@ -41,6 +41,7 @@ import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.TokenCache;
+import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
 import org.junit.After;
 import org.junit.Before;
@@ -165,6 +166,8 @@ public class IntegrationTest {
             testEnv.graphEndpoint);
         customTokenCache = TokenCache.getInstance(servicePrincipal);
         clearAzureResources();
+
+        AppInsightsGlobalConfig.get().setAppInsightsEnabled(false);
     }
 
     @After

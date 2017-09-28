@@ -16,7 +16,11 @@
 package com.microsoft.azure.vmagent.remote;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.jcraft.jsch.*;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
@@ -39,7 +43,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jvnet.localizer.Localizable;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
