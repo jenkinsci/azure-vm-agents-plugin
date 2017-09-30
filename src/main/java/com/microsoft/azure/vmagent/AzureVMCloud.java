@@ -1107,6 +1107,7 @@ public class AzureVMCloud extends Cloud {
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
                 throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Resource Group ---", "");
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
