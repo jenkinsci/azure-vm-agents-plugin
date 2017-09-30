@@ -1081,17 +1081,21 @@ public class AzureVMCloud extends Cloud {
         }
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
-            return new StandardListBoxModel().withAll(
+            StandardListBoxModel listBoxModel = new StandardListBoxModel();
+            listBoxModel.add("--- Select Azure Service Principal ---", "");
+            listBoxModel.withAll(
                     CredentialsProvider.lookupCredentials(
                             AzureCredentials.class,
                             owner,
                             ACL.SYSTEM,
                             Collections.<DomainRequirement>emptyList()));
+            return listBoxModel;
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
                 throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Resource Group ---", "");
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
