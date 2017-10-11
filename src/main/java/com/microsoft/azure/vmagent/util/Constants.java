@@ -217,6 +217,11 @@ public final class Constants {
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
     /**
+     * AI constants.
+     */
+    public static final String AI_VM_AGENT = "VMAgent";
+
+    /**
      * Default parameters.
      */
     public static final int DEFAULT_IDLE_RETENTION_TIME = 60;

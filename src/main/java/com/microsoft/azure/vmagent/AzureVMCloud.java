@@ -28,6 +28,7 @@ import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
+import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -65,6 +66,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -594,6 +596,7 @@ public class AzureVMCloud extends Cloud {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
                 final Azure azureClient = Azure.configure()
+                        .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
                         .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
                         .withUserAgent(TokenCache.getUserAgent())
                         .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
@@ -634,8 +637,8 @@ public class AzureVMCloud extends Cloud {
                                         "AzureVMCloud: createProvisionedAgent: VM available: {0}",
                                         resource);
 
-                                final VirtualMachine vm =
-                                        azureClient.virtualMachines().getByGroup(resourceGroupName, resource);
+                                final VirtualMachine vm = azureClient.virtualMachines()
+                                        .getByResourceGroup(resourceGroupName, resource);
                                 final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
 
                                 AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(
@@ -741,6 +744,14 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
+        // AI events to send
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
+        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID,
+                template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
+        properties.put("AgentOS", template.getOsType());
+
         // provision new nodes if required
         if (numberOfAgents > 0) {
             try {
@@ -764,12 +775,15 @@ public class AzureVMCloud extends Cloud {
                         Level.SEVERE,
                         String.format("Failure provisioning agents about '%s'", template.getLabels()),
                         e);
+                properties.put("Message", e.getMessage());
+                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ProvisionFailed", properties);
             }
         }
 
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: provision: asynchronous provision finished, returning {0} planned node(s)",
                 plannedNodes.size());
+        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Provision", properties);
         return plannedNodes;
     }
 
@@ -894,7 +908,6 @@ public class AzureVMCloud extends Cloud {
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
                                 }
-
                                 return agent;
                             } catch (AzureCloudException e) {
                                 if (isProvisionOutside) {
@@ -1081,12 +1094,14 @@ public class AzureVMCloud extends Cloud {
         }
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
-            return new StandardListBoxModel().withAll(
-                    CredentialsProvider.lookupCredentials(
-                            AzureCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+            return new StandardListBoxModel()
+                    .withEmptySelection()
+                    .withAll(
+                            CredentialsProvider.lookupCredentials(
+                                    AzureCredentials.class,
+                                    owner,
+                                    ACL.SYSTEM,
+                                    Collections.<DomainRequirement>emptyList()));
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)

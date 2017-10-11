@@ -971,7 +971,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-                List<StorageAccount> storageAccountList = azureClient.storageAccounts().listByGroup(resourceGroupName);
+                List<StorageAccount> storageAccountList =
+                        azureClient.storageAccounts().listByResourceGroup(resourceGroupName);
                 for (StorageAccount storageAccount : storageAccountList) {
                     if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {
                         model.add(storageAccount.name());

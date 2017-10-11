@@ -153,8 +153,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //    being accepted by Azure.
                 // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
                 // of retries.  If we hit 0, we remove the deployment from our list.
-                Deployment deployment =
-                        azureClient.deployments().getByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                Deployment deployment = azureClient.deployments().
+                        getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 if (deployment == null) {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
@@ -183,14 +183,17 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                                     + "Failed deployment older than {0} minutes, deleting",
                             failTimeoutInMinutes);
                     // Delete the deployment
-                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
-                } else if (state.equalsIgnoreCase("succeeded") && diffTimeInMinutes > successTimeoutInMinutes) {
+                    azureClient.deployments()
+                            .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+                } else if (state.equalsIgnoreCase("succeeded")
+                        && diffTimeInMinutes > successTimeoutInMinutes) {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: "
                                     + "Succesfull deployment older than {0} minutes, deleting",
                             successTimeoutInMinutes);
                     // Delete the deployment
-                    azureClient.deployments().deleteByGroup(info.getResourceGroupName(), info.getDeploymentName());
+                    azureClient.deployments()
+                            .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 } else {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");
@@ -254,6 +257,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
         }
+
         return vms;
     }
 
@@ -267,7 +271,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
-            final PagedList<GenericResource> resources = azureClient.genericResources().listByGroup(resourceGroup);
+            final PagedList<GenericResource> resources = azureClient.genericResources()
+                    .listByResourceGroup(resourceGroup);
 
             if (resources == null || resources.isEmpty()) {
                 return;
