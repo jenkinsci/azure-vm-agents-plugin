@@ -331,8 +331,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         if (computer != null) {
             // Set the machine temporarily offline machine with an offline reason.
             computer.setTemporarilyOffline(true, OfflineCause.create(reason));
-            // Reset the "by user" bit.
-            computer.setSetOfflineByUser(false);
         }
         setCleanUpAction(action);
         setCleanUpReason(reason);

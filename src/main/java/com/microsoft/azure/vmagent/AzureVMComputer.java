@@ -37,8 +37,6 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
 
     private final ProvisioningActivity.Id provisioningId;
 
-    private boolean setOfflineByUser = false;
-
     public AzureVMComputer(AzureVMAgent agent) {
         super(agent);
         this.provisioningId = agent.getId();
@@ -88,11 +86,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     }
 
     public boolean isSetOfflineByUser() {
-        return setOfflineByUser;
-    }
-
-    public void setSetOfflineByUser(boolean setOfflineByUser) {
-        this.setOfflineByUser = setOfflineByUser;
+        return (this.getOfflineCause() instanceof OfflineCause.UserCause);
     }
 
     /**
@@ -103,35 +97,6 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     @Override
     public void waitUntilOnline() throws InterruptedException {
         super.waitUntilOnline();
-    }
-
-    /**
-     * We use temporary offline settings to do investigation of machines.
-     * To avoid deletion, we assume this came through a user call and set a bit.  Where
-     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
-     * after calling setTemporarilyOffline
-     *
-     * @param setOffline
-     * @param oc
-     */
-    @Override
-    public void setTemporarilyOffline(boolean setOffline, OfflineCause oc) {
-        setSetOfflineByUser(setOffline);
-        super.setTemporarilyOffline(setOffline, oc);
-    }
-
-    /**
-     * We use temporary offline settings to do investigation of machines.
-     * To avoid deletion, we assume this came through a user call and set a bit.  Where
-     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
-     * after calling setTemporarilyOffline
-     *
-     * @param setOffline
-     */
-    @Override
-    public void setTemporarilyOffline(boolean setOffline) {
-        setSetOfflineByUser(setOffline);
-        super.setTemporarilyOffline(setOffline);
     }
 
     @Nullable
