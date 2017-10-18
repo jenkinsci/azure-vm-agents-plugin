@@ -21,7 +21,6 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,24 +33,15 @@ public class TokenCache {
 
     private static TokenCache cache = null;
 
+    private Azure client = null;
+
     private final AzureCredentials.ServicePrincipal credentials;
 
     public static TokenCache getInstance(AzureCredentials.ServicePrincipal servicePrincipal) {
         synchronized (TSAFE) {
             if (cache == null) {
                 cache = new TokenCache(servicePrincipal);
-            } else if (cache.credentials == null
-                    || !StringUtils.isEmpty(cache.credentials.getSubscriptionId())
-                    || !cache.credentials.getSubscriptionId().equals(servicePrincipal.getSubscriptionId())
-                    || !StringUtils.isEmpty(cache.credentials.getClientId())
-                    || !cache.credentials.getClientId().equals(servicePrincipal.getClientId())
-                    || !StringUtils.isEmpty(cache.credentials.getClientSecret())
-                    || !cache.credentials.getClientSecret().equals(servicePrincipal.getClientSecret())
-                    || !StringUtils.isEmpty(cache.credentials.getTenant())
-                    || !cache.credentials.getTenant().equals(servicePrincipal.getTenant())
-                    || !StringUtils.isEmpty(cache.credentials.getServiceManagementURL())
-                    || !cache.credentials.getServiceManagementURL().equals(
-                    servicePrincipal.getServiceManagementURL())) {
+            } else if (cache.credentials != servicePrincipal) {
                 cache = new TokenCache(servicePrincipal);
             }
         }
@@ -98,13 +88,23 @@ public class TokenCache {
     }
 
     public Azure getAzureClient() throws AzureCloudException {
+        if (client != null) {
+            return client;
+        }
         try {
-            return Azure
-                    .configure()
-                    .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-                    .withUserAgent(getUserAgent())
-                    .authenticate(get(credentials))
-                    .withSubscription(credentials.getSubscriptionId());
+            synchronized (this) {
+                if (client != null) {
+                    return client;
+                } else {
+                    client = Azure
+                            .configure()
+                            .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                            .withUserAgent(getUserAgent())
+                            .authenticate(get(credentials))
+                            .withSubscription(credentials.getSubscriptionId());
+                    return client;
+                }
+            }
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
