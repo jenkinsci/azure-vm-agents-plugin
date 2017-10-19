@@ -46,9 +46,8 @@ public class TokenCache {
                 cache = new TokenCache(servicePrincipal);
                 cache.client = cache.getAzureClient();
             }
+            return cache;
         }
-
-        return cache;
     }
 
     protected TokenCache(AzureCredentials.ServicePrincipal servicePrincipal) {
@@ -95,7 +94,7 @@ public class TokenCache {
     public Azure getAzureClient() throws AzureCloudException {
         if (client == null) {
             try {
-                synchronized (TSAFE) {
+                synchronized (this) {
                     if (client == null) {
                         client = Azure
                                 .configure()
