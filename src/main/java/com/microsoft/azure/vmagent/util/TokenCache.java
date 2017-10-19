@@ -35,7 +35,7 @@ public class TokenCache {
 
     private static TokenCache cache = null;
 
-    private Azure client = null;
+    private volatile Azure client = null;
 
     private final AzureCredentials.ServicePrincipal credentials;
 
@@ -93,26 +93,23 @@ public class TokenCache {
     }
 
     public Azure getAzureClient() throws AzureCloudException {
-        if (client != null) {
-            return client;
-        }
-        try {
-            synchronized (this) {
-                if (client != null) {
-                    return client;
-                } else {
-                    client = Azure
-                            .configure()
-                            .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
-                            .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-                            .withUserAgent(getUserAgent())
-                            .authenticate(get(credentials))
-                            .withSubscription(credentials.getSubscriptionId());
-                    return client;
+        if (client == null) {
+            try {
+                synchronized (TSAFE) {
+                    if (client == null) {
+                        client = Azure
+                                .configure()
+                                .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
+                                .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
+                                .withUserAgent(getUserAgent())
+                                .authenticate(get(credentials))
+                                .withSubscription(credentials.getSubscriptionId());
+                    }
                 }
+            } catch (Exception e) {
+                throw AzureCloudException.create(e);
             }
-        } catch (Exception e) {
-            throw AzureCloudException.create(e);
         }
+        return client;
     }
 }
