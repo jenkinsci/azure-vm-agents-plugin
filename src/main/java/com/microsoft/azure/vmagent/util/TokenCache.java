@@ -39,12 +39,12 @@ public class TokenCache {
 
     private final AzureCredentials.ServicePrincipal credentials;
 
-    public static TokenCache getInstance(AzureCredentials.ServicePrincipal servicePrincipal) {
+    public static TokenCache getInstance(AzureCredentials.ServicePrincipal servicePrincipal)
+            throws AzureCloudException {
         synchronized (TSAFE) {
-            if (cache == null) {
+            if (cache == null || cache.credentials != servicePrincipal) {
                 cache = new TokenCache(servicePrincipal);
-            } else if (cache.credentials != servicePrincipal) {
-                cache = new TokenCache(servicePrincipal);
+                cache.client = cache.getAzureClient();
             }
         }
 
