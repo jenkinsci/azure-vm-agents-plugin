@@ -110,6 +110,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         if (agentComputer.isIdle() && agentNode != null) {
             if (System.currentTimeMillis() - agentComputer.getIdleStartMilliseconds() > IDLE_LIMIT_MILLIS) {
                 try {
+                    agentNode.blockCleanUpAction();
                     agentNode.deprovision(Messages._Idle_Timeout_Delete());
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO,

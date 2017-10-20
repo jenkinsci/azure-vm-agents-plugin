@@ -828,7 +828,7 @@ public class AzureVMCloud extends Cloud {
                         public Node call() throws AzureCloudException {
                             // Wait for the future to complete
                             try {
-                                PoolLock.provisionLock(template);
+                                PoolLock.provisionLock(template); //Only lock for pool maintaining.
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onStarted(provisioningId);
                                 }
