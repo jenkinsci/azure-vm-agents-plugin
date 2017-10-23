@@ -55,6 +55,8 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 8. Select the retention strategy
    * Idle Retention Strategy. You can specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
    * Pool Retention Strategy. This retention strategy help you to maintain amount of agents in a specific number. You can specify the retention time in hour and the pool size.
+   * Once Retention Strategy. This retention strategy make sure to use one agent only once. 
+   
    Retention time define the time of hour before automatically deleting since the agent created. And the pool size define the agent pool size you want to maintain.
    If you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template.
    But if you only change your Retention Time or Pool Size, we will only scale in, scale out or do nothing for you.
