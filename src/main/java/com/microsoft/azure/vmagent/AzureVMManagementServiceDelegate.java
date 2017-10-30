@@ -1169,31 +1169,7 @@ public final class AzureVMManagementServiceDelegate {
     public static Set<String> getVirtualMachineLocations(AzureCredentials.ServicePrincipal servicePrincipal) {
         try {
             final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-            Set<String> regions = new HashSet<>();
-            PagedList<Provider> providers = azureClient.providers().list();
-            for (Provider provider : providers) {
-                List<ProviderResourceType> resourceTypes = provider.resourceTypes();
-                for (ProviderResourceType resourceType : resourceTypes) {
-                    if (!resourceType.resourceType().equalsIgnoreCase("virtualMachines")) {
-                        continue;
-                    }
-
-                    for (String location : resourceType.locations()) {
-                        if (!regions.contains(location)) {
-                            try {
-                                if (!azureClient.virtualMachines().sizes().listByRegion(location).isEmpty()) {
-                                    regions.add(location);
-                                }
-                            } catch (Exception e) {
-                                // some of the provider regions might not be valid for other API calls.
-                                // The SDK call will throw an exception instead of returning an emtpy list
-                            }
-                        }
-                    }
-
-                }
-            }
-            return regions;
+            return LocationCache.getLocation(azureClient, servicePrincipal.getServiceManagementURL().toLowerCase());
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "

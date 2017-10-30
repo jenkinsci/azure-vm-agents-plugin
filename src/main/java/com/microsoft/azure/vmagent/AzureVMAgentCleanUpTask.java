@@ -92,7 +92,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     private static final int CLEAN_TIMEOUT_IN_MINUTES = 15;
-    private static final int RECURRENCE_PERIOD_IN_MILLIS = 15 * MILLIS_IN_MINUTE;  // 15 minutes
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * MILLIS_IN_MINUTE;  // 5 minutes
 
     private static final long SUCCESFULL_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60;
     private static final long FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60 * 8;

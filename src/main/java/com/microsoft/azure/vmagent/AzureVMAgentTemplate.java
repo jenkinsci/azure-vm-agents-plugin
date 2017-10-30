@@ -862,6 +862,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             List<Descriptor<RetentionStrategy<?>>> list = new ArrayList<>();
             list.add(AzureVMCloudRetensionStrategy.DESCRIPTOR);
             list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
+            list.add(AzureVMCloudOnceRetentionStrategy.DESCRIPTOR);
             return list;
         }
 
@@ -927,8 +928,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             model.add(SkuName.STANDARD_LRS.toString());
 
-            /*As introduced in Azure Docs, VmSize among DS/GS/FS/LS supports premium storage*/
-            if (virtualMachineSize.matches(".*(D|G|F[0-9]+|L[0-9]+)[Ss].*")) {
+            /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
+            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[Mm]?[Ss]|[Ss][0-9]+).*")) {
                 model.add(SkuName.PREMIUM_LRS.toString());
             }
             return model;

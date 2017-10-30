@@ -828,7 +828,7 @@ public class AzureVMCloud extends Cloud {
                         public Node call() throws AzureCloudException {
                             // Wait for the future to complete
                             try {
-                                PoolLock.provisionLock(template);
+                                PoolLock.provisionLock(template); //Only lock for pool maintaining.
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onStarted(provisioningId);
                                 }
@@ -1107,6 +1107,7 @@ public class AzureVMCloud extends Cloud {
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
                 throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Resource Group ---", "");
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }

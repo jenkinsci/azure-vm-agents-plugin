@@ -469,12 +469,17 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      *
      * @throws Exception
      */
-    public void deprovision(Localizable reason) throws Exception {
-        LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}", this.getDisplayName());
-        if (this.getComputer() != null) {
-            this.getComputer().setAcceptingTasks(false);
-            this.getComputer().disconnect(OfflineCause.create(reason));
+    public synchronized void deprovision(Localizable reason) throws Exception {
+        if (Jenkins.getInstance().getNode(this.name) == null || this.getComputer() == null) {
+            return;
         }
+
+        LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}, for reason: {1}",
+                new Object[]{this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()});
+
+        this.getComputer().setAcceptingTasks(false);
+        this.getComputer().disconnect(OfflineCause.create(reason));
+
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
@@ -487,7 +492,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         Jenkins.getInstance().removeNode(this);
 
         final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason.toString());
+        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 

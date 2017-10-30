@@ -167,7 +167,11 @@ public class IntegrationTest {
                 testEnv.authenticationEndpoint,
                 testEnv.resourceManagerEndpoint,
                 testEnv.graphEndpoint);
-        customTokenCache = TokenCache.getInstance(servicePrincipal);
+        try {
+            customTokenCache = TokenCache.getInstance(servicePrincipal);
+        } catch (AzureCloudException e) {
+            LOGGER.log(Level.SEVERE, null, e);
+        }
         clearAzureResources();
 
         AppInsightsGlobalConfig.get().setAppInsightsEnabled(false);

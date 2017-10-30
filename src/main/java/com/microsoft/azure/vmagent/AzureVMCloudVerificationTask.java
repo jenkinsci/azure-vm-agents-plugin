@@ -53,7 +53,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMCloudVerificationTask.class.getName());
 
-    private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * 60 * 1000;  // every 5 minutes
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 15 * 60 * 1000;  // every 15 minutes
 
     // Templates that need verification
     private static Set<AbstractMap.SimpleEntry<String, String>> cloudTemplates;
