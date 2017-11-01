@@ -1417,7 +1417,7 @@ public final class AzureVMManagementServiceDelegate {
 
         try {
             azureClient.virtualMachines()
-                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).powerOff();
+                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).deallocate();
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: provision: could not terminate or shutdown {0}, {1}",
