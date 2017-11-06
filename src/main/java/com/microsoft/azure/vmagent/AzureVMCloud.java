@@ -1034,6 +1034,10 @@ public class AzureVMCloud extends Cloud {
 
         @Initializer(before = PLUGINS_STARTED)
         public static void addLogRecorder(Jenkins h) throws IOException {
+            // avoid the failure in dynamic loading.
+            if (!h.hasPermission(h.ADMINISTER)) {
+                return;
+            }
             LogRecorderManager manager = h.getLog();
             Map<String, LogRecorder> logRecorders = manager.logRecorders;
             if (!logRecorders.containsKey(LOG_RECORDER_NAME)) {
