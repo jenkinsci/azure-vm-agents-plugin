@@ -89,7 +89,7 @@
             </f:radioBlock>
 
             <f:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
-                <ui:dropdownList selectedName="imageReferenceType" name="imageReferenceTypeClass">
+                <f:dropdownList selectedName="imageReferenceType" name="imageReferenceTypeClass">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
                         <f:entry title="${%Image}" field="image" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
@@ -113,7 +113,7 @@
                             <f:textbox default="latest"/>
                         </f:entry>
                     </f:dropdownListBlock>
-                </ui:dropdownList>
+                </f:dropdownList>
 
                 <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
                     <f:select/>
