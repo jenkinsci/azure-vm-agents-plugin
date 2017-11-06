@@ -185,11 +185,6 @@
             <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
             <url>http://repository.springsource.com/maven/bundles/external</url>
         </repository>
-        <repository>
-            <id>tags</id>
-            <name>Custom Tags</name>
-            <url>https://raw.githubusercontent.com/t-wanl/Jenkins-Dynamic-Databinding-UI-Control-Library/master/jar/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
