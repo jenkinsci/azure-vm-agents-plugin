@@ -1,6 +1,6 @@
 # Azure VM Agents Plugin Changelog
 
-## Version 0.4.8
+## Version 0.4.8, 2017-11-07
 * Add Cloud and Template builder with fluent interface
 * Add pool retention strategy and once retention strategy
 * Fix bugs and improve performance
