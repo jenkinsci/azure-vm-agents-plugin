@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
-         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials"  xmlns:ui="/lib/azure">
     <f:block>
         <f:link href="${rootURL}/log/${descriptor.logRecorderName}/">${%Azure_VM_Agent_Log_Link}</f:link>
     </f:block>

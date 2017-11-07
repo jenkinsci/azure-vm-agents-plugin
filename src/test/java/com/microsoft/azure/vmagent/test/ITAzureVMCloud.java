@@ -67,7 +67,7 @@ public class ITAzureVMCloud extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String vmName = deploymentInfo.getVmBaseName() + "0";
-            final String vmDNS = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup, vmName).getPrimaryPublicIpAddress().fqdn();
+            final String vmDNS = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).getPrimaryPublicIPAddress().fqdn();
             final String deploymentName = deploymentInfo.getDeploymentName();
             final String templateName = "createTemplate";
             final String templateDesc = "createTemplateDesc";

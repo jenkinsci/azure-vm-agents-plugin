@@ -18,21 +18,18 @@ package com.microsoft.azure.vmagent;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-
-import java.io.IOException;
-import java.util.logging.Logger;
-
+import hudson.slaves.AbstractCloudComputer;
+import hudson.slaves.OfflineCause;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 
-import hudson.slaves.AbstractCloudComputer;
-import hudson.slaves.OfflineCause;
-
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> implements TrackedItem {
 
@@ -40,9 +37,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
 
     private final ProvisioningActivity.Id provisioningId;
 
-    private boolean setOfflineByUser = false;
-
-    public AzureVMComputer(final AzureVMAgent agent) {
+    public AzureVMComputer(AzureVMAgent agent) {
         super(agent);
         this.provisioningId = agent.getId();
     }
@@ -66,8 +61,12 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                         // Deprovision
                         agent.deprovision(Messages._User_Delete());
                     } catch (Exception e) {
-                        LOGGER.log(Level.INFO, "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
-                        throw AzureCloudException.create("AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
+                        LOGGER.log(Level.INFO,
+                                "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
+                                e);
+                        throw AzureCloudException.create(
+                                "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
+                                e);
                     }
                     return null;
                 }
@@ -87,11 +86,7 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     }
 
     public boolean isSetOfflineByUser() {
-        return setOfflineByUser;
-    }
-
-    public void setSetOfflineByUser(boolean setOfflineByUser) {
-        this.setOfflineByUser = setOfflineByUser;
+        return (this.getOfflineCause() instanceof OfflineCause.UserCause);
     }
 
     /**
@@ -102,36 +97,6 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     @Override
     public void waitUntilOnline() throws InterruptedException {
         super.waitUntilOnline();
-    }
-
-    /**
-     * We use temporary offline settings to do investigation of machines.
-     * To avoid deletion, we assume this came through a user call and set a bit.  Where
-     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
-     * after calling setTemporarilyOffline
-     *
-     * @param setOffline
-     * @param oc
-     */
-    @Override
-    public void setTemporarilyOffline(boolean setOffline, OfflineCause oc) {
-        setSetOfflineByUser(setOffline);
-        super.setTemporarilyOffline(setOffline, oc);
-    }
-
-    /**
-     * We use temporary offline settings to do investigation of machines.
-     * To avoid deletion, we assume this came through a user call and set a bit.  Where
-     * this plugin might set things temp-offline (vs. disconnect), we'll reset the bit
-     * after calling setTemporarilyOffline
-     *
-     * @param setOffline
-     * @param oc
-     */
-    @Override
-    public void setTemporarilyOffline(boolean setOffline) {
-        setSetOfflineByUser(setOffline);
-        super.setTemporarilyOffline(setOffline);
     }
 
     @Nullable

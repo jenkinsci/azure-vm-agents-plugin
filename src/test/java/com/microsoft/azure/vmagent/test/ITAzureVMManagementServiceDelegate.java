@@ -20,7 +20,8 @@ import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkInterface;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
-import com.microsoft.azure.management.network.PublicIpAddress;
+import com.microsoft.azure.management.network.PublicIPAddress;
+import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
@@ -73,7 +74,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         uploadCustomScript(uploadFileName, UUID.randomUUID().toString());
     }
 
-    private void uploadCustomScript(final String uploadFileName, final String writtenData) {
+    private void uploadCustomScript(String uploadFileName, String writtenData) {
 
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
@@ -90,7 +91,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     testEnv.azureStorageAccountName,
                     Constants.CONFIG_CONTAINER_NAME,
                     uploadFileName
-                    );
+            );
             /*Data padded before upload to Page Blob so we need to use strip*/
             Assert.assertEquals(StringUtils.strip(writtenData), StringUtils.strip(downloadedData));
         } catch (Exception e) {
@@ -114,37 +115,37 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Network actualVNet = null;
             StorageAccount actualStorageAcc = null;
             try {
-                actualVNet =  customTokenCache.getAzureClient().networks().getByGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
-                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+                actualVNet = customTokenCache.getAzureClient().networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
-            Assert.assertNotNull("The deployed VNet doesn't exist: "+ testEnv.azureResourceGroup, actualVNet);
-            Assert.assertNotNull("The deployed Storage Account doesn't exist: "+ testEnv.azureResourceGroup, actualStorageAcc);
+            Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
+            Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
 
-            for(int i = 0; i < numberOfAgents; i++) {
+            for (int i = 0; i < numberOfAgents; i++) {
                 final String baseName = deploymentInfo.getVmBaseName() + String.valueOf(i);
-                final String commonAssertMsg = testEnv.azureResourceGroup +  ":" + baseName;
+                final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
                 VirtualMachine actualVM = null;
                 NetworkInterface actualNetIface = null;
-                PublicIpAddress actualIP = null;
+                PublicIPAddress actualIP = null;
                 try {
                     actualVM = customTokenCache.getAzureClient()
-                                .virtualMachines()
-                                .getByGroup(testEnv.azureResourceGroup, baseName);
+                            .virtualMachines()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName);
 
                     actualNetIface = customTokenCache.getAzureClient()
-                                .networkInterfaces()
-                                .getByGroup(testEnv.azureResourceGroup, baseName + "NIC");
+                            .networkInterfaces()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
                     actualIP = customTokenCache.getAzureClient()
-                                .publicIpAddresses()
-                                .getByGroup(testEnv.azureResourceGroup, baseName + "IPName");
+                            .publicIPAddresses()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, null, e);
                 }
-                Assert.assertNotNull("The deployed VM doesn't exist: "+ commonAssertMsg, actualVM);
+                Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
                 Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
                 Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
             }
@@ -166,33 +167,33 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Network actualVNet = null;
             StorageAccount actualStorageAcc = null;
             try {
-                actualVNet =  customTokenCache.getAzureClient().networks().getByGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
-                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+                actualVNet = customTokenCache.getAzureClient().networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
-            Assert.assertNotNull("The deployed VNet doesn't exist: "+ testEnv.azureResourceGroup, actualVNet);
-            Assert.assertNotNull("The deployed Storage Account doesn't exist: "+ testEnv.azureResourceGroup, actualStorageAcc);
+            Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
+            Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
 
             final String baseName = deploymentInfo.getVmBaseName() + "0";
             VirtualMachine actualVM = null;
             NetworkInterface actualNetIface = null;
-            PublicIpAddress actualIP = null;
+            PublicIPAddress actualIP = null;
             String privateIP = "";
             try {
                 actualVM = customTokenCache.getAzureClient()
-                            .virtualMachines()
-                            .getByGroup(testEnv.azureResourceGroup, baseName);
+                        .virtualMachines()
+                        .getByResourceGroup(testEnv.azureResourceGroup, baseName);
 
                 actualNetIface = customTokenCache.getAzureClient()
-                            .networkInterfaces()
-                            .getByGroup(testEnv.azureResourceGroup, baseName + "NIC");
+                        .networkInterfaces()
+                        .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
-                privateIP = actualNetIface.primaryPrivateIp();
+                privateIP = actualNetIface.primaryPrivateIP();
 
                 actualIP = customTokenCache.getAzureClient()
-                            .publicIpAddresses()
-                            .getByGroup(testEnv.azureResourceGroup, baseName + "IPName");
+                        .publicIPAddresses()
+                        .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, null, e);
@@ -224,37 +225,37 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Network actualVNet = null;
             StorageAccount actualStorageAcc = null;
             try {
-                actualVNet =  customTokenCache.getAzureClient().networks().getByGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
-                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+                actualVNet = customTokenCache.getAzureClient().networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+                actualStorageAcc = customTokenCache.getAzureClient().storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
-            Assert.assertNotNull("The deployed VNet doesn't exist: "+ testEnv.azureResourceGroup, actualVNet);
-            Assert.assertNotNull("The deployed Storage Account doesn't exist: "+ testEnv.azureResourceGroup, actualStorageAcc);
-            final List<String> baseVMNames = Arrays.asList(new Object[]{ firstDeployment.getVmBaseName(), secondDeployment.getVmBaseName(), thirdDeployment.getVmBaseName() });
-            for(String base: baseVMNames) {
+            Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
+            Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
+            final List<String> baseVMNames = Arrays.asList(new Object[]{firstDeployment.getVmBaseName(), secondDeployment.getVmBaseName(), thirdDeployment.getVmBaseName()});
+            for (String base : baseVMNames) {
                 final String baseName = base + "0";
-                final String commonAssertMsg = testEnv.azureResourceGroup +  ":" + baseName;
+                final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
                 VirtualMachine actualVM = null;
                 NetworkInterface actualNetIface = null;
-                PublicIpAddress actualIP = null;
+                PublicIPAddress actualIP = null;
                 try {
                     actualVM = customTokenCache.getAzureClient()
-                                .virtualMachines()
-                                .getByGroup(testEnv.azureResourceGroup, baseName);
+                            .virtualMachines()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName);
 
                     actualNetIface = customTokenCache.getAzureClient()
-                                .networkInterfaces()
-                                .getByGroup(testEnv.azureResourceGroup, baseName + "NIC");
+                            .networkInterfaces()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
                     actualIP = customTokenCache.getAzureClient()
-                                .publicIpAddresses()
-                                .getByGroup(testEnv.azureResourceGroup, baseName + "IPName");
+                            .publicIPAddresses()
+                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, null, e);
                 }
-                Assert.assertNotNull("The deployed VM doesn't exist: "+ commonAssertMsg, actualVM);
+                Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
                 Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
                 Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
             }
@@ -265,7 +266,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         }
     }
 
-    private void setVirtualMachineDetailsCommonVerification(final String vmName, final String fqdn, final String privateIP, final String publicIp) throws Exception {
+    private void setVirtualMachineDetailsCommonVerification(String vmName, String fqdn, String privateIP, String publicIp) throws Exception {
         AzureVMAgent agentMock = mock(AzureVMAgent.class);
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
@@ -288,12 +289,12 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
-            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
-                    .publicIpAddresses()
-                    .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName");
+            final PublicIPAddress publicIP = customTokenCache.getAzureClient()
+                    .publicIPAddresses()
+                    .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName");
             final String privateIP = customTokenCache.getAzureClient()
-                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryNetworkInterface().primaryPrivateIp();
+                    .virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIP();
 
             setVirtualMachineDetailsCommonVerification(nodeName, publicIP.fqdn(), privateIP, publicIP.ipAddress());
         } catch (Exception e) {
@@ -308,8 +309,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
             final String ip = customTokenCache.getAzureClient()
-                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryNetworkInterface().primaryPrivateIp();
+                    .virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIP();
 
             setVirtualMachineDetailsCommonVerification(nodeName, ip, ip, "");
         } catch (Exception e) {
@@ -324,8 +325,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
             final String privateIP = customTokenCache.getAzureClient()
-                    .virtualMachines().getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryNetworkInterface().primaryPrivateIp();
+                    .virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryNetworkInterface().primaryPrivateIP();
             AzureVMAgent agentMock = mock(AzureVMAgent.class);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = mock(AzureVMCloud.class);
@@ -337,10 +338,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             AzureVMManagementServiceDelegate.attachPublicIP(agentMock, templateMock);
 
-            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
+            final PublicIPAddress publicIP = customTokenCache.getAzureClient()
                     .virtualMachines()
-                    .getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryPublicIpAddress();
+                    .getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIPAddress();
             Assert.assertNotNull(publicIP);
             verify(agentMock).setPublicDNSName(publicIP.fqdn());
             verify(agentMock).setSshPort(Constants.DEFAULT_SSH_PORT);
@@ -369,15 +370,15 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             final String initialPublicIPId = customTokenCache.getAzureClient()
                     .virtualMachines()
-                    .getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryPublicIpAddress().id();
+                    .getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIPAddress().id();
 
             AzureVMManagementServiceDelegate.attachPublicIP(agentMock, templateMock);
 
-            final PublicIpAddress publicIP = customTokenCache.getAzureClient()
+            final PublicIPAddress publicIP = customTokenCache.getAzureClient()
                     .virtualMachines()
-                    .getByGroup(testEnv.azureResourceGroup, nodeName)
-                    .getPrimaryPublicIpAddress();
+                    .getByResourceGroup(testEnv.azureResourceGroup, nodeName)
+                    .getPrimaryPublicIPAddress();
 
             Assert.assertNotNull(publicIP);
             Assert.assertEquals(initialPublicIPId, publicIP.id());
@@ -402,12 +403,12 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             when(agentMock.getNodeName()).thenReturn(vmName);
             when(agentMock.getServicePrincipal()).thenReturn(servicePrincipal);
             when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
-            Assert.assertTrue("The deployed VM doesn't exist: "+ vmName,
+            Assert.assertTrue("The deployed VM doesn't exist: " + vmName,
                     AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
 
             when(agentMock.getNodeName()).thenReturn(vmName + "a"); //invalid VM name
-            Assert.assertFalse("The deployed VM exists: "+ vmName,
-                AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
+            Assert.assertFalse("The deployed VM exists: " + vmName,
+                    AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -416,7 +417,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void isVMAliveOrHealthyTest() {
-        try{
+        try {
             final String vmName = "vmexists";
             VirtualMachine vm = createAzureVM(vmName);
             Assert.assertNotNull(vm);
@@ -434,7 +435,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             vm.deallocate();
             Assert.assertFalse(AzureVMManagementServiceDelegate.isVMAliveOrHealthy(agentMock));
 
-            customTokenCache.getAzureClient().virtualMachines().deleteByGroup(testEnv.azureResourceGroup, vmName);
+            customTokenCache.getAzureClient().virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, vmName);
             try {
                 AzureVMManagementServiceDelegate.isVMAliveOrHealthy(agentMock);
                 Assert.assertTrue("isVMAliveOrHealthy should have thrown an exception", false);
@@ -499,7 +500,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
-            Assert.assertNull(customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup, vmName));
+            Assert.assertNull(customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
             Assert.assertFalse(blobExists(osDiskStorageAccount));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
@@ -533,27 +534,27 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             //should fail because the VM is still using them
             Assert.assertNotNull(
                     customTokenCache.getAzureClient()
-                        .publicIpAddresses()
-                        .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName")
+                            .publicIPAddresses()
+                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
             );
             Assert.assertNotNull(
                     customTokenCache.getAzureClient()
-                        .networkInterfaces()
-                        .getByGroup(testEnv.azureResourceGroup, nodeName + "NIC")
+                            .networkInterfaces()
+                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
             );
 
             //destory the vm first
-            customTokenCache.getAzureClient().virtualMachines().deleteByGroup(testEnv.azureResourceGroup, nodeName);
+            customTokenCache.getAzureClient().virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
             AzureVMManagementServiceDelegate.removeIPName(servicePrincipal, testEnv.azureResourceGroup, nodeName);
             Assert.assertNull(
                     customTokenCache.getAzureClient()
-                        .publicIpAddresses()
-                        .getByGroup(testEnv.azureResourceGroup, nodeName + "IPName")
+                            .publicIPAddresses()
+                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
             );
             Assert.assertNull(
                     customTokenCache.getAzureClient()
-                        .networkInterfaces()
-                        .getByGroup(testEnv.azureResourceGroup, nodeName + "NIC")
+                            .networkInterfaces()
+                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
             );
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
@@ -573,12 +574,12 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
 
         AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock);
-        PowerState state = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
+        PowerState state = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
         Assert.assertTrue(state.equals(PowerState.RUNNING) || state.equals(PowerState.STARTING));
 
-       customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerOff();
-       PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
-       Assert.assertTrue(state2.toString(),state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
+        customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerOff();
+        PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
+        Assert.assertTrue(state2.toString(), state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
 
         try {
             AzureVMManagementServiceDelegate.restartVirtualMachine(agentMock); // restart throws exception when the VM is already stopped
@@ -590,7 +591,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void startVMTest() {
-        try{
+        try {
             final String vmName = "vmstart";
             VirtualMachine vm = createAzureVM(vmName);
             Assert.assertEquals(PowerState.RUNNING, vm.powerState());
@@ -602,14 +603,14 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             AzureVMManagementServiceDelegate.startVirtualMachine(agentMock);
             Assert.assertEquals(PowerState.RUNNING, customTokenCache.getAzureClient().virtualMachines()
-                    .getByGroup(testEnv.azureResourceGroup,vmName).powerState());
+                    .getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState());
 
-            customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerOff();
-            PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
-           Assert.assertTrue(state2.toString(),state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
+            customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerOff();
+            PowerState state2 = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
+            Assert.assertTrue(state2.toString(), state2.equals(PowerState.STOPPED) || state2.toString().equalsIgnoreCase("powerstate/stopping"));
 
             AzureVMManagementServiceDelegate.startVirtualMachine(agentMock);
-            PowerState state = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
+            PowerState state = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
             Assert.assertTrue(state.equals(PowerState.RUNNING) || state.equals(PowerState.STARTING));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
@@ -619,7 +620,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void shutdownVMTest() {
-        try{
+        try {
             final String vmName = "vmshutdown";
             VirtualMachine vm = createAzureVM(vmName);
             Assert.assertEquals(PowerState.RUNNING, vm.powerState());
@@ -630,8 +631,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
 
             AzureVMManagementServiceDelegate.shutdownVirtualMachine(agentMock);
-            PowerState state = customTokenCache.getAzureClient().virtualMachines().getByGroup(testEnv.azureResourceGroup,vmName).powerState();
-            Assert.assertTrue(state.toString(),state.equals(PowerState.STOPPED) || state.toString().equalsIgnoreCase("powerstate/stopping"));
+            PowerState state = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
+            Assert.assertTrue(state.toString(), state.equals(PowerState.STOPPED) || state.toString().equalsIgnoreCase("powerstate/stopping"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -640,7 +641,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void getVirtualNetworkTest() {
-        try{
+        try {
             createDefaultDeployment(1, null);
 
             Network vnet = AzureVMManagementServiceDelegate.getVirtualNetwork(servicePrincipal, "jenkinsarm-vnet", testEnv.azureResourceGroup);
@@ -656,41 +657,41 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void verifyVirtualNetworkTest() {
-        try{
+        try {
             final String vnetName = "jenkinsarm-vnet";
             final String vnetResourceGroup = "";
             final String subnetName = "jenkinsarm-snet";
             createDefaultDeployment(1, null);
 
-           Assert.assertEquals(Constants.OP_SUCCESS,
+            Assert.assertEquals(Constants.OP_SUCCESS,
                     AzureVMManagementServiceDelegate
                             .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
 
-            final String wrongVnet = vnetName+"wrong";
+            final String wrongVnet = vnetName + "wrong";
             Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_NotFound(wrongVnet, testEnv.azureResourceGroup),
                     AzureVMManagementServiceDelegate
                             .verifyVirtualNetwork(servicePrincipal, wrongVnet, vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
 
-            final String wrongSnet = subnetName+"wrong";
+            final String wrongSnet = subnetName + "wrong";
             Assert.assertEquals(Messages.Azure_GC_Template_subnet_NotFound(wrongSnet),
                     AzureVMManagementServiceDelegate
                             .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup, wrongSnet, false, testEnv.azureResourceGroup));
 
             Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
+                    AzureVMManagementServiceDelegate
+                            .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, subnetName, false, testEnv.azureResourceGroup));
 
             Assert.assertEquals(Constants.OP_SUCCESS,
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", false, testEnv.azureResourceGroup));
+                    AzureVMManagementServiceDelegate
+                            .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", false, testEnv.azureResourceGroup));
 
             Assert.assertEquals(Messages.Azure_GC_Template_VirtualNetwork_Null_Or_Empty(),
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", true, testEnv.azureResourceGroup));
+                    AzureVMManagementServiceDelegate
+                            .verifyVirtualNetwork(servicePrincipal, "", vnetResourceGroup, "", true, testEnv.azureResourceGroup));
 
             Assert.assertEquals(Messages.Azure_GC_Template_subnet_Empty(),
-                   AzureVMManagementServiceDelegate
-                           .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup,"", false, testEnv.azureResourceGroup));
+                    AzureVMManagementServiceDelegate
+                            .verifyVirtualNetwork(servicePrincipal, vnetName, vnetResourceGroup, "", false, testEnv.azureResourceGroup));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -699,9 +700,9 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void verifyVirtualMachineImageTest() {
-        try{
+        try {
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "","",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "latest"));
 
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
@@ -713,7 +714,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "wrong_version"));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
-                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation +"wrong", "", Constants.IMAGE_TOP_LEVEL_ADVANCED, AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
+                    .verifyVirtualMachineImage(servicePrincipal, testEnv.azureLocation + "wrong", "", Constants.IMAGE_TOP_LEVEL_ADVANCED, AzureVMAgentTemplate.ImageReferenceType.REFERENCE, "", "",
                             testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, ""));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
@@ -735,7 +736,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void verifyStorageAccountNameTest() {
-        try{
+        try {
             Assert.assertEquals(Constants.OP_SUCCESS, AzureVMManagementServiceDelegate
                     .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
@@ -750,7 +751,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .verifyStorageAccountName(servicePrincipal, testEnv.azureResourceGroup, testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
 
             Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(), AzureVMManagementServiceDelegate
-                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup+"fake", testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
+                    .verifyStorageAccountName(new ServicePrincipal(), testEnv.azureResourceGroup + "fake", testEnv.azureStorageAccountName, testEnv.azureStorageAccountType));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -791,7 +792,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertFalse(containerExists(deletedContainerBlobURI)); // both container and blob are missing
             Assert.assertTrue(containerExists(existingContainerBlobURI)); // the container is there, but the blob is missing
             Assert.assertFalse(blobExists(existingContainerBlobURI));
-        } catch (Exception e){
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }
@@ -799,17 +800,17 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     //Add Test for global first, will add test for mooncake later
-    public void getBlobEndpointSuffixForArmTemplateForGlobal(){
+    public void getBlobEndpointSuffixForArmTemplateForGlobal() {
         try {
             customTokenCache.getAzureClient().storageAccounts()
-            .define(testEnv.azureStorageAccountName)
-            .withRegion(testEnv.azureLocation)
-            .withNewResourceGroup(testEnv.azureResourceGroup)
-            .create();
-            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+                    .define(testEnv.azureStorageAccountName)
+                    .withRegion(testEnv.azureLocation)
+                    .withNewResourceGroup(testEnv.azureResourceGroup)
+                    .create();
+            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForTemplate(storageAccount);
             Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForTemplate.get(TestEnvironment.AZUREPUBLIC));
-        } catch (Exception e){
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }
@@ -830,7 +831,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(containerExists(blobToBeDeleted));
             Assert.assertFalse(blobExists(blobToBeDeleted));
             Assert.assertTrue(blobExists(notDeletedBlob));
-        } catch (Exception e){
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
         }
@@ -841,11 +842,11 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void getBlobEndpointSuffixForCloudStorageAccountForGlobal() {
         try {
             customTokenCache.getAzureClient().storageAccounts()
-            .define(testEnv.azureStorageAccountName)
-            .withRegion(testEnv.azureLocation)
-            .withNewResourceGroup(testEnv.azureResourceGroup)
-            .create();
-            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+                    .define(testEnv.azureStorageAccountName)
+                    .withRegion(testEnv.azureLocation)
+                    .withNewResourceGroup(testEnv.azureResourceGroup)
+                    .create();
+            StorageAccount storageAccount = customTokenCache.getAzureClient().storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
             String endSuffix = AzureVMManagementServiceDelegate.getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
             Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForCloudStorageAccount.get(TestEnvironment.AZUREPUBLIC));
         } catch (Exception e) {
@@ -870,7 +871,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             VirtualMachine deployedVM = customTokenCache.getAzureClient()
                     .virtualMachines()
-                    .getByGroup(testEnv.azureResourceGroup, deploymentInfo.getVmBaseName() + "0");
+                    .getByResourceGroup(testEnv.azureResourceGroup, deploymentInfo.getVmBaseName() + "0");
 
             final String actualNSGId = deployedVM.getPrimaryNetworkInterface().getNetworkSecurityGroup().id();
             Assert.assertEquals(nsg.id(), actualNSGId);

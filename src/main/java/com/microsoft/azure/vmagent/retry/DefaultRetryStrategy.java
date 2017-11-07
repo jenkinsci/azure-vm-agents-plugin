@@ -1,12 +1,12 @@
 /*
  Copyright 2016 Microsoft, Inc.
- 
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
- 
+
  http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,13 +28,13 @@ public class DefaultRetryStrategy implements RetryStrategy {
     private static final int DEFAULT_WAIT_INTERVAL_IN_SECONDS = 2;
     private static final int DEFAULT_TIMEOUT_IN_SECONDS = 4 * 60; // 4 minutes
 
-    protected int currentRetryCount = 0;
+    private int currentRetryCount = 0;
 
-    protected int maxRetries = DEFAULT_MAX_RETRIES;
+    private int maxRetries = DEFAULT_MAX_RETRIES;
 
-    protected int waitInterval = DEFAULT_WAIT_INTERVAL_IN_SECONDS;
+    private int waitInterval = DEFAULT_WAIT_INTERVAL_IN_SECONDS;
 
-    protected int defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
+    private int defaultTimeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
 
     public DefaultRetryStrategy() {
     }
@@ -46,8 +46,8 @@ public class DefaultRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public boolean canRetry(int currentRetryCount, Exception e) throws AzureCloudException {
-        if (currentRetryCount >= maxRetries) {
+    public boolean canRetry(int retryCount, Exception e) throws AzureCloudException {
+        if (retryCount >= maxRetries) {
             throw AzureCloudException.create("Exceeded maximum retry count " + maxRetries, e);
         } else {
             return AzureUtil.isHostNotFound(e.getMessage()) || AzureUtil.isConflictError(e.getLocalizedMessage());
@@ -67,13 +67,17 @@ public class DefaultRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public int getWaitPeriodInSeconds(int currentRetryCount, Exception e) {
+    public int getWaitPeriodInSeconds(int retryCount, Exception e) {
         return waitInterval;
     }
 
     @Override
     public int getMaxTimeoutInSeconds() {
         return defaultTimeoutInSeconds;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
     }
 
     @Override
