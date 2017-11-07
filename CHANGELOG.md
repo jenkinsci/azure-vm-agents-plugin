@@ -1,5 +1,11 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.4.8
+* Add Cloud and Template builder with fluent interface
+* Add pool retention strategy and once retention strategy
+* Fix bugs and improve performance
+* Maven version in built-in image update to 3.5.2
+
 ## Version 0.4.7.1, 2017-08-10
 * Fixed an issue that built-in init script cannot run correctly under Linux.
 
