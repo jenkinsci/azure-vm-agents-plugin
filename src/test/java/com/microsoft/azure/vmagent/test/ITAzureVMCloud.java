@@ -44,10 +44,9 @@ public class ITAzureVMCloud extends IntegrationTest {
             final String deploymentName = "fakeDeployment";
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud("", servicePrincipal, "xyz", "42", "0", "new", testEnv.azureResourceGroup, null,null));
+            AzureVMCloud cloudMock = spy( new AzureVMCloud("", "xyz", "42", "0", "new", testEnv.azureResourceGroup, null,null));
 
             when(templateMock.getAzureCloud()).thenReturn(cloudMock);
-            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
 
             try {
                 cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
@@ -67,7 +66,7 @@ public class ITAzureVMCloud extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String vmName = deploymentInfo.getVmBaseName() + "0";
-            final String vmDNS = customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).getPrimaryPublicIPAddress().fqdn();
+            final String vmDNS = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).getPrimaryPublicIPAddress().fqdn();
             final String deploymentName = deploymentInfo.getDeploymentName();
             final String templateName = "createTemplate";
             final String templateDesc = "createTemplateDesc";
@@ -86,9 +85,8 @@ public class ITAzureVMCloud extends IntegrationTest {
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud("", servicePrincipal, credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
+            AzureVMCloud cloudMock = spy( new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
 
-            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
             when(templateMock.getAzureCloud()).thenReturn(cloudMock);
             when(templateMock.getTemplateName()).thenReturn(templateName);
             when(templateMock.getTemplateDesc()).thenReturn(templateDesc);

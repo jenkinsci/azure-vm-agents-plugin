@@ -271,12 +271,12 @@ public final class AzureUtil {
     /**
      * Retrieves the name of the cloud for registering with Jenkins.
      *
-     * @param subscriptionId    Subscription id
+     * @param credentialId    credential id
      * @param resourceGroupName Resource group name
      * @return Name of the cloud
      */
-    public static String getCloudName(String subscriptionId, String resourceGroupName) {
-        return Constants.AZURE_CLOUD_PREFIX + subscriptionId + "-" + resourceGroupName;
+    public static String getCloudName(String credentialId, String resourceGroupName) {
+        return Constants.AZURE_CLOUD_PREFIX + credentialId + "-" + resourceGroupName;
     }
 
     /**

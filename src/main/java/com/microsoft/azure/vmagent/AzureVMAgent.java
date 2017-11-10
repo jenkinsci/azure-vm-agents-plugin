@@ -60,8 +60,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final String azureCredentialsId;
 
-    private final transient AzureCredentials.ServicePrincipal credentials;
-
     private final String sshPrivateKey;
 
     private final String sshPassPhrase;
@@ -150,7 +148,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.templateName = templateName;
         this.vmCredentialsId = vmCredentialsId;
         this.azureCredentialsId = azureCredentialsId;
-        this.credentials = servicePrincipal;
         this.sshPrivateKey = sshPrivateKey;
         this.sshPassPhrase = sshPassPhrase;
         this.jvmOptions = jvmOptions;
@@ -192,7 +189,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             RetentionStrategy<AzureVMComputer> retentionStrategy,
             String initScript,
             String azureCredentialsId,
-            AzureCredentials.ServicePrincipal servicePrincipal,
             String agentLaunchMethod,
             CleanUpAction cleanUpAction,
             Localizable cleanUpReason,
@@ -224,7 +220,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 template.getRetentionTimeInMin(),
                 initScript,
                 azureCredentialsId,
-                servicePrincipal,
+                null,
                 agentLaunchMethod,
                 cleanUpAction,
                 cleanUpReason,
@@ -247,13 +243,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public String getVMCredentialsId() {
         return vmCredentialsId;
-    }
-
-    public AzureCredentials.ServicePrincipal getServicePrincipal() {
-        if (credentials == null && azureCredentialsId != null) {
-            return AzureCredentials.getServicePrincipal(azureCredentialsId);
-        }
-        return credentials;
     }
 
     public String getSshPrivateKey() {
@@ -454,7 +443,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 getDisplayName());
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
-        AzureVMManagementServiceDelegate.shutdownVirtualMachine(this);
+        getServiceDelegate().shutdownVirtualMachine(this);
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
@@ -480,7 +469,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
 
-        AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
+        this.getServiceDelegate().terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
         // Adjust estimated virtual machine count.
@@ -496,8 +485,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
+    protected AzureVMManagementServiceDelegate getServiceDelegate() {
+        return this.getCloud().getServiceDelegate();
+    }
+
     public boolean isVMAliveOrHealthy() throws Exception {
-        return AzureVMManagementServiceDelegate.isVMAliveOrHealthy(this);
+        return this.getServiceDelegate().isVMAliveOrHealthy(this);
     }
 
     private final Object publicIPAttachLock = new Object();
@@ -510,8 +503,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // because of that we can just wait here until we have a public IP
         synchronized (publicIPAttachLock) {
             try {
-                AzureVMCloud azureVMCloud = (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
-                AzureVMManagementServiceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                AzureVMCloud azureVMCloud = getCloud();
+                this.getServiceDelegate().attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
             } catch (Exception e) {
                 LOGGER.log(
                         Level.INFO,
@@ -537,7 +530,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tmanagementURL=" + credentials.getServiceManagementURL()
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";
