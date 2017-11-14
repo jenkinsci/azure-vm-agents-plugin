@@ -326,7 +326,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         Map<String, String> defaultProperties =
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
         boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
-		String imageSkuName = template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
+        String imageSkuName =
+                template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
 
         templateProperties.put("imagePublisher",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
