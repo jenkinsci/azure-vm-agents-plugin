@@ -137,6 +137,7 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
 
+
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
     private final Azure azureClient;
@@ -1103,6 +1104,7 @@ public final class AzureVMManagementServiceDelegate {
                 Constants.DEFAULT_IMAGE_PUBLISHER, "MicrosoftWindowsServer");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_OFFER, "WindowsServer");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "2016-Datacenter-with-Containers");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(
@@ -1111,6 +1113,7 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_SKU, "16.04-LTS");
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "16.04-LTS");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_LINUX);
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(
