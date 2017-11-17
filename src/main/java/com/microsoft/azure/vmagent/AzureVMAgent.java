@@ -449,7 +449,13 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
-    public void shutdown(Localizable reason) {
+    public synchronized void shutdown(Localizable reason) {
+        if (isEligibleForReuse()) {
+            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: agent {0} is always shut down", this.
+                    getDisplayName());
+            return;
+        }
+
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
         this.getComputer().setAcceptingTasks(false);
@@ -460,7 +466,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         setEligibleForReuse(true);
 
         final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason.toString());
+        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
