@@ -323,11 +323,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             if (!sftpChannel.isClosed()) {
                 try {
-                    LOGGER.warning(
-                            "AzureVMAgentSSHLauncher: copyFileToRemote: "
-                                    + "Channel is not yet closed , waiting for 10 seconds");
-                    final int sleepInMills = 10 * 1000;
-                    Thread.sleep(sleepInMills);
+                    Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
                     //ignore error
                 }
@@ -424,11 +420,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             if (!channel.isClosed()) {
                 try {
-                    LOGGER.log(Level.WARNING,
-                            "{0}: executeRemoteCommand: Channel is not yet closed, waiting for 10 seconds",
-                            this.getClass().getSimpleName());
-                    final int sleepInMillis = 10 * 1000;
-                    Thread.sleep(sleepInMillis);
+                    Thread.sleep(10 * 1000);
                 } catch (InterruptedException e) {
                     //ignore error
                 }
