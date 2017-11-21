@@ -18,7 +18,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -59,13 +58,6 @@ public class MsiTokenCredentials extends AzureTokenCredentials {
     }
 
     private Token acquireAccessToken(String resource) throws IOException {
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build();
-
         RequestBody body = new FormBody.Builder()
                 .add("resource", resource)
                 .build();
@@ -75,7 +67,7 @@ public class MsiTokenCredentials extends AzureTokenCredentials {
                 .post(body)
                 .build();
 
-        Response response = client.newCall(request).execute();
+        Response response = new OkHttpClient().newCall(request).execute();
         if (!response.isSuccessful()) {
             throw new RuntimeException("http response: " + response.code() + " " + response.message());
         } else {
