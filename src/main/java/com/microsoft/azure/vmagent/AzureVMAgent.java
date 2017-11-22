@@ -26,6 +26,7 @@ import hudson.model.TaskListener;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.AbstractCloudSlave;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.OfflineCause;
@@ -41,7 +42,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +200,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            AzureVMAgentTemplate template) throws FormException, IOException {
+            AzureVMAgentTemplate template,
+            String fqdn) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -212,7 +214,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
-                Collections.<NodeProperty<?>>emptyList(),
+                Arrays.asList(new EnvironmentVariablesNodeProperty(
+                        new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn)
+                )),
                 cloudName,
                 vmCredentialsId,
                 sshPrivateKey,
