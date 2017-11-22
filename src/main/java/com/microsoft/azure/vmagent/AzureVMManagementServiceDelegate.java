@@ -158,7 +158,7 @@ public final class AzureVMManagementServiceDelegate {
                 template,
                 numberOfAgents,
                 TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()),
-                new AzureVMAgentCleanUpTask.DeploymentRegistrar()
+                AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance()
         );
     }
 

@@ -751,6 +751,7 @@ public class AzureVMCloud extends Cloud {
                 template.getAzureCloud().getServicePrincipal().getSubscriptionId());
         properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
         properties.put("AgentOS", template.getOsType());
+        properties.put("RetentionStrategy", template.getRetentionStrategy().getClass().getName());
 
         // provision new nodes if required
         if (numberOfAgents > 0) {

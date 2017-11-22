@@ -297,7 +297,7 @@ public class IntegrationTest {
         when(vmCredentials.getPassword()).thenReturn(vmPassword);
 
         if (deploymentRegistrar == null) {
-            deploymentRegistrar = new AzureVMAgentCleanUpTask.DeploymentRegistrar();
+            deploymentRegistrar = AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance();
         }
 
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
