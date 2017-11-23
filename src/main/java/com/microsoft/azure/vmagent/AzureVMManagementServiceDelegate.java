@@ -166,7 +166,7 @@ public final class AzureVMManagementServiceDelegate {
         return createDeployment(
                 template,
                 numberOfAgents,
-                new AzureVMAgentCleanUpTask.DeploymentRegistrar()
+                AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance()
         );
     }
 
@@ -752,6 +752,18 @@ public final class AzureVMManagementServiceDelegate {
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
 
+            VirtualMachine vm =
+                    azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), vmname);
+
+            final PublicIPAddress publicIP = vm.getPrimaryPublicIPAddress();
+            String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIP();
+            String fqdn = "";
+            if (publicIP == null) {
+                fqdn = privateIP;
+            } else {
+                fqdn = publicIP.fqdn();
+            }
+
             return new AzureVMAgent(
                     id,
                     vmname,
@@ -779,7 +791,8 @@ public final class AzureVMManagementServiceDelegate {
                     template.getResourceGroupName(),
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
-                    template);
+                    template,
+                    fqdn);
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occured while creating agent object", e);

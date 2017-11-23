@@ -2,6 +2,7 @@ package com.microsoft.azure.vmagent.builders;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,11 @@ public class AzureVMCloudBuilder {
         resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
         newResourceGroupName = cloud.getNewResourceGroupName();
         existingResourceGroupName = cloud.getExistingResourceGroupName();
-        vmTemplates = cloud.getVmTemplates();
+        // getVmTemplates returns unmodifiableList
+        vmTemplates = new ArrayList<>();
+        for (AzureVMAgentTemplate template : cloud.getVmTemplates()) {
+            vmTemplates.add(template);
+        }
     }
 
     //CHECKSTYLE:OFF
@@ -103,14 +108,14 @@ public class AzureVMCloudBuilder {
     //CHECKSTYLE:ON
 
     public AzureVMCloud build() {
-        return new AzureVMCloud(cloudName,
+        return new AzureVMCloud(StringUtils.defaultString(cloudName),
                 "",
-                azureCredentialsId,
+                StringUtils.defaultString(azureCredentialsId),
                 maxVirtualMachinesLimit,
                 deploymentTimeout,
                 resourceGroupReferenceType,
-                newResourceGroupName,
-                existingResourceGroupName,
+                StringUtils.defaultString(newResourceGroupName),
+                StringUtils.defaultString(existingResourceGroupName),
                 vmTemplates);
     }
 

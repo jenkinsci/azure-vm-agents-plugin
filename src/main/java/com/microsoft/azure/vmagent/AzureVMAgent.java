@@ -26,6 +26,7 @@ import hudson.model.TaskListener;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.AbstractCloudSlave;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.OfflineCause;
@@ -41,7 +42,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,7 +196,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            AzureVMAgentTemplate template) throws FormException, IOException {
+            AzureVMAgentTemplate template,
+            String fqdn) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -208,7 +210,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
-                Collections.<NodeProperty<?>>emptyList(),
+                Arrays.asList(new EnvironmentVariablesNodeProperty(
+                        new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn)
+                )),
                 cloudName,
                 vmCredentialsId,
                 sshPrivateKey,
@@ -438,7 +442,13 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
-    public void shutdown(Localizable reason) {
+    public synchronized void shutdown(Localizable reason) {
+        if (isEligibleForReuse()) {
+            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: agent {0} is always shut down", this.
+                    getDisplayName());
+            return;
+        }
+
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
         this.getComputer().setAcceptingTasks(false);
@@ -449,7 +459,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         setEligibleForReuse(true);
 
         final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason.toString());
+        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
