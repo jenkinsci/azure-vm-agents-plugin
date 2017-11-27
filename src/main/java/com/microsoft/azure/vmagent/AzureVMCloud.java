@@ -18,6 +18,8 @@ package com.microsoft.azure.vmagent;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
@@ -26,15 +28,17 @@ import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureMsiCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
+import com.microsoft.azure.vmagent.util.AzureClientHolder;
+import com.microsoft.azure.vmagent.util.AzureClientFactory;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
-import com.microsoft.azure.vmagent.util.TokenCache;
+import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
 import hudson.Extension;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
@@ -87,8 +91,6 @@ public class AzureVMCloud extends Cloud {
 
     private String cloudName;
 
-    private final transient AzureCredentials.ServicePrincipal credentials;
-
     private final String credentialsId;
 
     private final int maxVirtualMachinesLimit;
@@ -120,6 +122,17 @@ public class AzureVMCloud extends Cloud {
     // Approximate virtual machine count.  Updated periodically.
     private int approximateVirtualMachineCount;
 
+    private transient Supplier<Azure> azureClient = createAzureClientSupplier();
+
+    private Supplier<Azure> createAzureClientSupplier() {
+        return Suppliers.memoize(new Supplier<Azure>() {
+            @Override
+            public Azure get() {
+                return AzureClientFactory.getClient(credentialsId);
+            }
+        });
+    }
+
     @DataBoundConstructor
     public AzureVMCloud(
             String cloudName,
@@ -133,7 +146,6 @@ public class AzureVMCloud extends Cloud {
             List<AzureVMAgentTemplate> vmTemplates) {
         this(
                 cloudName,
-                AzureCredentials.getServicePrincipal(azureCredentialsId),
                 azureCredentialsId,
                 maxVirtualMachinesLimit,
                 deploymentTimeout,
@@ -145,7 +157,6 @@ public class AzureVMCloud extends Cloud {
 
     public AzureVMCloud(
             String cloudName,
-            AzureCredentials.ServicePrincipal credentials,
             String azureCredentialsId,
             String maxVirtualMachinesLimit,
             String deploymentTimeout,
@@ -156,19 +167,18 @@ public class AzureVMCloud extends Cloud {
         super(
                 getOrGenerateCloudName(
                         cloudName,
-                        credentials.getSubscriptionId(),
+                        azureCredentialsId,
                         getResourceGroupName(
                                 resourceGroupReferenceType,
                                 newResourceGroupName,
                                 existingResourceGroupName)));
-        this.credentials = credentials;
         this.credentialsId = azureCredentialsId;
         this.resourceGroupReferenceType = resourceGroupReferenceType;
         this.newResourceGroupName = newResourceGroupName;
         this.existingResourceGroupName = existingResourceGroupName;
         this.resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-        this.cloudName = getOrGenerateCloudName(cloudName, credentials.getSubscriptionId(), this.resourceGroupName);
+        this.cloudName = getOrGenerateCloudName(cloudName, azureCredentialsId, this.resourceGroupName);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -220,6 +230,7 @@ public class AzureVMCloud extends Cloud {
         //resourceGroupName is transient so we need to restore it for future using
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+        azureClient = createAzureClientSupplier();
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
@@ -301,9 +312,9 @@ public class AzureVMCloud extends Cloud {
         return cloudName;
     }
 
-    public static String getOrGenerateCloudName(String cloudName, String subscriptionId, String resourceGroupName) {
+    public static String getOrGenerateCloudName(String cloudName, String credentialId, String resourceGroupName) {
         return StringUtils.isBlank(cloudName)
-                ? AzureUtil.getCloudName(subscriptionId, resourceGroupName)
+                ? AzureUtil.getCloudName(credentialId, resourceGroupName)
                 : cloudName;
     }
 
@@ -329,13 +340,6 @@ public class AzureVMCloud extends Cloud {
 
     public String getAzureCredentialsId() {
         return credentialsId;
-    }
-
-    public AzureCredentials.ServicePrincipal getServicePrincipal() {
-        if (credentials == null && credentialsId != null) {
-            return AzureCredentials.getServicePrincipal(credentialsId);
-        }
-        return credentials;
     }
 
     /**
@@ -595,13 +599,8 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
-                final Azure azureClient = Azure.configure()
-                        .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
-                        .withLogLevel(Constants.DEFAULT_AZURE_SDK_LOGGING_LEVEL)
-                        .withUserAgent(TokenCache.getUserAgent())
-                        .authenticate(TokenCache.get(template.getAzureCloud().getServicePrincipal()))
-                        .withSubscription(template.getAzureCloud().getServicePrincipal().getSubscriptionId());
-                final Deployment dep = azureClient.deployments().getByName(deploymentName);
+                final Azure newAzureClient = AzureClientFactory.getClient(credentialsId);
+                final Deployment dep = newAzureClient.deployments().getByName(deploymentName);
                 // Might find no deployment.
                 if (dep == null) {
                     throw AzureCloudException.create(
@@ -637,13 +636,13 @@ public class AzureVMCloud extends Cloud {
                                         "AzureVMCloud: createProvisionedAgent: VM available: {0}",
                                         resource);
 
-                                final VirtualMachine vm = azureClient.virtualMachines()
+                                final VirtualMachine vm = newAzureClient.virtualMachines()
                                         .getByResourceGroup(resourceGroupName, resource);
                                 final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
 
-                                AzureVMAgent newAgent = AzureVMManagementServiceDelegate.parseResponse(
+                                AzureVMAgent newAgent = getServiceDelegate().parseResponse(
                                         provisioningId, vmName, deploymentName, template, osType);
-                                AzureVMManagementServiceDelegate.setVirtualMachineDetails(newAgent, template);
+                                getServiceDelegate().setVirtualMachineDetails(newAgent, template);
                                 return newAgent;
                             } else {
                                 LOGGER.log(Level.INFO,
@@ -711,11 +710,11 @@ public class AzureVMCloud extends Cloud {
                                                     agentNode.getNodeName());
 
                                             try {
-                                                AzureVMManagementServiceDelegate.startVirtualMachine(agentNode);
+                                                getServiceDelegate().startVirtualMachine(agentNode);
                                                 final int waitTimeInMillis = 30 * 1000; // wait for 30 seconds
                                                 // set virtual machine details again
                                                 Thread.sleep(waitTimeInMillis);
-                                                AzureVMManagementServiceDelegate.setVirtualMachineDetails(
+                                                getServiceDelegate().setVirtualMachineDetails(
                                                         agentNode, template);
                                                 Jenkins.getInstance().addNode(agentNode);
                                                 if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
@@ -747,8 +746,7 @@ public class AzureVMCloud extends Cloud {
         // AI events to send
         final Map<String, String> properties = new HashMap<>();
         properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
-        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID,
-                template.getAzureCloud().getServicePrincipal().getSubscriptionId());
+        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID, getAzureClient().subscriptionId());
         properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
         properties.put("AgentOS", template.getOsType());
         properties.put("RetentionStrategy", template.getRetentionStrategy().getClass().getName());
@@ -927,8 +925,8 @@ public class AzureVMCloud extends Cloud {
                                 FailureStage stage) {
                             // Attempt to terminate whatever was created
                             try {
-                                AzureVMManagementServiceDelegate.terminateVirtualMachine(
-                                        template.getAzureCloud().getServicePrincipal(), vmName,
+                                getServiceDelegate().terminateVirtualMachine(
+                                        vmName,
                                         template.getResourceGroupName());
                             } catch (AzureCloudException terminateEx) {
                                 LOGGER.log(
@@ -1004,6 +1002,14 @@ public class AzureVMCloud extends Cloud {
         }
 
         return false;
+    }
+
+    public Azure getAzureClient() {
+        return azureClient.get();
+    }
+
+    public AzureVMManagementServiceDelegate getServiceDelegate() {
+        return AzureVMManagementServiceDelegate.getInstance(getAzureClient());
     }
 
     @Extension
@@ -1084,29 +1090,26 @@ public class AzureVMCloud extends Cloud {
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
-            AzureCredentials.ServicePrincipal credentials = AzureCredentials.getServicePrincipal(azureCredentialsId);
-            try {
-                credentials.validate();
-                final String validationResult = AzureVMManagementServiceDelegate.verifyConfiguration(
-                        credentials, resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
-                if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
-                    return FormValidation.error(validationResult);
-                }
-            } catch (AzureCredentials.ValidationException e) {
-                return FormValidation.error(e.getMessage());
+            Azure azureClient = AzureClientHolder.get(azureCredentialsId);
+            final String validationResult = AzureVMManagementServiceDelegate.getInstance(azureClient)
+                    .verifyConfiguration(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
+            if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
+                return FormValidation.error(validationResult);
             }
             return FormValidation.ok(Messages.Azure_Config_Success());
         }
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
             return new StandardListBoxModel()
-                    .withEmptySelection()
-                    .withAll(
-                            CredentialsProvider.lookupCredentials(
-                                    AzureCredentials.class,
-                                    owner,
-                                    ACL.SYSTEM,
-                                    Collections.<DomainRequirement>emptyList()));
+                    .includeEmptyValue()
+                    .withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class,
+                            owner,
+                            ACL.SYSTEM,
+                            Collections.<DomainRequirement>emptyList()))
+                    .withAll(CredentialsProvider.lookupCredentials(AzureMsiCredentials.class,
+                            owner,
+                            ACL.SYSTEM,
+                            Collections.<DomainRequirement>emptyList()));
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
@@ -1118,11 +1121,7 @@ public class AzureVMCloud extends Cloud {
             }
 
             try {
-                AzureCredentials.ServicePrincipal servicePrincipal =
-                        AzureCredentials.getServicePrincipal(azureCredentialsId);
-
-                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-
+                final Azure azureClient = AzureClientHolder.get(azureCredentialsId);
                 for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
                     model.add(resourceGroup.name());
                 }

@@ -57,15 +57,14 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
 
             when(cleanUpMock.getCloud(cloudName)).thenReturn(cloudMock);
             doNothing().when(cleanUpMock).execute(any(TaskListener.class));
-            when(cloudMock.getServicePrincipal()).thenReturn(servicePrincipal);
 
             cleanUpMock.cleanDeployments(60 * 24,-1); // should be a no-op, the timeout is 1 day
-            Assert.assertNotNull(customTokenCache.getAzureClient().deployments().getByResourceGroup(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
+            Assert.assertNotNull(azureClient.deployments().getByResourceGroup(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
 
             cleanUpMock.cleanDeployments(-1,-1); // should delete all deployments
             try {
                 Thread.sleep(10* 1000); // give time for azure to realize that the deployment was deleted
-                Assert.assertNull(customTokenCache.getAzureClient().deployments().getByResourceGroup(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
+                Assert.assertNull(azureClient.deployments().getByResourceGroup(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
             } catch (Exception e) {
                 Assert.assertTrue(true);
             }
@@ -87,6 +86,8 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         final String cloudName = "some_cloud_name";
         final List<String> emptyValidVMsList = Arrays.asList(new Object[]{});
         try {
+            AzureVMCloud cloud = mock(AzureVMCloud.class);
+            // TODO: mock
             AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
             when(cleanUpTask.getValidVMs(cloudName)).thenReturn(emptyValidVMsList);
 
@@ -99,14 +100,14 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
 
             createAzureVM(vmName, tagName, tagValue.get());
 
-            cleanUpTask.cleanLeakedResources(testEnv.azureResourceGroup, servicePrincipal, cloudName, deploymentRegistrarMock_nonMatching1);
-            Assert.assertNotNull(customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+            cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_nonMatching1);
+            Assert.assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
 
-            cleanUpTask.cleanLeakedResources(testEnv.azureResourceGroup, servicePrincipal, cloudName, deploymentRegistrarMock_nonMatching2);
-            Assert.assertNotNull(customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+            cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_nonMatching2);
+            Assert.assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
 
-            cleanUpTask.cleanLeakedResources(testEnv.azureResourceGroup, servicePrincipal, cloudName, deploymentRegistrarMock_matching);
-            Assert.assertNull(customTokenCache.getAzureClient().virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+            cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_matching);
+            Assert.assertNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -119,6 +120,8 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         final AzureUtil.DeploymentTag matchingTagValue = new AzureUtil.DeploymentTag("some_value/9999123");
         final String cloudName = "some_cloud_name";
         try {
+            AzureVMCloud cloud = mock(AzureVMCloud.class);
+            // TODO:
 
             final DeploymentRegistrar deploymentRegistrarMock = mock(DeploymentRegistrar.class);
             when(deploymentRegistrarMock.getDeploymentTag()).thenReturn(tagValue);
@@ -131,14 +134,14 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
             AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
             when(cleanUpTask.getValidVMs(cloudName)).thenReturn(validVMs);
 
-            cleanUpTask.cleanLeakedResources(testEnv.azureResourceGroup, servicePrincipal, cloudName, deploymentRegistrarMock_matching); //should remove second deployment
+            cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_matching); //should remove second deployment
 
             Thread.sleep(20* 1000); // give time for azure to realize that some resources are missing
             StorageAccount jenkinsStorage = null;
-            PagedList<GenericResource> resources = customTokenCache.getAzureClient().genericResources().listByResourceGroup(testEnv.azureResourceGroup);
+            PagedList<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
             for (GenericResource resource : resources) {
                 if (StringUtils.containsIgnoreCase(resource.type(), "storageAccounts")) {
-                    jenkinsStorage = customTokenCache.getAzureClient().storageAccounts().getById(resource.id());
+                    jenkinsStorage = azureClient.storageAccounts().getById(resource.id());
                 }
                 if (resource.tags().get(Constants.AZURE_RESOURCES_TAG_NAME) != null &&
                         matchingTagValue.matches(new AzureUtil.DeploymentTag(resource.tags().get(Constants.AZURE_RESOURCES_TAG_NAME)))) {

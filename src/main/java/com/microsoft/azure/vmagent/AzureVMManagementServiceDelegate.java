@@ -27,8 +27,6 @@ import com.microsoft.azure.management.network.Network;
 import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
-import com.microsoft.azure.management.resources.Provider;
-import com.microsoft.azure.management.resources.ProviderResourceType;
 import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.storage.*;
@@ -39,8 +37,6 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudPageBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import com.microsoft.azure.storage.core.PathUtility;
-import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
@@ -143,6 +139,19 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
+    private final Azure azureClient;
+
+    public static AzureVMManagementServiceDelegate getInstance(AzureVMCloud cloud) {
+        return cloud.getServiceDelegate();
+    }
+
+    public static AzureVMManagementServiceDelegate getInstance(Azure azureClient) {
+        if (azureClient == null) {
+            throw new NullPointerException("the azure client is null!");
+        }
+        return new AzureVMManagementServiceDelegate(azureClient);
+    }
+
     /**
      * Creates a new deployment of VMs based on the provided template.
      *
@@ -152,20 +161,18 @@ public final class AzureVMManagementServiceDelegate {
      * @throws AzureCloudException
      * @throws java.io.IOException
      */
-    public static AzureVMDeploymentInfo createDeployment(AzureVMAgentTemplate template, int numberOfAgents)
+    public AzureVMDeploymentInfo createDeployment(AzureVMAgentTemplate template, int numberOfAgents)
             throws AzureCloudException, IOException {
-        return AzureVMManagementServiceDelegate.createDeployment(
+        return createDeployment(
                 template,
                 numberOfAgents,
-                TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()),
                 AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance()
         );
     }
 
-    public static AzureVMDeploymentInfo createDeployment(
+    public AzureVMDeploymentInfo createDeployment(
             AzureVMAgentTemplate template,
             int numberOfAgents,
-            TokenCache tokenCache,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException {
 
         InputStream embeddedTemplate = null;
@@ -173,8 +180,6 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
                     template.getTemplateName());
-
-            final Azure azureClient = tokenCache.getAzureClient();
 
             final Date timestamp = new Date(System.currentTimeMillis());
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
@@ -296,7 +301,7 @@ public final class AzureVMManagementServiceDelegate {
                 } else {
                     initScript = (String) properties.get("initScript");
                 }
-                String scriptUri = uploadCustomScript(template, scriptName, tokenCache, initScript);
+                String scriptUri = uploadCustomScript(template, scriptName, initScript);
                 putVariable(tmp, "startupScriptURI", scriptUri);
                 putVariable(tmp, "startupScriptName", scriptName);
 
@@ -546,20 +551,18 @@ public final class AzureVMManagementServiceDelegate {
      *
      * @param template         Template containing script to upload
      * @param targetScriptName Script to upload
-     * @param tokenCache       TokenCache
      * @param initScript       Specify initScript
      * @return URI of script
      * @throws AzureCloudException
      */
-    public static String uploadCustomScript(
+    public String uploadCustomScript(
             AzureVMAgentTemplate template,
             String targetScriptName,
-            TokenCache tokenCache, String initScript) throws AzureCloudException {
+            String initScript) throws AzureCloudException {
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
         String location = template.getLocation();
-        final Azure azureClient = tokenCache.getAzureClient();
 
         //make sure the resource group and storage account exist
         try {
@@ -588,11 +591,10 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String uploadCustomScript(
+    public String uploadCustomScript(
             AzureVMAgentTemplate template,
-            String targetScriptName,
-            TokenCache tokenCache) throws AzureCloudException {
-        return uploadCustomScript(template, targetScriptName, tokenCache, template.getInitScript());
+            String targetScriptName) throws AzureCloudException {
+        return uploadCustomScript(template, targetScriptName, template.getInitScript());
     }
 
     /**
@@ -602,11 +604,9 @@ public final class AzureVMManagementServiceDelegate {
      * @param template
      * @throws AzureCloudException
      */
-    public static void setVirtualMachineDetails(
+    public void setVirtualMachineDetails(
             AzureVMAgent azureAgent, AzureVMAgentTemplate template) throws AzureCloudException {
 
-        final Azure azureClient =
-                TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()).getAzureClient();
         VirtualMachine vm =
                 azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), azureAgent.getNodeName());
 
@@ -637,10 +637,8 @@ public final class AzureVMManagementServiceDelegate {
                         azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
     }
 
-    public static void attachPublicIP(AzureVMAgent azureAgent, AzureVMAgentTemplate template)
+    public void attachPublicIP(AzureVMAgent azureAgent, AzureVMAgentTemplate template)
             throws AzureCloudException {
-        final Azure azureClient =
-                TokenCache.getInstance(template.getAzureCloud().getServicePrincipal()).getAzureClient();
 
         VirtualMachine vm = null;
         try {
@@ -679,18 +677,14 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Determines whether a virtual machine exists.
      *
-     * @param servicePrincipal  Service principal of the subscription.
      * @param vmName            Name of the VM.
      * @param resourceGroupName Resource group of the VM.
      * @return If the virtual machine exists
      */
-    private static boolean virtualMachineExists(
-            ServicePrincipal servicePrincipal,
+    private boolean virtualMachineExists(
             String vmName,
             String resourceGroupName) throws AzureCloudException {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: check for {0}", vmName);
-
-        final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
 
         VirtualMachine vm = null;
         try {
@@ -718,7 +712,8 @@ public final class AzureVMManagementServiceDelegate {
      */
     public static boolean virtualMachineExists(AzureVMAgent agent) {
         try {
-            return virtualMachineExists(agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+            AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
+            return delegate.virtualMachineExists(agent.getNodeName(), agent.getResourceGroupName());
         } catch (AzureCloudException e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: virtualMachineExists: "
@@ -738,7 +733,7 @@ public final class AzureVMManagementServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static AzureVMAgent parseResponse(
+    public AzureVMAgent parseResponse(
             ProvisioningActivity.Id id,
             String vmname,
             String deploymentName,
@@ -757,8 +752,6 @@ public final class AzureVMManagementServiceDelegate {
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
 
-            final Azure azureClient =
-                    TokenCache.getInstance(azureCloud.getServicePrincipal()).getAzureClient();
             VirtualMachine vm =
                     azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), vmname);
 
@@ -792,7 +785,6 @@ public final class AzureVMManagementServiceDelegate {
                     template.getRetentionStrategy(),
                     (String) properties.get("initScript"),
                     azureCloud.getAzureCredentialsId(),
-                    azureCloud.getServicePrincipal(),
                     (String) properties.get("agentLaunchMethod"),
                     CleanUpAction.DEFAULT,
                     null,
@@ -1178,21 +1170,21 @@ public final class AzureVMManagementServiceDelegate {
      * If it can't fetch the data then it will return a default hardcoded set
      * certificate based auth appears to be required.
      *
-     * @param servicePrincipal Service Principal
      * @return Set of available regions
      */
-    public static Set<String> getVirtualMachineLocations(AzureCredentials.ServicePrincipal servicePrincipal) {
+    public Set<String> getVirtualMachineLocations(String serviceManagementURL) {
+        if (serviceManagementURL == null) {
+            return null;
+        }
+        serviceManagementURL = serviceManagementURL.toLowerCase();
         try {
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-            return LocationCache.getLocation(azureClient, servicePrincipal.getServiceManagementURL().toLowerCase());
+            return LocationCache.getLocation(azureClient, serviceManagementURL);
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
                             + "error while fetching the regions {0}. Will return default list ",
                     e);
-            if (servicePrincipal != null
-                    && servicePrincipal.getServiceManagementURL() != null
-                    && servicePrincipal.getServiceManagementURL().toLowerCase().contains("china")) {
+            if (serviceManagementURL.contains("china")) {
                 return AVAILABLE_LOCATIONS_CHINA;
             }
             return AVAILABLE_LOCATIONS_STD;
@@ -1202,18 +1194,16 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Gets list of virtual machine sizes. If it can't fetch the data then it will return a default hardcoded list
      *
-     * @param servicePrincipal Service Principal
      * @param location         Location to obtain VM sizes for
      * @return List of VM sizes
      */
-    public static List<String> getVMSizes(AzureCredentials.ServicePrincipal servicePrincipal, String location) {
+    public List<String> getVMSizes(String location) {
         if (location == null || location.isEmpty()) {
             //if the location is not available we'll just return a default list with some of the most common VM sizes
             return DEFAULT_VM_SIZES;
         }
         try {
             List<String> ret = new ArrayList<>();
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             PagedList<VirtualMachineSize> vmSizes = azureClient.virtualMachines().sizes().listByRegion(location);
             for (VirtualMachineSize vmSize : vmSizes) {
                 ret.add(vmSize.name());
@@ -1231,14 +1221,12 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Validates certificate configuration.
      *
-     * @param servicePrincipal  Service principal of the subscription.
      * @param resourceGroupName Resource group name.
      * @param maxVMLimit        Max limit of virtual machines.
      * @param timeOut           Timeout of the verification.
      * @return Verification result.
      */
-    public static String verifyConfiguration(
-            ServicePrincipal servicePrincipal,
+    public String verifyConfiguration(
             String resourceGroupName,
             String maxVMLimit,
             String timeOut) {
@@ -1259,7 +1247,7 @@ public final class AzureVMManagementServiceDelegate {
             if (AzureUtil.isValidTimeOut(timeOut) && AzureUtil.isValidMAxVMLimit(maxVMLimit)
                     && AzureUtil.isValidResourceGroupName(resourceGroupName)) {
 
-                String result = verifyConfiguration(servicePrincipal, resourceGroupName);
+                String result = verifyConfiguration(resourceGroupName);
                 if (!result.matches(Constants.OP_SUCCESS)) {
                     return Messages.Azure_GC_Template_Val_Profile_Err();
                 }
@@ -1271,13 +1259,12 @@ public final class AzureVMManagementServiceDelegate {
         return Constants.OP_SUCCESS;
     }
 
-    public static String verifyConfiguration(final ServicePrincipal servicePrincipal, final String resourceGroupName) {
+    public String verifyConfiguration(final String resourceGroupName) {
 
         Callable<String> task = new Callable<String>() {
 
             @Override
             public String call() throws Exception {
-                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
                 azureClient.storageAccounts().getByResourceGroup(resourceGroupName, "CI_SYSTEM");
                 return Constants.OP_SUCCESS;
             }
@@ -1321,18 +1308,15 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Gets current status of virtual machine.
      *
-     * @param servicePrincipal  Service principal of the subscription.
      * @param vmName            Virtual machine name.
      * @param resourceGroupName Resource group name.
      * @return Virtual machine status.
      * @throws AzureCloudException
      */
 
-    private static VMStatus getVirtualMachineStatus(
-            ServicePrincipal servicePrincipal,
+    private VMStatus getVirtualMachineStatus(
             String vmName,
             String resourceGroupName) throws AzureCloudException {
-        final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
 
         VirtualMachine vm;
         try {
@@ -1361,16 +1345,14 @@ public final class AzureVMManagementServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public static boolean isVMAliveOrHealthy(AzureVMAgent agent) throws AzureCloudException {
-        VMStatus status = getVirtualMachineStatus(
-                agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+    public boolean isVMAliveOrHealthy(AzureVMAgent agent) throws AzureCloudException {
+        VMStatus status = getVirtualMachineStatus(agent.getNodeName(), agent.getResourceGroupName());
         final int maxRetryCount = 6;
         int currentRetryCount = 0;
         //When launching Windows via SSH, this function will be executed before extension done.
         //Thus status will be "Updating".
         while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
-            status = getVirtualMachineStatus(
-                    agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName());
+            status = getVirtualMachineStatus(agent.getNodeName(), agent.getResourceGroupName());
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: "
                             + "Status is Updating, wait for another 30 seconds");
@@ -1397,13 +1379,11 @@ public final class AzureVMManagementServiceDelegate {
      * based off of the VMs that the current credential set has access to. It
      * also does not deal with the classic, model. So keep this in mind.
      *
-     * @param servicePrincipal
      * @param resourceGroupName
      * @return Total VM count
      */
-    public static int getVirtualMachineCount(ServicePrincipal servicePrincipal, String resourceGroupName) {
+    public int getVirtualMachineCount(String resourceGroupName) {
         try {
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             final PagedList<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
             int count = 0;
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
@@ -1430,14 +1410,13 @@ public final class AzureVMManagementServiceDelegate {
      * @param agent
      * @throws Exception
      */
-    public static void shutdownVirtualMachine(AzureVMAgent agent) {
+    public void shutdownVirtualMachine(AzureVMAgent agent) {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: shutdownVirtualMachine: called for {0}",
                 agent.getNodeName());
 
         try {
-            TokenCache.getInstance(agent.getServicePrincipal()).getAzureClient().virtualMachines()
-                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName())
-                    .powerOff();
+            azureClient.virtualMachines()
+                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).powerOff();
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: provision: could not terminate or shutdown {0}, {1}",
@@ -1452,42 +1431,37 @@ public final class AzureVMManagementServiceDelegate {
      * @throws Exception
      */
     public static void terminateVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
-        terminateVirtualMachine(
-                agent.getServicePrincipal(), agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
+        AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
+        delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
     }
 
     /**
      * Terminates a virtual machine.
      *
-     * @param servicePrincipal  Azure ServicePrincipal
      * @param vmName            VM name
      * @param resourceGroupName Resource group containing the VM
      * @throws Exception
      */
-    public static void terminateVirtualMachine(
-            ServicePrincipal servicePrincipal,
+    public void terminateVirtualMachine(
             String vmName,
             String resourceGroupName) throws AzureCloudException {
-        terminateVirtualMachine(servicePrincipal, vmName, resourceGroupName, new ExecutionEngine());
+        terminateVirtualMachine(vmName, resourceGroupName, new ExecutionEngine());
     }
 
     /**
      * Terminates a virtual machine.
      *
-     * @param servicePrincipal  Azure ServicePrincipal
      * @param vmName            VM name
      * @param resourceGroupName Resource group containing the VM
      * @param executionEngine
      * @throws Exception
      */
-    public static void terminateVirtualMachine(
-            final ServicePrincipal servicePrincipal,
+    public void terminateVirtualMachine(
             final String vmName,
             final String resourceGroupName,
             ExecutionEngine executionEngine) throws AzureCloudException {
         try {
-            if (virtualMachineExists(servicePrincipal, vmName, resourceGroupName)) {
-                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            if (virtualMachineExists(vmName, resourceGroupName)) {
                 List<URI> diskUrisToRemove = new ArrayList<>();
                 List<String> diskIdToRemove = new ArrayList<>();
                 if (!azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).isManagedDiskEnabled()) {
@@ -1510,7 +1484,7 @@ public final class AzureVMManagementServiceDelegate {
 
                 // Now remove the disks
                 for (URI diskUri : diskUrisToRemove) {
-                    AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, diskUri, resourceGroupName);
+                    this.removeStorageBlob(diskUri, resourceGroupName);
                 }
                 for (String id : diskIdToRemove) {
                     LOGGER.log(Level.INFO,
@@ -1537,7 +1511,7 @@ public final class AzureVMManagementServiceDelegate {
             executionEngine.executeAsync(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    removeIPName(servicePrincipal, resourceGroupName, vmName);
+                    removeIPName(resourceGroupName, vmName);
                     return null;
                 }
             }, new NoRetryStrategy());
@@ -1545,7 +1519,7 @@ public final class AzureVMManagementServiceDelegate {
 
     }
 
-    public static void removeImage(Azure azureClient, String vmName, String resourceGroupName) {
+    public void removeImage(Azure azureClient, String vmName, String resourceGroupName) {
         List<VirtualMachineCustomImage> customImages =
                 azureClient.virtualMachineCustomImages().listByResourceGroup(resourceGroupName);
         for (VirtualMachineCustomImage image : customImages) {
@@ -1560,8 +1534,7 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static void removeStorageBlob(
-            Azure azureClient, URI blobURI, String resourceGroupName) throws Exception {
+    public void removeStorageBlob(URI blobURI, String resourceGroupName) throws Exception {
         // Obtain container, storage account, and blob name
         String storageAccountName = blobURI.getHost().split("\\.")[0];
         String containerName = PathUtility.getContainerNameFromUri(blobURI, false);
@@ -1587,16 +1560,12 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Remove the IP name.
      *
-     * @param servicePrincipal
      * @param resourceGroupName
      * @param vmName
      * @throws AzureCloudException
      */
-    public static void removeIPName(ServicePrincipal servicePrincipal,
-                                    String resourceGroupName,
-                                    String vmName) throws AzureCloudException {
-        final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-
+    public void removeIPName(String resourceGroupName,
+                             String vmName) throws AzureCloudException {
         final String nic = vmName + "NIC";
         try {
             LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
@@ -1620,12 +1589,10 @@ public final class AzureVMManagementServiceDelegate {
      * @param agent
      * @throws AzureCloudException
      */
-    public static void restartVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
+    public void restartVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         try {
-            TokenCache.getInstance(agent.getServicePrincipal()).getAzureClient()
-                    .virtualMachines()
-                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName())
-                    .restart();
+            azureClient.virtualMachines()
+                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).restart();
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
@@ -1637,12 +1604,10 @@ public final class AzureVMManagementServiceDelegate {
      * @param agent
      * @throws Exception
      */
-    public static void startVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
+    public void startVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: startVirtualMachine: {0}", agent.getNodeName());
         int retryCount = 0;
         boolean successful = false;
-
-        final Azure azureClient = TokenCache.getInstance(agent.getServicePrincipal()).getAzureClient();
 
         while (!successful) {
             try {
@@ -1672,15 +1637,12 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Returns virtual network site properties.
      *
-     * @param servicePrincipal
      * @param virtualNetworkName
      * @param resourceGroupName
      * @return
      */
-    public static Network getVirtualNetwork(
-            ServicePrincipal servicePrincipal, String virtualNetworkName, String resourceGroupName) {
+    public Network getVirtualNetwork(String virtualNetworkName, String resourceGroupName) {
         try {
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
             return azureClient.networks().getByResourceGroup(resourceGroupName, virtualNetworkName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getVirtualNetworkInfo: "
@@ -1706,7 +1668,6 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Verifies template configuration by making server calls if needed.
      *
-     * @param servicePrincipal
      * @param templateName
      * @param labels
      * @param location
@@ -1734,8 +1695,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param usePrivateIP
      * @return
      */
-    public static List<String> verifyTemplate(
-            AzureCredentials.ServicePrincipal servicePrincipal,
+    public List<String> verifyTemplate(
             String templateName,
             String labels,
             String location,
@@ -1822,14 +1782,13 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyLocation(location, servicePrincipal.getServiceManagementURL());
+            validationResult = verifyLocation(location);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
             }
 
             verifyTemplateAsync(
-                    servicePrincipal,
                     location,
                     imageTopLevelType,
                     referenceType,
@@ -1858,8 +1817,7 @@ public final class AzureVMManagementServiceDelegate {
         return errors;
     }
 
-    private static void verifyTemplateAsync(
-            final ServicePrincipal servicePrincipal,
+    private void verifyTemplateAsync(
             final String location,
             final String imageTopLevelType,
             final AzureVMAgentTemplate.ImageReferenceType referenceType,
@@ -1887,7 +1845,6 @@ public final class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyVirtualNetwork(
-                        servicePrincipal,
                         virtualNetworkName,
                         virtualNetworkResourceGroupName,
                         subnetName,
@@ -1903,7 +1860,6 @@ public final class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyVirtualMachineImage(
-                        servicePrincipal,
                         location,
                         storageAccountName,
                         imageTopLevelType,
@@ -1924,7 +1880,7 @@ public final class AzureVMManagementServiceDelegate {
             @Override
             public String call() throws Exception {
                 return verifyStorageAccountName(
-                        servicePrincipal, resourceGroupName, storageAccountName, storageAccountType);
+                        resourceGroupName, storageAccountName, storageAccountType);
             }
         };
         verificationTaskList.add(callVerifyStorageAccountName);
@@ -1934,7 +1890,7 @@ public final class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyNSG(servicePrincipal, resourceGroupName, nsgName);
+                return verifyNSG(resourceGroupName, nsgName);
             }
         };
         verificationTaskList.add(callVerifyNSG);
@@ -1990,8 +1946,7 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyVirtualNetwork(
-            ServicePrincipal servicePrincipal,
+    public String verifyVirtualNetwork(
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
             String subnetName,
@@ -2002,7 +1957,7 @@ public final class AzureVMManagementServiceDelegate {
             if (StringUtils.isNotBlank(virtualNetworkResourceGroupName)) {
                 finalResourceGroupName = virtualNetworkResourceGroupName;
             }
-            Network virtualNetwork = getVirtualNetwork(servicePrincipal, virtualNetworkName, finalResourceGroupName);
+            Network virtualNetwork = getVirtualNetwork(virtualNetworkName, finalResourceGroupName);
             if (virtualNetwork == null) {
                 return Messages.Azure_GC_Template_VirtualNetwork_NotFound(virtualNetworkName, finalResourceGroupName);
             }
@@ -2020,8 +1975,7 @@ public final class AzureVMManagementServiceDelegate {
         return Constants.OP_SUCCESS;
     }
 
-    public static String verifyVirtualMachineImage(
-            ServicePrincipal servicePrincipal,
+    public String verifyVirtualMachineImage(
             String location,
             String storageAccountName,
             String imageTopLevelType,
@@ -2075,10 +2029,7 @@ public final class AzureVMManagementServiceDelegate {
         } else {
             try {
                 List<VirtualMachinePublisher> publishers =
-                        TokenCache.getInstance(servicePrincipal).getAzureClient()
-                                .virtualMachineImages()
-                                .publishers()
-                                .listByRegion(getLocationName(location));
+                        azureClient.virtualMachineImages().publishers().listByRegion(getLocationName(location));
                 for (VirtualMachinePublisher publisher : publishers) {
                     if (!publisher.name().equalsIgnoreCase(imagePublisher)) {
                         continue;
@@ -2116,15 +2067,12 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyStorageAccountName(
-            ServicePrincipal servicePrincipal,
+    public String verifyStorageAccountName(
             String resourceGroupName,
             String storageAccountName,
             String storageAccountType) {
         boolean isAvailable = false;
         try {
-            Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
-
             CheckNameAvailabilityResult checkResult =
                     azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
@@ -2184,7 +2132,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param location
      * @return
      */
-    private static String verifyLocation(String location, String serviceManagementURL) {
+    private static String verifyLocation(String location) {
         String locationName = getLocationName(location);
         if (locationName != null) {
             return Constants.OP_SUCCESS;
@@ -2245,13 +2193,11 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static String verifyNSG(
-            ServicePrincipal servicePrincipal,
+    public String verifyNSG(
             String resourceGroupName,
             String nsgName) {
         if (StringUtils.isNotBlank(nsgName)) {
             try {
-                final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
                 NetworkSecurityGroup nsg = azureClient.networkSecurityGroups().getByResourceGroup(resourceGroupName, nsgName);
                 if (nsg == null) {
                     return Messages.Azure_GC_Template_NSG_NotFound(nsgName);
@@ -2271,7 +2217,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return
      */
-    private static void createAzureResourceGroup(
+    private void createAzureResourceGroup(
             Azure azureClient, String locationName, String resourceGroupName) throws AzureCloudException {
         try {
             azureClient.resourceGroups()
@@ -2297,7 +2243,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return
      */
-    private static void createStorageAccount(
+    private void createStorageAccount(
             Azure azureClient,
             String targetStorageAccountType,
             String targetStorageAccount,
@@ -2328,7 +2274,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return StorageAccount object
      */
-    private static StorageAccount getStorageAccount(
+    private StorageAccount getStorageAccount(
             Azure azureClient, String targetStorageAccount, String resourceGroupName)
             throws AzureCloudException {
         try {
@@ -2468,7 +2414,7 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public static CloudBlobContainer getCloudBlobContainer(
+    public CloudBlobContainer getCloudBlobContainer(
             Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContanerName)
             throws AzureCloudException {
 
@@ -2484,7 +2430,7 @@ public final class AzureVMManagementServiceDelegate {
         return getCloudBlobContainer(account, blobContanerName);
     }
 
-    private AzureVMManagementServiceDelegate() {
-        // hide constructor
+    private AzureVMManagementServiceDelegate(Azure azureClient) {
+        this.azureClient = azureClient;
     }
 }
