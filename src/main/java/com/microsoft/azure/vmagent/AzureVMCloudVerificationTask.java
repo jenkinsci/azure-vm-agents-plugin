@@ -256,8 +256,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         LOGGER.info("AzureVMCloudVerificationTask: verifyConfiguration: start");
 
         // Check the sub and off we go
-        String result = AzureVMManagementServiceDelegate.verifyConfiguration(
-                cloud.getServicePrincipal(),
+        String result = cloud.getServiceDelegate().verifyConfiguration(
                 cloud.getResourceGroupName(),
                 Integer.toString(cloud.getMaxVirtualMachinesLimit()),
                 Integer.toString(cloud.getDeploymentTimeout()));
@@ -279,8 +278,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     public int getVirtualMachineCount(AzureVMCloud cloud) {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
-            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(
-                    cloud.getServicePrincipal(), cloud.getResourceGroupName());
+            int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getResourceGroupName());
             LOGGER.log(Level.INFO,
                     "AzureVMCloudVerificationTask: getVirtualMachineCount: end, currently {0} vms",
                     vmCount);

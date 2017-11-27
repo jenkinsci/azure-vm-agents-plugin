@@ -19,14 +19,12 @@ import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.DefaultRetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.Computer;
@@ -209,7 +207,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             }
 
             try {
-                final Azure azureClient = TokenCache.getInstance(cloud.getServicePrincipal()).getAzureClient();
+                final Azure azureClient = cloud.getAzureClient();
 
                 // This will throw if the deployment can't be found.  This could happen in a couple instances
                 // 1) The deployment has already been deleted
@@ -310,11 +308,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             return;
         }
         for (AzureVMCloud cloud : instance.clouds.getAll(AzureVMCloud.class)) {
-            cleanLeakedResources(
-                    cloud.getResourceGroupName(),
-                    cloud.getServicePrincipal(),
-                    cloud.name,
-                    DeploymentRegistrar.getInstance());
+            cleanLeakedResources(cloud, cloud.getResourceGroupName(), DeploymentRegistrar.getInstance());
         }
     }
 
@@ -333,13 +327,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public void cleanLeakedResources(
+            AzureVMCloud cloud,
             String resourceGroup,
-            ServicePrincipal servicePrincipal,
-            String cloudName,
             DeploymentRegistrar deploymentRegistrar) {
         try {
             final List<String> validVMs = getValidVMs();
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            final Azure azureClient = cloud.getAzureClient();
+            final AzureVMManagementServiceDelegate serviceDelegate = cloud.getServiceDelegate();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
             final PagedList<GenericResource> resources = azureClient.genericResources()
@@ -425,11 +419,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                             new Object[]{resource.name(), resourceGroup});
                     azureClient.genericResources().deleteById(resource.id());
                     if (osDiskURI != null) {
-                        AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, osDiskURI, resourceGroup);
+                        serviceDelegate.removeStorageBlob(osDiskURI, resourceGroup);
                     }
                     if (managedOsDiskId != null) {
                         azureClient.disks().deleteById(managedOsDiskId);
-                        AzureVMManagementServiceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
+                        serviceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
                     }
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO,
