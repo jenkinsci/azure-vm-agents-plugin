@@ -121,7 +121,6 @@ public class AzureVMAgentPostBuildAction extends Recorder {
 
         @Override
         public String getDisplayName() {
-            // TODO Auto-generated method stub
             return Messages.Azure_Agent_Post_Build_Action();
         }
 
