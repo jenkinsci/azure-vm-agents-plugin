@@ -22,17 +22,16 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
-import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
 import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
 import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.util.AzureClientHolder;
+import com.microsoft.azure.vmagent.util.AzureClientFactory;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
-import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.Describable;
@@ -660,7 +659,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(
-                    azureCloud.getResourceGroupName(), azureCloud.getServicePrincipal());
+                    azureCloud.getResourceGroupName(), templateName);
             newStorageAccountName = storageAccountName;
             //if storageAccountNameReferenceType equals existing, we help to choose new directly
             storageAccountNameReferenceType = "new";
@@ -791,7 +790,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      * @throws Exception May throw if provisioning was not successful.
      */
     public AzureVMDeploymentInfo provisionAgents(TaskListener listener, int numberOfAgents) throws Exception {
-        return AzureVMManagementServiceDelegate.createDeployment(this, numberOfAgents);
+        return getServiceDelegate().createDeployment(this, numberOfAgents);
+    }
+
+    private AzureVMManagementServiceDelegate getServiceDelegate() {
+        return getAzureCloud().getServiceDelegate();
     }
 
     /**
@@ -817,7 +820,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      * @throws Exception
      */
     public List<String> verifyTemplate() throws Exception {
-        return AzureVMManagementServiceDelegate.verifyTemplate(azureCloud.getServicePrincipal(),
+        return getServiceDelegate().verifyTemplate(
                 templateName,
                 labels,
                 location,
@@ -869,12 +872,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         public ListBoxModel doFillVirtualMachineSizeItems(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @QueryParameter String location)
+
                 throws IOException, ServletException {
 
-            AzureCredentials.ServicePrincipal servicePrincipal =
-                    AzureCredentials.getServicePrincipal(azureCredentialsId);
             ListBoxModel model = new ListBoxModel();
-            List<String> vmSizes = AzureVMManagementServiceDelegate.getVMSizes(servicePrincipal, location);
+            List<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
 
             if (vmSizes != null) {
                 for (String vmSize : vmSizes) {
@@ -903,15 +905,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillLocationItems(
-                @RelativePath("..") @QueryParameter String azureCredentialsId)
+        public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId)
                 throws IOException, ServletException {
-            AzureCredentials.ServicePrincipal servicePrincipal =
-                    AzureCredentials.getServicePrincipal(azureCredentialsId);
 
             ListBoxModel model = new ListBoxModel();
 
-            Set<String> locations = AzureVMManagementServiceDelegate.getVirtualMachineLocations(servicePrincipal);
+            String managementEndpoint = AzureClientFactory.getManagementEndpoint(azureCredentialsId);
+            Set<String> locations = AzureClientHolder.getDelegate(azureCredentialsId)
+                    .getVirtualMachineLocations(managementEndpoint);
 
             for (String location : locations) {
                 model.add(location);
@@ -966,9 +967,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             resourceGroupReferenceType = null;
 
             try {
-                AzureCredentials.ServicePrincipal servicePrincipal =
-                        AzureCredentials.getServicePrincipal(azureCredentialsId);
-                Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+                Azure azureClient = AzureClientHolder.get(azureCredentialsId);
 
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -1141,23 +1140,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 referenceType =
                         imageReferenceType.equals("custom") ? ImageReferenceType.CUSTOM : ImageReferenceType.REFERENCE;
             }
-            AzureCredentials.ServicePrincipal servicePrincipal =
-                    AzureCredentials.getServicePrincipal(azureCredentialsId);
             String resourceGroupName = AzureVMCloud.getResourceGroupName(
                     resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
             String storageAccountName = getStorageAccountName(
                     storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
             if (storageAccountName.trim().isEmpty()) {
                 storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(
-                        resourceGroupName, servicePrincipal);
+                        resourceGroupName, templateName);
             }
 
             LOGGER.log(Level.INFO,
-                    "Verify configuration:\n\t"
-                            + "subscriptionId: {0};\n\t"
-                            + "clientId: {1};\n\t"
-                            + "clientSecret: {2};\n\t"
-                            + "serviceManagementURL: {3};\n\t"
+                    "Verify configuration:\n\t{0}{1}{2}{3}"
                             + "resourceGroupName: {4};\n\t."
                             + "templateName: {5};\n\t"
                             + "labels: {6};\n\t"
@@ -1183,10 +1176,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "nsgName: {26};\n\t"
                             + "jvmOptions: {27};",
                     new Object[]{
-                            servicePrincipal.getSubscriptionId(),
-                            (StringUtils.isNotBlank(servicePrincipal.getClientId()) ? "********" : null),
-                            (StringUtils.isNotBlank(servicePrincipal.getClientSecret()) ? "********" : null),
-                            servicePrincipal.getServiceManagementURL(),
+                            "",
+                            "",
+                            "",
+                            "",
                             resourceGroupName,
                             templateName,
                             labels,
@@ -1214,14 +1207,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
-            String result = AzureVMManagementServiceDelegate.verifyConfiguration(servicePrincipal, resourceGroupName,
+            String result = AzureClientHolder.getDelegate(azureCredentialsId).verifyConfiguration(resourceGroupName,
                     maxVirtualMachinesLimit, deploymentTimeout);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }
 
-            final List<String> errors = AzureVMManagementServiceDelegate.verifyTemplate(
-                    servicePrincipal,
+            final List<String> errors = AzureClientHolder.getDelegate(azureCredentialsId).verifyTemplate(
                     templateName,
                     labels,
                     location,
@@ -1271,14 +1263,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     }
 
     public void setVirtualMachineDetails(AzureVMAgent agent) throws Exception {
-        AzureVMManagementServiceDelegate.setVirtualMachineDetails(agent, this);
+        getServiceDelegate().setVirtualMachineDetails(agent, this);
     }
 
-    public static String generateUniqueStorageAccountName(String resourceGroupName, ServicePrincipal servicePrincipal) {
+    public static String generateUniqueStorageAccountName(String resourceGroupName,
+                                                          String templateName) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (null != servicePrincipal && !StringUtils.isEmpty(servicePrincipal.getSubscriptionId())) {
-                md.update(servicePrincipal.getSubscriptionId().getBytes("UTF-8"));
+            if (null != templateName) {
+                md.update(templateName.getBytes("UTF-8"));
             }
             if (null != resourceGroupName) {
                 md.update(resourceGroupName.getBytes("UTF-8"));

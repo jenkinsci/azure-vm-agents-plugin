@@ -26,6 +26,7 @@ import hudson.model.TaskListener;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.AbstractCloudSlave;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.OfflineCause;
@@ -41,7 +42,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +60,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     private final String vmCredentialsId;
 
     private final String azureCredentialsId;
-
-    private final transient AzureCredentials.ServicePrincipal credentials;
 
     private final String sshPrivateKey;
 
@@ -150,7 +149,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.templateName = templateName;
         this.vmCredentialsId = vmCredentialsId;
         this.azureCredentialsId = azureCredentialsId;
-        this.credentials = servicePrincipal;
         this.sshPrivateKey = sshPrivateKey;
         this.sshPassPhrase = sshPassPhrase;
         this.jvmOptions = jvmOptions;
@@ -192,14 +190,14 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             RetentionStrategy<AzureVMComputer> retentionStrategy,
             String initScript,
             String azureCredentialsId,
-            AzureCredentials.ServicePrincipal servicePrincipal,
             String agentLaunchMethod,
             CleanUpAction cleanUpAction,
             Localizable cleanUpReason,
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            AzureVMAgentTemplate template) throws FormException, IOException {
+            AzureVMAgentTemplate template,
+            String fqdn) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -212,7 +210,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
-                Collections.<NodeProperty<?>>emptyList(),
+                Arrays.asList(new EnvironmentVariablesNodeProperty(
+                        new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn)
+                )),
                 cloudName,
                 vmCredentialsId,
                 sshPrivateKey,
@@ -224,7 +224,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 template.getRetentionTimeInMin(),
                 initScript,
                 azureCredentialsId,
-                servicePrincipal,
+                null,
                 agentLaunchMethod,
                 cleanUpAction,
                 cleanUpReason,
@@ -247,13 +247,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public String getVMCredentialsId() {
         return vmCredentialsId;
-    }
-
-    public AzureCredentials.ServicePrincipal getServicePrincipal() {
-        if (credentials == null && azureCredentialsId != null) {
-            return AzureCredentials.getServicePrincipal(azureCredentialsId);
-        }
-        return credentials;
     }
 
     public String getSshPrivateKey() {
@@ -449,18 +442,24 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
-    public void shutdown(Localizable reason) {
+    public synchronized void shutdown(Localizable reason) {
+        if (isEligibleForReuse()) {
+            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: agent {0} is always shut down", this.
+                    getDisplayName());
+            return;
+        }
+
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
-        AzureVMManagementServiceDelegate.shutdownVirtualMachine(this);
+        getServiceDelegate().shutdownVirtualMachine(this);
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
 
         final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason.toString());
+        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
@@ -480,7 +479,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
 
-        AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
+        this.getServiceDelegate().terminateVirtualMachine(this);
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
         // Adjust estimated virtual machine count.
@@ -496,8 +495,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
+    public AzureVMManagementServiceDelegate getServiceDelegate() {
+        return this.getCloud().getServiceDelegate();
+    }
+
     public boolean isVMAliveOrHealthy() throws Exception {
-        return AzureVMManagementServiceDelegate.isVMAliveOrHealthy(this);
+        return this.getServiceDelegate().isVMAliveOrHealthy(this);
     }
 
     private final Object publicIPAttachLock = new Object();
@@ -510,8 +513,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // because of that we can just wait here until we have a public IP
         synchronized (publicIPAttachLock) {
             try {
-                AzureVMCloud azureVMCloud = (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
-                AzureVMManagementServiceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                AzureVMCloud azureVMCloud = getCloud();
+                this.getServiceDelegate().attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
             } catch (Exception e) {
                 LOGGER.log(
                         Level.INFO,
@@ -537,7 +540,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 + "\n\tpublicDNSName=" + publicDNSName
                 + "\n\tsshPort=" + sshPort
                 + "\n\tmode=" + mode
-                + "\n\tmanagementURL=" + credentials.getServiceManagementURL()
                 + "\n\ttemplateName=" + templateName
                 + "\n\tcleanUpAction=" + cleanUpAction
                 + "\n]";

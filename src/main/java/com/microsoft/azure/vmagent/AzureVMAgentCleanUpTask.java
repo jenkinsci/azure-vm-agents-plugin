@@ -19,24 +19,30 @@ import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.DefaultRetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.azure.vmagent.util.TokenCache;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -57,7 +63,9 @@ import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_MINUTE;
 @Extension
 public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
-    private static class DeploymentInfo {
+    private static class DeploymentInfo implements Serializable {
+        private static final long serialVersionUID = 888154365;
+
         DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName, int deleteAttempts) {
             this.cloudName = cloudName;
             this.deploymentName = deploymentName;
@@ -98,8 +106,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     private static final long FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60 * 8;
     private static final int MAX_DELETE_ATTEMPTS = 3;
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentCleanUpTask.class.getName());
-    private static final ConcurrentLinkedQueue<DeploymentInfo> DEPLOYMENTS_TO_CLEAN =
-            new ConcurrentLinkedQueue<DeploymentInfo>();
 
     public AzureVMAgentCleanUpTask() {
         super("Azure VM Agents Clean Task");
@@ -107,13 +113,67 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
     public static class DeploymentRegistrar {
 
-        public void registerDeployment(String cloudName, String resourceGroupName, String deploymentName) {
+        private static final String OUTPUT_FILE
+                = Paths.get(loadProperty("JENKINS_HOME"), "deployment.out").toString();
+
+        private static DeploymentRegistrar deploymentRegistrar = null;
+
+        private ConcurrentLinkedQueue<DeploymentInfo> deploymentsToClean =
+                new ConcurrentLinkedQueue<DeploymentInfo>();
+
+        protected DeploymentRegistrar() {
+            ObjectInputStream ois = null;
+            try {
+
+                ois = new ObjectInputStream(new FileInputStream(OUTPUT_FILE));
+                deploymentsToClean = (ConcurrentLinkedQueue<DeploymentInfo>) ois.readObject();
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING,
+                        "AzureVMAgentCleanUpTask: readResolve: Cannot deserialize deploymentsToClean", e);
+                deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
+            } finally {
+                IOUtils.closeQuietly(ois);
+            }
+        }
+
+        public static synchronized DeploymentRegistrar getInstance() {
+            if (deploymentRegistrar == null) {
+                deploymentRegistrar = new DeploymentRegistrar();
+            }
+            return deploymentRegistrar;
+        }
+
+        public ConcurrentLinkedQueue<DeploymentInfo> getDeploymentsToClean() {
+            return deploymentsToClean;
+        }
+
+        public void registerDeployment(String cloudName,
+                                                    String resourceGroupName,
+                                                    String deploymentName) {
             LOGGER.log(Level.INFO,
                     "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
                     new Object[]{deploymentName, resourceGroupName});
             DeploymentInfo newDeploymentToClean =
                     new DeploymentInfo(cloudName, resourceGroupName, deploymentName, MAX_DELETE_ATTEMPTS);
-            DEPLOYMENTS_TO_CLEAN.add(newDeploymentToClean);
+            deploymentsToClean.add(newDeploymentToClean);
+
+            syncDeploymentsToClean();
+        }
+
+        public synchronized void syncDeploymentsToClean() {
+            ObjectOutputStream oos = null;
+            try {
+                oos = new ObjectOutputStream(new FileOutputStream(OUTPUT_FILE));
+                oos.writeObject(deploymentsToClean);
+            } catch (FileNotFoundException e) {
+                LOGGER.log(Level.WARNING,
+                        "AzureVMAgentCleanUpTask: registerDeployment: Cannot open deployment output file"
+                                + OUTPUT_FILE);
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, "AzureVMAgentCleanUpTask: registerDeployment: Serialize failed", e);
+            } finally {
+                IOUtils.closeQuietly(oos);
+            }
         }
 
         public AzureUtil.DeploymentTag getDeploymentTag() {
@@ -130,8 +190,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         // Walk the queue, popping and pushing until we reach an item that we've already
         // dealt with or the queue is empty.
         DeploymentInfo firstBackInQueue = null;
-        while (!DEPLOYMENTS_TO_CLEAN.isEmpty() && firstBackInQueue != DEPLOYMENTS_TO_CLEAN.peek()) {
-            DeploymentInfo info = DEPLOYMENTS_TO_CLEAN.remove();
+        ConcurrentLinkedQueue<DeploymentInfo> deploymentsToClean
+                = DeploymentRegistrar.getInstance().getDeploymentsToClean();
+        while (!deploymentsToClean.isEmpty() && firstBackInQueue != deploymentsToClean.peek()) {
+            DeploymentInfo info = deploymentsToClean.remove();
 
             LOGGER.log(Level.INFO,
                     "AzureVMAgentCleanUpTask: cleanDeployments: Checking deployment {0}",
@@ -145,7 +207,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             }
 
             try {
-                final Azure azureClient = TokenCache.getInstance(cloud.getServicePrincipal()).getAzureClient();
+                final Azure azureClient = cloud.getAzureClient();
 
                 // This will throw if the deployment can't be found.  This could happen in a couple instances
                 // 1) The deployment has already been deleted
@@ -153,8 +215,15 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //    being accepted by Azure.
                 // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
                 // of retries.  If we hit 0, we remove the deployment from our list.
-                Deployment deployment = azureClient.deployments().
-                        getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+                Deployment deployment;
+                try {
+                    deployment = azureClient.deployments().
+                            getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+                } catch (NullPointerException e) {
+                    LOGGER.log(Level.INFO,
+                            "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
+                    continue;
+                }
                 if (deployment == null) {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
@@ -202,7 +271,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         firstBackInQueue = info;
                     }
                     // Put it back
-                    DEPLOYMENTS_TO_CLEAN.add(info);
+                    deploymentsToClean.add(info);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
@@ -218,10 +287,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     }
 
                     // Put it back in the queue for another attempt
-                    DEPLOYMENTS_TO_CLEAN.add(info);
+                    deploymentsToClean.add(info);
                 }
             }
         }
+        DeploymentRegistrar.getInstance().syncDeploymentsToClean();
+
         LOGGER.log(Level.INFO, "AzureVMAgentCleanUpTask: cleanDeployments: Done cleaning deployments");
     }
 
@@ -237,23 +308,17 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             return;
         }
         for (AzureVMCloud cloud : instance.clouds.getAll(AzureVMCloud.class)) {
-            cleanLeakedResources(
-                    cloud.getResourceGroupName(), cloud.getServicePrincipal(), cloud.name, new DeploymentRegistrar());
+            cleanLeakedResources(cloud, cloud.getResourceGroupName(), DeploymentRegistrar.getInstance());
         }
     }
 
-    public List<String> getValidVMs(String cloudName) {
+    public List<String> getValidVMs() {
         List<String> vms = new ArrayList<>();
         Jenkins instance = Jenkins.getInstance();
         if (instance != null) {
             for (Computer computer : instance.getComputers()) {
                 if (computer instanceof AzureVMComputer) {
-                    AzureVMComputer azureComputer = (AzureVMComputer) computer;
-                    AzureVMAgent agent = azureComputer.getNode();
-                    if (agent != null && agent.getCloudName().equals(cloudName)) {
-                        final String vmName = computer.getName();
-                        vms.add(vmName);
-                    }
+                        vms.add(computer.getName());
                 }
             }
         }
@@ -262,13 +327,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public void cleanLeakedResources(
+            AzureVMCloud cloud,
             String resourceGroup,
-            ServicePrincipal servicePrincipal,
-            String cloudName,
             DeploymentRegistrar deploymentRegistrar) {
         try {
-            final List<String> validVMs = getValidVMs(cloudName);
-            final Azure azureClient = TokenCache.getInstance(servicePrincipal).getAzureClient();
+            final List<String> validVMs = getValidVMs();
+            final Azure azureClient = cloud.getAzureClient();
+            final AzureVMManagementServiceDelegate serviceDelegate = cloud.getServiceDelegate();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
             final PagedList<GenericResource> resources = azureClient.genericResources()
@@ -354,11 +419,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                             new Object[]{resource.name(), resourceGroup});
                     azureClient.genericResources().deleteById(resource.id());
                     if (osDiskURI != null) {
-                        AzureVMManagementServiceDelegate.removeStorageBlob(azureClient, osDiskURI, resourceGroup);
+                        serviceDelegate.removeStorageBlob(osDiskURI, resourceGroup);
                     }
                     if (managedOsDiskId != null) {
                         azureClient.disks().deleteById(managedOsDiskId);
-                        AzureVMManagementServiceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
+                        serviceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
                     }
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO,
@@ -528,5 +593,21 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     @Override
     public long getRecurrencePeriod() {
         return RECURRENCE_PERIOD_IN_MILLIS;
+    }
+
+    public static String loadProperty(final String name) {
+        final String value = System.getProperty(name);
+        if (StringUtils.isBlank(value)) {
+            return loadEnv(name);
+        }
+        return value;
+    }
+
+    public static String loadEnv(final String name) {
+        final String value = System.getenv(name);
+        if (StringUtils.isBlank(value)) {
+            return "";
+        }
+        return value;
     }
 }

@@ -75,7 +75,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             synchronized (CLOUD_NAMES_LOCK) {
                 List<String> toRemove = new ArrayList<String>();
                 for (String cloudName : cloudNames) {
-                    LOGGER.log(Level.INFO,
+                    LOGGER.log(Level.FINE,
                             "AzureVMCloudVerificationTask: verify: verifying cloud {0}",
                             cloudName);
 
@@ -94,7 +94,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
                     // If already verified, skip
                     if (cloud.isConfigurationValid()) {
-                        LOGGER.log(Level.INFO,
+                        LOGGER.log(Level.FINE,
                                 "AzureVMCloudVerificationTask: verify: subscription {0} already verified",
                                 cloudName);
                         // Update the count.
@@ -104,7 +104,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
                     // Verify.  Update the VM count before setting to valid
                     if (verifyConfiguration(cloud)) {
-                        LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
+                        LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
                         // Update the count
                         cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
                         // We grab the current VM count and
@@ -132,13 +132,13 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             synchronized (TEMPLATES_LOCK) {
                 List<AbstractMap.SimpleEntry<String, String>> toRemove = new ArrayList<>();
 
-                LOGGER.log(Level.INFO,
+                LOGGER.log(Level.FINE,
                         "AzureVMCloudVerificationTask: verify: verifying {0} template(s)",
                         cloudTemplates.size());
                 for (AbstractMap.SimpleEntry<String, String> entry : cloudTemplates) {
                     final String templateName = entry.getKey();
                     final String cloudName = entry.getValue();
-                    LOGGER.log(Level.INFO,
+                    LOGGER.log(Level.FINE,
                             "AzureVMCloudVerificationTask: verify: verifying {0} in {1}",
                             new Object[]{templateName, cloudName});
 
@@ -166,7 +166,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
                     // Determine whether we need to verify the template
                     if (agentTemplate.isTemplateVerified()) {
-                        LOGGER.log(Level.INFO,
+                        LOGGER.log(Level.FINE,
                                 "AzureVMCloudVerificationTask: verify: template {0} in {1} already verified",
                                 new Object[]{templateName, cloudName});
                         // Good to go, nothing more to check here.  Add to removal list.
@@ -177,7 +177,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                     try {
                         List<String> errors = agentTemplate.verifyTemplate();
                         if (errors.isEmpty()) {
-                            LOGGER.log(Level.INFO,
+                            LOGGER.log(Level.FINE,
                                     "AzureVMCloudVerificationTask: verify: {0} verified succesfully",
                                     templateName);
                             // Verified, set the template to verified.
@@ -256,8 +256,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         LOGGER.info("AzureVMCloudVerificationTask: verifyConfiguration: start");
 
         // Check the sub and off we go
-        String result = AzureVMManagementServiceDelegate.verifyConfiguration(
-                cloud.getServicePrincipal(),
+        String result = cloud.getServiceDelegate().verifyConfiguration(
                 cloud.getResourceGroupName(),
                 Integer.toString(cloud.getMaxVirtualMachinesLimit()),
                 Integer.toString(cloud.getDeploymentTimeout()));
@@ -279,8 +278,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     public int getVirtualMachineCount(AzureVMCloud cloud) {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
-            int vmCount = AzureVMManagementServiceDelegate.getVirtualMachineCount(
-                    cloud.getServicePrincipal(), cloud.getResourceGroupName());
+            int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getResourceGroupName());
             LOGGER.log(Level.INFO,
                     "AzureVMCloudVerificationTask: getVirtualMachineCount: end, currently {0} vms",
                     vmCount);
