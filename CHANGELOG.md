@@ -1,5 +1,10 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.4.9, 2017-11-29
+* Add support for the Managed Service Identity (MSI) as credential
+* Clean init scripts after the deployment
+* Fix some minor bugs
+
 ## Version 0.4.8, 2017-11-07
 * Add Cloud and Template builder with fluent interface
 * Add pool retention strategy and once retention strategy

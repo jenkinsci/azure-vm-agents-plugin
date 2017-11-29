@@ -66,10 +66,15 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     private static class DeploymentInfo implements Serializable {
         private static final long serialVersionUID = 888154365;
 
-        DeploymentInfo(String cloudName, String resourceGroupName, String deploymentName, int deleteAttempts) {
+        DeploymentInfo(String cloudName,
+                       String resourceGroupName,
+                       String deploymentName,
+                       String scriptUri,
+                       int deleteAttempts) {
             this.cloudName = cloudName;
             this.deploymentName = deploymentName;
             this.resourceGroupName = resourceGroupName;
+            this.scriptUri = scriptUri;
             this.attemptsRemaining = deleteAttempts;
         }
 
@@ -85,6 +90,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             return resourceGroupName;
         }
 
+        String getScriptUri() {
+            return scriptUri;
+        }
+
         boolean hasAttemptsRemaining() {
             return attemptsRemaining > 0;
         }
@@ -96,6 +105,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         private String cloudName;
         private String deploymentName;
         private String resourceGroupName;
+        private String scriptUri;
         private int attemptsRemaining;
     }
 
@@ -148,13 +158,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
 
         public void registerDeployment(String cloudName,
-                                                    String resourceGroupName,
-                                                    String deploymentName) {
+                                       String resourceGroupName,
+                                       String deploymentName,
+                                       String scriptUri) {
             LOGGER.log(Level.INFO,
                     "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
                     new Object[]{deploymentName, resourceGroupName});
             DeploymentInfo newDeploymentToClean =
-                    new DeploymentInfo(cloudName, resourceGroupName, deploymentName, MAX_DELETE_ATTEMPTS);
+                    new DeploymentInfo(cloudName, resourceGroupName, deploymentName, scriptUri, MAX_DELETE_ATTEMPTS);
             deploymentsToClean.add(newDeploymentToClean);
 
             syncDeploymentsToClean();
@@ -208,6 +219,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
             try {
                 final Azure azureClient = cloud.getAzureClient();
+                final AzureVMManagementServiceDelegate delegate = cloud.getServiceDelegate();
 
                 // This will throw if the deployment can't be found.  This could happen in a couple instances
                 // 1) The deployment has already been deleted
@@ -254,6 +266,9 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     // Delete the deployment
                     azureClient.deployments()
                             .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+                    if (StringUtils.isNotBlank(info.scriptUri)) {
+                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName());
+                    }
                 } else if (state.equalsIgnoreCase("succeeded")
                         && diffTimeInMinutes > successTimeoutInMinutes) {
                     LOGGER.log(Level.INFO,
@@ -263,6 +278,9 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     // Delete the deployment
                     azureClient.deployments()
                             .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+                    if (StringUtils.isNotBlank(info.scriptUri)) {
+                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName());
+                    }
                 } else {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");

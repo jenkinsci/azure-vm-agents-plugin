@@ -110,7 +110,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
+        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -156,7 +156,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
+        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
