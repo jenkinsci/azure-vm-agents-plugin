@@ -1,6 +1,6 @@
 # Azure VM Agents Plugin Changelog
 
-## Version 0.4.9, 2017-11-29
+## Version 0.5.0, 2017-11-29
 * Add support for the Managed Service Identity (MSI) as credential
 * Clean init scripts after the deployment
 * Fix some minor bugs
