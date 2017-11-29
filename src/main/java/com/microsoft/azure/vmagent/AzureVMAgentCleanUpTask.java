@@ -121,7 +121,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         super("Azure VM Agents Clean Task");
     }
 
-    public static final class DeploymentRegistrar {
+    public static class DeploymentRegistrar {
 
         private static final String OUTPUT_FILE
                 = Paths.get(loadProperty("JENKINS_HOME"), "deployment.out").toString();
@@ -131,7 +131,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         private ConcurrentLinkedQueue<DeploymentInfo> deploymentsToClean =
                 new ConcurrentLinkedQueue<DeploymentInfo>();
 
-        private DeploymentRegistrar() {
+        protected DeploymentRegistrar() {
             ObjectInputStream ois = null;
             try {
 

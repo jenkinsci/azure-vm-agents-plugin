@@ -495,7 +495,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
-    protected AzureVMManagementServiceDelegate getServiceDelegate() {
+    public AzureVMManagementServiceDelegate getServiceDelegate() {
         return this.getCloud().getServiceDelegate();
     }
 
