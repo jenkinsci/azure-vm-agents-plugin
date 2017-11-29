@@ -189,6 +189,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
+            String scriptUri = null;
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: "
@@ -301,7 +302,7 @@ public final class AzureVMManagementServiceDelegate {
                 } else {
                     initScript = (String) properties.get("initScript");
                 }
-                String scriptUri = uploadCustomScript(template, scriptName, initScript);
+                scriptUri = uploadCustomScript(template, scriptName, initScript);
                 putVariable(tmp, "startupScriptURI", scriptUri);
                 putVariable(tmp, "startupScriptName", scriptName);
 
@@ -356,7 +357,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
-                    template.getAzureCloud().name, template.getResourceGroupName(), deploymentName);
+                    template.getAzureCloud().name, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
@@ -1541,7 +1542,7 @@ public final class AzureVMManagementServiceDelegate {
         String blobName = PathUtility.getBlobNameFromURI(blobURI, false);
 
         LOGGER.log(Level.INFO,
-                "removeStorageBlob: Removing disk blob {0}, in container {1} of storage account {2}",
+                "removeStorageBlob: Removing blob {0}, in container {1} of storage account {2}",
                 new Object[]{blobName, containerName, storageAccountName});
         CloudBlobContainer container =
                 getCloudBlobContainer(azureClient, resourceGroupName, storageAccountName, containerName);
