@@ -101,85 +101,33 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void createDeploymentTest() {
+    public void createDeploymentTest() throws Exception {
         Random rand = new Random();
         final int numberOfAgents = rand.nextInt(4) + 1;
         AzureVMDeploymentInfo deploymentInfo = null;
 
+        AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+        when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
+        deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
+
+        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
+        Network actualVNet = null;
+        StorageAccount actualStorageAcc = null;
         try {
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
-            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
-            deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
-
-            verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
-            Network actualVNet = null;
-            StorageAccount actualStorageAcc = null;
-            try {
-                actualVNet = azureClient.networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
-                actualStorageAcc = azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, null, e);
-            }
-            Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
-            Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
-
-            for (int i = 0; i < numberOfAgents; i++) {
-                final String baseName = deploymentInfo.getVmBaseName() + String.valueOf(i);
-                final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
-                VirtualMachine actualVM = null;
-                NetworkInterface actualNetIface = null;
-                PublicIPAddress actualIP = null;
-                try {
-                    actualVM = azureClient
-                            .virtualMachines()
-                            .getByResourceGroup(testEnv.azureResourceGroup, baseName);
-
-                    actualNetIface = azureClient
-                            .networkInterfaces()
-                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
-
-                    actualIP = azureClient
-                            .publicIPAddresses()
-                            .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
-
-                } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, null, e);
-                }
-                Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
-                Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
-                Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
-            }
-
+            actualVNet = azureClient.networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+            actualStorageAcc = azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
         }
-    }
+        Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
+        Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
 
-    @Test
-    public void createDeploymentWithPrivateIPTest() {
-        try {
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
-            when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
-            AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
-
-            verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
-            Network actualVNet = null;
-            StorageAccount actualStorageAcc = null;
-            try {
-                actualVNet = azureClient.networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
-                actualStorageAcc = azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, null, e);
-            }
-            Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
-            Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
-
-            final String baseName = deploymentInfo.getVmBaseName() + "0";
+        for (int i = 0; i < numberOfAgents; i++) {
+            final String baseName = deploymentInfo.getVmBaseName() + String.valueOf(i);
+            final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
             VirtualMachine actualVM = null;
             NetworkInterface actualNetIface = null;
             PublicIPAddress actualIP = null;
-            String privateIP = "";
             try {
                 actualVM = azureClient
                         .virtualMachines()
@@ -189,8 +137,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                         .networkInterfaces()
                         .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
-                privateIP = actualNetIface.primaryPrivateIP();
-
                 actualIP = azureClient
                         .publicIPAddresses()
                         .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
@@ -198,16 +144,58 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
-            Assert.assertNotNull("The deployed VM doesn't exist", actualVM);
-            Assert.assertNotNull("The deployed Network interface doesn't exist", actualNetIface);
-            Assert.assertTrue("The deployed VM doesn't have a private IP", privateIP != null && !privateIP.isEmpty());
-            Assert.assertNull("The deployed VM shouldn't have a public IP", actualIP);
+            Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
+            Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
+            Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
+        }
+    }
 
+    @Test
+    public void createDeploymentWithPrivateIPTest() throws Exception {
+        AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
+        when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
+        AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
+
+        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName());
+        Network actualVNet = null;
+        StorageAccount actualStorageAcc = null;
+        try {
+            actualVNet = azureClient.networks().getByResourceGroup(testEnv.azureResourceGroup, "jenkinsarm-vnet");
+            actualStorageAcc = azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, null, e);
+        }
+        Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
+        Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
+
+        final String baseName = deploymentInfo.getVmBaseName() + "0";
+        VirtualMachine actualVM = null;
+        NetworkInterface actualNetIface = null;
+        PublicIPAddress actualIP = null;
+        String privateIP = "";
+        try {
+            actualVM = azureClient
+                    .virtualMachines()
+                    .getByResourceGroup(testEnv.azureResourceGroup, baseName);
+
+            actualNetIface = azureClient
+                    .networkInterfaces()
+                    .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
+
+            privateIP = actualNetIface.primaryPrivateIP();
+
+            actualIP = azureClient
+                    .publicIPAddresses()
+                    .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
         }
+        Assert.assertNotNull("The deployed VM doesn't exist", actualVM);
+        Assert.assertNotNull("The deployed Network interface doesn't exist", actualNetIface);
+        Assert.assertTrue("The deployed VM doesn't have a private IP", privateIP != null && !privateIP.isEmpty());
+        Assert.assertNull("The deployed VM shouldn't have a public IP", actualIP);
+
     }
 
     @Test
@@ -391,24 +379,20 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void virtualMachineExistsTest() {
-        try {
-            final String vmName = "vmexists";
-            createAzureVM(vmName);
+    public void virtualMachineExistsTest() throws IOException, AzureCloudException {
+        final String vmName = "vmexists";
+        createAzureVM(vmName);
 
-            AzureVMAgent agentMock = mock(AzureVMAgent.class);
-            when(agentMock.getNodeName()).thenReturn(vmName);
-            when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
-            Assert.assertTrue("The deployed VM doesn't exist: " + vmName,
-                    AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
+        AzureVMAgent agentMock = mock(AzureVMAgent.class);
+        when(agentMock.getNodeName()).thenReturn(vmName);
+        when(agentMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+        when(agentMock.getServiceDelegate()).thenReturn(delegate);
+        Assert.assertTrue("The deployed VM doesn't exist: " + vmName,
+                AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
 
-            when(agentMock.getNodeName()).thenReturn(vmName + "a"); //invalid VM name
-            Assert.assertFalse("The deployed VM exists: " + vmName,
-                    AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
-        }
+        when(agentMock.getNodeName()).thenReturn(vmName + "a"); //invalid VM name
+        Assert.assertFalse("The deployed VM exists: " + vmName,
+                AzureVMManagementServiceDelegate.virtualMachineExists(agentMock));
     }
 
     @Test
