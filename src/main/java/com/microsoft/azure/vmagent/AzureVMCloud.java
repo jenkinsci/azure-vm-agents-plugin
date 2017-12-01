@@ -117,7 +117,7 @@ public class AzureVMCloud extends Cloud {
 
     // True if the subscription has been verified.
     // False otherwise.
-    private transient boolean configurationValid;
+    private transient String configurationStatus;
 
     // Approximate virtual machine count.  Updated periodically.
     private int approximateVirtualMachineCount;
@@ -192,33 +192,12 @@ public class AzureVMCloud extends Cloud {
             this.deploymentTimeout = Integer.parseInt(deploymentTimeout);
         }
 
-        this.configurationValid = false;
+        this.configurationStatus = Constants.UNVERIFIED;
 
         // Set the templates
         setVmTemplates(vmTemplates == null
                 ? Collections.<AzureVMAgentTemplate>emptyList()
                 : vmTemplates);
-
-        registerVerificationIfNeeded();
-    }
-
-    /**
-     * Register the initial verification if required.
-     */
-    private void registerVerificationIfNeeded() {
-        if (this.isConfigurationValid()) {
-            return;
-        }
-        // Register the cloud and the templates for verification
-        AzureVMCloudVerificationTask.registerCloud(this.name);
-        // Register all templates.  We don't know what happened with them
-        // when save was hit.
-        AzureVMCloudVerificationTask.registerTemplates(this.getVmTemplates());
-        // Force the verification task to run if it's not already running.
-        // Note that early in startup this could return null
-        if (AzureVMCloudVerificationTask.get() != null) {
-            AzureVMCloudVerificationTask.get().doRun();
-        }
     }
 
     private Object readResolve() {
@@ -231,6 +210,7 @@ public class AzureVMCloud extends Cloud {
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         azureClient = createAzureClientSupplier();
+        configurationStatus = Constants.UNVERIFIED;
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
@@ -250,11 +230,10 @@ public class AzureVMCloud extends Cloud {
 
     @Override
     public boolean canProvision(Label label) {
-        registerVerificationIfNeeded();
-
-        if (!this.isConfigurationValid()) {
+        // Only when configurationStatus is certain invalid, reject at once.
+        if (this.getConfigurationStatus().equals(Constants.VERIFIED_FAILED)) {
             LOGGER.log(Level.INFO,
-                    "AzureVMCloud: canProvision: Subscription not verified, or is invalid, cannot provision");
+                    "AzureVMCloud: canProvision: Subscription is invalid, cannot provision");
         }
 
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
@@ -268,13 +247,12 @@ public class AzureVMCloud extends Cloud {
                     "AzureVMCloud: canProvision: template {0} is marked has disabled, cannot provision agents",
                     template.getTemplateName());
             return false;
-        } else if (!template.isTemplateVerified()) {
+        } else if (template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_FAILED)) {
             // The template is available, but not verified. It may be queued for
             // verification, but ensure that it's added.
             LOGGER.log(Level.INFO,
-                    "AzureVMCloud: canProvision: template {0} is awaiting verification or has failed verification",
+                    "AzureVMCloud: canProvision: template {0} has failed verification",
                     template.getTemplateName());
-            AzureVMCloudVerificationTask.registerTemplate(template);
             return false;
         } else {
             return true;
@@ -435,17 +413,17 @@ public class AzureVMCloud extends Cloud {
      *
      * @return True if the configuration set up and verified, false otherwise.
      */
-    public boolean isConfigurationValid() {
-        return configurationValid;
+    public String getConfigurationStatus() {
+        return configurationStatus;
     }
 
     /**
      * Set the configuration verification status.
      *
-     * @param isValid True for verified + valid, false otherwise.
+     * @param status True for verified + valid, false otherwise.
      */
-    public void setConfigurationValid(boolean isValid) {
-        configurationValid = isValid;
+    public void setConfigurationStatus(String status) {
+        configurationStatus = status;
     }
 
     /**
@@ -676,6 +654,16 @@ public class AzureVMCloud extends Cloud {
         // round up the number of required machine
         int numberOfAgents = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
         final List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>(numberOfAgents);
+
+        // verify cloud and template if it's status is unverified
+        if (this.getConfigurationStatus().equals(Constants.UNVERIFIED)
+                || template.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+            AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
+        }
+        if (!this.getConfigurationStatus().equals(Constants.VERIFIED_PASS)
+                || !template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
+            return plannedNodes;
+        }
 
         // reuse existing nodes if available
         LOGGER.log(Level.INFO, "AzureVMCloud: provision: checking for node reuse options");

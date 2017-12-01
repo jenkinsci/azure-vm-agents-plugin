@@ -71,6 +71,12 @@ public final class Constants {
 
     public static final String STORAGE_ACCOUNT_PREFIX = "jenkins";
 
+    public static final String UNVERIFIED = "unverified";
+
+    public static final String VERIFIED_PASS = "pass";
+
+    public static final String VERIFIED_FAILED = "failed";
+
     /**
      * Managed disks.
      */
