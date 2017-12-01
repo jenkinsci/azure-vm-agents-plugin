@@ -217,6 +217,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean templateVerified;
 
+    private transient String templateConfigurationStatus;
+
     private boolean executeInitScriptAsRoot;
 
     private boolean doNotUseMachineIfInitFails;
@@ -313,7 +315,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.templateStatusDetails = "";
 
         // Reset the template verification status.
-        this.templateVerified = false;
+        this.templateConfigurationStatus = Constants.UNVERIFIED;
         this.retentionStrategy = retentionStrategy;
 
         // Forms data which is not persisted
@@ -427,6 +429,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private Object readResolve() {
         labelDataSet = Label.parse(labels);
+        templateConfigurationStatus = Constants.UNVERIFIED;
 
         if (StringUtils.isBlank(storageAccountType)) {
             storageAccountType = SkuName.STANDARD_LRS.toString();
@@ -684,6 +687,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return agentLaunchMethod;
     }
 
+    public String getTemplateConfigurationStatus() {
+        return templateConfigurationStatus;
+    }
+
+    public void setTemplateConfigurationStatus(String templateConfigurationStatus) {
+        this.templateConfigurationStatus = templateConfigurationStatus;
+    }
+
     /**
      * Returns true if this template is disabled and cannot be used, false
      * otherwise.
@@ -808,9 +819,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      */
     public void handleTemplateProvisioningFailure(String message, FailureStage failureStep) {
         // The template is bad.  It should have already been verified, but
-        // perhaps something changed (VHD gone, etc.).  Queue for verification.
-        setTemplateVerified(false);
-        AzureVMCloudVerificationTask.registerTemplate(this);
+        // perhaps something changed (VHD gone, etc.).
+        // Doesn't mean the template is totally failed, maybe a random issue. Set as unverified to try again.
+        setTemplateConfigurationStatus(Constants.UNVERIFIED);
         // Set the details so that it's easier to see what's going on from the configuration UI.
         setTemplateStatusDetails(message);
     }

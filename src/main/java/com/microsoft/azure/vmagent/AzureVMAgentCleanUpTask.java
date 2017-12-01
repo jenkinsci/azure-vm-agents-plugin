@@ -588,7 +588,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         Future<Void> result = AzureVMCloud.getThreadPool().submit(callClean);
 
         try {
-            LOGGER.info("AzureVMAgentCleanUpTask: execute: Running clean with 15 minute timeout");
+            LOGGER.info("AzureVMAgentCleanUpTask: execute: Running clean with 5 minute timeout");
             // Get will block until time expires or until task completes
             result.get(CLEAN_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
         } catch (ExecutionException executionException) {
