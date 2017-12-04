@@ -31,7 +31,7 @@ public final class AzureVMCloudVerificationTask {
     private AzureVMCloudVerificationTask() {
     }
 
-    public static synchronized void verify(String cloudName, String templateName) {
+    public static void verify(String cloudName, String templateName) {
         if (StringUtils.isBlank(cloudName) || StringUtils.isBlank(templateName)) {
             return;
         }
@@ -54,41 +54,43 @@ public final class AzureVMCloudVerificationTask {
             return;
         }
 
-        if (!cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
-            agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
-            return;
-        }
-
-        if (!agentTemplate.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
-            return;
-        }
-
-        // The template is not yet verified.  Do so now
-        try {
-            List<String> errors = agentTemplate.verifyTemplate();
-            if (errors.isEmpty()) {
-                LOGGER.log(Level.FINE,
-                        "AzureVMCloudVerificationTask: verify: {0} verified successfully",
-                        templateName);
-                // Verified, set the template to verified.
-                agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_PASS);
-                // Reset the status details
-                agentTemplate.setTemplateStatusDetails("");
-            } else {
-                String details = StringUtils.join(errors, "\n");
-                LOGGER.log(Level.INFO,
-                        "AzureVMCloudVerificationTask: verify: {0} could not be verified:\n{1}",
-                        new Object[]{templateName, details});
-                agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_FAILED);
-                // Set the status details to the set of messages
-                agentTemplate.setTemplateStatusDetails(details);
+        synchronized (agentTemplate) {
+            if (!cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
+                agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
+                return;
             }
-        } catch (Exception e) {
-            // Log, but ignore overall
-            LOGGER.log(Level.INFO,
-                    "AzureVMCloudVerificationTask: verify: got exception while verifying {0}:\n{1}",
-                    new Object[]{templateName, e.toString()});
-            agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
+
+            if (!agentTemplate.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+                return;
+            }
+
+            // The template is not yet verified.  Do so now
+            try {
+                List<String> errors = agentTemplate.verifyTemplate();
+                if (errors.isEmpty()) {
+                    LOGGER.log(Level.FINE,
+                            "AzureVMCloudVerificationTask: verify: {0} verified successfully",
+                            templateName);
+                    // Verified, set the template to verified.
+                    agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_PASS);
+                    // Reset the status details
+                    agentTemplate.setTemplateStatusDetails("");
+                } else {
+                    String details = StringUtils.join(errors, "\n");
+                    LOGGER.log(Level.INFO,
+                            "AzureVMCloudVerificationTask: verify: {0} could not be verified:\n{1}",
+                            new Object[]{templateName, details});
+                    agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_FAILED);
+                    // Set the status details to the set of messages
+                    agentTemplate.setTemplateStatusDetails(details);
+                }
+            } catch (Exception e) {
+                // Log, but ignore overall
+                LOGGER.log(Level.INFO,
+                        "AzureVMCloudVerificationTask: verify: got exception while verifying {0}:\n{1}",
+                        new Object[]{templateName, e.toString()});
+                agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
+            }
         }
     }
 
@@ -110,31 +112,33 @@ public final class AzureVMCloudVerificationTask {
             return;
         }
 
-        // If already verified, skip
-        if (!cloud.getConfigurationStatus().equals(Constants.UNVERIFIED)) {
-            LOGGER.log(Level.FINE,
-                    "AzureVMCloudVerificationTask: verify: subscription {0} already verified",
+        synchronized (cloud) {
+            // If already verified, skip
+            if (!cloud.getConfigurationStatus().equals(Constants.UNVERIFIED)) {
+                LOGGER.log(Level.FINE,
+                        "AzureVMCloudVerificationTask: verify: subscription {0} already verified",
+                        cloudName);
+                // Update the count.
+                cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                return;
+            }
+
+            // Verify.  Update the VM count before setting to valid
+            if (verifyConfiguration(cloud)) {
+                LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
+                // Update the count
+                cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                // We grab the current VM count and
+                cloud.setConfigurationStatus(Constants.VERIFIED_PASS);
+                return;
+            }
+
+            // Not valid!
+            cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
+            LOGGER.log(Level.INFO,
+                    "AzureVMCloudVerificationTask: verify: {0} not verified, has errors",
                     cloudName);
-            // Update the count.
-            cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
-            return;
         }
-
-        // Verify.  Update the VM count before setting to valid
-        if (verifyConfiguration(cloud)) {
-            LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
-            // Update the count
-            cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
-            // We grab the current VM count and
-            cloud.setConfigurationStatus(Constants.VERIFIED_PASS);
-            return;
-        }
-
-        // Not valid!
-        cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
-        LOGGER.log(Level.INFO,
-                "AzureVMCloudVerificationTask: verify: {0} not verified, has errors",
-                cloudName);
     }
 
     /**

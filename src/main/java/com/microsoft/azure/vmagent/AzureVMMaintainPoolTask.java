@@ -1,5 +1,6 @@
 package com.microsoft.azure.vmagent;
 
+import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.azure.vmagent.util.TemplateUtil;
 import hudson.Extension;
@@ -54,7 +55,17 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     }
 
     public void provisionNodes(AzureVMCloud cloud, AzureVMAgentTemplate template, int newAgents) {
-        cloud.doProvision(newAgents, new ArrayList<NodeProvisioner.PlannedNode>(), template, true);
+        if (cloud.getConfigurationStatus().equals(Constants.UNVERIFIED)
+                || template.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+            AzureVMCloudVerificationTask.verify(cloud.getCloudName(), template.getTemplateName());
+        }
+        if (cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)
+                && template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
+            cloud.doProvision(newAgents, new ArrayList<NodeProvisioner.PlannedNode>(), template, true);
+        } else {
+            LOGGER.log(Level.WARNING, "Template {0} failed to verify, cannot be provisioned",
+                    template.getTemplateName());
+        }
     }
 
     @Override
