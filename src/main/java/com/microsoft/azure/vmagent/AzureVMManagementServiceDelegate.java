@@ -275,6 +275,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "location", locationName);
             putVariable(tmp, "jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             putVariable(tmp, "resourceTag", deploymentRegistrar.getDeploymentTag().get());
+            putVariable(tmp, "cloudTag", template.getAzureCloud().getCloudName());
 
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");
             copyVariableIfNotBlank(tmp, properties, "imageOffer");
@@ -357,7 +358,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
-                    template.getAzureCloud().name, template.getResourceGroupName(), deploymentName, scriptUri);
+                    template.getAzureCloud().getCloudName(), template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
@@ -1383,7 +1384,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return Total VM count
      */
-    public int getVirtualMachineCount(String resourceGroupName) {
+    public int getVirtualMachineCount(String cloudName, String resourceGroupName) {
         try {
             final PagedList<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
             int count = 0;
@@ -1393,7 +1394,15 @@ public final class AzureVMManagementServiceDelegate {
                 if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME)
                         && deployTag.isFromSameInstance(
                         new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
-                    count++;
+                    if (tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME)) {
+                        if (tags.get(Constants.AZURE_CLOUD_TAG_NAME).equals(cloudName)) {
+                            count++;
+                        }
+                    } else {
+                        // keep backwards compatibility, omitting the resource created before updates
+                        // until all the resources has cloud tag
+                        count++;
+                    }
                 }
             }
             return count;

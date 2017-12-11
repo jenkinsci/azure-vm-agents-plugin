@@ -16,6 +16,10 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.Constants;
+import hudson.Extension;
+import hudson.model.AsyncPeriodicWork;
+import hudson.model.TaskListener;
+import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
@@ -23,12 +27,15 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
-public final class AzureVMCloudVerificationTask {
+@Extension
+public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMCloudVerificationTask.class.getName());
 
-    private AzureVMCloudVerificationTask() {
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 60 * 60 * 1000;
+
+    public AzureVMCloudVerificationTask() {
+        super("Azure VM Verification Task");
     }
 
     public static void verify(String cloudName, String templateName) {
@@ -175,10 +182,11 @@ public final class AzureVMCloudVerificationTask {
     public static int getVirtualMachineCount(AzureVMCloud cloud) {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
-            int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getResourceGroupName());
+            int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getCloudName(),
+                    cloud.getResourceGroupName());
             LOGGER.log(Level.INFO,
-                    "AzureVMCloudVerificationTask: getVirtualMachineCount: end, currently {0} vms",
-                    vmCount);
+                    "AzureVMCloudVerificationTask: getVirtualMachineCount: end, cloud {0} has currently {1} vms",
+                    new Object[]{cloud.getCloudName(), vmCount});
             return vmCount;
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
@@ -193,6 +201,22 @@ public final class AzureVMCloudVerificationTask {
 
     public static AzureVMCloud getCloud(String cloudName) {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+    }
+
+    public void execute(TaskListener arg0) {
+        for (Cloud cloud : Jenkins.getInstance().clouds) {
+            if (cloud instanceof AzureVMCloud) {
+                AzureVMCloud azureVMCloud = (AzureVMCloud) cloud;
+                synchronized (azureVMCloud) {
+                    azureVMCloud.setVirtualMachineCount(getVirtualMachineCount(azureVMCloud));
+                }
+            }
+        }
+    }
+
+    @Override
+    public long getRecurrencePeriod() {
+        return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
 }
