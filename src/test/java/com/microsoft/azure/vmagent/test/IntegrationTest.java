@@ -295,6 +295,8 @@ public class IntegrationTest {
         }
 
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
+        AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+        when(cloudMock.getCloudName()).thenReturn("testCloud");
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
@@ -311,7 +313,7 @@ public class IntegrationTest {
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
         when(templateMock.getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
-        when(templateMock.getAzureCloud()).thenReturn(mock(AzureVMCloud.class));
+        when(templateMock.getAzureCloud()).thenReturn(cloudMock);
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);

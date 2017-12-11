@@ -15,6 +15,7 @@
     "storageAccountType": "Standard_LRS",
     "jenkinsTag": "ManagedByAzureVMAgents",
     "resourceTag": "AzureJenkins",
+    "cloudTag": "",
     "blobEndpointSuffix": ".blob.core.windows.net/"
   },
   "resources": [
@@ -98,7 +99,8 @@
       },
       "tags": {
         "JenkinsManagedTag": "[variables('jenkinsTag')]",
-        "JenkinsResourceTag": "[variables('resourceTag')]"
+        "JenkinsResourceTag": "[variables('resourceTag')]",
+        "JenkinsCloudTag": "[variables('cloudTag')]"
       }
     }
   ]

@@ -436,8 +436,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             createDefaultDeployment(numberOfAgents, null);
             createAzureVM(vmName);
 
-            Assert.assertEquals(numberOfAgents, delegate.getVirtualMachineCount(testEnv.azureResourceGroup));
-            Assert.assertEquals(0, delegate.getVirtualMachineCount(testEnv.azureResourceGroup + "-missing"));
+            Assert.assertEquals(numberOfAgents, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup));
+            Assert.assertEquals(0, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
