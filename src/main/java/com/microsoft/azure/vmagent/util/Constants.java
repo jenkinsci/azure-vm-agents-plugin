@@ -123,6 +123,7 @@ public final class Constants {
     public static final String DEFAULT_IMAGE_PUBLISHER = "defaultImagePublisher";
     public static final String DEFAULT_IMAGE_OFFER = "defaultImageOffer";
     public static final String DEFAULT_IMAGE_SKU = "defaultImageSku";
+    public static final String DEFAULT_DOCKER_IMAGE_SKU = "defaultDockerImageSku";
     public static final String DEFAULT_IMAGE_VERSION = "defaultImageVersion";
     public static final String DEFAULT_OS_TYPE = "defaultOsType";
     public static final String DEFAULT_LAUNCH_METHOD = "defaultLaunchMethod";

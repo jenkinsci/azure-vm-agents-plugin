@@ -82,7 +82,7 @@
                         <f:checkbox/>
                     </f:entry>
 
-                    <f:entry title="Install Docker (Only for Linux)" field="isInstallDocker">
+                    <f:entry title="Install Docker" field="isInstallDocker">
                         <f:checkbox/>
                     </f:entry>
                 </f:section>

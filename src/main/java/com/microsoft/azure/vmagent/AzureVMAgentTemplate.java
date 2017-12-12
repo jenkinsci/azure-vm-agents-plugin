@@ -326,13 +326,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         Map<String, String> defaultProperties =
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
         boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
+        String imageSkuName =
+                template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
 
         templateProperties.put("imagePublisher",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
         templateProperties.put("imageOffer",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
         templateProperties.put("imageSku",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_SKU) : template.getImageSku());
+                isBasic ? defaultProperties.get(imageSkuName) : template.getImageSku());
         templateProperties.put("imageVersion",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
         templateProperties.put("osType",
@@ -389,7 +391,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER)
                                 .replace("${ADMIN}",
-                                        AzureUtil.getCredentials(template.getCredentialsId()).getUsername()));
+                                        template.getVMCredentials().getUsername()));
             }
             return stringBuilder.toString();
         } catch (Exception e) {

@@ -699,11 +699,9 @@ public class AzureVMCloud extends Cloud {
                         if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                             numberOfAgents--;
 
-                            plannedNodes.add(new TrackedPlannedNode(
-                                    provisioningId,
+                            plannedNodes.add(new TrackedPlannedNode(provisioningId,
                                     template.getNoOfParallelJobs(),
                                     Computer.threadPoolForRemoting.submit(new Callable<Node>() {
-
                                         @Override
                                         public Node call() throws AzureCloudException {
                                             LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
