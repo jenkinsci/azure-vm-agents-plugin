@@ -39,8 +39,8 @@
 
     <developers>
         <developer>
-            <id>vscjenkins</id>
-            <name>Visual Studio China Jenkins Team</name>
+            <id>azure_devops</id>
+            <name>Azure DevOps Team</name>
             <email>vscjenkins@microsoft.com</email>
         </developer>
     </developers>
