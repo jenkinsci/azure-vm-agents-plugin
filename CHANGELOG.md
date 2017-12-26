@@ -1,5 +1,11 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.6.0, 2017-12-26
+* Use deallocation instead of powerOff when configured shutdown only
+* Add built-in windows image with docker 
+* Redesign verification task to improve performance
+* Fix launching issues when using performance limited vms
+
 ## Version 0.5.0, 2017-11-29
 * Add support for the Managed Service Identity (MSI) as credential
 * Clean init scripts after the deployment
