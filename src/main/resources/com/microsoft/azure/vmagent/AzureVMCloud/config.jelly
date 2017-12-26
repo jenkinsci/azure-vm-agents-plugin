@@ -24,17 +24,17 @@
         </f:entry>
 
         <f:entry title="${%Resource_Group_Name}">
-            <f:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isResourceGroupReferenceTypeEquals('new')}" inline="true">
+            <ui:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isResourceGroupReferenceTypeEquals('new')}" inline="true">
                 <f:entry field="newResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:textbox/>
                 </f:entry>
-            </f:radioBlock>
+            </ui:radioBlock>
 
-            <f:radioBlock name="resourceGroupReferenceType" value="existing" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('existing')}" inline="true">
+            <ui:radioBlock name="resourceGroupReferenceType" value="existing" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('existing')}" inline="true">
                 <f:entry field="existingResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:select/>
                 </f:entry>
-            </f:radioBlock>
+            </ui:radioBlock>
         </f:entry>
 
         <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"

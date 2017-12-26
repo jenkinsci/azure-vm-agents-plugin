@@ -1352,7 +1352,8 @@ public final class AzureVMManagementServiceDelegate {
      */
     public boolean isVMAliveOrHealthy(AzureVMAgent agent) throws AzureCloudException {
         VMStatus status = getVirtualMachineStatus(agent.getNodeName(), agent.getResourceGroupName());
-        final int maxRetryCount = 6;
+        // Change to 20 minutes. It takes around 10 minutes in A0.
+        final int maxRetryCount = 40;
         int currentRetryCount = 0;
         //When launching Windows via SSH, this function will be executed before extension done.
         //Thus status will be "Updating".
