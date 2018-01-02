@@ -1,6 +1,6 @@
 # Azure VM Agents Plugin Changelog
 
-## Version 0.6.0, 2017-12-26
+## Version 0.6.0, 2018-01-02
 * Use deallocation instead of powerOff when configured shutdown only
 * Add built-in windows image with docker 
 * Redesign verification task to improve performance
