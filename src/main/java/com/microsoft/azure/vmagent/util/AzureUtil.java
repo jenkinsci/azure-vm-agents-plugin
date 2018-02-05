@@ -505,6 +505,10 @@ public final class AzureUtil {
         private final long timestamp;
     }
 
+    public static String getLocationNameByLabel(String label) {
+        return label.toLowerCase().replace(" ", "");
+    }
+
     private AzureUtil() {
         // hide constructor
     }

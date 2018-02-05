@@ -186,7 +186,7 @@ public final class AzureVMManagementServiceDelegate {
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
             final String vmBaseName = AzureUtil.getVMBaseName(
                     template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
-            final String locationName = getLocationName(template.getLocation());
+            final String locationName = AzureUtil.getLocationNameByLabel(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
@@ -1796,12 +1796,6 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            validationResult = verifyLocation(location);
-            addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
-                return errors;
-            }
-
             verifyTemplateAsync(
                     location,
                     imageTopLevelType,
@@ -1990,7 +1984,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     public String verifyVirtualMachineImage(
-            String location,
+            String locationLabel,
             String storageAccountName,
             String imageTopLevelType,
             AzureVMAgentTemplate.ImageReferenceType referenceType,
@@ -2042,8 +2036,9 @@ public final class AzureVMManagementServiceDelegate {
             }
         } else {
             try {
+                final String locationName = AzureUtil.getLocationNameByLabel(locationLabel);
                 List<VirtualMachinePublisher> publishers =
-                        azureClient.virtualMachineImages().publishers().listByRegion(getLocationName(location));
+                        azureClient.virtualMachineImages().publishers().listByRegion(locationName);
                 for (VirtualMachinePublisher publisher : publishers) {
                     if (!publisher.name().equalsIgnoreCase(imagePublisher)) {
                         continue;
@@ -2137,21 +2132,6 @@ public final class AzureVMManagementServiceDelegate {
             return Constants.OP_SUCCESS;
         } else {
             return Messages.Azure_GC_JVM_Option_Err();
-        }
-    }
-
-    /**
-     * Check the location. This location is the display name.
-     *
-     * @param location
-     * @return
-     */
-    private static String verifyLocation(String location) {
-        String locationName = getLocationName(location);
-        if (locationName != null) {
-            return Constants.OP_SUCCESS;
-        } else {
-            return Messages.Azure_GC_Template_LOC_Not_Found();
         }
     }
 
