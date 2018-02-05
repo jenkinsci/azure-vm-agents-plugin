@@ -1177,19 +1177,19 @@ public final class AzureVMManagementServiceDelegate {
      *
      * @return Set of available regions
      */
-    public Set<String> getVirtualMachineLocations(String serviceManagementURL) {
-        if (serviceManagementURL == null) {
+    public Set<String> getVirtualMachineLocations(String envNameOrUrl) {
+        if (envNameOrUrl == null) {
             return null;
         }
-        serviceManagementURL = serviceManagementURL.toLowerCase();
+        envNameOrUrl = envNameOrUrl.toLowerCase();
         try {
-            return LocationCache.getLocation(azureClient, serviceManagementURL);
+            return LocationCache.getLocation(azureClient, envNameOrUrl);
         } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
                             + "error while fetching the regions {0}. Will return default list ",
                     e);
-            if (serviceManagementURL.contains("china")) {
+            if (envNameOrUrl.contains("china")) {
                 return AVAILABLE_LOCATIONS_CHINA;
             }
             return AVAILABLE_LOCATIONS_STD;

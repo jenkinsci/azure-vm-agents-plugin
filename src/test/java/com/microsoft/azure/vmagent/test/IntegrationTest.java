@@ -35,10 +35,14 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
-import com.microsoft.azure.vmagent.*;
+import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
+import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
+import com.microsoft.azure.vmagent.AzureVMCloud;
+import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
+import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.azure.vmagent.util.AzureClientFactory;
+import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
 import org.junit.After;
@@ -101,6 +105,7 @@ public class IntegrationTest {
             subscriptionId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_SUBSCRIPTION_ID");
             clientId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_CLIENT_ID");
             clientSecret = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_CLIENT_SECRET");
+
             oauth2TokenEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_TOKEN_ENDPOINT");
             serviceManagementURL = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_URL", "https://management.core.windows.net/");
             authenticationEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_AUTH_URL", "https://login.microsoftonline.com/");
@@ -166,7 +171,12 @@ public class IntegrationTest {
                 testEnv.authenticationEndpoint,
                 testEnv.resourceManagerEndpoint,
                 testEnv.graphEndpoint);
-        azureClient = AzureClientFactory.getClient(servicePrincipal);
+        azureClient = AzureClientFactory.getClient(
+                servicePrincipal.getClientId(),
+                servicePrincipal.getClientSecret(),
+                servicePrincipal.getTenant(),
+                servicePrincipal.getSubscriptionId(),
+                servicePrincipal.getAzureEnvironment());
         delegate = AzureVMManagementServiceDelegate.getInstance(azureClient);
         clearAzureResources();
 

@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
@@ -24,8 +25,8 @@
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>1.3</azure-credentials.version>
-        <azure-commons.version>0.2.2.2</azure-commons.version>
+        <azure-credentials.version>1.4.0</azure-credentials.version>
+        <azure-commons.version>0.2.4</azure-commons.version>
         <guava.version>19.0</guava.version>
     </properties>
 
@@ -83,6 +84,12 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-commons</artifactId>
+            <version>${azure-commons.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>azure-commons-core</artifactId>
             <version>${azure-commons.version}</version>
         </dependency>
 
@@ -213,11 +220,33 @@
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
                 <configuration>
-                    <pluginFirstClassLoader>true</pluginFirstClassLoader>
                     <maskClasses>
-                        com.microsoft.azure.management.
-                        com.microsoft.rest.
+                        com.microsoft.jenkins.azurecommons.core.
+                        com.fasterxml.jackson.
                         com.google.common.
+
+                        com.microsoft.azure.AzureAsyncOperation
+                        com.microsoft.azure.AzureClient
+                        com.microsoft.azure.AzureEnvironment
+                        com.microsoft.azure.AzureResponseBuilder
+                        com.microsoft.azure.AzureServiceClient
+                        com.microsoft.azure.AzureServiceFuture
+                        com.microsoft.azure.CloudError
+                        com.microsoft.azure.CloudException
+                        com.microsoft.azure.ListOperationCallback
+                        com.microsoft.azure.Page
+                        com.microsoft.azure.PagedList
+                        com.microsoft.azure.PollingState
+                        com.microsoft.azure.Resource
+                        com.microsoft.azure.SubResource
+                        com.microsoft.aad.
+                        com.microsoft.applicationinsights.
+                        com.microsoft.azure.credentials.
+                        com.microsoft.azure.keyvault.
+                        com.microsoft.azure.management.
+                        com.microsoft.azure.serializer.
+                        com.microsoft.azure.storage.
+                        com.microsoft.rest.
                     </maskClasses>
                 </configuration>
             </plugin>

@@ -28,10 +28,11 @@ import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureClientHolder;
-import com.microsoft.azure.vmagent.util.AzureClientFactory;
+import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.Describable;
@@ -918,17 +919,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId)
-                throws IOException, ServletException {
-
+        public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId) {
             ListBoxModel model = new ListBoxModel();
 
-            String managementEndpoint = AzureClientFactory.getManagementEndpoint(azureCredentialsId);
-            Set<String> locations = AzureClientHolder.getDelegate(azureCredentialsId)
-                    .getVirtualMachineLocations(managementEndpoint);
-
-            for (String location : locations) {
-                model.add(location);
+            final TokenCredentialData token = AzureClientUtil.getToken(azureCredentialsId);
+            if (token != null) {
+                String envName = token.getAzureEnvironmentName();
+                String managementEndpoint = token.getManagementEndpoint();
+                Set<String> locations = AzureClientHolder.getDelegate(azureCredentialsId)
+                        .getVirtualMachineLocations(managementEndpoint != null ? managementEndpoint : envName);
+                if (locations != null) {
+                    for (String location : locations) {
+                        model.add(location);
+                    }
+                }
             }
 
             return model;
