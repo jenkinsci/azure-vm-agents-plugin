@@ -32,7 +32,7 @@ import com.microsoft.azure.util.AzureMsiCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureClientHolder;
-import com.microsoft.azure.vmagent.util.AzureClientFactory;
+import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -128,7 +128,7 @@ public class AzureVMCloud extends Cloud {
         return Suppliers.memoize(new Supplier<Azure>() {
             @Override
             public Azure get() {
-                return AzureClientFactory.getClient(credentialsId);
+                return AzureClientUtil.getClient(credentialsId);
             }
         });
     }
@@ -577,7 +577,7 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
-                final Azure newAzureClient = AzureClientFactory.getClient(credentialsId);
+                final Azure newAzureClient = AzureClientUtil.getClient(credentialsId);
                 final Deployment dep = newAzureClient.deployments().getByName(deploymentName);
                 // Might find no deployment.
                 if (dep == null) {

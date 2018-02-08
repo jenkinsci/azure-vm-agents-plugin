@@ -17,18 +17,18 @@ public final class LocationCache {
     private static final long EXPIRE_TIME_IN_MILLIS = TimeUnit2.HOURS.toMillis(24); //re-get locations every 24 hours
     private static Map<String, Long> achieveTimeInMillis = new HashMap<>();
 
-    public static Set<String> getLocation(Azure azureClient, String serviceManagementURL) throws Exception {
-        if (regions.containsKey(serviceManagementURL)
-                && !regions.get(serviceManagementURL).isEmpty()
-                && System.currentTimeMillis() < achieveTimeInMillis.get(serviceManagementURL) + EXPIRE_TIME_IN_MILLIS) {
-            return regions.get(serviceManagementURL);
+    public static Set<String> getLocation(Azure azureClient, String key) throws Exception {
+        if (regions.containsKey(key)
+                && !regions.get(key).isEmpty()
+                && System.currentTimeMillis() < achieveTimeInMillis.get(key) + EXPIRE_TIME_IN_MILLIS) {
+            return regions.get(key);
         } else {
             synchronized (LocationCache.class) {
-                if (regions.containsKey(serviceManagementURL)
-                        && !regions.get(serviceManagementURL).isEmpty()
+                if (regions.containsKey(key)
+                        && !regions.get(key).isEmpty()
                         && System.currentTimeMillis()
-                            < achieveTimeInMillis.get(serviceManagementURL) + EXPIRE_TIME_IN_MILLIS) {
-                    return regions.get(serviceManagementURL);
+                            < achieveTimeInMillis.get(key) + EXPIRE_TIME_IN_MILLIS) {
+                    return regions.get(key);
                 } else {
                     Set<String> locations = new HashSet<>();
                     PagedList<Provider> providers = azureClient.providers().list();
@@ -54,8 +54,8 @@ public final class LocationCache {
 
                         }
                     }
-                    achieveTimeInMillis.put(serviceManagementURL, System.currentTimeMillis());
-                    regions.put(serviceManagementURL, locations);
+                    achieveTimeInMillis.put(key, System.currentTimeMillis());
+                    regions.put(key, locations);
                     return locations;
                 }
             }

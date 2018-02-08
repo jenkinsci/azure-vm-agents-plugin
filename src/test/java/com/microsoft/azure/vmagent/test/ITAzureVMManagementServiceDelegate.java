@@ -23,7 +23,6 @@ import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
@@ -36,7 +35,7 @@ import com.microsoft.azure.vmagent.retry.RetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.azure.vmagent.util.AzureClientFactory;
+import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
@@ -458,8 +457,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         );
 
         //should fail if service principal is wrong
-        AzureVMManagementServiceDelegate wrongDelegate =
-                AzureVMManagementServiceDelegate.getInstance(AzureClientFactory.getClient(new ServicePrincipal()));
+        AzureVMManagementServiceDelegate wrongDelegate = AzureVMManagementServiceDelegate.getInstance(
+                AzureClientFactory.getClient("", "", "", "", null));
         Assert.assertNotEquals(
                 Constants.OP_SUCCESS,
                 wrongDelegate.verifyConfiguration(testEnv.azureResourceGroup)
@@ -733,7 +732,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
 
             AzureVMManagementServiceDelegate wrongDelegate =
-                    AzureVMManagementServiceDelegate.getInstance(AzureClientFactory.getClient(new ServicePrincipal()));
+                    AzureVMManagementServiceDelegate.getInstance(
+                            AzureClientFactory.getClient("", "", "", "", null));
             Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(),
                     wrongDelegate.verifyStorageAccountName(testEnv.azureResourceGroup + "fake",
                             testEnv.azureStorageAccountName,

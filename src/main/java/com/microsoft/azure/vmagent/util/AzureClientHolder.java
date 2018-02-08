@@ -23,7 +23,7 @@ public final class AzureClientHolder {
         }
         if (!StringUtils.equals(cachedId, credentialId)) {
             cachedId = credentialId;
-            cachedClient = AzureClientFactory.getClient(credentialId);
+            cachedClient = AzureClientUtil.getClient(credentialId);
         }
         return cachedClient;
     }
