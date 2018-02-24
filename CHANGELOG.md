@@ -1,5 +1,9 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.6.2, 2018-02-24
+* Use Tls1.2 to fix the bug in SSH initialization
+* Support Windows Server 1709 as SSH slave
+
 ## Version 0.6.1, 2018-02-09
 * Fix location verification on non-global clouds
 

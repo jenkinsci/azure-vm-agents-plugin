@@ -1,16 +1,16 @@
 Set-ExecutionPolicy Unrestricted
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $source = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/v0.0.16.0/OpenSSH-Win64.zip"
 $destination = "C:\OpenSSH-Win64.zip"
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($source, $destination)
 
-$shell_app=new-object -com shell.application
-$zip_file = $shell_app.namespace($destination)
+
+$dirParentPath='C:\Program Files'
 $dir='C:\Program Files\OpenSSH-Win64'
 mkdir $dir
-$destination = $shell_app.namespace('C:\Program Files')
-$destination.Copyhere($zip_file.items(), 0x14)
+Expand-Archive -LiteralPath $destination -DestinationPath $dirParentPath
 [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${dir}", "Machine")
 
 Set-Location $dir
