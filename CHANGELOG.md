@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.6.3, 2018-03-08
+* Fix SSH initialization failed in Windows Server 2012
+
 ## Version 0.6.2, 2018-02-24
 * Use Tls1.2 to fix the bug in SSH initialization
 * Support Windows Server 1709 as SSH slave
