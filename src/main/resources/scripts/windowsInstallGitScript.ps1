@@ -10,6 +10,6 @@ $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($source, $destination)
 $proc = Start-Process -FilePath $destination -ArgumentList "/VERYSILENT" -Wait -PassThru
 $proc.WaitForExit()
-$Env:Path += ";C:\Program Files\Git\cmd"
+$Env:Path += ";C:\Program Files\Git\cmd;C:\Program Files\Git\usr\bin"
 #Disable git credential manager, get more details in https://support.cloudbees.com/hc/en-us/articles/221046888-Build-Hang-or-Fail-with-Git-for-Windows
 git config --system --unset credential.helper
