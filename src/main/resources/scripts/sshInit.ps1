@@ -6,12 +6,30 @@ $destination = "C:\OpenSSH-Win64.zip"
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($source, $destination)
 
-
-$dirParentPath='C:\Program Files'
 $dir='C:\Program Files\OpenSSH-Win64'
 mkdir $dir
-Expand-Archive -LiteralPath $destination -DestinationPath $dirParentPath
-[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${dir}", "Machine")
+
+function UnzipInV5
+{
+    $dirParentPath='C:\Program Files'
+    Expand-Archive -LiteralPath $destination -DestinationPath $dirParentPath
+    [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${dir}", "Machine")
+}
+
+function UnzipBelowV5
+{
+    $shell_app=new-object -com shell.application
+    $zip_file = $shell_app.namespace($destination)
+    $destination = $shell_app.namespace('C:\Program Files')
+    $destination.Copyhere($zip_file.items(), 0x14)
+    [System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${dir}", "Machine")
+}
+
+if ($PSVersionTable.PSVersion.Major -ge 5) {
+    UnzipInV5
+} else {
+    UnzipBelowV5
+}
 
 Set-Location $dir
 
