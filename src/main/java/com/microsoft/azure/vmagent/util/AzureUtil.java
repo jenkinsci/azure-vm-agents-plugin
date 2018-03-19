@@ -60,7 +60,7 @@ public final class AzureUtil {
     public static final int STORAGE_ACCOUNT_MAX_LENGTH = 24;
 
     public static final int PASSWORD_MIN_COMBINATION = 3;
-    public static final int PASSWORD_MIN_LENGTH = 8;
+    public static final int PASSWORD_MIN_LENGTH = 12;
     public static final int PASSWORD_MAX_LENGTH = 123;
 
     public static final int TEMPLATE_NAME_MAX_LENGTH_LINUX = 63;
@@ -129,7 +129,7 @@ public final class AzureUtil {
     /**
      * Checks for validity of password
      * Rules for password:
-     * 1. The password must contain at least 8 characters
+     * 1. The password must contain at least 12 characters
      * 2. The password cannot be longer than 123 characters
      * 3. The password must contain 3 of the following
      * a) a lowercase character
@@ -142,7 +142,7 @@ public final class AzureUtil {
     public static boolean isValidPassword(String value) {
         int matchCount = 0;
 
-        // check if atleast one digit is present
+        // check if at least one digit is present
         if (value.matches(VAL_DIGIT_REGEX)) {
             matchCount++;
         }
@@ -316,7 +316,6 @@ public final class AzureUtil {
 
         // Shorten the name
         String shortenedName = templateName.substring(0, Math.min(templateName.length(), maxLength));
-
         // If the name ends in a digit, either append or replace the last char with a - so it's
         // not confusing
         if (StringUtils.isNumeric(shortenedName.substring(shortenedName.length() - 1))) {

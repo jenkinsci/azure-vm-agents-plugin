@@ -253,6 +253,9 @@ public class AzureVMCloud extends Cloud {
             LOGGER.log(Level.INFO,
                     "AzureVMCloud: canProvision: template {0} has failed verification",
                     template.getTemplateName());
+            if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
+                LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
+            }
             return false;
         } else {
             return true;

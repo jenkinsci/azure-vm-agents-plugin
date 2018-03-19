@@ -943,6 +943,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 throws IOException, ServletException {
 
             ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Storage Account Type ---", "");
 
             model.add(SkuName.STANDARD_LRS.toString());
 
@@ -1168,7 +1169,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             LOGGER.log(Level.INFO,
                     "Verify configuration:\n\t{0}{1}{2}{3}"
-                            + "resourceGroupName: {4};\n\t."
+                            + "resourceGroupName: {4};\n\t"
                             + "templateName: {5};\n\t"
                             + "labels: {6};\n\t"
                             + "location: {7};\n\t"
