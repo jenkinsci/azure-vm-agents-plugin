@@ -28,10 +28,15 @@ import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.Computer;
+import hudson.model.Label;
 import hudson.model.TaskListener;
+import hudson.slaves.NodeProvisioner;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.joda.time.DateTime;
 
 import java.io.FileInputStream;
@@ -45,10 +50,13 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
@@ -561,6 +569,34 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
     }
 
+    public void cleanCloudStatistics() {
+        Jenkins jenkins = Jenkins.getInstance();
+
+        Set<ProvisioningActivity.Id> plannedNodesSet = new HashSet<>();
+        for (NodeProvisioner.PlannedNode node : jenkins.unlabeledNodeProvisioner.getPendingLaunches()) {
+            if (node instanceof TrackedItem) {
+                plannedNodesSet.add(((TrackedItem) node).getId());
+            }
+        }
+        for (Label l : jenkins.getLabels()) {
+            for (NodeProvisioner.PlannedNode node : l.nodeProvisioner.getPendingLaunches()) {
+                if (node instanceof TrackedItem) {
+                    plannedNodesSet.add(((TrackedItem) node).getId());
+                }
+            }
+        }
+
+        Collection<ProvisioningActivity> activites = CloudStatistics.get().getNotCompletedActivities();
+        for (ProvisioningActivity activity : activites) {
+            if (activity.getCurrentPhase().equals(ProvisioningActivity.Phase.PROVISIONING)
+                    && !plannedNodesSet.contains(activity.getId())) {
+                Exception e = new Exception(String.format("Node %s has lost. Mark as failure",
+                        activity.getId().toString()));
+                CloudStatistics.ProvisioningListener.get().onFailure(activity.getId(), e);
+            }
+        }
+    }
+
     public AzureVMCloud getCloud(String cloudName) {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
@@ -571,6 +607,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         cleanDeployments();
 
         cleanLeakedResources();
+
+        cleanCloudStatistics();
     }
 
     @Override
