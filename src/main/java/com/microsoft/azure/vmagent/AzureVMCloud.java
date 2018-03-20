@@ -679,23 +679,26 @@ public class AzureVMCloud extends Cloud {
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
                 if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
-                    synchronized (agentNode) {
-                        LOGGER.log(Level.INFO,
-                                "AzureVMCloud: provision: agent computer eligible for reuse {0}",
-                                agentComputer.getName());
+                    LOGGER.log(Level.INFO,
+                            "AzureVMCloud: provision: agent computer eligible for reuse {0}",
+                            agentComputer.getName());
 
-                        final ProvisioningActivity.Id provisioningId =
-                                new ProvisioningActivity.Id(this.name, template.getTemplateName());
+                    final ProvisioningActivity.Id provisioningId =
+                            new ProvisioningActivity.Id(this.name, template.getTemplateName());
 
-                        try {
-                            if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-                                numberOfAgents--;
+                    try {
+                        if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
+                            numberOfAgents--;
 
-                                plannedNodes.add(new TrackedPlannedNode(provisioningId,
-                                        template.getNoOfParallelJobs(),
-                                        Computer.threadPoolForRemoting.submit(new Callable<Node>() {
-                                            @Override
-                                            public Node call() throws AzureCloudException {
+                            plannedNodes.add(new TrackedPlannedNode(provisioningId,
+                                    template.getNoOfParallelJobs(),
+                                    Computer.threadPoolForRemoting.submit(new Callable<Node>() {
+                                        @Override
+                                        public Node call() throws AzureCloudException {
+                                            synchronized (agentNode) {
+                                                if (agentNode.getComputer().isOnline()) {
+                                                    return agentNode;
+                                                }
                                                 LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
                                                         agentNode.getNodeName());
 
@@ -724,15 +727,15 @@ public class AzureVMCloud extends Cloud {
 
                                                 return agentNode;
                                             }
-                                        })));
-                            }
-                        } catch (Exception e) {
-                            // Couldn't bring the node back online.  Mark it
-                            // as needing deletion
-                            azureComputer.setAcceptingTasks(false);
-                            agentNode.setCleanUpAction(CleanUpAction.DEFAULT,
-                                    Messages._Shutdown_Agent_Failed_To_Revive());
+                                        }
+                                    })));
                         }
+                    } catch (Exception e) {
+                        // Couldn't bring the node back online.  Mark it
+                        // as needing deletion
+                        azureComputer.setAcceptingTasks(false);
+                        agentNode.setCleanUpAction(CleanUpAction.DEFAULT,
+                                Messages._Shutdown_Agent_Failed_To_Revive());
                     }
                 }
             }

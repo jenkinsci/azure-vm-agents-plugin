@@ -2269,7 +2269,7 @@ public final class AzureVMManagementServiceDelegate {
             String resourceGroupName) throws AzureCloudException {
         try {
             // Get storage account before creating.
-            // Reuse existing to prevent failed.
+            // Reuse existing to prevent failure.
 
             if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
                 azureClient.storageAccounts().define(targetStorageAccount)

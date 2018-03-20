@@ -29,6 +29,7 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.Computer;
 import hudson.model.Label;
+import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.NodeProvisioner;
 import jenkins.model.Jenkins;
@@ -583,6 +584,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 if (node instanceof TrackedItem) {
                     plannedNodesSet.add(((TrackedItem) node).getId());
                 }
+            }
+        }
+
+        for (Node node : jenkins.getNodes()) {
+            if (node instanceof TrackedItem) {
+                plannedNodesSet.add(((TrackedItem) node).getId());
             }
         }
 
