@@ -451,6 +451,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
+        LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: Add suspended status for node {0}", this.getNodeName());
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
         getServiceDelegate().shutdownVirtualMachine(this);
