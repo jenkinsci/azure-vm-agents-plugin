@@ -13,7 +13,9 @@ public abstract class AzureVMCloudBaseRetentionStrategy extends RetentionStrateg
     private static final transient long LAPSE_START_JENKINS = TimeUnit2.MINUTES.toMillis(3);
 
     public void resetShutdownVMStatus(final AzureVMAgent agent) {
-        if (System.currentTimeMillis() - Jenkins.getInstance().toComputer().getConnectTime() < LAPSE_START_JENKINS) {
+        Computer computer = Jenkins.getInstance().toComputer();
+        if (computer != null
+                && System.currentTimeMillis() - computer.getConnectTime() < LAPSE_START_JENKINS) {
             Computer.threadPoolForRemoting.submit(new Runnable() {
                 @Override
                 public void run() {
