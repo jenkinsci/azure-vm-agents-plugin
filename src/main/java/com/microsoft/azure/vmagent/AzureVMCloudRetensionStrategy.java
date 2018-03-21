@@ -102,7 +102,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
             };
 
             try {
-                final int maxRetries = 30;
+                final int maxRetries = 3;
                 final int waitInterval = 30;
                 final int defaultTimeoutInSeconds = 30 * 60;
                 executionEngine.executeAsync(task,
@@ -147,6 +147,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
         LOGGER.log(Level.INFO, "AzureVMCloudRetensionStrategy: start: azureComputer name {0}",
                 azureComputer.getDisplayName());
         azureComputer.connect(false);
+        resetShutdownVMStatus(azureComputer.getNode());
     }
 
     @Override

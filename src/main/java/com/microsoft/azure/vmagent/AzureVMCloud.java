@@ -706,7 +706,6 @@ public class AzureVMCloud extends Cloud {
                                                     getServiceDelegate().startVirtualMachine(agentNode);
                                                     final int waitTimeInMillis = 30 * 1000; // wait for 30 seconds
                                                     // set virtual machine details again
-                                                    Thread.sleep(waitTimeInMillis);
                                                     getServiceDelegate().setVirtualMachineDetails(
                                                             agentNode, template);
                                                     Jenkins.getInstance().addNode(agentNode);

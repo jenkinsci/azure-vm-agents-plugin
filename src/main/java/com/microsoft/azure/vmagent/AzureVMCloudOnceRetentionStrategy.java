@@ -44,6 +44,7 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
         LOGGER.log(Level.INFO, "AzureVMCloudOnceRetentionStrategy: start: azureComputer name {0}",
                 azureComputer.getDisplayName());
         azureComputer.connect(false);
+        resetShutdownVMStatus(azureComputer.getNode());
     }
 
     @Override
