@@ -683,15 +683,11 @@ public class AzureVMCloud extends Cloud {
                             "AzureVMCloud: provision: agent computer eligible for reuse {0}",
                             agentComputer.getName());
 
-                    final ProvisioningActivity.Id provisioningId =
-                            new ProvisioningActivity.Id(this.name, template.getTemplateName());
-
                     try {
                         if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                             numberOfAgents--;
 
-                            plannedNodes.add(new TrackedPlannedNode(provisioningId,
-                                    template.getNoOfParallelJobs(),
+                            plannedNodes.add(new PlannedNode(agentNode.getNodeName(),
                                     Computer.threadPoolForRemoting.submit(new Callable<Node>() {
                                         @Override
                                         public Node call() throws AzureCloudException {
@@ -727,7 +723,7 @@ public class AzureVMCloud extends Cloud {
                                                 return agentNode;
                                             }
                                         }
-                                    })));
+                                    }), template.getNoOfParallelJobs()));
                         }
                     } catch (Exception e) {
                         // Couldn't bring the node back online.  Mark it
