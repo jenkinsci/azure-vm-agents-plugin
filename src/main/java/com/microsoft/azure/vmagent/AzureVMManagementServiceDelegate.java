@@ -185,10 +185,12 @@ public final class AzureVMManagementServiceDelegate {
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
                     template.getTemplateName());
 
+            Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
+
             final Date timestamp = new Date(System.currentTimeMillis());
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
             final String vmBaseName = AzureUtil.getVMBaseName(
-                    template.getTemplateName(), deploymentName, template.getOsType(), numberOfAgents);
+                    template.getTemplateName(), deploymentName, (String) properties.get("osType"), numberOfAgents);
             final String locationName = AzureUtil.getLocationNameByLabel(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
@@ -214,7 +216,7 @@ public final class AzureVMManagementServiceDelegate {
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
-            Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
+
             Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
             ImageReferenceType referenceType = ImageReferenceType.get(template.getImageReferenceType());
 
@@ -1762,6 +1764,13 @@ public final class AzureVMManagementServiceDelegate {
 
             // Verify basic info about the template
             //Verify number of parallel jobs
+
+            validationResult = verifyTemplateName(templateName);
+            addValidationResultIfFailed(validationResult, errors);
+            if (returnOnSingleError && errors.size() > 0) {
+                return errors;
+            }
+
             validationResult = verifyNoOfExecutors(noOfParallelJobs);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
@@ -1948,6 +1957,17 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
+    public String verifyTemplateName(String templateName) {
+        // See reserved name: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-reserved-resource-name
+        if (StringUtils.lowerCase(templateName).contains("login")
+                || StringUtils.lowerCase(templateName).contains("microsoft")
+                || StringUtils.lowerCase(templateName).contains("windows")
+                || StringUtils.lowerCase(templateName).contains("xbox")) {
+            return Messages.Azure_GC_Template_Name_Reserved();
+        }
+        return Constants.OP_SUCCESS;
+    }
+
     public static String verifyNoOfExecutors(String noOfExecutors) {
         try {
             if (StringUtils.isBlank(noOfExecutors)) {
@@ -2113,6 +2133,10 @@ public final class AzureVMManagementServiceDelegate {
             String storageAccountType) {
         boolean isAvailable = false;
         try {
+            if (StringUtils.isBlank(storageAccountType)) {
+                return Messages.Azure_GC_Template_SA_Type_Null_Or_Empty();
+            }
+
             CheckNameAvailabilityResult checkResult =
                     azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
@@ -2281,11 +2305,16 @@ public final class AzureVMManagementServiceDelegate {
             String location,
             String resourceGroupName) throws AzureCloudException {
         try {
-            azureClient.storageAccounts().define(targetStorageAccount)
-                    .withRegion(location)
-                    .withExistingResourceGroup(resourceGroupName)
-                    .withSku(SkuName.fromString(targetStorageAccountType))
-                    .create();
+            // Get storage account before creating.
+            // Reuse existing to prevent failure.
+
+            if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
+                azureClient.storageAccounts().define(targetStorageAccount)
+                        .withRegion(location)
+                        .withExistingResourceGroup(resourceGroupName)
+                        .withSku(SkuName.fromString(targetStorageAccountType))
+                        .create();
+            }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
             throw AzureCloudException.create(
