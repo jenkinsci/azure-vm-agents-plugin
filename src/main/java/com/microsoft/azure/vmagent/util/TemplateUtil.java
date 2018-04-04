@@ -25,6 +25,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getImageReferenceType(), b.getImageReferenceType())
                 && StringUtils.equals(a.getImage(), b.getImage())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
+                && StringUtils.equals(a.getImageId(), b.getImageId())
                 && StringUtils.equals(a.getImagePublisher(), b.getImagePublisher())
                 && StringUtils.equals(a.getImageOffer(), b.getImageOffer())
                 && StringUtils.equals(a.getImageSku(), b.getImageSku())

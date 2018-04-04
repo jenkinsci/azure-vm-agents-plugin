@@ -1,6 +1,7 @@
 package com.microsoft.azure.vmagent.builders;
 
 
+import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.util.Constants;
 
 public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
@@ -10,6 +11,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     private String image;
 
     private String osType;
+
+    private String imageId;
 
     private String imagePublisher;
 
@@ -46,7 +49,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     private boolean templateDisabled;
 
     public AdvancedImageFluent() {
-        this.imageReferenceType = "reference";
+        this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imageVersion = "latest";
         this.osType = Constants.OS_TYPE_LINUX;
         this.agentLaunchMethod = Constants.LAUNCH_METHOD_SSH;
@@ -60,8 +63,14 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     //CHECKSTYLE:OFF
     public T withCustomImage(String imageUrl) {
-        this.imageReferenceType = "custom";
+        this.imageReferenceType = ImageReferenceType.CUSTOM.getName();
         this.image = imageUrl;
+        return (T) this;
+    }
+
+    public T withCustomManagedImage(String imageId) {
+        this.imageReferenceType = ImageReferenceType.CUSTOM_IMAGE.getName();
+        this.imageId = imageId;
         return (T) this;
     }
 
@@ -69,7 +78,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
                                 String imageOffer,
                                 String imageSku,
                                 String imageVersion) {
-        this.imageReferenceType = "reference";
+        this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imagePublisher = imagePublisher;
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
@@ -157,6 +166,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public String getOsType() {
         return osType;
+    }
+
+    public String getImageId() {
+        return imageId;
     }
 
     public String getImagePublisher() {

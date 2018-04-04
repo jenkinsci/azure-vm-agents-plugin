@@ -12,6 +12,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
     public AdvancedImageBuilder(AdvancedImageFluent<?> fluent, AdvancedImage image) {
         this.fluent = fluent;
         fluent.withCustomImage(image.getImage());
+        fluent.withCustomManagedImage(image.getImageId());
         fluent.withReferenceImage(image.getImagePublisher(),
                 image.getImageOffer(),
                 image.getImageSku(),
@@ -40,6 +41,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
     public AdvancedImageBuilder(AdvancedImage image) {
         this.fluent = this;
         fluent.withCustomImage(image.getImage());
+        fluent.withCustomManagedImage(image.getImageId());
         fluent.withReferenceImage(image.getImagePublisher(),
                 image.getImageOffer(),
                 image.getImageSku(),
@@ -64,6 +66,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         return new AdvancedImage(fluent.getImageReferenceType(),
                 fluent.getImage(),
                 fluent.getOsType(),
+                fluent.getImageId(),
                 fluent.getImagePublisher(),
                 fluent.getImageOffer(),
                 fluent.getImageSku(),

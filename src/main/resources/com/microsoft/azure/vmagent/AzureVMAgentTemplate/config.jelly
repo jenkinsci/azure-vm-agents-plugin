@@ -96,6 +96,13 @@
                         </f:entry>
                     </f:dropdownListBlock>
 
+                    <f:dropdownListBlock title="${%Custom_Managed_Image}" value="customImage" selected="${instance.isType('customImage')}">
+                        <f:entry title="${%Image_Id}" field="imageId"
+                                 help="/plugin/azure-vm-agents/help-customReference.html">
+                            <f:textbox/>
+                        </f:entry>
+                    </f:dropdownListBlock>
+
                     <f:dropdownListBlock title="${%Marketplace_Image}" value="reference" selected="${instance.isType('reference')}">
                         <f:entry title="${%Image_Publisher}" field="imagePublisher"
                                  help="/plugin/azure-vm-agents/help-imageReference.html">
@@ -205,6 +212,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imageId,imagePublisher,imageOffer,imageSku,imageVersion,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

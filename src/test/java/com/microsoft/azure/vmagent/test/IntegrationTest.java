@@ -90,6 +90,7 @@ public class IntegrationTest {
         public final String azureResourceGroup;
         public final String azureStorageAccountName;
         public final String azureStorageAccountType;
+        public final String azureImageId;
         public final String azureImagePublisher;
         public final String azureImageOffer;
         public final String azureImageSku;
@@ -116,6 +117,7 @@ public class IntegrationTest {
             azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
             azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst") + TestEnvironment.GenerateRandomString(19);
             azureStorageAccountType = SkuName.STANDARD_LRS.toString();
+            azureImageId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_ID", "/subscriptions/vmagents-tst/resourceGroups/vmagents-tst/providers/Microsoft.Compute/images/MyJenkinsImage");
             azureImagePublisher = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_PUBLISHER", "Canonical");
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "14.04.5-LTS");
@@ -317,6 +319,7 @@ public class IntegrationTest {
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
         when(templateMock.getImageReferenceType()).thenReturn("reference");
+        when(templateMock.getImageId()).thenReturn(testEnv.azureImageId);
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
         when(templateMock.getImageSku()).thenReturn(testEnv.azureImageSku);

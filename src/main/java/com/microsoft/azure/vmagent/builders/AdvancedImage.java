@@ -9,6 +9,8 @@ public class AdvancedImage {
 
     private String osType;
 
+    private String imageId;
+
     private String imagePublisher;
 
     private String imageOffer;
@@ -46,6 +48,7 @@ public class AdvancedImage {
     public AdvancedImage(String imageReferenceType,
                          String image,
                          String osType,
+                         String imageId,
                          String imagePublisher,
                          String imageOffer,
                          String imageSku,
@@ -66,6 +69,7 @@ public class AdvancedImage {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
+        this.imageId = imageId;
         this.imagePublisher = imagePublisher;
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
@@ -97,6 +101,9 @@ public class AdvancedImage {
         return osType;
     }
 
+    public String getImageId() {
+        return imageId;
+    }
     public String getImagePublisher() {
         return imagePublisher;
     }

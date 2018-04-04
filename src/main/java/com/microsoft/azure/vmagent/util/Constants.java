@@ -126,6 +126,7 @@ public final class Constants {
     /**
      * Default Image Properties.
      */
+    public static final String DEFAULT_IMAGE_ID = "defaultImageId";
     public static final String DEFAULT_IMAGE_PUBLISHER = "defaultImagePublisher";
     public static final String DEFAULT_IMAGE_OFFER = "defaultImageOffer";
     public static final String DEFAULT_IMAGE_SKU = "defaultImageSku";
