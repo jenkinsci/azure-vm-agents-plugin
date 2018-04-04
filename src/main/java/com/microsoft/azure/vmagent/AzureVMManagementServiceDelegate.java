@@ -732,7 +732,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
             return delegate.virtualMachineExists(agent.getNodeName(), agent.getResourceGroupName());
-        } catch (AzureCloudException e) {
+        } catch (Exception e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: virtualMachineExists: "
                             + "error while determining whether vm exists",

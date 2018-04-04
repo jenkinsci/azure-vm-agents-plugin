@@ -1,5 +1,16 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.0, 2018-04-04
+* Support customer managed disk [JENKINS-48076](https://issues.jenkins-ci.org/browse/JENKINS-48076)
+* Add more checks in Template Name, Admin/Password [JENKINS-49150](https://issues.jenkins-ci.org/browse/JENKINS-49150)
+* Add sync logic to prevent issues when using only shutdown [JENKINS-49021](https://issues.jenkins-ci.org/browse/JENKINS-49021)
+* Clean unused warning logs [JENKINS-48901](https://issues.jenkins-ci.org/browse/JENKINS-48901)
+* Add Cloud Statistics cleaner [JENKINS-48345](https://issues.jenkins-ci.org/browse/JENKINS-48345)
+* Add blank choice for storage account to reduce UI issues related to existing storage account [JENKINS-48253](https://issues.jenkins-ci.org/browse/JENKINS-48253)
+* Check whether reuse existing storage account [JENKINS-47923](https://issues.jenkins-ci.org/browse/JENKINS-47923)
+* Show detail error message when the template cannot be deployed. [JENKINS-46337](https://issues.jenkins-ci.org/browse/JENKINS-46337)
+* Resolve vm delete issue if related cloud have been deleted. [JENKINS-49473](https://issues.jenkins-ci.org/browse/JENKINS-49473)
+
 ## Version 0.6.3, 2018-03-08
 * Fix SSH initialization failed in Windows Server 2012
 

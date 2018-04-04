@@ -1,6 +1,8 @@
 package com.microsoft.azure.vmagent.builders;
 
 
+import com.microsoft.azure.vmagent.ImageReferenceType;
+
 public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuilder> {
 
     private AdvancedImageFluent<?> fluent;
@@ -11,12 +13,16 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
 
     public AdvancedImageBuilder(AdvancedImageFluent<?> fluent, AdvancedImage image) {
         this.fluent = fluent;
-        fluent.withCustomImage(image.getImage());
-        fluent.withCustomManagedImage(image.getImageId());
-        fluent.withReferenceImage(image.getImagePublisher(),
-                image.getImageOffer(),
-                image.getImageSku(),
-                image.getImageVersion());
+        if (ImageReferenceType.CUSTOM.getName().equals(image.getImageReferenceType())) {
+            fluent.withCustomImage(image.getImage());
+        } else if (ImageReferenceType.CUSTOM_IMAGE.getName().equals(image.getImageReferenceType())) {
+            fluent.withCustomManagedImage(image.getImageId());
+        } else {
+            fluent.withReferenceImage(image.getImagePublisher(),
+                    image.getImageOffer(),
+                    image.getImageSku(),
+                    image.getImageVersion());
+        }
         fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
         fluent.withOsType(image.getOsType());
         fluent.withLaunchMethod(image.getAgentLaunchMethod());
@@ -40,12 +46,16 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
 
     public AdvancedImageBuilder(AdvancedImage image) {
         this.fluent = this;
-        fluent.withCustomImage(image.getImage());
-        fluent.withCustomManagedImage(image.getImageId());
-        fluent.withReferenceImage(image.getImagePublisher(),
-                image.getImageOffer(),
-                image.getImageSku(),
-                image.getImageVersion());
+        if (ImageReferenceType.CUSTOM.getName().equals(image.getImageReferenceType())) {
+            fluent.withCustomImage(image.getImage());
+        } else if (ImageReferenceType.CUSTOM_IMAGE.getName().equals(image.getImageReferenceType())) {
+            fluent.withCustomManagedImage(image.getImageId());
+        } else {
+            fluent.withReferenceImage(image.getImagePublisher(),
+                    image.getImageOffer(),
+                    image.getImageSku(),
+                    image.getImageVersion());
+        }
         fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
         fluent.withOsType(image.getOsType());
         fluent.withLaunchMethod(image.getAgentLaunchMethod());

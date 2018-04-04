@@ -40,6 +40,7 @@ import org.jvnet.localizer.Localizable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Arrays;
@@ -455,7 +456,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().disconnect(OfflineCause.create(reason));
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
-        getServiceDelegate().shutdownVirtualMachine(this);
+        try {
+            getServiceDelegate().shutdownVirtualMachine(this);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "AzureVMAgent: shutdown: Cannot terminate VM.", e);
+        }
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
@@ -481,7 +486,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
 
-        this.getServiceDelegate().terminateVirtualMachine(this);
+        try {
+            this.getServiceDelegate().terminateVirtualMachine(this);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "AzureVMAgent: deprovision: Cannot terminate VM.", e);
+        }
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
         // Adjust estimated virtual machine count.
@@ -497,12 +506,18 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
+    @CheckForNull
     public AzureVMManagementServiceDelegate getServiceDelegate() {
         return this.getCloud().getServiceDelegate();
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
-        return this.getServiceDelegate().isVMAliveOrHealthy(this);
+        try {
+            return this.getServiceDelegate().isVMAliveOrHealthy(this);
+        } catch (NullPointerException e) {
+            LOGGER.log(Level.WARNING, "AzureVMAgent: isVMAliveOrHealthy: Cannot get service delegate.", e);
+            return false;
+        }
     }
 
     private final Object publicIPAttachLock = new Object();
