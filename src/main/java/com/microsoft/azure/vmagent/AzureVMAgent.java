@@ -456,11 +456,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().disconnect(OfflineCause.create(reason));
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
-        try {
-            getServiceDelegate().shutdownVirtualMachine(this);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMAgent: shutdown: Cannot terminate VM.", e);
+
+        AzureVMManagementServiceDelegate serviceDelegate = getServiceDelegate();
+        if (serviceDelegate != null) {
+            serviceDelegate.shutdownVirtualMachine(this);
         }
+
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
@@ -486,11 +487,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
 
-        try {
-            this.getServiceDelegate().terminateVirtualMachine(this);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMAgent: deprovision: Cannot terminate VM.", e);
-        }
+        AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
+
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
         // Adjust estimated virtual machine count.
@@ -531,7 +529,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         synchronized (publicIPAttachLock) {
             try {
                 AzureVMCloud azureVMCloud = getCloud();
-                this.getServiceDelegate().attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                AzureVMManagementServiceDelegate serviceDelegate = this.getServiceDelegate();
+                if (serviceDelegate != null) {
+                    serviceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                }
             } catch (Exception e) {
                 LOGGER.log(
                         Level.INFO,
