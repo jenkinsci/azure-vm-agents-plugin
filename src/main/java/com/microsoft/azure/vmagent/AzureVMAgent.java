@@ -439,6 +439,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return new AzureVMComputer(this);
     }
 
+    @CheckForNull
     public AzureVMCloud getCloud() {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
@@ -506,7 +507,13 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @CheckForNull
     public AzureVMManagementServiceDelegate getServiceDelegate() {
-        return this.getCloud().getServiceDelegate();
+        AzureVMCloud cloud = this.getCloud();
+        if (cloud != null) {
+            return cloud.getServiceDelegate();
+        } else {
+            return null;
+        }
+
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
@@ -530,7 +537,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             try {
                 AzureVMCloud azureVMCloud = getCloud();
                 AzureVMManagementServiceDelegate serviceDelegate = this.getServiceDelegate();
-                if (serviceDelegate != null) {
+                if (azureVMCloud != null && serviceDelegate != null) {
                     serviceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
                 }
             } catch (Exception e) {
