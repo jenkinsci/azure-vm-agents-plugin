@@ -1,6 +1,6 @@
 # Azure VM Agents Plugin Changelog
 
-## Version 0.7.0, 2018-04-04
+## Version 0.7.0, 2018-04-09
 * Support custom managed disk [JENKINS-48076](https://issues.jenkins-ci.org/browse/JENKINS-48076)
 * Add more checks in Template Name, Admin/Password [JENKINS-49150](https://issues.jenkins-ci.org/browse/JENKINS-49150)
 * Add sync logic to prevent issues when using only shutdown [JENKINS-49021](https://issues.jenkins-ci.org/browse/JENKINS-49021)
