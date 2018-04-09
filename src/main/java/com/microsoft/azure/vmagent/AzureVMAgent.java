@@ -519,7 +519,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     public boolean isVMAliveOrHealthy() throws Exception {
         AzureVMManagementServiceDelegate serviceDelegate = this.getServiceDelegate();
         if (serviceDelegate != null) {
-            return this.getServiceDelegate().isVMAliveOrHealthy(this);
+            return serviceDelegate.isVMAliveOrHealthy(this);
         } else {
             return false;
         }
