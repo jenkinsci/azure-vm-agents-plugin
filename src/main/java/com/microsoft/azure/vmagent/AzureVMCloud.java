@@ -668,6 +668,15 @@ public class AzureVMCloud extends Cloud {
             return plannedNodes;
         }
 
+        // AI events to send
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
+        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID, getAzureClient().subscriptionId());
+        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
+        properties.put("AgentOS", template.getOsType());
+        properties.put("RetentionStrategy", template.getRetentionStrategy().getClass().getName());
+        properties.put("Connection method", template.getAgentLaunchMethod());
+
         // reuse existing nodes if available
         LOGGER.log(Level.INFO, "AzureVMCloud: provision: checking for node reuse options");
         for (Computer agentComputer : Jenkins.getInstance().getComputers()) {
@@ -717,9 +726,15 @@ public class AzureVMCloud extends Cloud {
                                                     agentNode.clearCleanUpAction();
                                                     agentNode.setEligibleForReuse(false);
                                                 } catch (Exception e) {
+                                                    properties.put("Message", e.getMessage());
+                                                    AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                            "ProvisionFailed",
+                                                            properties);
                                                     throw AzureCloudException.create(e);
                                                 }
-
+                                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                        "Provision",
+                                                        properties);
                                                 return agentNode;
                                             }
                                         }
@@ -736,13 +751,7 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-        // AI events to send
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("NumberOfAgents", String.valueOf(plannedNodes.size()));
-        properties.put(AppInsightsConstants.AZURE_SUBSCRIPTION_ID, getAzureClient().subscriptionId());
-        properties.put(AppInsightsConstants.AZURE_LOCATION, template.getLocation());
-        properties.put("AgentOS", template.getOsType());
-        properties.put("RetentionStrategy", template.getRetentionStrategy().getClass().getName());
+
 
         // provision new nodes if required
         if (numberOfAgents > 0) {
@@ -760,7 +769,7 @@ public class AzureVMCloud extends Cloud {
                             "Able to create new nodes, but can only create {0} (desired {1})",
                             new Object[]{adjustedNumberOfAgents, numberOfAgents});
                 }
-                doProvision(adjustedNumberOfAgents, plannedNodes, template);
+                doProvision(adjustedNumberOfAgents, plannedNodes, template, properties);
                 // wait for deployment completion ant than check for created nodes
             } catch (Exception e) {
                 LOGGER.log(
@@ -781,15 +790,17 @@ public class AzureVMCloud extends Cloud {
 
     public void doProvision(final int numberOfNewAgents,
                             List<PlannedNode> plannedNodes,
-                            final AzureVMAgentTemplate template) {
-        doProvision(numberOfNewAgents, plannedNodes, template, false);
+                            final AzureVMAgentTemplate template,
+                            final Map<String, String> properties) {
+        doProvision(numberOfNewAgents, plannedNodes, template, false, properties);
     }
 
     public void doProvision(
             final int numberOfNewAgents,
             List<PlannedNode> plannedNodes,
             final AzureVMAgentTemplate template,
-            final boolean isProvisionOutside) {
+            final boolean isProvisionOutside,
+            final Map<String, String> properties) {
         Callable<AzureVMDeploymentInfo> callableTask = new Callable<AzureVMDeploymentInfo>() {
             @Override
             public AzureVMDeploymentInfo call() throws AzureCloudException {
@@ -797,8 +808,12 @@ public class AzureVMCloud extends Cloud {
                     return template.provisionAgents(
                             new StreamTaskListener(System.out, Charset.defaultCharset()), numberOfNewAgents);
                 } catch (AzureCloudException e) {
+                    properties.put("Message", e.getMessage());
+                    AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ProvisionFailed", properties);
                     throw e;
                 } catch (Exception e) {
+                    properties.put("Message", e.getMessage());
+                    AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ProvisionFailed", properties);
                     throw AzureCloudException.create(e);
                 }
             }
@@ -815,7 +830,6 @@ public class AzureVMCloud extends Cloud {
                     provisioningId,
                     template.getNoOfParallelJobs(),
                     Computer.threadPoolForRemoting.submit(new Callable<Node>() {
-
                         @Override
                         public Node call() throws AzureCloudException {
                             // Wait for the future to complete
@@ -849,7 +863,6 @@ public class AzureVMCloud extends Cloud {
                                             e);
 
                                     handleFailure(template, vmName, e, FailureStage.PROVISIONING);
-
                                     throw e;
                                 }
 
@@ -893,10 +906,8 @@ public class AzureVMCloud extends Cloud {
                                                 nodeRemoveEx);
                                         // Do not throw to avoid it being recorded
                                     }
-
                                     throw AzureCloudException.create(e);
                                 }
-
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
                                 }
@@ -905,6 +916,8 @@ public class AzureVMCloud extends Cloud {
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onFailure(provisioningId, e);
                                 }
+                                properties.put("Message", e.getMessage());
+                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ProvisionFailed", properties);
                                 throw e;
                             } finally {
                                 PoolLock.provisionUnlock(template);
@@ -928,9 +941,7 @@ public class AzureVMCloud extends Cloud {
                                         terminateEx);
                                 // Do not throw to avoid it being recorded
                             }
-
                             template.getAzureCloud().adjustVirtualMachineCount(-1);
-
                             // Update the template status given this new issue.
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }

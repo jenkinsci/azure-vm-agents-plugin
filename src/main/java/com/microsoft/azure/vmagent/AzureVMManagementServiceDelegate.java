@@ -731,7 +731,11 @@ public final class AzureVMManagementServiceDelegate {
     public static boolean virtualMachineExists(AzureVMAgent agent) {
         try {
             AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
-            return delegate.virtualMachineExists(agent.getNodeName(), agent.getResourceGroupName());
+            if (delegate != null) {
+                return delegate.virtualMachineExists(agent.getNodeName(), agent.getResourceGroupName());
+            } else {
+                return false;
+            }
         } catch (AzureCloudException e) {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: virtualMachineExists: "
@@ -1461,7 +1465,9 @@ public final class AzureVMManagementServiceDelegate {
      */
     public static void terminateVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
-        delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
+        if (delegate != null) {
+            delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
+        }
     }
 
     /**

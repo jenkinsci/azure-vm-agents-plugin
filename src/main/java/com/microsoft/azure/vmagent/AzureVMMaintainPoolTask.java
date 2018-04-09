@@ -12,6 +12,7 @@ import hudson.slaves.NodeProvisioner;
 import jenkins.model.Jenkins;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,7 +62,11 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
         }
         if (cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)
                 && template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
-            cloud.doProvision(newAgents, new ArrayList<NodeProvisioner.PlannedNode>(), template, true);
+            cloud.doProvision(newAgents,
+                    new ArrayList<NodeProvisioner.PlannedNode>(),
+                    template,
+                    true,
+                    new HashMap<String, String>());
         } else {
             LOGGER.log(Level.WARNING, "Template {0} failed to verify, cannot be provisioned",
                     template.getTemplateName());

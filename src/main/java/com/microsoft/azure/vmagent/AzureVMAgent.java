@@ -40,6 +40,7 @@ import org.jvnet.localizer.Localizable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Arrays;
@@ -438,6 +439,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return new AzureVMComputer(this);
     }
 
+    @CheckForNull
     public AzureVMCloud getCloud() {
         return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
@@ -455,7 +457,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().disconnect(OfflineCause.create(reason));
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
-        getServiceDelegate().shutdownVirtualMachine(this);
+
+        AzureVMManagementServiceDelegate serviceDelegate = getServiceDelegate();
+        if (serviceDelegate != null) {
+            serviceDelegate.shutdownVirtualMachine(this);
+        }
+
         // After shutting down succesfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
@@ -481,7 +488,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.getComputer().setAcceptingTasks(false);
         this.getComputer().disconnect(OfflineCause.create(reason));
 
-        this.getServiceDelegate().terminateVirtualMachine(this);
+        AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
+
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
                 this.getDisplayName());
         // Adjust estimated virtual machine count.
@@ -497,12 +505,24 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
     }
 
+    @CheckForNull
     public AzureVMManagementServiceDelegate getServiceDelegate() {
-        return this.getCloud().getServiceDelegate();
+        AzureVMCloud cloud = this.getCloud();
+        if (cloud != null) {
+            return cloud.getServiceDelegate();
+        } else {
+            return null;
+        }
+
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
-        return this.getServiceDelegate().isVMAliveOrHealthy(this);
+        AzureVMManagementServiceDelegate serviceDelegate = this.getServiceDelegate();
+        if (serviceDelegate != null) {
+            return serviceDelegate.isVMAliveOrHealthy(this);
+        } else {
+            return false;
+        }
     }
 
     private final Object publicIPAttachLock = new Object();
@@ -516,7 +536,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         synchronized (publicIPAttachLock) {
             try {
                 AzureVMCloud azureVMCloud = getCloud();
-                this.getServiceDelegate().attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                AzureVMManagementServiceDelegate serviceDelegate = this.getServiceDelegate();
+                if (azureVMCloud != null && serviceDelegate != null) {
+                    serviceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
+                }
             } catch (Exception e) {
                 LOGGER.log(
                         Level.INFO,
