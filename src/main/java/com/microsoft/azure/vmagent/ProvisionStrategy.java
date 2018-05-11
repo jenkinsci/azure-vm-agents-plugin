@@ -53,11 +53,4 @@ public class ProvisionStrategy {
         return lastFailureTime + interval <= System.currentTimeMillis();
     }
 
-    public boolean isNeedValidate() {
-        if (configurationStatus.equals(Constants.VERIFIED_PASS)) {
-            return false;
-        }
-        return true;
-    }
-
 }
