@@ -1,6 +1,5 @@
 package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.azure.vmagent.util.TemplateUtil;
 import hudson.Extension;
@@ -21,7 +20,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMMaintainPoolTask.class.getName());
 
-    private static final int RECURRENCE_PERIOD_IN_MILLIS = 1 * 60 * 1000;
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * 60 * 1000;
 
     public AzureVMMaintainPoolTask() {
         super("Azure VM Maintainer Pool Size");
@@ -56,12 +55,10 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     }
 
     public void provisionNodes(AzureVMCloud cloud, AzureVMAgentTemplate template, int newAgents) {
-        if (cloud.getConfigurationStatus().equals(Constants.UNVERIFIED)
-                || template.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+        if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(cloud.getCloudName(), template.getTemplateName());
         }
-        if (cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)
-                && template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
+        if (template.getTemplateProvisionStrategy().isVerifiedPass()) {
             cloud.doProvision(newAgents,
                     new ArrayList<NodeProvisioner.PlannedNode>(),
                     template,

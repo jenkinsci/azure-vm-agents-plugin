@@ -180,6 +180,7 @@ public final class AzureVMManagementServiceDelegate {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException {
 
         InputStream embeddedTemplate = null;
+        String scriptUri = null;
         try {
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
@@ -195,7 +196,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
-            String scriptUri = null;
+
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: "
@@ -387,6 +388,12 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: deployment: Unable to deploy", e);
             // Pass the info off to the template so that it can be queued for update.
             template.handleTemplateProvisioningFailure(e.getMessage(), FailureStage.PROVISIONING);
+            try {
+                removeStorageBlob(new URI(scriptUri), template.getResourceGroupName());
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING,
+                        "AzureVMManagementServiceDelegate: deployment: Delete initScript failed: {0}", scriptUri);
+            }
             throw AzureCloudException.create(e);
         } finally {
             if (embeddedTemplate != null) {
@@ -1681,7 +1688,7 @@ public final class AzureVMManagementServiceDelegate {
             return azureClient.networks().getByResourceGroup(resourceGroupName, virtualNetworkName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getVirtualNetworkInfo: "
-                    + "Got exception while getting virtual network info {0}", virtualNetworkName);
+                    + "Got exception while getting virtual network info: {0}", e);
         }
         return null;
     }

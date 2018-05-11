@@ -1,0 +1,63 @@
+package com.microsoft.azure.vmagent;
+
+import com.microsoft.azure.vmagent.util.Constants;
+
+public class ProvisionStrategy {
+    private static final long INIT_INTERVAL = 10 * 1000; // 10 seconds
+
+    private static final long MAX_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+    private long interval;
+
+    private long lastFailureTime;
+
+    private String configurationStatus;
+
+    public ProvisionStrategy() {
+        this.interval = INIT_INTERVAL;
+        this.configurationStatus = Constants.UNVERIFIED;
+        this.lastFailureTime = 0;
+    }
+
+    public boolean isVerifiedPass() {
+        return configurationStatus.equals(Constants.VERIFIED_PASS);
+    }
+
+    public boolean isVerifiedFailed() {
+        return configurationStatus.equals(Constants.VERIFIED_FAILED);
+    }
+
+    // Whatever verify failed or deploy failed, extend retry interval
+    public synchronized void failure() {
+        configurationStatus = Constants.VERIFIED_FAILED;
+        interval = interval * 2 > MAX_INTERVAL ? MAX_INTERVAL : interval * 2;
+        lastFailureTime = System.currentTimeMillis();
+    }
+
+    // If deploy succeed, clean retry interval
+    public synchronized void success() {
+        configurationStatus = Constants.VERIFIED_PASS;
+        interval = INIT_INTERVAL;
+        lastFailureTime = 0;
+    }
+
+    // If only verify succeed, don't reset retry interval
+    // So, if verify passed but deploy failed, we can also accumulate retry interval.
+    public synchronized void verifiedPass() {
+        configurationStatus = Constants.VERIFIED_PASS;
+    }
+
+    // If enabled, it means the template can go to the provision logic
+    // If lastFailureTime == 0, it always return true.
+    public synchronized boolean isEnable() {
+        return lastFailureTime + interval <= System.currentTimeMillis();
+    }
+
+    public boolean isNeedValidate() {
+        if (configurationStatus.equals(Constants.VERIFIED_PASS)) {
+            return false;
+        }
+        return true;
+    }
+
+}
