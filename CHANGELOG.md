@@ -1,5 +1,11 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.1, 2018-05-23
+* Update Provision retry strategy in order to prevent hitting Azure request rate limit 
+* Update validate logic to avoid bad template by accidentally issue
+* Change the way of generating name of VMs to resolve the same name conflict
+* Remove sleep while shutting down VMs in OnceRetentionStrategy
+
 ## Version 0.7.0, 2018-04-09
 * Support custom managed disk [JENKINS-48076](https://issues.jenkins-ci.org/browse/JENKINS-48076)
 * Add more checks in Template Name, Admin/Password [JENKINS-49150](https://issues.jenkins-ci.org/browse/JENKINS-49150)

@@ -230,12 +230,6 @@ public class AzureVMCloud extends Cloud {
 
     @Override
     public boolean canProvision(Label label) {
-        // Only when configurationStatus is certain invalid, reject at once.
-        if (this.getConfigurationStatus().equals(Constants.VERIFIED_FAILED)) {
-            LOGGER.log(Level.INFO,
-                    "AzureVMCloud: canProvision: Subscription is invalid, cannot provision");
-        }
-
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
         // return false if there is no template for this label.
         if (template == null) {
@@ -247,19 +241,10 @@ public class AzureVMCloud extends Cloud {
                     "AzureVMCloud: canProvision: template {0} is marked has disabled, cannot provision agents",
                     template.getTemplateName());
             return false;
-        } else if (template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_FAILED)) {
-            // The template is available, but not verified. It may be queued for
-            // verification, but ensure that it's added.
-            LOGGER.log(Level.INFO,
-                    "AzureVMCloud: canProvision: template {0} has failed verification",
-                    template.getTemplateName());
-            if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
-                LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
-            }
-            return false;
-        } else {
-            return true;
         }
+
+        return template.getTemplateProvisionStrategy().isEnabled();
+
     }
 
     public static synchronized ExecutorService getThreadPool() {
@@ -658,14 +643,17 @@ public class AzureVMCloud extends Cloud {
         int numberOfAgents = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
         final List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>(numberOfAgents);
 
-        // verify cloud and template if it's status is unverified
-        if (this.getConfigurationStatus().equals(Constants.UNVERIFIED)
-                || template.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+
+        if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
         }
-        if (!this.getConfigurationStatus().equals(Constants.VERIFIED_PASS)
-                || !template.getTemplateConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
-            return plannedNodes;
+        if (template.getTemplateProvisionStrategy().isVerifiedFailed()) {
+            LOGGER.log(Level.INFO,
+                    "AzureVMCloud: provision: template {0} has just verified failed", template.getTemplateName());
+            if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
+                LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
+            }
+            return new ArrayList<PlannedNode>();
         }
 
         // AI events to send
@@ -735,6 +723,7 @@ public class AzureVMCloud extends Cloud {
                                                 AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
                                                         "Provision",
                                                         properties);
+                                                template.getTemplateProvisionStrategy().success();
                                                 return agentNode;
                                             }
                                         }
@@ -911,6 +900,7 @@ public class AzureVMCloud extends Cloud {
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
                                 }
+                                template.getTemplateProvisionStrategy().success();
                                 return agent;
                             } catch (AzureCloudException e) {
                                 if (isProvisionOutside) {

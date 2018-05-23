@@ -373,8 +373,16 @@ public final class AzureUtil {
         // Get the hash of the deployment name
         Integer deploymentHashCode = deploymentName.hashCode();
         // Convert the int into a hex string and do a substring
-        String shortenedDeploymentHash =
-                Integer.toHexString(deploymentHashCode).substring(0, Constants.VM_NAME_HASH_LENGTH - 1);
+        // If the deployment names are similar, the prefix of hashCode will be same
+        // So suffix of the hashCode.
+        String deploymentHashString = Integer.toHexString(deploymentHashCode);
+        String shortenedDeploymentHash = null;
+        if (deploymentHashString.length() <= Constants.VM_NAME_HASH_LENGTH - 1) {
+            shortenedDeploymentHash = deploymentHashString;
+        } else {
+            shortenedDeploymentHash = deploymentHashString
+                        .substring(deploymentHashString.length() - (Constants.VM_NAME_HASH_LENGTH - 1));
+        }
         return String.format("%s%s", getShortenedTemplateName(templateName, osType,
                 Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
                 shortenedDeploymentHash);

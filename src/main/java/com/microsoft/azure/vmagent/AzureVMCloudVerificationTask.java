@@ -62,16 +62,22 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         }
 
         synchronized (agentTemplate) {
+            // If cloud verified failed, all the template in the cloud should set as failed.
             if (!cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
-                agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
+                agentTemplate.getTemplateProvisionStrategy().failure();
                 return;
             }
 
-            if (!agentTemplate.getTemplateConfigurationStatus().equals(Constants.UNVERIFIED)) {
+            if (agentTemplate.getTemplateProvisionStrategy().isVerifiedPass()) {
                 return;
             }
 
-            // The template is not yet verified.  Do so now
+            // This means the template just verified failed soon before.
+            if (!agentTemplate.getTemplateProvisionStrategy().isEnabled()) {
+                return;
+            }
+
+            // The template is failed or not verified.  Do so now
             try {
                 List<String> errors = agentTemplate.verifyTemplate();
                 if (errors.isEmpty()) {
@@ -79,24 +85,24 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                             "AzureVMCloudVerificationTask: verify: {0} verified successfully",
                             templateName);
                     // Verified, set the template to verified.
-                    agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_PASS);
+                    agentTemplate.getTemplateProvisionStrategy().verifiedPass();
                     // Reset the status details
                     agentTemplate.setTemplateStatusDetails("");
                 } else {
                     String details = StringUtils.join(errors, "\n");
-                    LOGGER.log(Level.INFO,
+                    LOGGER.log(Level.WARNING,
                             "AzureVMCloudVerificationTask: verify: {0} could not be verified:\n{1}",
                             new Object[]{templateName, details});
-                    agentTemplate.setTemplateConfigurationStatus(Constants.VERIFIED_FAILED);
+                    agentTemplate.getTemplateProvisionStrategy().failure();
                     // Set the status details to the set of messages
                     agentTemplate.setTemplateStatusDetails(details);
                 }
             } catch (Exception e) {
                 // Log, but ignore overall
-                LOGGER.log(Level.INFO,
+                LOGGER.log(Level.WARNING,
                         "AzureVMCloudVerificationTask: verify: got exception while verifying {0}:\n{1}",
                         new Object[]{templateName, e.toString()});
-                agentTemplate.setTemplateConfigurationStatus(Constants.UNVERIFIED);
+                agentTemplate.getTemplateProvisionStrategy().failure();
             }
         }
     }
@@ -120,10 +126,10 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         }
 
         synchronized (cloud) {
-            // If already verified, skip
-            if (!cloud.getConfigurationStatus().equals(Constants.UNVERIFIED)) {
+            // Only if verified pass, return at once
+            if (cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
                 LOGGER.log(Level.FINE,
-                        "AzureVMCloudVerificationTask: verify: subscription {0} already verified",
+                        "AzureVMCloudVerificationTask: verify: cloud {0} already verified pass",
                         cloudName);
                 // Update the count.
                 cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
@@ -132,7 +138,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
             // Verify.  Update the VM count before setting to valid
             if (verifyConfiguration(cloud)) {
-                LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified", cloudName);
+                LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified pass", cloudName);
                 // Update the count
                 cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
                 // We grab the current VM count and
@@ -142,7 +148,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
             // Not valid!
             cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMCloudVerificationTask: verify: {0} not verified, has errors",
                     cloudName);
         }
