@@ -18,7 +18,6 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
     private static final long serialVersionUID = 1566788691L;
     private static final transient long IDLE_MILLIS = TimeUnit2.MINUTES.toMillis(1);
-    private static final transient long WAIT_TIME = TimeUnit2.SECONDS.toMillis(10);
     private static final transient long LAPSE = TimeUnit2.SECONDS.toMillis(5);
 
     @DataBoundConstructor
@@ -71,12 +70,6 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
     }
 
     public void done(AzureVMComputer computer) {
-        try {
-            Thread.sleep(WAIT_TIME);
-        } catch (Exception e) {
-            LOGGER.info(e.getMessage());
-        }
-
         final AzureVMAgent agent = computer.getNode();
         if (agent == null) {
             return;
