@@ -73,7 +73,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             }
 
             // This means the template just verified failed soon before.
-            if (!agentTemplate.getTemplateProvisionStrategy().isEnable()) {
+            if (!agentTemplate.getTemplateProvisionStrategy().isEnabled()) {
                 return;
             }
 

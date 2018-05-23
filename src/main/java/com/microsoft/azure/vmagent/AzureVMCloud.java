@@ -243,7 +243,7 @@ public class AzureVMCloud extends Cloud {
             return false;
         }
 
-        return template.getTemplateProvisionStrategy().isEnable();
+        return template.getTemplateProvisionStrategy().isEnabled();
 
     }
 

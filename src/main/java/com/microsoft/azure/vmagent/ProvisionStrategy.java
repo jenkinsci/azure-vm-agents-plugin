@@ -49,7 +49,7 @@ public class ProvisionStrategy {
 
     // If enabled, it means the template can go to the provision logic
     // If lastFailureTime == 0, it always return true.
-    public synchronized boolean isEnable() {
+    public synchronized boolean isEnabled() {
         return lastFailureTime + interval <= System.currentTimeMillis();
     }
 
