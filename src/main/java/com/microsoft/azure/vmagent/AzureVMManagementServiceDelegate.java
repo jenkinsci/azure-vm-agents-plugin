@@ -835,27 +835,42 @@ public final class AzureVMManagementServiceDelegate {
      * Gets a map of available locations mapping display name -> name (usable in
      * template).
      *
+     * az account list-locations --query "[].displayName" -o tsv
+     *
      * @return
      */
     private static Set<String> getAvailableLocationsStandard() {
         final Set<String> locations = new HashSet<>();
-        locations.add("East US");
-        locations.add("West US");
-        locations.add("South Central US");
+        locations.add("East Asia");
+        locations.add("Southeast Asia");
         locations.add("Central US");
+        locations.add("East US");
+        locations.add("East US 2");
+        locations.add("West US");
         locations.add("North Central US");
+        locations.add("South Central US");
         locations.add("North Europe");
         locations.add("West Europe");
-        locations.add("Southeast Asia");
-        locations.add("East Asia");
         locations.add("Japan West");
         locations.add("Japan East");
         locations.add("Brazil South");
-        locations.add("Australia Southeast");
         locations.add("Australia East");
-        locations.add("Central India");
+        locations.add("Australia Southeast");
         locations.add("South India");
+        locations.add("Central India");
         locations.add("West India");
+        locations.add("Canada Central");
+        locations.add("Canada East");
+        locations.add("UK South");
+        locations.add("UK West");
+        locations.add("West Central US");
+        locations.add("West US 2");
+        locations.add("Korea Central");
+        locations.add("Korea South");
+        locations.add("France Central");
+        locations.add("France South");
+        locations.add("Australia Central");
+        locations.add("Australia Central 2");
         return locations;
     }
 
