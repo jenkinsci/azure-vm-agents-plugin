@@ -868,9 +868,10 @@ public final class AzureVMManagementServiceDelegate {
         locations.add("Korea Central");
         locations.add("Korea South");
         locations.add("France Central");
-        locations.add("France South");
-        locations.add("Australia Central");
-        locations.add("Australia Central 2");
+        // No registered resource provider found for location
+        // locations.add("France South");
+        // locations.add("Australia Central");
+        // locations.add("Australia Central 2");
         return locations;
     }
 
