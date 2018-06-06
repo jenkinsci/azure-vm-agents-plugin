@@ -171,19 +171,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final boolean isInstallDocker;
 
-    private final String image;
+    private String image;
 
-    private final String osType;
+    private String osType;
 
-    private final String imageId;
+    private String imageId;
 
-    private final String imagePublisher;
+    private String imagePublisher;
 
-    private final String imageOffer;
+    private String imageOffer;
 
-    private final String imageSku;
+    private String imageSku;
 
-    private final String imageVersion;
+    private String imageVersion;
 
     private final String agentLaunchMethod;
 
@@ -591,6 +591,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return image;
     }
 
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public String getOsType() {
         return osType;
     }
@@ -603,20 +607,40 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return imageId;
     }
 
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
+    }
+
     public String getImagePublisher() {
         return imagePublisher;
+    }
+
+    public void setImagePublisher(String imagePublisher) {
+        this.imagePublisher = imagePublisher;
     }
 
     public String getImageOffer() {
         return imageOffer;
     }
 
+    public void setImageOffer(String imageOffer) {
+        this.imageOffer = imageOffer;
+    }
+
     public String getImageSku() {
         return imageSku;
     }
 
+    public void setImageSku(String imageSku) {
+        this.imageSku = imageSku;
+    }
+
     public String getImageVersion() {
         return imageVersion;
+    }
+
+    public void setImageVersion(String imageVersion) {
+        this.imageVersion = imageVersion;
     }
 
     public String getInitScript() {
