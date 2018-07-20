@@ -293,6 +293,26 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "resourceTag", deploymentRegistrar.getDeploymentTag().get());
             putVariable(tmp, "cloudTag", template.getAzureCloud().getCloudName());
 
+            // add purchase plan for image if needed
+            VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
+                    template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), template.getImageVersion());
+            if (image != null) {
+                PurchasePlan plan = image.plan();
+                if (plan != null) {
+                    ArrayNode resources = (ArrayNode) tmp.get("resources");
+                    for (JsonNode resource : resources) {
+                        String type = resource.get("type").asText();
+                        if(type.contains("virtualMachine")){
+                            ObjectNode planNode = mapper.createObjectNode();
+                            planNode.put("name", plan.name());
+                            planNode.put("publisher", plan.publisher());
+                            planNode.put("product", plan.product());
+                            ObjectNode.class.cast(resource).replace("plan", planNode);
+                        }
+                    }
+                }
+            }
+
             copyVariableIfNotBlank(tmp, properties, "imageId");
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");
             copyVariableIfNotBlank(tmp, properties, "imageOffer");
