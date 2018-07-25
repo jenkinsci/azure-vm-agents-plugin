@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.2 2018-07-25
+* Fix missing plan information for some images in reference image configuration
+
 ## Version 0.7.1, 2018-05-23
 * Update Provision retry strategy in order to prevent hitting Azure request rate limit 
 * Update validate logic to avoid bad template by accidentally issue
