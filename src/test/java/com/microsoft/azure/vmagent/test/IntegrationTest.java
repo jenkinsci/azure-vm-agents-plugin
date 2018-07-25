@@ -91,9 +91,9 @@ public class IntegrationTest {
         public final String azureStorageAccountName;
         public final String azureStorageAccountType;
         public final String azureImageId;
-        public final String azureImagePublisher;
-        public final String azureImageOffer;
-        public final String azureImageSku;
+        public String azureImagePublisher;
+        public String azureImageOffer;
+        public String azureImageSku;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
         public final Map<String, String> blobEndpointSuffixForCloudStorageAccount;
