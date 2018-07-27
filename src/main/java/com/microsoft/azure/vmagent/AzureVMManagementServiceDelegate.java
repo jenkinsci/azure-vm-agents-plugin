@@ -314,6 +314,11 @@ public final class AzureVMManagementServiceDelegate {
                                 }
                             }
                         }
+                    } else {
+                        LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
+                                "version:{3} when trying to add purchase plan to ARM template", new Object[]{
+                                template.getImagePublisher(), template.getImageOffer(), template.getImageSku(),
+                                template.getImageVersion()});
                     }
                 }
             }
@@ -432,7 +437,7 @@ public final class AzureVMManagementServiceDelegate {
                 || StringUtils.isBlank(template.getImageOffer())
                 || StringUtils.isBlank(template.getImageSku())
                 || StringUtils.isBlank(template.getImageVersion())) {
-            LOGGER.warning("Missing Image Reference information when trying to add purchase plan to ARM template");
+            LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }
         return true;
