@@ -294,6 +294,8 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "cloudTag", template.getAzureCloud().getCloudName());
 
             // add purchase plan for image if needed in reference configuration
+            // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
+            // getImageId()->Custom Managed Image, here we need the last one: Image Reference
             if (!isBasic && !useCustomImage && StringUtils.isBlank(template.getImageId())) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
