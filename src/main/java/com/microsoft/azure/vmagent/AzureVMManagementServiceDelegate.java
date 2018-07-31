@@ -294,23 +294,33 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "cloudTag", template.getAzureCloud().getCloudName());
 
             // add purchase plan for image if needed in reference configuration
-            if (!useCustomImage && StringUtils.isBlank(template.getImageId())) {
-                VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
-                        template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), template.getImageVersion());
-                if (image != null) {
-                    PurchasePlan plan = image.plan();
-                    if (plan != null) {
-                        ArrayNode resources = (ArrayNode) tmp.get("resources");
-                        for (JsonNode resource : resources) {
-                            String type = resource.get("type").asText();
-                            if (type.contains("virtualMachine")) {
-                                ObjectNode planNode = mapper.createObjectNode();
-                                planNode.put("name", plan.name());
-                                planNode.put("publisher", plan.publisher());
-                                planNode.put("product", plan.product());
-                                ObjectNode.class.cast(resource).replace("plan", planNode);
+            // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
+            // getImageId()->Custom Managed Image, here we need the last one: Image Reference
+            if (!isBasic && !useCustomImage && StringUtils.isBlank(template.getImageId())) {
+                boolean isImageParameterValid = checkImageParameter(template);
+                if (isImageParameterValid) {
+                    VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
+                            template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), template.getImageVersion());
+                    if (image != null) {
+                        PurchasePlan plan = image.plan();
+                        if (plan != null) {
+                            ArrayNode resources = (ArrayNode) tmp.get("resources");
+                            for (JsonNode resource : resources) {
+                                String type = resource.get("type").asText();
+                                if (type.contains("virtualMachine")) {
+                                    ObjectNode planNode = mapper.createObjectNode();
+                                    planNode.put("name", plan.name());
+                                    planNode.put("publisher", plan.publisher());
+                                    planNode.put("product", plan.product());
+                                    ObjectNode.class.cast(resource).replace("plan", planNode);
+                                }
                             }
                         }
+                    } else {
+                        LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
+                                "version:{3} when trying to add purchase plan to ARM template", new Object[]{
+                                template.getImagePublisher(), template.getImageOffer(), template.getImageSku(),
+                                template.getImageVersion()});
                     }
                 }
             }
@@ -422,6 +432,17 @@ public final class AzureVMManagementServiceDelegate {
                 embeddedTemplate.close();
             }
         }
+    }
+
+    private boolean checkImageParameter(AzureVMAgentTemplate template) {
+        if (StringUtils.isBlank(template.getImagePublisher())
+                || StringUtils.isBlank(template.getImageOffer())
+                || StringUtils.isBlank(template.getImageSku())
+                || StringUtils.isBlank(template.getImageVersion())) {
+            LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
+            return false;
+        }
+        return true;
     }
 
     private static void putVariable(JsonNode template, String name, String value) {
