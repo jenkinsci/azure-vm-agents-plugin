@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.2.1 2018-08-01
+* Fixed an issue that built-in images may fail to provision.
+
 ## Version 0.7.2 2018-07-25
 * Fix missing plan information for some images in reference image configuration [JENKINS-52407](https://issues.jenkins-ci.org/browse/JENKINS-52407)
 
