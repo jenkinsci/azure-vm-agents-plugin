@@ -20,6 +20,7 @@ import com.microsoft.azure.CloudException;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.KnownLinuxVirtualMachineImage;
+import com.microsoft.azure.management.compute.StorageAccountTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
@@ -40,6 +41,7 @@ import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
+import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
@@ -71,7 +73,12 @@ To execute the integration tests you need to set the credentials env variables (
 */
 public class IntegrationTest {
     @ClassRule
-    public static JenkinsRule j = new JenkinsRule();
+    public static JenkinsRule jenkinsRule() {
+        JenkinsRule j = new JenkinsRule();
+        j.timeout = 20 * 60;
+        return j;
+    }
+
     @Rule
     public Timeout globalTimeout = Timeout.seconds(20 * 60); // integration tests are very slow
     private static final Logger LOGGER = Logger.getLogger(IntegrationTest.class.getName());
@@ -117,10 +124,10 @@ public class IntegrationTest {
             azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
             azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst") + TestEnvironment.GenerateRandomString(19);
             azureStorageAccountType = SkuName.STANDARD_LRS.toString();
-            azureImageId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_ID", "/subscriptions/vmagents-tst/resourceGroups/vmagents-tst/providers/Microsoft.Compute/images/MyJenkinsImage");
+            azureImageId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_ID", "");
             azureImagePublisher = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_PUBLISHER", "Canonical");
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
-            azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "14.04.5-LTS");
+            azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             blobEndpointSuffixForTemplate = new HashMap<String, String>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
@@ -318,7 +325,7 @@ public class IntegrationTest {
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
-        when(templateMock.getImageReferenceType()).thenReturn("reference");
+        when(templateMock.getImageReferenceType()).thenReturn(ImageReferenceType.REFERENCE.getName());
         when(templateMock.getImageId()).thenReturn(testEnv.azureImageId);
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
@@ -330,7 +337,7 @@ public class IntegrationTest {
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
-        when(templateMock.getDiskType()).thenReturn(Constants.DISK_UNMANAGED);
+        when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
         when(templateMock.getPreInstallSsh()).thenReturn(true);
 
         AzureVMDeploymentInfo ret = delegate.createDeployment(templateMock, numberOfAgents, deploymentRegistrar);
@@ -367,19 +374,21 @@ public class IntegrationTest {
                 final String resource = op.targetResource().resourceName();
                 final String state = op.provisioningState();
                 if (op.targetResource().resourceType().contains("virtualMachine")) {
-                    if (!state.equalsIgnoreCase("creating")
-                            && !state.equalsIgnoreCase("succeeded")
-                            && !state.equalsIgnoreCase("running")) {
-                        return false;
-                    } else if (state.equalsIgnoreCase("succeeded")) {
-                        for (String vmName : vmNames) {
-                            if (resource.equalsIgnoreCase(vmName)) {
-                                deployedVMs++;
-                                break;
+                    switch (state) {
+                        case "creating":
+                        case "running":
+                            return false;
+                        case "succeeded":
+                            for (String vmName : vmNames) {
+                                if (resource.equalsIgnoreCase(vmName)) {
+                                    deployedVMs++;
+                                    break;
+                                }
                             }
-                        }
-                    } else {
-                        return false;
+                            break;
+                        default:
+                            throw new IllegalStateException(
+                                    String.format("the state of VM %s is '%s'", resource, state));
                     }
                 }
             }
@@ -401,10 +410,10 @@ public class IntegrationTest {
                 .withNewPrimaryNetwork("10.0.0.0/28")
                 .withPrimaryPrivateIPAddressDynamic()
                 .withoutPrimaryPublicIPAddress()
-                .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_14_04_LTS)
+                .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_16_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
                 .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'") //don't try this at home
-                .withUnmanagedDisks()
+                .withOSDiskStorageAccountType(StorageAccountTypes.STANDARD_LRS)
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                 .withTag(tagName, tagValue)
                 .create();

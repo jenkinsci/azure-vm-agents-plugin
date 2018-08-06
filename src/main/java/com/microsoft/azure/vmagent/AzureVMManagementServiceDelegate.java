@@ -244,7 +244,7 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME;
                     } else {
-                        templateLocation = StringUtils.isNotBlank(template.getImageId())
+                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
                                 ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME
                                 : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
                     }
@@ -262,7 +262,7 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME;
                     } else {
-                        templateLocation = StringUtils.isNotBlank(template.getImageId())
+                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
                             ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
                             : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
@@ -296,7 +296,7 @@ public final class AzureVMManagementServiceDelegate {
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
             // getImageId()->Custom Managed Image, here we need the last one: Image Reference
-            if (!isBasic && !useCustomImage && StringUtils.isBlank(template.getImageId())) {
+            if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
                     VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
