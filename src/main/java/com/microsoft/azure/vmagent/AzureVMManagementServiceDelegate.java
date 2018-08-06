@@ -437,8 +437,7 @@ public final class AzureVMManagementServiceDelegate {
     private boolean checkImageParameter(AzureVMAgentTemplate template) {
         if (StringUtils.isBlank(template.getImagePublisher())
                 || StringUtils.isBlank(template.getImageOffer())
-                || StringUtils.isBlank(template.getImageSku())
-                || StringUtils.isBlank(template.getImageVersion())) {
+                || StringUtils.isBlank(template.getImageSku())) {
             LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }

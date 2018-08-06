@@ -15,6 +15,7 @@
  */
 package com.microsoft.azure.vmagent.test;
 
+import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.network.Network;
@@ -510,7 +511,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         //should fail if service principal is wrong
         AzureVMManagementServiceDelegate wrongDelegate = AzureVMManagementServiceDelegate.getInstance(
-                AzureClientFactory.getClient("", "", "", "", null));
+                AzureClientFactory.getClient("foo", "bar", "foo", "bar", AzureEnvironment.AZURE));
         Assert.assertNotEquals(
                 Constants.OP_SUCCESS,
                 wrongDelegate.verifyConfiguration(testEnv.azureResourceGroup)
@@ -656,7 +657,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.shutdownVirtualMachine(agentMock);
             PowerState state = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
-            Assert.assertEquals(state, anyOf(
+            Assert.assertThat(state, anyOf(
                     is(PowerState.STOPPING),
                     is(PowerState.STOPPED),
                     is(PowerState.DEALLOCATING),

@@ -374,7 +374,7 @@ public class IntegrationTest {
                 final String resource = op.targetResource().resourceName();
                 final String state = op.provisioningState();
                 if (op.targetResource().resourceType().contains("virtualMachine")) {
-                    switch (state) {
+                    switch (state.toLowerCase()) {
                         case "creating":
                         case "running":
                             return false;
