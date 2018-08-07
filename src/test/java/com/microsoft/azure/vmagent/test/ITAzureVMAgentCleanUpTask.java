@@ -146,17 +146,5 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
                 Assert.assertTrue("Resource shouldn't exist: " + resourceName + " (vmbase: " + depl + " )", resourceName.contains(depl));
             }
         }
-
-        //check the OS disk was removed
-        Assert.assertNotNull("The resource group doesn't have any storage account", jenkinsStorage);
-        final String storageKey = jenkinsStorage.getKeys().get(0).value();
-        CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(jenkinsStorage.name(), storageKey));
-        CloudBlobClient blobClient = account.createCloudBlobClient();
-        CloudBlobContainer container = blobClient.getContainerReference("vhds");
-        Assert.assertTrue(container.exists());
-        for (ListBlobItem blob : container.listBlobs()) {
-            final String u = blob.getUri().toString();
-            Assert.assertTrue("Blobl shouldn't exist: " + u, u.contains(deployment.getVmBaseName() + "0"));
-        }
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.microsoft.azure.vmagent.test;
 
+import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.network.Network;
@@ -51,6 +52,8 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -110,7 +113,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -156,7 +159,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -508,7 +511,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         //should fail if service principal is wrong
         AzureVMManagementServiceDelegate wrongDelegate = AzureVMManagementServiceDelegate.getInstance(
-                AzureClientFactory.getClient("", "", "", "", null));
+                AzureClientFactory.getClient("foo", "bar", "foo", "bar", AzureEnvironment.AZURE));
         Assert.assertNotEquals(
                 Constants.OP_SUCCESS,
                 wrongDelegate.verifyConfiguration(testEnv.azureResourceGroup)
@@ -520,9 +523,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final String vmName = "vmterminate";
             VirtualMachine vm = createAzureVM(vmName);
-            final URI osDiskStorageAccount = new URI(vm.osUnmanagedDiskVhdUri());
-            Assert.assertTrue(blobExists(osDiskStorageAccount));
-
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
             delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, executionEngineMock);
@@ -530,7 +530,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
             Assert.assertNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
-            Assert.assertFalse(blobExists(osDiskStorageAccount));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -658,7 +657,11 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.shutdownVirtualMachine(agentMock);
             PowerState state = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
-            Assert.assertTrue(state.toString(), state.equals(PowerState.STOPPED) || state.toString().equalsIgnoreCase("powerstate/stopping"));
+            Assert.assertThat(state, anyOf(
+                    is(PowerState.STOPPING),
+                    is(PowerState.STOPPED),
+                    is(PowerState.DEALLOCATING),
+                    is(PowerState.DEALLOCATED)));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -754,10 +757,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
                             "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku + "wrong", "latest"));
-
-            Assert.assertEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.CUSTOM_IMAGE, "", "",
-                            testEnv.azureImageId, "", "", "", ""));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.CUSTOM_IMAGE, "", "",

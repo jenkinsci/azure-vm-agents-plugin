@@ -244,7 +244,7 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME;
                     } else {
-                        templateLocation = StringUtils.isNotBlank(template.getImageId())
+                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
                                 ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME
                                 : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
                     }
@@ -262,7 +262,7 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME;
                     } else {
-                        templateLocation = StringUtils.isNotBlank(template.getImageId())
+                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
                             ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
                             : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
@@ -296,11 +296,12 @@ public final class AzureVMManagementServiceDelegate {
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
             // getImageId()->Custom Managed Image, here we need the last one: Image Reference
-            if (!isBasic && !useCustomImage && StringUtils.isBlank(template.getImageId())) {
+            if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
+                    String imageVersion = StringUtils.isNotEmpty(template.getImageVersion()) ? template.getImageVersion() : "latest";
                     VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
-                            template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), template.getImageVersion());
+                            template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), imageVersion);
                     if (image != null) {
                         PurchasePlan plan = image.plan();
                         if (plan != null) {
@@ -320,7 +321,7 @@ public final class AzureVMManagementServiceDelegate {
                         LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
                                 "version:{3} when trying to add purchase plan to ARM template", new Object[]{
                                 template.getImagePublisher(), template.getImageOffer(), template.getImageSku(),
-                                template.getImageVersion()});
+                                imageVersion});
                     }
                 }
             }
@@ -437,8 +438,7 @@ public final class AzureVMManagementServiceDelegate {
     private boolean checkImageParameter(AzureVMAgentTemplate template) {
         if (StringUtils.isBlank(template.getImagePublisher())
                 || StringUtils.isBlank(template.getImageOffer())
-                || StringUtils.isBlank(template.getImageSku())
-                || StringUtils.isBlank(template.getImageVersion())) {
+                || StringUtils.isBlank(template.getImageSku())) {
             LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }
