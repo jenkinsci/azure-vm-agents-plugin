@@ -299,8 +299,9 @@ public final class AzureVMManagementServiceDelegate {
             if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
+                    String imageVersion = StringUtils.isNotEmpty(template.getImageVersion()) ? template.getImageVersion() : "latest";
                     VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
-                            template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), template.getImageVersion());
+                            template.getImagePublisher(), template.getImageOffer(), template.getImageSku(), imageVersion);
                     if (image != null) {
                         PurchasePlan plan = image.plan();
                         if (plan != null) {
@@ -320,7 +321,7 @@ public final class AzureVMManagementServiceDelegate {
                         LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
                                 "version:{3} when trying to add purchase plan to ARM template", new Object[]{
                                 template.getImagePublisher(), template.getImageOffer(), template.getImageSku(),
-                                template.getImageVersion()});
+                                imageVersion});
                     }
                 }
             }
