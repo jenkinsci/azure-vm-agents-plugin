@@ -212,7 +212,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMDeploymentInfo deploymentInfo;
         deploymentInfo = createDefaultDeployment(1, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment(null, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
