@@ -150,6 +150,11 @@
                              help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html">
                         <f:checkbox default="true"/>
                     </f:entry>
+
+                    <f:entry title="${%Enable_MSI}" field="enableMSI"
+                        help="/plugin/azure-vm-agents/help-enableMSI.html">
+                        <f:checkbox/>
+                    </f:entry>
                 </f:section>
 
                 <f:advanced>

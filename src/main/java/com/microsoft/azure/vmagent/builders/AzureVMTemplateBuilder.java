@@ -110,6 +110,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isTemplateDisabled(),
                 null,
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails());
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
+                fluent.getAdvancedImage().isEnableMSI());
     }
 }

@@ -32,6 +32,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private boolean doNotUseMachineIfInitFails;
 
+    private boolean enableMSI;
+
     private String virtualNetworkName;
 
     private String virtualNetworkResourceGroupName;
@@ -56,6 +58,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.preInstallSsh = true;
         this.executeInitScriptAsRoot = true;
         this.doNotUseMachineIfInitFails = true;
+        this.enableMSI = false;
         this.usePrivateIP = false;
         this.noOfParallelJobs = "1";
         this.templateDisabled = false;
@@ -113,6 +116,11 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public T withDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        return (T) this;
+    }
+
+    public T withEnableMSI(boolean enableMSI) {
+        this.enableMSI = enableMSI;
         return (T) this;
     }
 
@@ -206,6 +214,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isDoNotUseMachineIfInitFails() {
         return doNotUseMachineIfInitFails;
+    }
+
+    public boolean isEnableMSI() {
+        return enableMSI;
     }
 
     public String getVirtualNetworkName() {

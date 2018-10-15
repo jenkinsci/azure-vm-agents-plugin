@@ -263,8 +263,8 @@ public final class AzureVMManagementServiceDelegate {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME;
                     } else {
                         templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
-                            ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
-                            : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
+                                ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
+                                : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
                 } else {
                     msg = "AzureVMManagementServiceDelegate: createDeployment: "
@@ -325,6 +325,20 @@ public final class AzureVMManagementServiceDelegate {
                     }
                 }
             }
+
+            // If MSI is enabled, need to add identity node in virtualMachine resource
+            if (template.isEnableMSI()) {
+                ArrayNode resources = (ArrayNode) tmp.get("resources");
+                for (JsonNode resource : resources) {
+                    String type = resource.get("type").asText();
+                    if (type.contains("virtualMachine")) {
+                        ObjectNode identityNode = mapper.createObjectNode();
+                        identityNode.put("type", "systemAssigned");
+                        ObjectNode.class.cast(resource).replace("identity", identityNode);
+                    }
+                }
+            }
+
 
             copyVariableIfNotBlank(tmp, properties, "imageId");
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");
@@ -863,6 +877,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.getResourceGroupName(),
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
+                    (Boolean) properties.get("enableMSI"),
                     template,
                     fqdn);
         } catch (FormException e) {
@@ -1268,7 +1283,7 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Gets list of virtual machine sizes. If it can't fetch the data then it will return a default hardcoded list
      *
-     * @param location         Location to obtain VM sizes for
+     * @param location Location to obtain VM sizes for
      * @return List of VM sizes
      */
     public List<String> getVMSizes(String location) {
@@ -2291,7 +2306,7 @@ public final class AzureVMManagementServiceDelegate {
                 return Constants.OP_SUCCESS;
             } else if (referenceType == ImageReferenceType.CUSTOM_IMAGE &&
                     StringUtils.isNotBlank(imageId)) {
-                    return Constants.OP_SUCCESS;
+                return Constants.OP_SUCCESS;
             } else if (StringUtils.isNotBlank(imagePublisher)
                     && StringUtils.isNotBlank(imageOffer)
                     && StringUtils.isNotBlank(imageSku)

@@ -105,6 +105,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final boolean doNotUseMachineIfInitFails;
 
+    private final boolean enalbeMSI;
+
     private boolean eligibleForReuse;
 
     private final AzureVMAgentTemplate template;
@@ -142,6 +144,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
+            boolean enalbeMSI,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -166,6 +169,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.resourceGroupName = resourceGroupName;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        this.enalbeMSI = enalbeMSI;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
     }
@@ -197,6 +201,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
+            boolean enalbeMSI,
             AzureVMAgentTemplate template,
             String fqdn) throws FormException, IOException {
 
@@ -232,6 +237,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 resourceGroupName,
                 executeInitScriptAsRoot,
                 doNotUseMachineIfInitFails,
+                enalbeMSI,
                 template);
 
         this.provisioningId = id;
@@ -412,6 +418,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean getDoNotUseMachineIfInitFails() {
         return doNotUseMachineIfInitFails;
+    }
+
+    public boolean isEnalbeMSI() {
+        return enalbeMSI;
     }
 
     public AzureVMAgentTemplate getTemplate() {
