@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.4 2018-10-17
+* Support MSI for agents [JENKINS-53945](https://issues.jenkins-ci.org/browse/JENKINS-53945)
+
 ## Version 0.7.3 2018-08-06
 * Fixed Jackson version conflicts caused by Azure client runtime lib updates [JENKINS-52838](https://issues.jenkins-ci.org/browse/JENKINS-52838)
 
