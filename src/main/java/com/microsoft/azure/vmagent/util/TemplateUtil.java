@@ -35,6 +35,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())
                 && a.getExecuteInitScriptAsRoot() == b.getExecuteInitScriptAsRoot()
                 && a.getDoNotUseMachineIfInitFails() == b.getDoNotUseMachineIfInitFails()
+                && a.isEnableMSI() == b.isEnableMSI()
                 && StringUtils.equals(a.getVirtualNetworkName(), b.getVirtualNetworkName())
                 && StringUtils.equals(a.getVirtualNetworkResourceGroupName(), b.getVirtualNetworkResourceGroupName())
                 && StringUtils.equals(a.getSubnetName(), b.getSubnetName())

@@ -227,6 +227,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean doNotUseMachineIfInitFails;
 
+    private final boolean enableMSI;
+
     private AzureVMCloudBaseRetentionStrategy retentionStrategy;
 
     @DataBoundConstructor
@@ -267,7 +269,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             boolean templateDisabled,
             String templateStatusDetails,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails) {
+            boolean doNotUseMachineIfInitFails,
+            boolean enableMSI) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -316,6 +319,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        this.enableMSI = enableMSI;
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
@@ -372,6 +376,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? true : template.getExecuteInitScriptAsRoot());
         templateProperties.put("doNotUseMachineIfInitFails",
                 isBasic ? true : template.getDoNotUseMachineIfInitFails());
+        templateProperties.put("enableMSI",
+                isBasic ? false : template.isEnableMSI());
 
         return templateProperties;
     }
@@ -763,6 +769,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return doNotUseMachineIfInitFails;
     }
 
+    public boolean isEnableMSI() {
+        return enableMSI;
+    }
+
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
@@ -791,6 +801,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withDisableTemplate(isTemplateDisabled())
                 .withRunScriptAsRoot(getExecuteInitScriptAsRoot())
                 .withDoNotUseMachineIfInitFails(getDoNotUseMachineIfInitFails())
+                .withEnableMSI(isEnableMSI())
                 .build();
     }
 

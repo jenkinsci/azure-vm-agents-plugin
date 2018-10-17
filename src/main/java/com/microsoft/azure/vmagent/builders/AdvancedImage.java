@@ -29,6 +29,8 @@ public class AdvancedImage {
 
     private boolean doNotUseMachineIfInitFails;
 
+    private boolean enableMSI;
+
     private String virtualNetworkName;
 
     private String virtualNetworkResourceGroupName;
@@ -58,6 +60,7 @@ public class AdvancedImage {
                          String initScript,
                          boolean executeInitScriptAsRoot,
                          boolean doNotUseMachineIfInitFails,
+                         boolean enableMSI,
                          String virtualNetworkName,
                          String virtualNetworkResourceGroupName,
                          String subnetName,
@@ -79,6 +82,7 @@ public class AdvancedImage {
         this.initScript = initScript;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
+        this.enableMSI = enableMSI;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
         this.subnetName = subnetName;
@@ -138,6 +142,10 @@ public class AdvancedImage {
 
     public boolean isDoNotUseMachineIfInitFails() {
         return doNotUseMachineIfInitFails;
+    }
+
+    public boolean isEnableMSI() {
+        return enableMSI;
     }
 
     public String getVirtualNetworkName() {

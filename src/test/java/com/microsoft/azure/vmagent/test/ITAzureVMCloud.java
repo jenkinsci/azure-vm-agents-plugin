@@ -82,6 +82,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final String agentLaunchMethod = Constants.LAUNCH_METHOD_SSH;
             final boolean executeInitScriptAsRoot = true;
             final boolean doNotUseMachineIfInitFails = true;
+            final boolean enableMSI = false;
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
@@ -103,6 +104,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
             when(templateMock.getExecuteInitScriptAsRoot()).thenReturn(executeInitScriptAsRoot);
             when(templateMock.getDoNotUseMachineIfInitFails()).thenReturn(doNotUseMachineIfInitFails);
+            when(templateMock.isEnableMSI()).thenReturn(enableMSI);
 
             AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
@@ -119,6 +121,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             Assert.assertEquals(agentLaunchMethod, newAgent.getAgentLaunchMethod());
             Assert.assertEquals(executeInitScriptAsRoot, newAgent.getExecuteInitScriptAsRoot());
             Assert.assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());
+            Assert.assertEquals(enableMSI, newAgent.isEnalbeMSI());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
