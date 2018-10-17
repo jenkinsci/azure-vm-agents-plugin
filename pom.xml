@@ -234,6 +234,7 @@
                         com.microsoft.jenkins.azurecommons.core.
                         com.fasterxml.jackson.
                         com.google.common.
+                        com.nimbusds.
 
                         com.microsoft.azure.AzureAsyncOperation
                         com.microsoft.azure.AzureClient
