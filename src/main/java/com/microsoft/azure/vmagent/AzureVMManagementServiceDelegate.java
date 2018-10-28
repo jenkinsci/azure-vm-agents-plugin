@@ -376,7 +376,7 @@ public final class AzureVMManagementServiceDelegate {
                         .getKeys();
                 if (storageKeys.isEmpty()) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Exception occured while fetching the storage account key");
+                            + "Exception occurred while fetching the storage account key");
                 }
                 String storageAccountKey = storageKeys.get(0).value();
 
@@ -882,10 +882,10 @@ public final class AzureVMManagementServiceDelegate {
                     fqdn);
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
-                    + "Exception occured while creating agent object", e);
+                    + "Exception occurred while creating agent object", e);
         } catch (IOException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
-                    + "Exception occured while creating agent object", e);
+                    + "Exception occurred while creating agent object", e);
         }
     }
 
@@ -1369,7 +1369,7 @@ public final class AzureVMManagementServiceDelegate {
                     ));
         } catch (AzureCloudException e) {
             LOGGER.log(Level.SEVERE, "Error validating configuration", e);
-            return "Failure: Exception occured while validating subscription configuration " + e;
+            return "Failure: Exception occurred while validating subscription configuration " + e;
         }
     }
 
@@ -2010,15 +2010,15 @@ public final class AzureVMManagementServiceDelegate {
                     String result = validationResult.get(timeoutInSeconds, TimeUnit.SECONDS);
                     addValidationResultIfFailed(result, errors);
                 } catch (ExecutionException executionException) {
-                    errors.add("Exception occured while validating temaplate " + executionException);
+                    errors.add("Exception occurred while validating temaplate " + executionException);
                 } catch (TimeoutException timeoutException) {
-                    errors.add("Exception occured while validating temaplate " + timeoutException);
+                    errors.add("Exception occurred while validating template " + timeoutException);
                 } catch (Exception others) {
                     errors.add(others.getMessage() + others);
                 }
             }
         } catch (InterruptedException interruptedException) {
-            errors.add("Exception occured while validating temaplate " + interruptedException);
+            errors.add("Exception occurred while validating template " + interruptedException);
         }
     }
 
@@ -2119,7 +2119,7 @@ public final class AzureVMManagementServiceDelegate {
                 // Custom image verification.  We must verify that the VM image
                 // storage account is the same as the target storage account.
                 // The URI for he storage account should be https://<storageaccountname>.
-                // Parse that out and verify agaisnt the image storageAccountName
+                // Parse that out and verify against the image storageAccountName
 
                 // Check that the image string is a URI by attempting to create
                 // a URI
@@ -2498,18 +2498,18 @@ public final class AzureVMManagementServiceDelegate {
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: uploadCustomScript: "
-                    + "Exception occured while fetching the storage account key");
+                    + "Exception occurred while fetching the storage account key");
         }
 
         String storageAccountKey = storageKeys.get(0).value();
         String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
         LOGGER.log(Level.INFO,
                 "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
-                        + "the suffix for contruct CloudStorageCloud is {0}",
+                        + "the suffix for construct CloudStorageCloud is {0}",
                 blobSuffix);
         if (StringUtils.isEmpty(blobSuffix)) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
-                    + "Exception occured while getting blobSuffix, it's empty'");
+                    + "Exception occurred while getting blobSuffix, it's empty'");
         }
         try {
             return new CloudStorageAccount(
@@ -2546,7 +2546,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     public CloudBlobContainer getCloudBlobContainer(
-            Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContanerName)
+            Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContainerName)
             throws AzureCloudException {
 
         StorageAccount storageAccount = null;
@@ -2558,7 +2558,7 @@ public final class AzureVMManagementServiceDelegate {
         }
 
         CloudStorageAccount account = getCloudStorageAccount(storageAccount);
-        return getCloudBlobContainer(account, blobContanerName);
+        return getCloudBlobContainer(account, blobContainerName);
     }
 
     private AzureVMManagementServiceDelegate(Azure azureClient) {

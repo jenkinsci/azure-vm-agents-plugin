@@ -105,7 +105,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final boolean doNotUseMachineIfInitFails;
 
-    private final boolean enalbeMSI;
+    private final boolean enableMSI;
 
     private boolean eligibleForReuse;
 
@@ -144,7 +144,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            boolean enalbeMSI,
+            boolean enableMSI,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -169,7 +169,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.resourceGroupName = resourceGroupName;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
-        this.enalbeMSI = enalbeMSI;
+        this.enableMSI = enableMSI;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
     }
@@ -201,7 +201,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String resourceGroupName,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            boolean enalbeMSI,
+            boolean enableMSI,
             AzureVMAgentTemplate template,
             String fqdn) throws FormException, IOException {
 
@@ -237,7 +237,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 resourceGroupName,
                 executeInitScriptAsRoot,
                 doNotUseMachineIfInitFails,
-                enalbeMSI,
+                enableMSI,
                 template);
 
         this.provisioningId = id;
@@ -421,7 +421,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     }
 
     public boolean isEnalbeMSI() {
-        return enalbeMSI;
+        return enableMSI;
     }
 
     public AzureVMAgentTemplate getTemplate() {
@@ -473,7 +473,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             serviceDelegate.shutdownVirtualMachine(this);
         }
 
-        // After shutting down succesfully, set the node as eligible for
+        // After shutting down successfully, set the node as eligible for
         // reuse.
         setEligibleForReuse(true);
 

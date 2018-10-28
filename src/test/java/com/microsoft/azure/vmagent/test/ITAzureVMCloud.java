@@ -38,7 +38,7 @@ public class ITAzureVMCloud extends IntegrationTest {
     private static final Logger LOGGER = Logger.getLogger(ITAzureVMCloud.class.getName());
 
     @Test
-    public void createProvisionedAgentThowsExceptionWhenNoDeployments() {
+    public void createProvisionedAgentThrowsExceptionWhenNoDeployments() {
         try {
             final String vmName = "fakeVM";
             final String deploymentName = "fakeDeployment";

@@ -618,7 +618,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                             .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
             );
 
-            //destory the vm first
+            // destroy the vm first
             azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
             delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
             Assert.assertNull(
@@ -872,7 +872,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final String fileName = "abc.txt";
             final String data = "5gadfgbsdafsdg";
-            final String containerName_from_jenkins = "jnkshouldgetdeleted"; // we deploy the init scrit in containers starting with jnk
+            final String containerName_from_jenkins = "jnkshouldgetdeleted"; // we deploy the init script in containers starting with jnk
             final String containerName_from_user = "notstartingwithjnk"; // we shouldn't delete containers not deployed by us
             final URI deletedContainerBlobURI = uploadFile(fileName, data, containerName_from_jenkins);
             final URI existingContainerBlobURI = uploadFile(fileName, data, containerName_from_user);

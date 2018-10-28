@@ -121,7 +121,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     private static final int CLEAN_TIMEOUT_IN_MINUTES = 15;
     private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * MILLIS_IN_MINUTE;  // 5 minutes
 
-    private static final long SUCCESFULL_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60;
+    private static final long SUCCESSFUL_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60;
     private static final long FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES = 60 * 8;
     private static final int MAX_DELETE_ATTEMPTS = 3;
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentCleanUpTask.class.getName());
@@ -206,7 +206,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public void cleanDeployments() {
-        cleanDeployments(SUCCESFULL_DEPLOYMENT_TIMEOUT_IN_MINUTES, FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES);
+        cleanDeployments(SUCCESSFUL_DEPLOYMENT_TIMEOUT_IN_MINUTES, FAILING_DEPLOYMENT_TIMEOUT_IN_MINUTES);
     }
 
     public void cleanDeployments(long successTimeoutInMinutes, long failTimeoutInMinutes) {
@@ -286,7 +286,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         && diffTimeInMinutes > successTimeoutInMinutes) {
                     LOGGER.log(Level.INFO,
                             "AzureVMAgentCleanUpTask: cleanDeployments: "
-                                    + "Succesfull deployment older than {0} minutes, deleting",
+                                    + "Successful deployment older than {0} minutes, deleting",
                             successTimeoutInMinutes);
                     // Delete the deployment
                     azureClient.deployments()
@@ -553,11 +553,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 try {
                     final int maxRetries = 3;
-                    final int waitIntervanl = 10;
+                    final int waitInterval = 10;
                     final int defaultTimeOutInSeconds = 30 * 60;
                     executionEngine.executeAsync(task, new DefaultRetryStrategy(
                             maxRetries,
-                            waitIntervanl,
+                            waitInterval,
                             defaultTimeOutInSeconds
                     ));
                 } catch (AzureCloudException exception) {
@@ -597,8 +597,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             }
         }
 
-        Collection<ProvisioningActivity> activites = CloudStatistics.get().getNotCompletedActivities();
-        for (ProvisioningActivity activity : activites) {
+        Collection<ProvisioningActivity> activities = CloudStatistics.get().getNotCompletedActivities();
+        for (ProvisioningActivity activity : activities) {
             if (activity.getCurrentPhase().equals(ProvisioningActivity.Phase.PROVISIONING)
                     && !plannedNodesSet.contains(activity.getId())) {
                 Exception e = new Exception(String.format("Node %s has lost. Mark as failure",

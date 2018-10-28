@@ -124,7 +124,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
                         "AzureVMCloudRetensionStrategy: check: "
-                                + "Exception occured while calling timeout on node {0}: {1}",
+                                + "Exception occurred while calling timeout on node {0}: {1}",
                         new Object[]{agentNode.getName(), e});
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.

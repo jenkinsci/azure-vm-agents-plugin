@@ -98,7 +98,7 @@ public final class AzureUtil {
         return true;
     }
 
-    //** Validates in given inut is number or not */
+    //** Validates in given input is number or not */
     public static boolean validateNumberFormat(String value) {
         return !value.matches(NOT_A_NUMBER_FORMAT);
     }
@@ -452,8 +452,8 @@ public final class AzureUtil {
         }
 
         /*  Expects a string in this format: "<id>/<timestamp>".
-            If id is ommited it will be replaced with an empty string
-            If timestamp is ommited or it's a negative number than it will be replaced with 0 */
+            If id is omitted it will be replaced with an empty string
+            If timestamp is omitted or it's a negative number than it will be replaced with 0 */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;

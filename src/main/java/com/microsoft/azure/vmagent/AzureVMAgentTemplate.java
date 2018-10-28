@@ -1332,7 +1332,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return "jn" + uid;
         } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             LOGGER.log(Level.WARNING,
-                    "Could not genetare UID from the resource group name. "
+                    "Could not generate UID from the resource group name. "
                             + "Will fallback on using the resource group name.",
                     e);
             return "";
