@@ -22,9 +22,9 @@ import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.slaves.RetentionStrategy;
-import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +41,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
     @DataBoundConstructor
     public AzureVMCloudRetensionStrategy(int idleTerminationMinutes) {
         this.idleTerminationMinutes = idleTerminationMinutes;
-        this.idleTerminationMillis = TimeUnit2.MINUTES.toMillis(idleTerminationMinutes);
+        this.idleTerminationMillis = TimeUnit.MINUTES.toMillis(idleTerminationMinutes);
     }
 
     /**
