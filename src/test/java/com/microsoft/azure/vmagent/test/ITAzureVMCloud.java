@@ -26,7 +26,6 @@ import hudson.model.Node;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.junit.Assert;
 import org.junit.Ignore;
