@@ -5,6 +5,7 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class AzureVMCloudBuilder {
@@ -92,9 +93,7 @@ public class AzureVMCloudBuilder {
     }
 
     public AzureVMCloudBuilder addToTemplates(AzureVMAgentTemplate... templates) {
-        for (AzureVMAgentTemplate template : templates) {
-            this.vmTemplates.add(template);
-        }
+        Collections.addAll(this.vmTemplates, templates);
         return this;
     }
 
