@@ -126,7 +126,7 @@ In some cases you may want to configure the VM template using script so it can b
 
 ```groovy
 //Configure cloud with built-in image
-import com.microsoft.azure.vmagent.builders.*;
+import com.microsoft.azure.vmagent.builders.*
 
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
@@ -146,13 +146,13 @@ def myCloud = new AzureVMCloudBuilder()
     .endBuiltInImage()
     .withAdminCredential("<your admin credential ID>")
 .endTemplate()
-.build();
+.build()
 
-Jenkins.getInstance().clouds.add(myCloud);
+Jenkins.getInstance().clouds.add(myCloud)
 ```
 ```groovy
 //Configure cloud with mutli-template of advanced images
-import com.microsoft.azure.vmagent.builders.*;
+import com.microsoft.azure.vmagent.builders.*
 
 def firstTemplate = new AzureVMTemplateBuilder()
 .withName("first-template")
@@ -167,7 +167,7 @@ def firstTemplate = new AzureVMTemplateBuilder()
                     "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
 .endAdvancedImage()
 .withAdminCredential("<your admin credential ID>")
-.build();
+.build()
 
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
@@ -185,14 +185,14 @@ def myCloud = new AzureVMCloudBuilder()
     .endAdvancedImage()
     .withAdminCredential("<your admin credential ID>")
 .endTemplate()
-.build();
+.build()
 
-Jenkins.getInstance().clouds.add(myCloud);
+Jenkins.getInstance().clouds.add(myCloud)
 ```
 ```groovy
 //inherit existing template
-import com.microsoft.azure.vmagent.builders.*;
-import com.microsoft.azure.vmagent.*;
+import com.microsoft.azure.vmagent.builders.*
+import com.microsoft.azure.vmagent.*
 
 AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
 .withLocation("Southeast Asia")
@@ -203,7 +203,7 @@ AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
          .withReferenceImage("Canonical", "UbuntuServer", "16.04-LTS", "latest")
     .endAdvancedImage()
     .withAdminCredential("<your admin credential ID>")
-.build();
+.build()
 
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
@@ -218,9 +218,9 @@ def myCloud = new AzureVMCloudBuilder()
                         "sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y")
     .endAdvancedImage()
 .endTemplate()
-.build();
+.build()
 
-Jenkins.getInstance().clouds.add(myCloud);
+Jenkins.getInstance().clouds.add(myCloud)
 
 ```
 This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).
