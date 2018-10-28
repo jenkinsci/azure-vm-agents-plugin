@@ -170,7 +170,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                 cloud.getResourceGroupName(),
                 Integer.toString(cloud.getMaxVirtualMachinesLimit()),
                 Integer.toString(cloud.getDeploymentTimeout()));
-        if (result != Constants.OP_SUCCESS) {
+        if (!Constants.OP_SUCCESS.equals(result)) {
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
             return false;
