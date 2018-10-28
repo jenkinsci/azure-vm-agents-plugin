@@ -42,6 +42,7 @@ import org.jvnet.localizer.Localizable;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -151,11 +152,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 if (isUnix) {
                     copyFileToRemote(
                             session,
-                            new ByteArrayInputStream(initScript.getBytes("UTF-8")),
+                            new ByteArrayInputStream(initScript.getBytes(StandardCharsets.UTF_8)),
                             REMOTE_INIT_FILE_NAME);
                 } else {
                     copyFileToRemote(session,
-                            new ByteArrayInputStream(initScript.getBytes("UTF-8")),
+                            new ByteArrayInputStream(initScript.getBytes(StandardCharsets.UTF_8)),
                             REMOTE_INIT_FILE_NAME_WINDOWS);
                 }
                 // Execute initialization script
@@ -400,7 +401,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             // If as root, push the password
             if (isUnix && executeAsRoot) {
-                outputStream.write((passwordIfRoot + "\n").getBytes("UTF-8"));
+                outputStream.write((passwordIfRoot + "\n").getBytes(StandardCharsets.UTF_8));
                 outputStream.flush();
             }
 
