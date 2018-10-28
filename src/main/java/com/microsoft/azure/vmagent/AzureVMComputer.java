@@ -90,9 +90,9 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     }
 
     /**
-     * Wait until the node is online.
+     * Waits until the node is online.
      *
-     * @throws InterruptedException
+     * @throws InterruptedException If interrupted while waiting
      */
     @Override
     public void waitUntilOnline() throws InterruptedException {

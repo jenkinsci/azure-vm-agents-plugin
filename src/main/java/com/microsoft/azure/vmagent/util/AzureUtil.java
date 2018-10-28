@@ -337,10 +337,10 @@ public final class AzureUtil {
     }
 
     /**
-     * Creates a deployment given a template name and OS type.
+     * Creates a deployment given a template name and timestamp.
      *
-     * @param templateName Valid template name
-     * @param osType       Valid os type
+     * @param templateName Template name
+     * @param timestamp    Timestamp
      * @return Valid deployment name to use for a new deployment
      */
     public static String getDeploymentName(String templateName, Date timestamp) {
@@ -359,9 +359,9 @@ public final class AzureUtil {
      *
      * @param templateName        Template name
      * @param osType              Type of OS
-     * @param numberOfVmsToCreate Number of VMs that will be created
+     * @param numberOfVMs         Number of VMs that will be created
      *                            (which is added to the suffix of the VM name by azure)
-     * @return
+     * @return Valid VM base name to use for new VMs
      */
     public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
         if (!isValidTemplateName(templateName)) {

@@ -280,9 +280,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return cleanUpReason;
     }
 
-    /**
-     * @param cleanUpAction
-     */
     private void setCleanUpAction(CleanUpAction cleanUpAction) {
         // Translate a default cleanup action into what we want for a particular
         // node
@@ -296,9 +293,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.cleanUpAction = cleanUpAction;
     }
 
-    /**
-     * @param cleanUpReason
-     */
     private void setCleanUpReason(Localizable cleanUpReason) {
         this.cleanUpReason = cleanUpReason;
     }
@@ -485,7 +479,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     /**
      * Delete node in Azure and in Jenkins.
      *
-     * @throws Exception
+     * @throws Exception On error
      */
     public synchronized void deprovision(Localizable reason) throws Exception {
         if (Jenkins.getInstance().getNode(this.name) == null || this.getComputer() == null) {

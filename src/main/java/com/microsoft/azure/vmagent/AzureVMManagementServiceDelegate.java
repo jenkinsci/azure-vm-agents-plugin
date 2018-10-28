@@ -2341,7 +2341,6 @@ public final class AzureVMManagementServiceDelegate {
      * @param azureClient
      * @param locationName
      * @param resourceGroupName
-     * @return
      */
     private void createAzureResourceGroup(
             Azure azureClient, String locationName, String resourceGroupName) throws AzureCloudException {
@@ -2367,7 +2366,6 @@ public final class AzureVMManagementServiceDelegate {
      * @param targetStorageAccount
      * @param location
      * @param resourceGroupName
-     * @return
      */
     private void createStorageAccount(
             Azure azureClient,

@@ -829,7 +829,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     /**
      * Provision new agents using this template.
      *
-     * @param listener
+     * @param listener Not used
      * @param numberOfAgents Number of agents to provision
      * @return New deployment info if the provisioning was successful.
      * @throws Exception May throw if provisioning was not successful.
@@ -860,7 +860,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      * Verify that this template is correct and can be allocated.
      *
      * @return Empty list if this template is valid, list of errors otherwise
-     * @throws Exception
+     * @throws Exception On Error
      */
     public List<String> verifyTemplate() throws Exception {
         return getServiceDelegate().verifyTemplate(
@@ -1082,7 +1082,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
          * @param value            Current name
          * @param templateDisabled Is the template disabled
          * @param osType           OS type
-         * @return
+         * @return The validation result
          */
         public FormValidation doCheckTemplateName(
                 @QueryParameter String value,
