@@ -42,6 +42,7 @@ import org.jvnet.localizer.Localizable;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -151,11 +152,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 if (isUnix) {
                     copyFileToRemote(
                             session,
-                            new ByteArrayInputStream(initScript.getBytes("UTF-8")),
+                            new ByteArrayInputStream(initScript.getBytes(StandardCharsets.UTF_8)),
                             REMOTE_INIT_FILE_NAME);
                 } else {
                     copyFileToRemote(session,
-                            new ByteArrayInputStream(initScript.getBytes("UTF-8")),
+                            new ByteArrayInputStream(initScript.getBytes(StandardCharsets.UTF_8)),
                             REMOTE_INIT_FILE_NAME_WINDOWS);
                 }
                 // Execute initialization script
@@ -348,28 +349,12 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
     }
 
-    /**
-     * Helper method for most common call (without root).
-     *
-     * @param jschSession
-     * @param command
-     * @param logger
-     * @return
-     */
+    /* Helper method for most common call (without root). */
     private int executeRemoteCommand(Session jschSession, String command, PrintStream logger, boolean isUnix) {
         return executeRemoteCommand(jschSession, command, logger, isUnix, false, null);
     }
 
-    /**
-     * Executes a remote command, as root if desired.
-     *
-     * @param jschSession
-     * @param command
-     * @param logger
-     * @param executeAsRoot
-     * @param passwordIfRoot
-     * @return
-     */
+    /* Executes a remote command, as root if desired. */
     private int executeRemoteCommand(
             Session jschSession,
             String command,
@@ -400,7 +385,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             // If as root, push the password
             if (isUnix && executeAsRoot) {
-                outputStream.write((passwordIfRoot + "\n").getBytes("UTF-8"));
+                outputStream.write((passwordIfRoot + "\n").getBytes(StandardCharsets.UTF_8));
                 outputStream.flush();
             }
 
@@ -482,12 +467,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
     }
 
-    /**
-     * Mark the agent for deletion and queue the corresponding template for verification.
-     *
-     * @param agent
-     * @param message
-     */
+    /* Mark the agent for deletion and queue the corresponding template for verification. */
     private void handleLaunchFailure(AzureVMAgent agent, String message) {
         // Queue the template for verification in case something happened there.
         AzureVMCloud azureCloud = agent.getCloud();

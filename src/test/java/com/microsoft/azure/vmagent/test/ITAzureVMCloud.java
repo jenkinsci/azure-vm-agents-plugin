@@ -26,7 +26,6 @@ import hudson.model.Node;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -38,7 +37,7 @@ public class ITAzureVMCloud extends IntegrationTest {
     private static final Logger LOGGER = Logger.getLogger(ITAzureVMCloud.class.getName());
 
     @Test
-    public void createProvisionedAgentThowsExceptionWhenNoDeployments() {
+    public void createProvisionedAgentThrowsExceptionWhenNoDeployments() {
         try {
             final String vmName = "fakeVM";
             final String deploymentName = "fakeDeployment";

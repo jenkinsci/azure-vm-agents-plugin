@@ -1,17 +1,17 @@
-<dev>
-    <b>Azure VM Idle Retention Strategy</b><br/>
-    Default retention strategy, agents will be deleted or shut down after retention time <br/><br/>
+<div>
+    <b>Azure VM Idle Retention Strategy</b><br>
+    Default retention strategy, agents will be deleted or shut down after retention time <br><br>
 
-    <b>Azure VM Pool Retention Strategy (Experimental)</b><br/>
-    This retention strategy help you to maintain amount of agents in a specific number. <br/>
-    When you save the configuration page that contains templates which using this retention strategy, we will help you to provision a number of agents you specified.<br/>
-    If you specify the retention time (Not zero), the agent will be deleted after the time since created, and then a new agent will be provisioned to maintain the agent pool size.<br/>
-    When you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template <br/>
-    But if you only change your <b>Retention Time</b> or <b>Pool Size</b>, we will only scale in, scale out or do nothing for you.<br/><br/>
+    <b>Azure VM Pool Retention Strategy (Experimental)</b><br>
+    This retention strategy help you to maintain amount of agents in a specific number. <br>
+    When you save the configuration page that contains templates which using this retention strategy, we will help you to provision a number of agents you specified.<br>
+    If you specify the retention time (Not zero), the agent will be deleted after the time since created, and then a new agent will be provisioned to maintain the agent pool size.<br>
+    When you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template <br>
+    But if you only change your <b>Retention Time</b> or <b>Pool Size</b>, we will only scale in, scale out or do nothing for you.<br><br>
 
-    <b>Azure VM Once Retention Strategy</b><br/>
-    This retention strategy help you to use one agent only once.<br/>
-    When using this strategy, once your job finished, the agent will be marked to offline and suspended and waiting for a periodic clean task to execute the action.<br/>
+    <b>Azure VM Once Retention Strategy</b><br>
+    This retention strategy help you to use one agent only once.<br>
+    When using this strategy, once your job finished, the agent will be marked to offline and suspended and waiting for a periodic clean task to execute the action.<br>
     We encourage to use only one executor when using the strategy. But if the agent has more than one executor, the agent will be marked to offline and suspended when the first job on the agent finished.
     The rest running job on the agent will not be terminate and the agent will not be really deleted until the agent is totally idle.
-</dev>
+</div>

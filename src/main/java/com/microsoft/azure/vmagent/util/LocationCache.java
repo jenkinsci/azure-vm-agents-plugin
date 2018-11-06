@@ -4,17 +4,17 @@ import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Provider;
 import com.microsoft.azure.management.resources.ProviderResourceType;
-import hudson.util.TimeUnit2;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public final class LocationCache {
     private static Map<String, Set<String>> regions = new HashMap<>();
-    private static final long EXPIRE_TIME_IN_MILLIS = TimeUnit2.HOURS.toMillis(24); //re-get locations every 24 hours
+    private static final long EXPIRE_TIME_IN_MILLIS = TimeUnit.HOURS.toMillis(24); //re-get locations every 24 hours
     private static Map<String, Long> achieveTimeInMillis = new HashMap<>();
 
     public static Set<String> getLocation(Azure azureClient, String key) throws Exception {

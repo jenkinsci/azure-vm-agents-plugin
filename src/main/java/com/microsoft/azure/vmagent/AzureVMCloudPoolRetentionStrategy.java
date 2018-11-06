@@ -7,12 +7,12 @@ import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.slaves.Cloud;
 import hudson.slaves.RetentionStrategy;
-import hudson.util.TimeUnit2;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,14 +23,14 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     private final int poolSize;
 
-    private static final long IDLE_LIMIT_MILLIS = TimeUnit2.MINUTES.toMillis(1);
+    private static final long IDLE_LIMIT_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
     @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
         retentionInHours = retentionInHours >= 0 ? retentionInHours : 0;
-        this.retentionMillis = TimeUnit2.HOURS.toMillis(retentionInHours);
+        this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
         this.poolSize = poolSize >= 0 ? poolSize : 0;
     }
 
@@ -115,7 +115,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
                 } catch (Exception e) {
                     LOGGER.log(Level.INFO,
                             "AzureVMCloudRetensionStrategy: check: "
-                                    + "Exception occured while calling timeout on node {0}: {1}",
+                                    + "Exception occurred while calling timeout on node {0}: {1}",
                             new Object[]{agentComputer.getName(), e});
                     // If we have an exception, set the agent for deletion.
                     // It's unlikely we'll be able to shut it down properly ever.
@@ -152,7 +152,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
     }
 
     public long getRetentionInHours() {
-        return TimeUnit2.MILLISECONDS.toHours(retentionMillis);
+        return TimeUnit.MILLISECONDS.toHours(retentionMillis);
     }
 
     public int getPoolSize() {

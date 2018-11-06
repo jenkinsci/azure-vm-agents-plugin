@@ -56,7 +56,7 @@ import javax.servlet.ServletException;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -829,7 +829,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     /**
      * Provision new agents using this template.
      *
-     * @param listener
+     * @param listener Not used
      * @param numberOfAgents Number of agents to provision
      * @return New deployment info if the provisioning was successful.
      * @throws Exception May throw if provisioning was not successful.
@@ -860,7 +860,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      * Verify that this template is correct and can be allocated.
      *
      * @return Empty list if this template is valid, list of errors otherwise
-     * @throws Exception
+     * @throws Exception On Error
      */
     public List<String> verifyTemplate() throws Exception {
         return getServiceDelegate().verifyTemplate(
@@ -1082,7 +1082,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
          * @param value            Current name
          * @param templateDisabled Is the template disabled
          * @param osType           OS type
-         * @return
+         * @return The validation result
          */
         public FormValidation doCheckTemplateName(
                 @QueryParameter String value,
@@ -1319,10 +1319,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             if (null != templateName) {
-                md.update(templateName.getBytes("UTF-8"));
+                md.update(templateName.getBytes(StandardCharsets.UTF_8));
             }
             if (null != resourceGroupName) {
-                md.update(resourceGroupName.getBytes("UTF-8"));
+                md.update(resourceGroupName.getBytes(StandardCharsets.UTF_8));
             }
 
             String uid = DatatypeConverter.printBase64Binary(md.digest());
@@ -1330,9 +1330,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             uid = uid.toLowerCase();
             uid = uid.replaceAll("[^a-z0-9]", "a");
             return "jn" + uid;
-        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             LOGGER.log(Level.WARNING,
-                    "Could not genetare UID from the resource group name. "
+                    "Could not generate UID from the resource group name. "
                             + "Will fallback on using the resource group name.",
                     e);
             return "";

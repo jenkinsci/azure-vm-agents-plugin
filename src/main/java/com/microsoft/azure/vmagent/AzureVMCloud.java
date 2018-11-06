@@ -417,7 +417,7 @@ public class AzureVMCloud extends Cloud {
     /**
      * Retrieves the current approximate virtual machine count.
      *
-     * @return
+     * @return The approximate count
      */
     public int getApproximateVirtualMachineCount() {
         synchronized (this) {
@@ -462,10 +462,10 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Sets the new approximate virtual machine count. This is run by the
-     * verification task to update the VM count periodically.
+     * Sets the new approximate virtual machine count.
+     * This is run by the verification task to update the VM count periodically.
      *
-     * @param newCount
+     * @param newCount New approximate count
      */
     public void setVirtualMachineCount(int newCount) {
         synchronized (this) {
@@ -476,8 +476,8 @@ public class AzureVMCloud extends Cloud {
     /**
      * Returns agent template associated with the label.
      *
-     * @param label
-     * @return
+     * @param label Label to use for search
+     * @return Agent template that has the label assigned
      */
     public AzureVMAgentTemplate getAzureAgentTemplate(Label label) {
         LOGGER.log(Level.FINE,
@@ -512,8 +512,8 @@ public class AzureVMCloud extends Cloud {
     /**
      * Returns agent template associated with the name.
      *
-     * @param name
-     * @return
+     * @param name Name to use for search
+     * @return Agent template that has the name assigned
      */
     public AzureVMAgentTemplate getAzureAgentTemplate(String name) {
         if (StringUtils.isBlank(name)) {
@@ -537,8 +537,8 @@ public class AzureVMCloud extends Cloud {
      * @param template       Template used to create the new agent
      * @param vmName         Name of the created VM
      * @param deploymentName Name of the deployment containing the VM
-     * @return New agent. Throws otherwise.
-     * @throws AzureCloudException
+     * @return New agent
+     * @throws AzureCloudException If the agent cannot be created
      */
     public AzureVMAgent createProvisionedAgent(
             ProvisioningActivity.Id provisioningId,
@@ -944,7 +944,7 @@ public class AzureVMCloud extends Cloud {
      * Jenkins.
      *
      * @param agent Node to wait for
-     * @throws Exception Throws if the wait time expires or other exception happens.
+     * @throws AzureCloudException If the wait time expires or other exception happens
      */
     private void waitUntilJNLPNodeIsOnline(final AzureVMAgent agent) throws AzureCloudException {
         LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: for agent {0}", agent.getDisplayName());

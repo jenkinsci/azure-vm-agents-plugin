@@ -157,7 +157,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     /**
      * Checks the subscription for validity if needed.
      *
-     * @param cloud
+     * @param cloud The Azure VM Cloud
      * @return True if the subscription is valid, false otherwise. Updates the
      * cloud state if it is. If subscription is not valid, then we can just
      * return
@@ -170,7 +170,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                 cloud.getResourceGroupName(),
                 Integer.toString(cloud.getMaxVirtualMachinesLimit()),
                 Integer.toString(cloud.getDeploymentTimeout()));
-        if (result != Constants.OP_SUCCESS) {
+        if (!Constants.OP_SUCCESS.equals(result)) {
             LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
             return false;
@@ -182,8 +182,8 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     /**
      * Retrieve the current VM count.
      *
-     * @param cloud
-     * @return
+     * @param cloud The Azure VM Cloud
+     * @return The current VM count
      */
     public static int getVirtualMachineCount(AzureVMCloud cloud) {
         LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");

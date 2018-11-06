@@ -98,7 +98,7 @@ public final class AzureUtil {
         return true;
     }
 
-    //** Validates in given inut is number or not */
+    //** Validates in given input is number or not */
     public static boolean validateNumberFormat(String value) {
         return !value.matches(NOT_A_NUMBER_FORMAT);
     }
@@ -337,10 +337,10 @@ public final class AzureUtil {
     }
 
     /**
-     * Creates a deployment given a template name and OS type.
+     * Creates a deployment given a template name and timestamp.
      *
-     * @param templateName Valid template name
-     * @param osType       Valid os type
+     * @param templateName Template name
+     * @param timestamp    Timestamp
      * @return Valid deployment name to use for a new deployment
      */
     public static String getDeploymentName(String templateName, Date timestamp) {
@@ -359,9 +359,9 @@ public final class AzureUtil {
      *
      * @param templateName        Template name
      * @param osType              Type of OS
-     * @param numberOfVmsToCreate Number of VMs that will be created
+     * @param numberOfVMs         Number of VMs that will be created
      *                            (which is added to the suffix of the VM name by azure)
-     * @return
+     * @return Valid VM base name to use for new VMs
      */
     public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
         if (!isValidTemplateName(templateName)) {
@@ -452,8 +452,8 @@ public final class AzureUtil {
         }
 
         /*  Expects a string in this format: "<id>/<timestamp>".
-            If id is ommited it will be replaced with an empty string
-            If timestamp is ommited or it's a negative number than it will be replaced with 0 */
+            If id is omitted it will be replaced with an empty string
+            If timestamp is omitted or it's a negative number than it will be replaced with 0 */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;

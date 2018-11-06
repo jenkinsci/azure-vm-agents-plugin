@@ -8,17 +8,17 @@ import hudson.model.ExecutorListener;
 import hudson.model.Queue;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.RetentionStrategy;
-import hudson.util.TimeUnit2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetentionStrategy implements ExecutorListener {
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
     private static final long serialVersionUID = 1566788691L;
-    private static final transient long IDLE_MILLIS = TimeUnit2.MINUTES.toMillis(1);
-    private static final transient long LAPSE = TimeUnit2.SECONDS.toMillis(5);
+    private static final transient long IDLE_MILLIS = TimeUnit.MINUTES.toMillis(1);
+    private static final transient long LAPSE = TimeUnit.SECONDS.toMillis(5);
 
     @DataBoundConstructor
     public AzureVMCloudOnceRetentionStrategy() {
