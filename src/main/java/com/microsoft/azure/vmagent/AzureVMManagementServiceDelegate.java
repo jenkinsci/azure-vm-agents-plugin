@@ -2512,7 +2512,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             return new CloudStorageAccount(
                     new StorageCredentialsAccountAndKey(storageAccount.name(), storageAccountKey),
-                    false,
+                    true,
                     blobSuffix);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
