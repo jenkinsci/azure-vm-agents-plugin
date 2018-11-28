@@ -1,5 +1,9 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.7.5 2018-11-28
+* Fix storage account name already exists issue [JENKINS-54885](https://issues.jenkins-ci.org/browse/JENKINS-54885)
+* Use https when communicating with storage account [JENKINS-52967](https://issues.jenkins-ci.org/browse/JENKINS-52967)
+
 ## Version 0.7.4 2018-10-17
 * Support MSI for agents [JENKINS-53945](https://issues.jenkins-ci.org/browse/JENKINS-53945)
 
