@@ -2211,7 +2211,7 @@ public final class AzureVMManagementServiceDelegate {
             CheckNameAvailabilityResult checkResult =
                     azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
-            if (!isAvailable && checkResult.reason().equals(Reason.ACCOUNT_NAME_INVALID)) {
+            if (!isAvailable && Reason.ACCOUNT_NAME_INVALID.equals(checkResult.reason())) {
                 return Messages.Azure_GC_Template_SA_Not_Valid();
             } else if (!isAvailable) {
                 /*if it's not available we need to check if it's already in our resource group*/
@@ -2232,7 +2232,7 @@ public final class AzureVMManagementServiceDelegate {
                 return Constants.OP_SUCCESS;
             }
         } catch (Exception e) {
-            LOGGER.log(Level.INFO, e.getMessage());
+            LOGGER.log(Level.SEVERE, "Verification failed for storage account name", e);
             if (!isAvailable) {
                 return Messages.Azure_GC_Template_SA_Already_Exists();
             } else {
