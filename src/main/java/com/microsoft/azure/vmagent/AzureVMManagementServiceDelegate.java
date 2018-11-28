@@ -2232,7 +2232,7 @@ public final class AzureVMManagementServiceDelegate {
                 return Constants.OP_SUCCESS;
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Fail to verify storage account name", e);
+            LOGGER.log(Level.SEVERE, "Verification failed for storage account name", e);
             if (!isAvailable) {
                 return Messages.Azure_GC_Template_SA_Already_Exists();
             } else {
