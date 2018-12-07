@@ -147,7 +147,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 ois = new ObjectInputStream(new FileInputStream(OUTPUT_FILE));
                 deploymentsToClean = (ConcurrentLinkedQueue<DeploymentInfo>) ois.readObject();
             } catch (FileNotFoundException e) {
-                LOGGER.log(Level.INFO,
+                LOGGER.log(Level.WARNING,
                         "AzureVMAgentCleanUpTask: readResolve: Cannot open deployment output file");
                 deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
             } catch (Exception e) {
@@ -457,14 +457,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         serviceDelegate.removeImage(azureClient, resource.name(), resourceGroup);
                     }
                 } catch (Exception e) {
-                    LOGGER.log(Level.INFO,
+                    LOGGER.log(Level.WARNING,
                             "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean resource ",
                             e);
                 }
             }
         } catch (Exception e) {
             // No need to throw exception back, just log and move on.
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean leaked resources ",
                     e);
         }
@@ -518,7 +518,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     try {
                         Jenkins.getInstance().removeNode(agentNode);
                     } catch (IOException e) {
-                        LOGGER.log(Level.INFO,
+                        LOGGER.log(Level.WARNING,
                                 "AzureVMAgentCleanUpTask: cleanVMs: node {0} could not be removed: {1}",
                                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }

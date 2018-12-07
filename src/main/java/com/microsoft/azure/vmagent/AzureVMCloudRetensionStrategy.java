@@ -112,9 +112,9 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                                 defaultTimeoutInSeconds
                         ));
             } catch (AzureCloudException ae) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMCloudRetensionStrategy: check: could not terminate or shutdown {0}: {1}",
-                        new Object[]{agentNode.getName(), ae});
+                LOGGER.log(Level.WARNING,
+                        String.format("AzureVMCloudRetensionStrategy: check: could not terminate or shutdown %s",
+                                agentNode.getName()), ae);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
@@ -122,10 +122,9 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMCloudRetensionStrategy: check: "
-                                + "Exception occurred while calling timeout on node {0}: {1}",
-                        new Object[]{agentNode.getName(), e});
+                LOGGER.log(Level.WARNING,
+                        String.format("AzureVMCloudRetensionStrategy: check: "
+                                + "Exception occurred while calling timeout on node %s", agentNode.getName()), e);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();

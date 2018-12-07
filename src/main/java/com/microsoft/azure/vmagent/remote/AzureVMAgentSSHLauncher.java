@@ -266,7 +266,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             properties.put("OSType", agent.getOsType().toString());
             AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunch", properties);
         } catch (Exception e) {
-            LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: got exception ", e);
+            LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: got exception ", e);
 
             final Map<String, String> properties = new HashMap<>();
             properties.put("OSType", agent.getOsType().toString());
@@ -304,9 +304,9 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             return session;
         } catch (JSchException e) {
             LOGGER.log(Level.SEVERE,
-                    "AzureVMAgentSSHLauncher: getRemoteSession: "
-                            + "Got exception while connecting to remote host {0}:{1} {2}",
-                    new Object[]{dnsName, sshPort, e.getMessage()});
+                    String.format("AzureVMAgentSSHLauncher: getRemoteSession: "
+                                    + "Got exception while connecting to remote host %s:%s",
+                            dnsName, sshPort), e);
             throw e;
         }
     }
@@ -335,8 +335,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMAgentSSHLauncher: copyFileToRemote: "
-                            + "Error occurred while copying file to remote host {0}",
-                    e.getMessage());
+                            + "Error occurred while copying file to remote host",
+                    e);
             throw e;
         } finally {
             try {
@@ -421,7 +421,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         } catch (IOException ex) {
             LOGGER.log(Level.WARNING, "IO failure running {0}", command);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Unexpected exception running {0}", command);
+            LOGGER.log(Level.SEVERE, String.format("Unexpected exception running %s", command), e);
         } finally {
             if (channel != null) {
                 channel.disconnect();
@@ -457,7 +457,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 // keep retrying till time out
                 LOGGER.log(Level.SEVERE,
                         "AzureVMAgentSSHLauncher: connectToSsh: Got exception while connecting to remote host. "
-                                + "Will be trying again after 1 minute {0}", e.getMessage());
+                                + "Will be trying again after 1 minute ", e);
                 final int sleepInMills = 60 * 1000;
                 Thread.sleep(sleepInMills);
                 // continue again

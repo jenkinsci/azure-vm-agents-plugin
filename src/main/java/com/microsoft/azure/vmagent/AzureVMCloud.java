@@ -732,6 +732,8 @@ public class AzureVMCloud extends Cloud {
                     } catch (Exception e) {
                         // Couldn't bring the node back online.  Mark it
                         // as needing deletion
+                        LOGGER.log(Level.WARNING, String.format("Failed to reuse agent computer %s",
+                                agentComputer.getName()), e);
                         azureComputer.setAcceptingTasks(false);
                         agentNode.setCleanUpAction(CleanUpAction.DEFAULT,
                                 Messages._Shutdown_Agent_Failed_To_Revive());
@@ -1120,7 +1122,7 @@ public class AzureVMCloud extends Cloud {
                     model.add(resourceGroup.name());
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.INFO, "Cannot list resource group name: {0}", e);
+                LOGGER.log(Level.WARNING, "Cannot list resource group name: ", e);
             } finally {
                 return model;
             }
