@@ -88,4 +88,9 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     public long getRecurrencePeriod() {
         return RECURRENCE_PERIOD_IN_MILLIS;
     }
+
+    @Override
+    protected Level getNormalLoggingLevel() {
+        return Level.FINE;
+    }
 }

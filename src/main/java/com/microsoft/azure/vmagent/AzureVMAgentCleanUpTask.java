@@ -662,6 +662,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
+    @Override
+    protected Level getNormalLoggingLevel() {
+        return Level.FINE;
+    }
+
     public static String loadProperty(final String name) {
         final String value = System.getProperty(name);
         if (StringUtils.isBlank(value)) {

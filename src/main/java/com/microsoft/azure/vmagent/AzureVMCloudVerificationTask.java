@@ -209,6 +209,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
+    @Override
     public void execute(TaskListener arg0) {
         for (Cloud cloud : Jenkins.getInstance().clouds) {
             if (cloud instanceof AzureVMCloud) {
@@ -225,4 +226,8 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
+    @Override
+    protected Level getNormalLoggingLevel() {
+        return Level.FINE;
+    }
 }
