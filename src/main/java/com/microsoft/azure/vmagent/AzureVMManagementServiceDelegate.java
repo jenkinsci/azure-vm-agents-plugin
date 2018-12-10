@@ -19,6 +19,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -196,6 +197,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
+            final int osDiskSize = template.getOsDiskSize();
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
@@ -326,19 +328,24 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
-            // If MSI is enabled, need to add identity node in virtualMachine resource
-            if (template.isEnableMSI()) {
+            if (template.isEnableMSI() || osDiskSize > 0) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
                     if (type.contains("virtualMachine")) {
-                        ObjectNode identityNode = mapper.createObjectNode();
-                        identityNode.put("type", "systemAssigned");
-                        ObjectNode.class.cast(resource).replace("identity", identityNode);
+                        // If MSI is enabled, need to add identity node in virtualMachine resource
+                        if (template.isEnableMSI()) {
+                            ObjectNode identityNode = mapper.createObjectNode();
+                            identityNode.put("type", "systemAssigned");
+                            ObjectNode.class.cast(resource).replace("identity", identityNode);
+                        }
+                        if (osDiskSize > 0) {
+                            JsonNode jsonNode = resource.get("properties").get("storageProfile").get("osDisk");
+                            ObjectNode.class.cast(jsonNode).replace("diskSizeGB", new IntNode(osDiskSize));
+                        }
                     }
                 }
             }
-
 
             copyVariableIfNotBlank(tmp, properties, "imageId");
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");

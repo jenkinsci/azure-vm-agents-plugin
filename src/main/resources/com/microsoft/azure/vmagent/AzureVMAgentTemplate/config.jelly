@@ -54,6 +54,10 @@
                 <f:select/>
             </f:entry>
 
+            <f:entry title="${%OS_Disk_Size}" field="osDiskSize" help="/plugin/azure-vm-agents/help-osDiskSize.html">
+                <f:textbox/>
+            </f:entry>
+
             <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}" descriptors="${descriptor.azureVMRetentionStrategy}"/>
 
             <f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"

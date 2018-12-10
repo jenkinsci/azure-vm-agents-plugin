@@ -16,6 +16,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getNewStorageAccountName(), b.getNewStorageAccountName())
                 && StringUtils.equals(a.getExistingStorageAccountName(), b.getExistingStorageAccountName())
                 && StringUtils.equals(a.getDiskType(), b.getDiskType())
+                && a.getOsDiskSize() == b.getOsDiskSize()
                 && StringUtils.equals(a.getCredentialsId(), b.getCredentialsId())
                 && StringUtils.equals(a.getImageTopLevelType(), b.getImageTopLevelType())
                 && StringUtils.equals(a.getBuiltInImage(), b.getBuiltInImage())
