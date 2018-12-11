@@ -25,6 +25,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String diskType;
 
+    private int osDiskSize;
+
     private String newStorageAccountName;
 
     private String existingStorageAccountName;
@@ -49,6 +51,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         storageAccountType = "Standard_LRS";
         storageAccountNameReferenceType = "new";
         diskType = Constants.DISK_MANAGED;
+        osDiskSize = 0;
         retentionStrategy = new AzureVMCloudRetensionStrategy(Constants.DEFAULT_IDLE_RETENTION_TIME);
         shutdownOnIdle = false;
         usageMode = "Use this node as much as possible";
@@ -107,6 +110,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T withDiskType(String diskType) {
         this.diskType = diskType;
+        return (T) this;
+    }
+
+    public T withOsDiskSize(int osDiskSize) {
+        this.osDiskSize = osDiskSize;
         return (T) this;
     }
 
@@ -204,6 +212,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getDiskType() {
         return diskType;
+    }
+
+    public int getOsDiskSize() {
+        return osDiskSize;
     }
 
     public String getNewStorageAccountName() {

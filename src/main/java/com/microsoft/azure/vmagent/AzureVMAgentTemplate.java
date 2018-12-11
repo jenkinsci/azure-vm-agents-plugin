@@ -146,6 +146,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String diskType;
 
+    private int osDiskSize;
+
     private String newStorageAccountName;
 
     private String existingStorageAccountName;
@@ -243,6 +245,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String newStorageAccountName,
             String existingStorageAccountName,
             String diskType,
+            int osDiskSize,
             String noOfParallelJobs,
             String usageMode,
             String builtInImage,
@@ -283,6 +286,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.existingStorageAccountName = existingStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
         this.diskType = diskType;
+        this.osDiskSize = osDiskSize;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
@@ -511,6 +515,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getDiskType() {
         return diskType;
+    }
+
+    public int getOsDiskSize() {
+        return osDiskSize;
     }
 
     public String getStorageAccountNameReferenceType() {

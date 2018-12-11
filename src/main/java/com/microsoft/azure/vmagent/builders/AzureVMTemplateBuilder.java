@@ -24,6 +24,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
+        fluent.withOsDiskSize(template.getOsDiskSize());
         fluent.withRetentionStrategy(template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
@@ -55,6 +56,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
+        fluent.withOsDiskSize(template.getOsDiskSize());
         fluent.withRetentionStrategy(template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
@@ -79,6 +81,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getNewStorageAccountName(),
                 fluent.getExistingStorageAccountName(),
                 fluent.getDiskType(),
+                fluent.getOsDiskSize(),
                 fluent.getAdvancedImage().getNoOfParallelJobs(),
                 fluent.getUsageMode(),
                 fluent.getBuiltInImage().getBuiltInImage(),

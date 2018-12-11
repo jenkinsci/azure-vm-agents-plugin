@@ -72,6 +72,8 @@ import static org.mockito.Mockito.when;
 To execute the integration tests you need to set the credentials env variables (the ones that don't have a default) and run mvn failsafe:integration-test
 */
 public class IntegrationTest {
+    protected static final String OS_TYPE = Constants.OS_TYPE_LINUX;
+
     @ClassRule
     public static JenkinsRule jenkinsRule() {
         JenkinsRule j = new JenkinsRule();
@@ -101,6 +103,7 @@ public class IntegrationTest {
         public String azureImagePublisher;
         public String azureImageOffer;
         public String azureImageSku;
+        public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
         public final Map<String, String> blobEndpointSuffixForCloudStorageAccount;
@@ -129,6 +132,7 @@ public class IntegrationTest {
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
+            osDiskSize = 0;
             blobEndpointSuffixForTemplate = new HashMap<String, String>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
             blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
@@ -299,7 +303,7 @@ public class IntegrationTest {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
-        final String osType = Constants.OS_TYPE_LINUX;
+        final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
@@ -339,6 +343,7 @@ public class IntegrationTest {
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
         when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
+        when(templateMock.getOsDiskSize()).thenReturn(testEnv.osDiskSize);
         when(templateMock.getPreInstallSsh()).thenReturn(true);
         when(templateMock.isEnableMSI()).thenReturn(enableMSI);
 
