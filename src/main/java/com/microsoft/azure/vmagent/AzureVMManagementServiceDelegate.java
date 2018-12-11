@@ -351,6 +351,7 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");
             copyVariableIfNotBlank(tmp, properties, "imageOffer");
             copyVariableIfNotBlank(tmp, properties, "imageSku");
+            copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
             putVariableIfNotBlank(tmp, "image", template.getImage());
 
