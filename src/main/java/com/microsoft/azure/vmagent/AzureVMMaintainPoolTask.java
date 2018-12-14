@@ -27,12 +27,12 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     }
 
     public void maintain(AzureVMCloud cloud, AzureVMAgentTemplate template) {
-        LOGGER.log(Level.INFO, "Starting to maintain template: {0}", template.getTemplateName());
+        LOGGER.log(getNormalLoggingLevel(), "Starting to maintain template: {0}", template.getTemplateName());
         int currentSize = 0;
         final int sizeLimit = ((AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy()).getPoolSize();
 
         if (PoolLock.checkProvisionLock(template)) {
-            LOGGER.log(Level.INFO, "Agents of template {0} is creating, check later", template);
+            LOGGER.log(getNormalLoggingLevel(), "Agents of template {0} is creating, check later", template);
             return;
         }
 
@@ -48,7 +48,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
             }
         }
         if (currentSize < sizeLimit) {
-            LOGGER.log(Level.INFO, "Prepare for provisioning {0} agents for template {1}",
+            LOGGER.log(getNormalLoggingLevel(), "Prepare for provisioning {0} agents for template {1}",
                     new Object[]{sizeLimit - currentSize, template.getTemplateName()});
             provisionNodes(cloud, template, sizeLimit - currentSize);
         }
