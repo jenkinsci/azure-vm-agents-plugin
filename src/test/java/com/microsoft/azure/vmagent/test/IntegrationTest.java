@@ -106,6 +106,7 @@ public class IntegrationTest {
         public String azureImagePublisher;
         public String azureImageOffer;
         public String azureImageSku;
+        public String azureImageVersion;
         public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
@@ -134,6 +135,7 @@ public class IntegrationTest {
             azureImagePublisher = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_PUBLISHER", "Canonical");
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
+            azureImageVersion = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_VERSION", "latest");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             osDiskSize = 0;
             availabilityType = AvailabilityType.UNKNOWN.getName();
@@ -342,6 +344,7 @@ public class IntegrationTest {
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
         when(templateMock.getImageSku()).thenReturn(testEnv.azureImageSku);
+        when(templateMock.getImageVersion()).thenReturn(testEnv.azureImageVersion);
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
         when(templateMock.getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
@@ -402,7 +405,7 @@ public class IntegrationTest {
                             break;
                         default:
                             throw new IllegalStateException(
-                                    String.format("the state of VM %s is '%s'", resource, state));
+                                    String.format("the state of VM %s is '%s', message: %s", resource, state, op.statusMessage()));
                     }
                 }
             }
