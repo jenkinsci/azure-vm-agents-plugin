@@ -26,6 +26,7 @@ import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
+import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
@@ -321,6 +322,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                 .withSku(AvailabilitySetSkuTypes.MANAGED)
                 .create();
         Assert.assertNotNull("Failed to create availability set in resourceGroup " + testEnv.azureResourceGroup, availabilitySet);
+        testEnv.availabilityType = AvailabilityType.AVAILABILITY_SET.getName();
         testEnv.availabilitySet = availabilitySet.name();
 
         AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);

@@ -36,6 +36,7 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
+import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -96,6 +97,7 @@ public class IntegrationTest {
         public final String resourceManagerEndpoint;
         public final String graphEndpoint;
         public final String azureLocation;
+        public String availabilityType;
         public String availabilitySet;
         public final String azureResourceGroup;
         public final String azureStorageAccountName;
@@ -134,6 +136,7 @@ public class IntegrationTest {
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             osDiskSize = 0;
+            availabilityType = AvailabilityType.UNKNOWN.getName();
             availabilitySet = "";
             blobEndpointSuffixForTemplate = new HashMap<String, String>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
@@ -326,6 +329,7 @@ public class IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
+        when(templateMock.getAvailabilityType()).thenReturn(testEnv.availabilityType);
         when(templateMock.getAvailabilitySet()).thenReturn(testEnv.availabilitySet);
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
