@@ -120,7 +120,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             Assert.assertEquals(agentLaunchMethod, newAgent.getAgentLaunchMethod());
             Assert.assertEquals(executeInitScriptAsRoot, newAgent.getExecuteInitScriptAsRoot());
             Assert.assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());
-            Assert.assertEquals(enableMSI, newAgent.isEnalbeMSI());
+            Assert.assertEquals(enableMSI, newAgent.isEnableMSI());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);

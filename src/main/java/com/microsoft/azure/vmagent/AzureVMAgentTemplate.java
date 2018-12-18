@@ -19,11 +19,15 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.compute.AvailabilitySet;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
 import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
+import com.microsoft.azure.vmagent.builders.Availability;
+import com.microsoft.azure.vmagent.builders.AvailabilityBuilder;
 import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
@@ -125,6 +129,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
+    public static class AvailabilityTypeClass {
+        private String availabilitySet;
+
+        @DataBoundConstructor
+        public AvailabilityTypeClass(
+                String availabilitySet) {
+            this.availabilitySet = availabilitySet;
+        }
+
+        public String getAvailabilitySet() {
+            return availabilitySet;
+        }
+    }
+
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
 
     private static final int GEN_STORAGE_ACCOUNT_UID_LENGTH = 22;
@@ -137,6 +155,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private final String labels;
 
     private final String location;
+
+    private final String availabilityType;
+
+    private final String availabilitySet;
 
     private final String virtualMachineSize;
 
@@ -239,6 +261,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateDesc,
             String labels,
             String location,
+            AvailabilityTypeClass availabilityTypeClass,
             String virtualMachineSize,
             String storageAccountNameReferenceType,
             String storageAccountType,
@@ -278,6 +301,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.templateDesc = templateDesc;
         this.labels = labels;
         this.location = location;
+        this.availabilityType = getAvailabilityType(availabilityTypeClass);
+        this.availabilitySet = availabilityTypeClass == null ? null : availabilityTypeClass.getAvailabilitySet();
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
         this.storageAccountName = getStorageAccountName(
@@ -492,6 +517,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return location;
     }
 
+    public String getAvailabilitySet() {
+        return availabilitySet;
+    }
+
     public String getVirtualMachineSize() {
         return virtualMachineSize;
     }
@@ -567,12 +596,26 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return shutdownOnIdle;
     }
 
+    public String getAvailabilityType() {
+        return availabilityType;
+    }
+
     public String getImageReferenceType() {
         return imageReferenceType;
     }
 
     public String getImageTopLevelType() {
         return imageTopLevelType;
+    }
+
+    public String getAvailabilityType(AvailabilityTypeClass availabilityTypeClass) {
+        if (availabilityTypeClass == null) {
+            return AvailabilityType.UNKNOWN.getName();
+        }
+        if (availabilityTypeClass.getAvailabilitySet() != null) {
+            return AvailabilityType.AVAILABILITY_SET.getName();
+        }
+        return AvailabilityType.UNKNOWN.getName();
     }
 
     public String getImageReferenceType(ImageReferenceTypeClass imageReferenceTypeClass) {
@@ -821,6 +864,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .build();
     }
 
+    public Availability getAvailabilityInside() {
+        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilitySet())
+                .build();
+    }
+
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
         return Jenkins.getInstance().getDescriptor(getClass());
@@ -837,7 +885,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     /**
      * Provision new agents using this template.
      *
-     * @param listener Not used
+     * @param listener       Not used
      * @param numberOfAgents Number of agents to provision
      * @return New deployment info if the provisioning was successful.
      * @throws Exception May throw if provisioning was not successful.
@@ -971,6 +1019,43 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 }
             }
 
+            return model;
+        }
+
+        public String doFillAvailabilityTypeItems() {
+            return null;
+        }
+
+        public ListBoxModel doFillAvailabilitySetItems(
+                @RelativePath("../..") @QueryParameter String azureCredentialsId,
+                @RelativePath("../..") @QueryParameter String resourceGroupReferenceType,
+                @RelativePath("../..") @QueryParameter String newResourceGroupName,
+                @RelativePath("../..") @QueryParameter String existingResourceGroupName,
+                @RelativePath("..") @QueryParameter String location) {
+            ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Availability Set in current resource group and location ---", "");
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
+
+            //resourceGroupReferenceType passed wrong value in 2.60.1-LTS, we won't use this value until bug resolved.
+            resourceGroupReferenceType = null;
+
+            try {
+                Azure azureClient = AzureClientHolder.get(azureCredentialsId);
+                String resourceGroupName = AzureVMCloud.getResourceGroupName(
+                        resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+                PagedList<AvailabilitySet> availabilitySets = azureClient.availabilitySets()
+                        .listByResourceGroup(resourceGroupName);
+                for (AvailabilitySet set : availabilitySets) {
+                    String label = set.region().label();
+                    if (label.equals(location)) {
+                        model.add(set.name());
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.INFO, "Cannot list availability set: ", e);
+            }
             return model;
         }
 

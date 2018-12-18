@@ -96,6 +96,7 @@ public class IntegrationTest {
         public final String resourceManagerEndpoint;
         public final String graphEndpoint;
         public final String azureLocation;
+        public String availabilitySet;
         public final String azureResourceGroup;
         public final String azureStorageAccountName;
         public final String azureStorageAccountType;
@@ -133,6 +134,7 @@ public class IntegrationTest {
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             osDiskSize = 0;
+            availabilitySet = "";
             blobEndpointSuffixForTemplate = new HashMap<String, String>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
             blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
@@ -324,6 +326,7 @@ public class IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
+        when(templateMock.getAvailabilitySet()).thenReturn(testEnv.availabilitySet);
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);
