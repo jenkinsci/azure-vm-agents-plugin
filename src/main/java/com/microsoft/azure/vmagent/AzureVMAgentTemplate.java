@@ -1054,7 +1054,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     }
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.INFO, "Cannot list availability set: ", e);
+                LOGGER.log(Level.WARNING, "Cannot list availability set: ", e);
             }
             return model;
         }
