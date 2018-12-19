@@ -317,7 +317,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         azureClient.resourceGroups()
                 .define(testEnv.azureResourceGroup)
                 .withRegion(testEnv.azureLocation)
-                .create()
+                .create();
         AvailabilitySet availabilitySet = azureClient.availabilitySets().define("test-av-set")
                 .withRegion(testEnv.azureLocation)
                 .withExistingResourceGroup(testEnv.azureResourceGroup)
