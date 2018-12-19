@@ -1036,7 +1036,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             } catch (NullPointerException e) {
                 // Do nothing
             } catch (Exception e) {
-                LOGGER.log(Level.INFO, "Cannot list storage account: {0}", e);
+                LOGGER.log(Level.WARNING, "Cannot list storage account: ", e);
             } finally {
                 return model;
             }

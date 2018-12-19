@@ -660,7 +660,7 @@ public final class AzureVMManagementServiceDelegate {
             createStorageAccount(
                     azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName);
         } catch (Exception e) {
-            LOGGER.log(Level.INFO, e.getMessage());
+            LOGGER.log(Level.SEVERE, "Got exception when checking the storage account for custom scripts", e);
         }
 
         int scriptLength = 0;
@@ -809,7 +809,7 @@ public final class AzureVMManagementServiceDelegate {
                 return false;
             }
         } catch (AzureCloudException e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: virtualMachineExists: "
                             + "error while determining whether vm exists",
                     e);
@@ -1277,7 +1277,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             return LocationCache.getLocation(azureClient, envNameOrUrl);
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
                             + "error while fetching the regions {0}. Will return default list ",
                     e);
@@ -1307,7 +1307,7 @@ public final class AzureVMManagementServiceDelegate {
             }
             return ret;
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: getVMSizes: "
                             + "error while fetching the VM sizes {0}. Will return default list ",
                     e);
@@ -1503,7 +1503,7 @@ public final class AzureVMManagementServiceDelegate {
             }
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
                             + "services info, assuming that there are no hosted services {0}", e);
             return 0;
@@ -1524,7 +1524,7 @@ public final class AzureVMManagementServiceDelegate {
             azureClient.virtualMachines()
                     .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).deallocate();
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: provision: could not terminate or shutdown {0}, {1}",
                     new Object[]{agent.getNodeName(), e});
         }
@@ -1608,7 +1608,7 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM", e);
             // Check if VM is already deleted: if VM is already deleted then just ignore exception.
             if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
@@ -1678,16 +1678,16 @@ public final class AzureVMManagementServiceDelegate {
         try {
             LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
             azureClient.networkInterfaces().deleteByResourceGroup(resourceGroupName, nic);
-        } catch (Exception ignore) {
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: removeIPName: while deleting NIC", ignore);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: removeIPName: while deleting NIC", e);
         }
 
         final String ip = vmName + "IPName";
         try {
             LOGGER.log(Level.INFO, "Remove IP {0}", ip);
             azureClient.publicIPAddresses().deleteByResourceGroup(resourceGroupName, ip);
-        } catch (Exception ignore) {
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: removeIPName: while deleting IPName", ignore);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: removeIPName: while deleting IPName", e);
         }
     }
 
@@ -1754,7 +1754,7 @@ public final class AzureVMManagementServiceDelegate {
             return azureClient.networks().getByResourceGroup(resourceGroupName, virtualNetworkName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getVirtualNetworkInfo: "
-                    + "Got exception while getting virtual network info: {0}", e);
+                    + "Got exception while getting virtual network info: ", e);
         }
         return null;
     }
@@ -2309,7 +2309,7 @@ public final class AzureVMManagementServiceDelegate {
                 try {
                     URI.create(image);
                 } catch (Exception e) {
-                    Messages.Azure_GC_Template_ImageURI_Not_Valid();
+                    return Messages.Azure_GC_Template_ImageURI_Not_Valid();
                 }
                 return Constants.OP_SUCCESS;
             } else if (referenceType == ImageReferenceType.CUSTOM_IMAGE &&
@@ -2358,7 +2358,6 @@ public final class AzureVMManagementServiceDelegate {
                     .withRegion(locationName)
                     .create();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, e.getMessage());
             throw AzureCloudException.create(
                     String.format(
                             " Failed to create resource group with group name %s, location %s",
@@ -2393,7 +2392,6 @@ public final class AzureVMManagementServiceDelegate {
                         .create();
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, e.getMessage());
             throw AzureCloudException.create(
                     String.format(
                             "Failed to create storage account with account name %s, location %s, "

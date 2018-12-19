@@ -113,10 +113,10 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
                     agentNode.blockCleanUpAction();
                     agentNode.deprovision(Messages._Idle_Timeout_Delete());
                 } catch (Exception e) {
-                    LOGGER.log(Level.INFO,
-                            "AzureVMCloudRetensionStrategy: check: "
-                                    + "Exception occurred while calling timeout on node {0}: {1}",
-                            new Object[]{agentComputer.getName(), e});
+                    LOGGER.log(Level.WARNING,
+                            String.format("AzureVMCloudRetensionStrategy: check: "
+                                    + "Exception occurred while calling timeout on node %s", agentComputer.getName()),
+                            e);
                     // If we have an exception, set the agent for deletion.
                     // It's unlikely we'll be able to shut it down properly ever.
                     AzureVMAgent node = agentComputer.getNode();

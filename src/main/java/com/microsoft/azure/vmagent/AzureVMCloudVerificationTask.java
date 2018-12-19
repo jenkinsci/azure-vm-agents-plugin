@@ -47,14 +47,14 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
         final AzureVMCloud cloud = getCloud(cloudName);
         if (cloud == null) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(getStaticNormalLoggingLevel(),
                     "AzureVMCloudVerificationTask: verify: parent cloud not found for {0} in {1}",
                     new Object[]{templateName, cloudName});
             return;
         }
         final AzureVMAgentTemplate agentTemplate = cloud.getAzureAgentTemplate(templateName);
         if (agentTemplate == null) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(getStaticNormalLoggingLevel(),
                     "AzureVMCloudVerificationTask: verify: "
                             + "could not retrieve agent template named {0} in {1}",
                     new Object[]{templateName, cloudName});
@@ -81,7 +81,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
             try {
                 List<String> errors = agentTemplate.verifyTemplate();
                 if (errors.isEmpty()) {
-                    LOGGER.log(Level.FINE,
+                    LOGGER.log(getStaticNormalLoggingLevel(),
                             "AzureVMCloudVerificationTask: verify: {0} verified successfully",
                             templateName);
                     // Verified, set the template to verified.
@@ -111,7 +111,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         if (StringUtils.isBlank(cloudName)) {
             return;
         }
-        LOGGER.log(Level.FINE,
+        LOGGER.log(getStaticNormalLoggingLevel(),
                 "AzureVMCloudVerificationTask: verify: verifying cloud {0}",
                 cloudName);
 
@@ -119,7 +119,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
         // Unknown cloud.  Maybe the name changed
         if (cloud == null) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(getStaticNormalLoggingLevel(),
                     "AzureVMCloudVerificationTask: verify: subscription {0} not found, skipping",
                     cloudName);
             return;
@@ -128,7 +128,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         synchronized (cloud) {
             // Only if verified pass, return at once
             if (cloud.getConfigurationStatus().equals(Constants.VERIFIED_PASS)) {
-                LOGGER.log(Level.FINE,
+                LOGGER.log(getStaticNormalLoggingLevel(),
                         "AzureVMCloudVerificationTask: verify: cloud {0} already verified pass",
                         cloudName);
                 // Update the count.
@@ -138,7 +138,8 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
             // Verify.  Update the VM count before setting to valid
             if (verifyConfiguration(cloud)) {
-                LOGGER.log(Level.FINE, "AzureVMCloudVerificationTask: validate: {0} verified pass", cloudName);
+                LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: validate: {0} "
+                        + "verified pass", cloudName);
                 // Update the count
                 cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
                 // We grab the current VM count and
@@ -163,7 +164,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      * return
      */
     public static boolean verifyConfiguration(AzureVMCloud cloud) {
-        LOGGER.info("AzureVMCloudVerificationTask: verifyConfiguration: start");
+        LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: verifyConfiguration: start");
 
         // Check the sub and off we go
         String result = cloud.getServiceDelegate().verifyConfiguration(
@@ -171,7 +172,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                 Integer.toString(cloud.getMaxVirtualMachinesLimit()),
                 Integer.toString(cloud.getDeploymentTimeout()));
         if (!Constants.OP_SUCCESS.equals(result)) {
-            LOGGER.log(Level.INFO, "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
+            LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: verifyConfiguration: {0}", result);
             cloud.setConfigurationStatus(Constants.VERIFIED_FAILED);
             return false;
         }
@@ -186,16 +187,16 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
      * @return The current VM count
      */
     public static int getVirtualMachineCount(AzureVMCloud cloud) {
-        LOGGER.info("AzureVMCloudVerificationTask: getVirtualMachineCount: start");
+        LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: getVirtualMachineCount: start");
         try {
             int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getCloudName(),
                     cloud.getResourceGroupName());
-            LOGGER.log(Level.INFO,
+            LOGGER.log(getStaticNormalLoggingLevel(),
                     "AzureVMCloudVerificationTask: getVirtualMachineCount: end, cloud {0} has currently {1} vms",
                     new Object[]{cloud.getCloudName(), vmCount});
             return vmCount;
         } catch (Exception e) {
-            LOGGER.log(Level.INFO,
+            LOGGER.log(getStaticNormalLoggingLevel(),
                     "AzureVMCloudVerificationTask: getVirtualMachineCount: failed to retrieve vm count:\n{0}",
                     e.toString());
             // We could have failed for any number of reasons.  Just return the current
@@ -209,6 +210,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
+    @Override
     public void execute(TaskListener arg0) {
         for (Cloud cloud : Jenkins.getInstance().clouds) {
             if (cloud instanceof AzureVMCloud) {
@@ -225,4 +227,12 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
         return RECURRENCE_PERIOD_IN_MILLIS;
     }
 
+    @Override
+    protected Level getNormalLoggingLevel() {
+        return Level.FINE;
+    }
+
+    private static Level getStaticNormalLoggingLevel() {
+        return Level.FINE;
+    }
 }

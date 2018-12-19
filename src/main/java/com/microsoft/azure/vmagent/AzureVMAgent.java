@@ -546,9 +546,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 }
             } catch (Exception e) {
                 LOGGER.log(
-                        Level.INFO,
-                        "AzureVMAgent: error while trying to attach a public IP to {0} : {1}",
-                        new Object[]{getNodeName(), e});
+                        Level.SEVERE,
+                        String.format("AzureVMAgent: error while trying to attach a public IP to %s", getNodeName()),
+                        e);
             }
             return publicIP;
         }
