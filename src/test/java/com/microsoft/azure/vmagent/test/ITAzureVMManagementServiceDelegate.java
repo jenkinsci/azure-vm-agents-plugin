@@ -314,6 +314,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     @Test
     public void createDeploymentWithAvailabilitySet() throws Exception {
+        azureClient.resourceGroups()
+                .define(testEnv.azureResourceGroup)
+                .withRegion(testEnv.azureLocation)
+                .create()
         AvailabilitySet availabilitySet = azureClient.availabilitySets().define("test-av-set")
                 .withRegion(testEnv.azureLocation)
                 .withExistingResourceGroup(testEnv.azureResourceGroup)
