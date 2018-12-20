@@ -370,7 +370,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
         Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
         Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
-        Assert.assertEquals(availabilitySet.id(), actualVM.availabilitySetId());
+        Assert.assertTrue(availabilitySet.id().equalsIgnoreCase(actualVM.availabilitySetId()));
     }
 
     @Test
