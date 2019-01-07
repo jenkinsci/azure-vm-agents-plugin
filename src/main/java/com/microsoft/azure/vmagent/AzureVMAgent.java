@@ -414,7 +414,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return doNotUseMachineIfInitFails;
     }
 
-    public boolean isEnalbeMSI() {
+    public boolean isEnableMSI() {
         return enableMSI;
     }
 

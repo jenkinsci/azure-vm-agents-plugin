@@ -26,6 +26,16 @@
                 <f:select/>
             </f:entry>
 
+            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityType" name="availabilityTypeClass" help="/plugin/azure-vm-agents/help-availability.html">
+                <f:dropdownListBlock title="${%No_Availability}" value="unknown" selected="${instance == null || instance.getAvailabilityType() == 'unknown'}">
+                </f:dropdownListBlock>
+                <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilityType() == 'availabilitySet'}">
+                    <f:entry title="${%name}" field="availabilitySet" help="/plugin/azure-vm-agents/help-availabilitySet.html">
+                        <f:select/>
+                    </f:entry>
+                </f:dropdownListBlock>
+            </ui:dropdownList>
+
             <f:entry title="${%Virtual_Machine_Size}" field="virtualMachineSize"
                      help="/plugin/azure-vm-agents/help-virtualMachineSize.html">
                 <f:select/>
