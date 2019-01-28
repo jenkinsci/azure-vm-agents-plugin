@@ -1,5 +1,11 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.8.0 2019-01-28
+* Add Availability Set support [JENKINS-40635](https://issues.jenkins-ci.org/browse/JENKINS-40635)
+* Remove periodic jobs' log from Jenkins default log level [JENKINS-51282](https://issues.jenkins-ci.org/browse/JENKINS-51282)
+* Specify OS disk size for agents [JENKINS-51528](https://issues.jenkins-ci.org/browse/JENKINS-51528)
+* Fix customer image version fixed as latest issue
+
 ## Version 0.7.5 2018-11-28
 * Fix storage account name already exists issue [JENKINS-54885](https://issues.jenkins-ci.org/browse/JENKINS-54885)
 * Use https when communicating with storage account [JENKINS-52967](https://issues.jenkins-ci.org/browse/JENKINS-52967)
