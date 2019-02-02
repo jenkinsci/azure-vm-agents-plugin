@@ -132,6 +132,10 @@ public final class Constants {
     public static final String DEFAULT_IMAGE_SKU = "defaultImageSku";
     public static final String DEFAULT_DOCKER_IMAGE_SKU = "defaultDockerImageSku";
     public static final String DEFAULT_IMAGE_VERSION = "defaultImageVersion";
+    public static final String DEFAULT_GALLERY_NAME = "defaultGalleryName";
+    public static final String DEFAULT_GALLERY_IMAGE_DEFINITION = "defaultGalleryImageDefinition";
+    public static final String DEFAULT_GALLERY_IMAGE_VERSION = "defaultGalleryImageVersion";
+    public static final String DEFAULT_GALLERY_RESOURCE_GROUP = "defaultGalleryResourceGroup";
     public static final String DEFAULT_OS_TYPE = "defaultOsType";
     public static final String DEFAULT_LAUNCH_METHOD = "defaultLaunchMethod";
     public static final String DEFAULT_PRE_INSTALL_SSH = "defaultPreInstallSsh";

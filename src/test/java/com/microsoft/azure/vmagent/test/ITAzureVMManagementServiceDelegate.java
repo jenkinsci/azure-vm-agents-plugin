@@ -903,35 +903,35 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             Assert.assertEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "latest"));
+                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, ""));
+                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "wrong_version"));
+                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "wrong_version", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation + "wrong", "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, ""));
+                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher + "wrong", testEnv.azureImageOffer, testEnv.azureImageSku, "latest"));
+                            "", testEnv.azureImagePublisher + "wrong", testEnv.azureImageOffer, testEnv.azureImageSku, "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer + "wrong", testEnv.azureImageSku, ""));
+                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer + "wrong", testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku + "wrong", "latest"));
+                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku + "wrong", "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
                     .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.CUSTOM_IMAGE, "", "",
-                            "", "", "", "", ""));
+                            "", "", "", "", "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.galleryResourceGroup));
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
