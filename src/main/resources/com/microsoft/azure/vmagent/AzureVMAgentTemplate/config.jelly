@@ -70,10 +70,8 @@
 
             <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}" descriptors="${descriptor.azureVMRetentionStrategy}"/>
 
-            <f:entry title="${%shutdownOnIdle}" field="shutdownOnIdle"
-                     help="/plugin/azure-vm-agents/help-shutdownOnIdle.html">
-                <f:checkbox/>
-            </f:entry>
+            <f:optionalBlock title="${%shutdownOnIdle}" field="shutdownOnIdle"
+                     help="/plugin/azure-vm-agents/help-shutdownOnIdle.html" />
 
             <f:entry title="${%Usage}" field="usageMode" help="/plugin/azure-vm-agents/help-slaveMode.html">
                 <f:select/>
@@ -88,17 +86,11 @@
                 </f:entry>
 
                 <f:section title="${%Pre_Installed_Tools}">
-                    <f:entry title="Install Git (Latest)" field="isInstallGit">
-                        <f:checkbox/>
-                    </f:entry>
+                    <f:optionalBlock title="Install Git (Latest)" field="isInstallGit" />
 
-                    <f:entry title="Install Maven (V3.5.2)" field="isInstallMaven">
-                        <f:checkbox/>
-                    </f:entry>
+                    <f:optionalBlock title="Install Maven (V3.5.2)" field="isInstallMaven" />
 
-                    <f:entry title="Install Docker" field="isInstallDocker">
-                        <f:checkbox/>
-                    </f:entry>
+                    <f:optionalBlock title="Install Docker" field="isInstallDocker" />
                 </f:section>
             </ui:radioBlock>
 
@@ -145,30 +137,25 @@
                     <f:select/>
                 </f:entry>
 
-                <f:entry title="${%Pre_Install_Ssh}" field="preInstallSsh"
-                         help="/plugin/azure-vm-agents/help-preInstallSsh.html">
-                    <f:checkbox default="true"/>
-                </f:entry>
+                <f:optionalBlock title="${%Pre_Install_Ssh}" field="preInstallSsh"
+                         help="/plugin/azure-vm-agents/help-preInstallSsh.html"
+                         default="true" />
 
                 <f:section title="${%Initialization_Configuration}">
                     <f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-vm-agents/help-initScript.html">
                         <f:textarea/>
                     </f:entry>
 
-                    <f:entry title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot"
-                             help="/plugin/azure-vm-agents/help-executeInitScriptAsRoot.html">
-                        <f:checkbox default="true"/>
-                    </f:entry>
+                    <f:optionalBlock title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot"
+                             help="/plugin/azure-vm-agents/help-executeInitScriptAsRoot.html"
+                             default="true" />
 
-                    <f:entry title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails"
-                             help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html">
-                        <f:checkbox default="true"/>
-                    </f:entry>
+                    <f:optionalBlock title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails"
+                             help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html"
+                             default="true" />
 
-                    <f:entry title="${%Enable_MSI}" field="enableMSI"
-                        help="/plugin/azure-vm-agents/help-enableMSI.html">
-                        <f:checkbox/>
-                    </f:entry>
+                    <f:optionalBlock title="${%Enable_MSI}" field="enableMSI"
+                        help="/plugin/azure-vm-agents/help-enableMSI.html" />
                 </f:section>
 
                 <f:advanced>
@@ -186,10 +173,9 @@
                         <f:textbox/>
                     </f:entry>
 
-                    <f:entry title="${%Use_Private_Ip}" field="usePrivateIP"
-                             help="/plugin/azure-vm-agents/help-agentPrivateIp.html">
-                        <f:checkbox default="false"/>
-                    </f:entry>
+                    <f:optionalBlock title="${%Use_Private_Ip}" field="usePrivateIP"
+                             help="/plugin/azure-vm-agents/help-agentPrivateIp.html"
+                             default="false" />
 
                     <f:entry title="${%NSG_Name}" field="nsgName" help="/plugin/azure-vm-agents/help-nsgName.html">
                         <f:textbox/>
@@ -205,10 +191,8 @@
                         <f:textbox default="${descriptor.getDefaultNoOfExecutors()}"/>
                     </f:entry>
 
-                    <f:entry title="${%Template_Is_Disabled}" field="templateDisabled"
-                             help="/plugin/azure-vm-agents/help-templateDisabled.html">
-                        <f:checkbox/>
-                    </f:entry>
+                    <f:optionalBlock title="${%Template_Is_Disabled}" field="templateDisabled"
+                             help="/plugin/azure-vm-agents/help-templateDisabled.html" />
 
                     <f:entry title="${%Template_Status_Details}" field="templateStatusDetails"
                              help="/plugin/azure-vm-agents/help-templateStatusDetails.html">
