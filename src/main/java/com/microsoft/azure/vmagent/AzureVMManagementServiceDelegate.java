@@ -373,13 +373,18 @@ public final class AzureVMManagementServiceDelegate {
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion  galleryImageVersion;
-                if (StringUtils.isNotBlank(template.getGalleryImageVersion())) {
+                String galleryImageVersionStr = template.getGalleryImageVersion();
+                if (StringUtils.isBlank(galleryImageVersionStr)) {
+                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
+                            + "please provide the right image version of your gallery image");
+                }
+                if (Constants.VERSION_LATEST.equals(galleryImageVersionStr)) {
+                    galleryImageVersion = getGalleryImageLatestVersion(template.getGalleryResourceGroup(),
+                            template.getGalleryName(), template.getGalleryImageDefinition());
+                } else {
                     galleryImageVersion = azureClient.galleryImageVersions()
                             .getByGalleryImage(template.getGalleryResourceGroup(), template.getGalleryName(),
                                     template.getGalleryImageDefinition(), template.getGalleryImageVersion());
-                } else {
-                    galleryImageVersion = getGalleryImageLatestVersion(template.getGalleryResourceGroup(),
-                            template.getGalleryName(), template.getGalleryImageDefinition());
                 }
                 if (galleryImageVersion == null) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
@@ -2241,14 +2246,14 @@ public final class AzureVMManagementServiceDelegate {
             }
         } else if (referenceType == ImageReferenceType.GALLERY) {
             try {
-                if (StringUtils.isNotBlank(galleryImageVersion)) {
-                    GalleryImageVersion galleryImage = azureClient.galleryImageVersions().getByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition, galleryImageVersion);
-                    if (galleryImage == null) {
+                if (Constants.VERSION_LATEST.equals(galleryImageVersion)) {
+                    PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+                    if (galleryImageVersions.isEmpty()) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 } else {
-                    PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
-                    if (galleryImageVersions.isEmpty()) {
+                    GalleryImageVersion galleryImage = azureClient.galleryImageVersions().getByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition, galleryImageVersion);
+                    if (galleryImage == null) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 }
@@ -2418,6 +2423,7 @@ public final class AzureVMManagementServiceDelegate {
                 return Constants.OP_SUCCESS;
             } else if (StringUtils.isNotBlank(galleryName)
                     && StringUtils.isNotBlank(galleryImageDefinition)
+                    && StringUtils.isNotBlank(galleryImageVersion)
                     && StringUtils.isNotBlank(galleryResourceGroup)) {
                 return Constants.OP_SUCCESS;
             } else {

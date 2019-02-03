@@ -230,6 +230,8 @@ public final class Constants {
 
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
+    public static final String VERSION_LATEST = "latest";
+
     /**
      * AI constants.
      */
