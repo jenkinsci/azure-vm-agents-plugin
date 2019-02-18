@@ -374,17 +374,22 @@ public final class AzureVMManagementServiceDelegate {
             if (referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion  galleryImageVersion;
                 String galleryImageVersionStr = template.getGalleryImageVersion();
-                if (StringUtils.isBlank(galleryImageVersionStr)) {
+                String galleryImageDefinition = template.getGalleryImageDefinition();
+                String galleryResourceGroup = template.getGalleryResourceGroup();
+                String galleryName = template.getGalleryName();
+                if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
+                        StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
-                            + "please provide the right image version of your gallery image");
+                            + "one of gallery name, gallery image version, image definition and image resource group "
+                            + "is blank.");
                 }
                 if (Constants.VERSION_LATEST.equals(galleryImageVersionStr)) {
-                    galleryImageVersion = getGalleryImageLatestVersion(template.getGalleryResourceGroup(),
-                            template.getGalleryName(), template.getGalleryImageDefinition());
+                    galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup,
+                            galleryName, galleryImageDefinition);
                 } else {
                     galleryImageVersion = azureClient.galleryImageVersions()
-                            .getByGalleryImage(template.getGalleryResourceGroup(), template.getGalleryName(),
-                                    template.getGalleryImageDefinition(), template.getGalleryImageVersion());
+                            .getByGalleryImage(galleryResourceGroup, galleryName,
+                                    galleryImageDefinition, galleryImageVersionStr);
                 }
                 if (galleryImageVersion == null) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
