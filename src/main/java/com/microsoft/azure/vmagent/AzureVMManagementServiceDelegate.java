@@ -49,6 +49,7 @@ import jenkins.slaves.JnlpSlaveAgentProtocol;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.joda.time.DateTime;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -518,14 +519,14 @@ public final class AzureVMManagementServiceDelegate {
         if (galleryImageVersions.isEmpty()) {
             return null;
         }
-        Collections.sort(galleryImageVersions, new Comparator<GalleryImageVersion>() {
-            @Override
-            public int compare(GalleryImageVersion o1, GalleryImageVersion o2) {
-
-                return o2.publishingProfile().publishedDate().compareTo(o1.publishingProfile().publishedDate());
+        GalleryImageVersion latestVersion = galleryImageVersions.get(0);
+        for (int i = 1; i < galleryImageVersions.size(); i++) {
+            DateTime currentPublishedDate= latestVersion.publishingProfile().publishedDate();
+            if (galleryImageVersions.get(i).publishingProfile().publishedDate().compareTo(currentPublishedDate) > 0) {
+                latestVersion = galleryImageVersions.get(i);
             }
-        });
-        return galleryImageVersions.get(0);
+        }
+        return latestVersion;
     }
 
     private static void putVariable(JsonNode template, String name, String value) {
