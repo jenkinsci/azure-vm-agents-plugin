@@ -521,7 +521,7 @@ public final class AzureVMManagementServiceDelegate {
         }
         GalleryImageVersion latestVersion = galleryImageVersions.get(0);
         for (int i = 1; i < galleryImageVersions.size(); i++) {
-            DateTime currentPublishedDate= latestVersion.publishingProfile().publishedDate();
+            DateTime currentPublishedDate = latestVersion.publishingProfile().publishedDate();
             if (galleryImageVersions.get(i).publishingProfile().publishedDate().compareTo(currentPublishedDate) > 0) {
                 latestVersion = galleryImageVersions.get(i);
             }
