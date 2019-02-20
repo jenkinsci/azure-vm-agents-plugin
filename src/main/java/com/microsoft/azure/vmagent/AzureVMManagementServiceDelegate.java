@@ -49,6 +49,7 @@ import jenkins.slaves.JnlpSlaveAgentProtocol;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.joda.time.DateTime;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -248,7 +249,8 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME;
                     } else {
-                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
+                        templateLocation = (referenceType == ImageReferenceType.CUSTOM_IMAGE
+                                || referenceType == ImageReferenceType.GALLERY)
                                 ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME
                                 : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
                     }
@@ -266,7 +268,8 @@ public final class AzureVMManagementServiceDelegate {
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME;
                     } else {
-                        templateLocation = referenceType == ImageReferenceType.CUSTOM_IMAGE
+                        templateLocation = (referenceType == ImageReferenceType.CUSTOM_IMAGE
+                                || referenceType == ImageReferenceType.GALLERY)
                                 ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
                                 : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
@@ -367,6 +370,36 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
             putVariableIfNotBlank(tmp, "image", template.getImage());
+
+            // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
+            if (referenceType == ImageReferenceType.GALLERY) {
+                GalleryImageVersion  galleryImageVersion;
+                String galleryImageVersionStr = template.getGalleryImageVersion();
+                String galleryImageDefinition = template.getGalleryImageDefinition();
+                String galleryResourceGroup = template.getGalleryResourceGroup();
+                String galleryName = template.getGalleryName();
+                if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
+                        StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
+                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
+                            + "one of gallery name, gallery image version, image definition and image resource group "
+                            + "is blank.");
+                }
+                if (Constants.VERSION_LATEST.equals(galleryImageVersionStr)) {
+                    galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup,
+                            galleryName, galleryImageDefinition);
+                } else {
+                    galleryImageVersion = azureClient.galleryImageVersions()
+                            .getByGalleryImage(galleryResourceGroup, galleryName,
+                                    galleryImageDefinition, galleryImageVersionStr);
+                }
+                if (galleryImageVersion == null) {
+                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
+                            + "Can not find the right version for the gallery image.");
+                }
+                String galleryImageId = galleryImageVersion.id();
+                LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{galleryImageId});
+                putVariableIfNotBlank(tmp, "imageId", galleryImageId);
+            }
 
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
@@ -478,6 +511,22 @@ public final class AzureVMManagementServiceDelegate {
             return false;
         }
         return true;
+    }
+
+    private GalleryImageVersion getGalleryImageLatestVersion(String galleryResourceGroup, String galleryName,
+                                                String galleryImageDefinition) {
+        PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+        if (galleryImageVersions.isEmpty()) {
+            return null;
+        }
+        GalleryImageVersion latestVersion = galleryImageVersions.get(0);
+        for (int i = 1; i < galleryImageVersions.size(); i++) {
+            DateTime currentPublishedDate = latestVersion.publishingProfile().publishedDate();
+            if (galleryImageVersions.get(i).publishingProfile().publishedDate().compareTo(currentPublishedDate) > 0) {
+                latestVersion = galleryImageVersions.get(i);
+            }
+        }
+        return latestVersion;
     }
 
     private static void putVariable(JsonNode template, String name, String value) {
@@ -1835,6 +1884,10 @@ public final class AzureVMManagementServiceDelegate {
             String imageOffer,
             String imageSku,
             String imageVersion,
+            String galleryName,
+            String galleryImageDefinition,
+            String galleryImageVersion,
+            String galleryResourceGroup,
             String agentLaunchMethod,
             String initScript,
             String credentialsId,
@@ -1907,7 +1960,11 @@ public final class AzureVMManagementServiceDelegate {
                     imagePublisher,
                     imageOffer,
                     imageSku,
-                    imageVersion);
+                    imageVersion,
+                    galleryName,
+                    galleryImageDefinition,
+                    galleryImageVersion,
+                    galleryResourceGroup);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -1924,6 +1981,10 @@ public final class AzureVMManagementServiceDelegate {
                     imageOffer,
                     imageSku,
                     imageVersion,
+                    galleryName,
+                    galleryImageDefinition,
+                    galleryImageVersion,
+                    galleryResourceGroup,
                     storageAccountName,
                     storageAccountType,
                     virtualNetworkName,
@@ -1954,6 +2015,10 @@ public final class AzureVMManagementServiceDelegate {
             final String imageOffer,
             final String imageSku,
             final String imageVersion,
+            final String galleryName,
+            final String galleryImageDefinition,
+            final String galleryImageVersion,
+            final String galleryResourceGroup,
             final String storageAccountName,
             final String storageAccountType,
             final String virtualNetworkName,
@@ -1997,7 +2062,11 @@ public final class AzureVMManagementServiceDelegate {
                         imagePublisher,
                         imageOffer,
                         imageSku,
-                        imageVersion);
+                        imageVersion,
+                        galleryName,
+                        galleryImageDefinition,
+                        galleryImageVersion,
+                        galleryResourceGroup);
             }
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
@@ -2125,7 +2194,11 @@ public final class AzureVMManagementServiceDelegate {
             String imagePublisher,
             String imageOffer,
             String imageSku,
-            String imageVersion) {
+            String imageVersion,
+            String galleryName,
+            String galleryImageDefinition,
+            String galleryImageVersion,
+            String galleryResourceGroup) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             if (StringUtils.isNotBlank(builtInImage)) {
                 // As imageTopLevelType have to be null before save the template,
@@ -2177,6 +2250,23 @@ public final class AzureVMManagementServiceDelegate {
             } catch (Exception e) {
                 return Messages.Azure_GC_Template_ImageID_Not_Valid();
             }
+        } else if (referenceType == ImageReferenceType.GALLERY) {
+            try {
+                if (Constants.VERSION_LATEST.equals(galleryImageVersion)) {
+                    PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+                    if (galleryImageVersions.isEmpty()) {
+                        return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
+                    }
+                } else {
+                    GalleryImageVersion galleryImage = azureClient.galleryImageVersions().getByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition, galleryImageVersion);
+                    if (galleryImage == null) {
+                        return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
+                    }
+                }
+            } catch (Exception e) {
+                return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
+            }
+            return Constants.OP_SUCCESS;
         } else {
             try {
                 final String locationName = AzureUtil.getLocationNameByLabel(locationLabel);
@@ -2305,7 +2395,11 @@ public final class AzureVMManagementServiceDelegate {
             String imagePublisher,
             String imageOffer,
             String imageSku,
-            String imageVersion) {
+            String imageVersion,
+            String galleryName,
+            String galleryImageDefinition,
+            String galleryImageVersion,
+            String galleryResourceGroup) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             // As imageTopLevelType have to be null before save the template,
             // so the verifyImageParameters always return success.
@@ -2332,6 +2426,11 @@ public final class AzureVMManagementServiceDelegate {
                     && StringUtils.isNotBlank(imageOffer)
                     && StringUtils.isNotBlank(imageSku)
                     && StringUtils.isNotBlank(imageVersion)) {
+                return Constants.OP_SUCCESS;
+            } else if (StringUtils.isNotBlank(galleryName)
+                    && StringUtils.isNotBlank(galleryImageDefinition)
+                    && StringUtils.isNotBlank(galleryImageVersion)
+                    && StringUtils.isNotBlank(galleryResourceGroup)) {
                 return Constants.OP_SUCCESS;
             } else {
                 return Messages.Azure_GC_Template_ImageReference_Not_Valid(

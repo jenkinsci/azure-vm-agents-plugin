@@ -19,6 +19,14 @@ public class AdvancedImage {
 
     private String imageVersion;
 
+    private String galleryName;
+
+    private String galleryImageDefinition;
+
+    private String  galleryImageVersion;
+
+    private String galleryResourceGroup;
+
     private String agentLaunchMethod;
 
     private boolean preInstallSsh;
@@ -55,6 +63,10 @@ public class AdvancedImage {
                          String imageOffer,
                          String imageSku,
                          String imageVersion,
+                         String galleryName,
+                         String galleryImageDefinition,
+                         String galleryImageVersion,
+                         String galleryResourceGroup,
                          String agentLaunchMethod,
                          boolean preInstallSsh,
                          String initScript,
@@ -77,6 +89,10 @@ public class AdvancedImage {
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
         this.imageVersion = imageVersion;
+        this.galleryName = galleryName;
+        this.galleryImageDefinition = galleryImageDefinition;
+        this.galleryImageVersion = galleryImageVersion;
+        this.galleryResourceGroup = galleryResourceGroup;
         this.agentLaunchMethod = agentLaunchMethod;
         this.preInstallSsh = preInstallSsh;
         this.initScript = initScript;
@@ -122,6 +138,22 @@ public class AdvancedImage {
 
     public String getImageVersion() {
         return imageVersion;
+    }
+
+    public String getGalleryName() {
+        return galleryName;
+    }
+
+    public String getGalleryImageDefinition() {
+        return galleryImageDefinition;
+    }
+
+    public String getGalleryImageVersion() {
+        return galleryImageVersion;
+    }
+
+    public String getGalleryResourceGroup() {
+        return galleryResourceGroup;
     }
 
     public String getAgentLaunchMethod() {

@@ -7,6 +7,7 @@ public enum ImageReferenceType {
     UNKNOWN("unknown"),
     CUSTOM("custom"),
     CUSTOM_IMAGE("customImage"),
+    GALLERY("gallery"),
     REFERENCE("reference");
 
     private String name;

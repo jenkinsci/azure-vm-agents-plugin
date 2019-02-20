@@ -52,6 +52,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 
@@ -107,6 +108,10 @@ public class IntegrationTest {
         public String azureImageOffer;
         public String azureImageSku;
         public String azureImageVersion;
+        public String galleryName;
+        public String galleryImageDefinition;
+        public String galleryImageVersion;
+        public String galleryResourceGroup;
         public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
@@ -136,6 +141,10 @@ public class IntegrationTest {
             azureImageOffer = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_OFFER", "UbuntuServer");
             azureImageSku = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SKU", "18.04-LTS");
             azureImageVersion = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_VERSION", "latest");
+            galleryName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_NAME", "");
+            galleryImageDefinition = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_IMAGE_DEFINITION", "");
+            galleryImageVersion = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_IMAGE_VERSION", "");
+            galleryResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_RESOURCE_GROUP", "");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             osDiskSize = 0;
             availabilityType = AvailabilityType.UNKNOWN.getName();
