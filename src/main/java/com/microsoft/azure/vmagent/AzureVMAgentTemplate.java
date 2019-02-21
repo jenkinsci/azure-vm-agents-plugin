@@ -1054,6 +1054,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 throws IOException, ServletException {
 
             ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
             List<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
 
             if (vmSizes != null) {
@@ -1086,6 +1089,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId) {
             ListBoxModel model = new ListBoxModel();
 
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
             final TokenCredentialData token = AzureClientUtil.getToken(azureCredentialsId);
             if (token != null) {
                 String envName = token.getAzureEnvironmentName();
