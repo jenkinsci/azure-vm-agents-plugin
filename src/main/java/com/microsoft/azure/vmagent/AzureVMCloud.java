@@ -17,7 +17,6 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.microsoft.azure.PagedList;
@@ -1096,16 +1095,21 @@ public class AzureVMCloud extends Cloud {
         }
 
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
+            StandardListBoxModel result = new StandardListBoxModel();
+            if (owner == null) {
+                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                    return result;
+                }
+            } else {
+                if (!owner.hasPermission(owner.EXTENDED_READ)
+                        && !owner.hasPermission(CredentialsProvider.USE_ITEM)) {
+                    return result;
+                }
+            }
             return new StandardListBoxModel()
                     .includeEmptyValue()
-                    .withAll(CredentialsProvider.lookupCredentials(AzureCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()))
-                    .withAll(CredentialsProvider.lookupCredentials(AzureMsiCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+                    .includeAs(ACL.SYSTEM, owner, AzureCredentials.class)
+                    .includeAs(ACL.SYSTEM, owner, AzureMsiCredentials.class);
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
