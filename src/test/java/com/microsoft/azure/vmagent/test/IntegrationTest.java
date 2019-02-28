@@ -15,7 +15,12 @@
  */
 package com.microsoft.azure.vmagent.test;
 
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import com.microsoft.azure.CloudException;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -35,6 +40,7 @@ import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
@@ -48,6 +54,8 @@ import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
+import jenkins.model.Jenkins;
+import org.eclipse.jetty.util.security.Credential;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -111,6 +119,7 @@ public class IntegrationTest {
         public String galleryName;
         public String galleryImageDefinition;
         public String galleryImageVersion;
+        public String gallerySubscriptionId;
         public String galleryResourceGroup;
         public int osDiskSize;
         public final String azureImageSize;
@@ -144,6 +153,7 @@ public class IntegrationTest {
             galleryName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_NAME", "");
             galleryImageDefinition = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_IMAGE_DEFINITION", "");
             galleryImageVersion = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_IMAGE_VERSION", "");
+            gallerySubscriptionId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_SUBSCRIPTION_ID", "");
             galleryResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_RESOURCE_GROUP", "");
             azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
             osDiskSize = 0;
@@ -187,6 +197,13 @@ public class IntegrationTest {
     protected AzureVMManagementServiceDelegate delegate;
     protected TestEnvironment testEnv = null;
 
+    protected void addAzureCredentials(String id, String description, String subscriptionId, String clientId, String clientSecret) {
+        Map<Domain, List<Credentials>> domainCredentialsMap = SystemCredentialsProvider.getInstance().getDomainCredentialsMap();
+        List<Credentials> credentials = domainCredentialsMap.get(Domain.global());
+        credentials.add(new AzureCredentials(CredentialsScope.GLOBAL, id, description, subscriptionId, clientId, clientSecret));
+        SystemCredentialsProvider.getInstance().setDomainCredentialsMap(domainCredentialsMap);
+    }
+
     @Before
     public void setUp() {
         testEnv = new TestEnvironment();
@@ -206,7 +223,9 @@ public class IntegrationTest {
                 servicePrincipal.getTenant(),
                 servicePrincipal.getSubscriptionId(),
                 servicePrincipal.getAzureEnvironment());
-        delegate = AzureVMManagementServiceDelegate.getInstance(azureClient);
+        String azureCredentialsId = "testId";
+        addAzureCredentials(azureCredentialsId, "test", testEnv.subscriptionId, testEnv.clientId, testEnv.clientSecret);
+        delegate = AzureVMManagementServiceDelegate.getInstance(azureClient, azureCredentialsId);
         clearAzureResources();
 
         AppInsightsGlobalConfig.get().setAppInsightsEnabled(false);

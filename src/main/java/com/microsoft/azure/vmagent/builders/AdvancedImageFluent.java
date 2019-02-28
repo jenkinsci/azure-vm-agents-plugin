@@ -28,6 +28,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String galleryImageVersion;
 
+    private String gallerySubscriptionId;
+
     private String galleryResourceGroup;
 
     private String agentLaunchMethod;
@@ -100,11 +102,13 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     public T withGalleryImage(String galleryName,
                               String galleryImageDefinition,
                               String galleryImageVersion,
+                              String gallerySubscriptionId,
                               String galleryResourceGroup) {
         this.imageReferenceType = ImageReferenceType.GALLERY.getName();
         this.galleryName = galleryName;
         this.galleryImageDefinition = galleryImageDefinition;
         this.galleryImageVersion = galleryImageVersion;
+        this.gallerySubscriptionId = gallerySubscriptionId;
         this.galleryResourceGroup = galleryResourceGroup;
         return (T) this;
     }
@@ -226,6 +230,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public String getGalleryImageVersion() {
         return galleryImageVersion;
+    }
+
+    public String getGallerySubscriptionId() {
+        return gallerySubscriptionId;
     }
 
     public String getGalleryResourceGroup() {

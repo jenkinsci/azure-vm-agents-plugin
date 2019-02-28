@@ -25,6 +25,8 @@ public class AdvancedImage {
 
     private String  galleryImageVersion;
 
+    private String gallerySubscriptionId;
+
     private String galleryResourceGroup;
 
     private String agentLaunchMethod;
@@ -66,6 +68,7 @@ public class AdvancedImage {
                          String galleryName,
                          String galleryImageDefinition,
                          String galleryImageVersion,
+                         String gallerySubscriptionId,
                          String galleryResourceGroup,
                          String agentLaunchMethod,
                          boolean preInstallSsh,
@@ -92,6 +95,7 @@ public class AdvancedImage {
         this.galleryName = galleryName;
         this.galleryImageDefinition = galleryImageDefinition;
         this.galleryImageVersion = galleryImageVersion;
+        this.gallerySubscriptionId = gallerySubscriptionId;
         this.galleryResourceGroup = galleryResourceGroup;
         this.agentLaunchMethod = agentLaunchMethod;
         this.preInstallSsh = preInstallSsh;
@@ -150,6 +154,10 @@ public class AdvancedImage {
 
     public String getGalleryImageVersion() {
         return galleryImageVersion;
+    }
+
+    public String getGallerySubscriptionId() {
+        return gallerySubscriptionId;
     }
 
     public String getGalleryResourceGroup() {

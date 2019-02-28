@@ -90,6 +90,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String galleryName;
         private String galleryImageDefinition;
         private String galleryImageVersion;
+        private String gallerySubscriptionId;
         private String galleryResourceGroup;
 
         @DataBoundConstructor
@@ -103,6 +104,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 String galleryName,
                 String galleryImageDefinition,
                 String galleryImageVersion,
+                String gallerySubscriptionId,
                 String galleryResourceGroup) {
             this.image = image;
             this.imageId = imageId;
@@ -113,6 +115,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.galleryName = galleryName;
             this.galleryImageDefinition = galleryImageDefinition;
             this.galleryImageVersion = galleryImageVersion;
+            this.gallerySubscriptionId = gallerySubscriptionId;
             this.galleryResourceGroup = galleryResourceGroup;
         }
 
@@ -150,6 +153,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public String getGalleryImageVersion() {
             return galleryImageVersion;
+        }
+
+        public String getGallerySubscriptionId() {
+            return gallerySubscriptionId;
         }
 
         public String getGalleryResourceGroup() {
@@ -242,6 +249,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private final String galleryImageDefinition;
 
     private final String galleryImageVersion;
+
+    private final String gallerySubscriptionId;
 
     private final String galleryResourceGroup;
 
@@ -373,6 +382,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.galleryName = imageReferenceTypeClass.getGalleryName();
         this.galleryImageDefinition = imageReferenceTypeClass.getGalleryImageDefinition();
         this.galleryImageVersion = imageReferenceTypeClass.getGalleryImageVersion();
+        this.gallerySubscriptionId = imageReferenceTypeClass.getGallerySubscriptionId();
         this.galleryResourceGroup = imageReferenceTypeClass.getGalleryResourceGroup();
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
@@ -427,6 +437,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("galleryImageVersion",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_VERSION)
                         : template.getGalleryImageVersion());
+        templateProperties.put("gallerySubscriptionId",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_SUBSCRIPTION_ID)
+                : template.getGallerySubscriptionId());
         templateProperties.put("galleryResourceGroup",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_RESOURCE_GROUP)
                         : template.getGalleryResourceGroup());
@@ -742,6 +755,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return galleryImageVersion;
     }
 
+    public String getGallerySubscriptionId() {
+        return gallerySubscriptionId;
+    }
+
     public String getGalleryResourceGroup() {
         return galleryResourceGroup;
     }
@@ -906,6 +923,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         getGalleryName(),
                         getGalleryImageDefinition(),
                         getGalleryImageVersion(),
+                        getGallerySubscriptionId(),
                         getGalleryResourceGroup()
                 )
                 .withReferenceImage(
@@ -1016,6 +1034,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 galleryName,
                 galleryImageDefinition,
                 galleryImageVersion,
+                gallerySubscriptionId,
                 galleryResourceGroup,
                 agentLaunchMethod,
                 initScript,
@@ -1348,6 +1367,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryName,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageDefinition,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageVersion,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String gallerySubscriptionId,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
@@ -1407,7 +1427,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "galleryName: {29}\n\t"
                             + "galleryImageDefinition: {30}\n\t"
                             + "galleryImageVersion: {31}\n\t"
-                            + "galleryResourceGroup: {32}",
+                            + "galleryResourceGroup: {32}\n\t"
+                            + "gallerySubscriptionId: {33}",
                     new Object[]{
                             "",
                             "",
@@ -1441,7 +1462,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryName,
                             galleryImageDefinition,
                             galleryImageVersion,
-                            galleryResourceGroup});
+                            galleryResourceGroup,
+                            gallerySubscriptionId});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1472,6 +1494,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     galleryName,
                     galleryImageDefinition,
                     galleryImageVersion,
+                    gallerySubscriptionId,
                     galleryResourceGroup,
                     agentLaunchMethod,
                     initScript,

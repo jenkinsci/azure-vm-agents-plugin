@@ -41,6 +41,12 @@ public final class AzureClientUtil {
         return getClient(token);
     }
 
+    public static Azure getClient(String credentialId, String subscriptionId) {
+        TokenCredentialData token = getToken(credentialId);
+        token.setSubscriptionId(subscriptionId);
+        return getClient(token);
+    }
+
     public static Azure getClient(TokenCredentialData token) {
         return AzureClientFactory.getClient(token, new AzureClientFactory.Configurer() {
             @Override
