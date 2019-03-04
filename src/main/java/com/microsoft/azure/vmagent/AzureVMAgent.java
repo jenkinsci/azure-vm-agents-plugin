@@ -21,6 +21,7 @@ import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.Extension;
+import hudson.model.Computer;
 import hudson.model.Descriptor.FormException;
 import hudson.model.TaskListener;
 import hudson.slaves.AbstractCloudComputer;
@@ -39,6 +40,7 @@ import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.jvnet.localizer.Localizable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -594,7 +596,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         }
 
         //abusing a bit of f:validateButton because it has nice progress
+        @RequirePOST
         public FormValidation doAttachPublicIP(@QueryParameter String vmAgentName) {
+            Jenkins.getInstance().checkPermission(Computer.CONFIGURE);
             AzureVMAgent vmAgent = (AzureVMAgent) Jenkins.getInstance().getNode(vmAgentName);
             String publicIP = "";
             if (vmAgent != null) {
