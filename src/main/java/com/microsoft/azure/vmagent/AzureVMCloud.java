@@ -63,6 +63,7 @@ import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -1073,6 +1074,7 @@ public class AzureVMCloud extends Cloud {
             return Constants.DEFAULT_RESOURCE_GROUP_NAME;
         }
 
+        @RequirePOST
         public FormValidation doVerifyConfiguration(
                 @QueryParameter String azureCredentialsId,
                 @QueryParameter String maxVirtualMachinesLimit,
@@ -1080,6 +1082,7 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String resourceGroupReferenceType,
                 @QueryParameter String newResourceGroupName,
                 @QueryParameter String existingResourceGroupName) {
+            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
             String resourceGroupName = getResourceGroupName(
                     resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);

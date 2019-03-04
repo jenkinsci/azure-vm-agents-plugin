@@ -55,6 +55,7 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.servlet.ServletException;
 import javax.xml.bind.DatatypeConverter;
@@ -1234,6 +1235,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @RequirePOST
         public FormValidation doVerifyConfiguration(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
@@ -1269,6 +1271,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String nsgName,
                 @QueryParameter String jvmOptions,
                 @QueryParameter String imageReferenceType) {
+            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
             /*
             imageReferenceType will not be passed to doVerifyConfiguration
