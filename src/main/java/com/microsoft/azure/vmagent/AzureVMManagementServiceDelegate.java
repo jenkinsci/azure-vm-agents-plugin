@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.microsoft.azure.AzureClient;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
@@ -29,6 +30,7 @@ import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.resources.GenericResource;
+import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.storage.*;
@@ -518,7 +520,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private GalleryImageVersion getGalleryImageLatestVersion(String galleryResourceGroup, String galleryName,
-                                                             String galleryImageDefinition, String gallerySubscriptionId) {
+                                                             String galleryImageDefinition, String gallerySubscriptionId) throws AzureCloudException {
         Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
         PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
         if (galleryImageVersions.isEmpty()) {
@@ -2275,6 +2277,8 @@ public final class AzureVMManagementServiceDelegate {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 }
+            } catch (AzureCloudException ex) {
+                return ex.getMessage();
             } catch (Exception e) {
                 return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
             }
@@ -2435,15 +2439,16 @@ public final class AzureVMManagementServiceDelegate {
             } else if (referenceType == ImageReferenceType.CUSTOM_IMAGE &&
                     StringUtils.isNotBlank(imageId)) {
                 return Constants.OP_SUCCESS;
-            } else if (StringUtils.isNotBlank(imagePublisher)
+            } else if (referenceType == ImageReferenceType.REFERENCE
+                    && StringUtils.isNotBlank(imagePublisher)
                     && StringUtils.isNotBlank(imageOffer)
                     && StringUtils.isNotBlank(imageSku)
                     && StringUtils.isNotBlank(imageVersion)) {
                 return Constants.OP_SUCCESS;
-            } else if (StringUtils.isNotBlank(galleryName)
+            } else if (referenceType == ImageReferenceType.GALLERY
+                    && StringUtils.isNotBlank(galleryName)
                     && StringUtils.isNotBlank(galleryImageDefinition)
                     && StringUtils.isNotBlank(galleryImageVersion)
-                    && StringUtils.isNotBlank(gallerySubscriptionId)
                     && StringUtils.isNotBlank(galleryResourceGroup)) {
                 return Constants.OP_SUCCESS;
             } else {

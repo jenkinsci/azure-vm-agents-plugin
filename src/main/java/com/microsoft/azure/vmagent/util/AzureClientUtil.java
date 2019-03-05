@@ -19,6 +19,7 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
+import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import org.apache.commons.lang.StringUtils;
@@ -42,9 +43,13 @@ public final class AzureClientUtil {
         return getClient(token);
     }
 
-    public static Azure getClient(String credentialId, String subscriptionId) {
+    public static Azure getClient(String credentialId, String subscriptionId) throws AzureCloudException {
+        boolean validSubscriptionId = AzureUtil.isValidSubscriptionId(credentialId, subscriptionId);
+        if (!validSubscriptionId) {
+            throw AzureCloudException.create("The subscription id for gallery image is not valid");
+        }
         TokenCredentialData token = getToken(credentialId);
-        if (StringUtils.isNotBlank(subscriptionId)) {
+        if (StringUtils.isNotEmpty(subscriptionId)) {
             token.setSubscriptionId(subscriptionId);
         }
         return getClient(token);
