@@ -136,6 +136,9 @@
                     </f:dropdownListBlock>
 
                     <f:dropdownListBlock title="${%Gallery_Image}" value="gallery" selected="${instance.isType('gallery')}">
+                        <f:entry title="${%Gallery_Subscription_Id}" field="gallerySubscriptionId">
+                            <f:textbox/>
+                        </f:entry>
                         <f:entry title="${%Gallery_Resource_Group}" field="galleryResourceGroup">
                             <f:textbox/>
                         </f:entry>
@@ -246,6 +249,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imageId,imagePublisher,imageOffer,imageSku,imageVersion,galleryName,galleryImageDefinition,galleryImageVersion,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imageId,imagePublisher,imageOffer,imageSku,imageVersion,galleryName,galleryImageDefinition,galleryImageVersion,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
     </table>
 </j:jelly>

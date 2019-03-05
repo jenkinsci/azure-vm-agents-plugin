@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.microsoft.azure.AzureClient;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
@@ -29,6 +30,7 @@ import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.resources.GenericResource;
+import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.storage.*;
@@ -147,15 +149,17 @@ public final class AzureVMManagementServiceDelegate {
 
     private final Azure azureClient;
 
+    private final String azureCredentialsId;
+
     public static AzureVMManagementServiceDelegate getInstance(AzureVMCloud cloud) {
         return cloud.getServiceDelegate();
     }
 
-    public static AzureVMManagementServiceDelegate getInstance(Azure azureClient) {
+    public static AzureVMManagementServiceDelegate getInstance(Azure azureClient, String azureCredentialsId) {
         if (azureClient == null) {
             throw new NullPointerException("the azure client is null!");
         }
-        return new AzureVMManagementServiceDelegate(azureClient);
+        return new AzureVMManagementServiceDelegate(azureClient,  azureCredentialsId);
     }
 
     /**
@@ -376,6 +380,7 @@ public final class AzureVMManagementServiceDelegate {
                 GalleryImageVersion  galleryImageVersion;
                 String galleryImageVersionStr = template.getGalleryImageVersion();
                 String galleryImageDefinition = template.getGalleryImageDefinition();
+                String gallerySubscriptionId = template.getGallerySubscriptionId();
                 String galleryResourceGroup = template.getGalleryResourceGroup();
                 String galleryName = template.getGalleryName();
                 if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
@@ -386,9 +391,10 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 if (Constants.VERSION_LATEST.equals(galleryImageVersionStr)) {
                     galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup,
-                            galleryName, galleryImageDefinition);
+                            galleryName, galleryImageDefinition, gallerySubscriptionId);
                 } else {
-                    galleryImageVersion = azureClient.galleryImageVersions()
+                    Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
+                    galleryImageVersion = client.galleryImageVersions()
                             .getByGalleryImage(galleryResourceGroup, galleryName,
                                     galleryImageDefinition, galleryImageVersionStr);
                 }
@@ -514,8 +520,9 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private GalleryImageVersion getGalleryImageLatestVersion(String galleryResourceGroup, String galleryName,
-                                                String galleryImageDefinition) {
-        PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+                                                             String galleryImageDefinition, String gallerySubscriptionId) throws AzureCloudException {
+        Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
+        PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
         if (galleryImageVersions.isEmpty()) {
             return null;
         }
@@ -1887,6 +1894,7 @@ public final class AzureVMManagementServiceDelegate {
             String galleryName,
             String galleryImageDefinition,
             String galleryImageVersion,
+            String gallerySubscriptionId,
             String galleryResourceGroup,
             String agentLaunchMethod,
             String initScript,
@@ -1964,6 +1972,7 @@ public final class AzureVMManagementServiceDelegate {
                     galleryName,
                     galleryImageDefinition,
                     galleryImageVersion,
+                    gallerySubscriptionId,
                     galleryResourceGroup);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
@@ -1984,6 +1993,7 @@ public final class AzureVMManagementServiceDelegate {
                     galleryName,
                     galleryImageDefinition,
                     galleryImageVersion,
+                    gallerySubscriptionId,
                     galleryResourceGroup,
                     storageAccountName,
                     storageAccountType,
@@ -2018,6 +2028,7 @@ public final class AzureVMManagementServiceDelegate {
             final String galleryName,
             final String galleryImageDefinition,
             final String galleryImageVersion,
+            final String gallerySubscriptionId,
             final String galleryResourceGroup,
             final String storageAccountName,
             final String storageAccountType,
@@ -2066,6 +2077,7 @@ public final class AzureVMManagementServiceDelegate {
                         galleryName,
                         galleryImageDefinition,
                         galleryImageVersion,
+                        gallerySubscriptionId,
                         galleryResourceGroup);
             }
         };
@@ -2198,6 +2210,7 @@ public final class AzureVMManagementServiceDelegate {
             String galleryName,
             String galleryImageDefinition,
             String galleryImageVersion,
+            String gallerySubscriptionId,
             String galleryResourceGroup) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             if (StringUtils.isNotBlank(builtInImage)) {
@@ -2252,17 +2265,20 @@ public final class AzureVMManagementServiceDelegate {
             }
         } else if (referenceType == ImageReferenceType.GALLERY) {
             try {
+                Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
                 if (Constants.VERSION_LATEST.equals(galleryImageVersion)) {
-                    PagedList<GalleryImageVersion> galleryImageVersions = azureClient.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+                    PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
                     if (galleryImageVersions.isEmpty()) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 } else {
-                    GalleryImageVersion galleryImage = azureClient.galleryImageVersions().getByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition, galleryImageVersion);
+                    GalleryImageVersion galleryImage = client.galleryImageVersions().getByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition, galleryImageVersion);
                     if (galleryImage == null) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 }
+            } catch (AzureCloudException ex) {
+                return ex.getMessage();
             } catch (Exception e) {
                 return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
             }
@@ -2399,6 +2415,7 @@ public final class AzureVMManagementServiceDelegate {
             String galleryName,
             String galleryImageDefinition,
             String galleryImageVersion,
+            String gallerySubscriptionId,
             String galleryResourceGroup) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             // As imageTopLevelType have to be null before save the template,
@@ -2422,12 +2439,14 @@ public final class AzureVMManagementServiceDelegate {
             } else if (referenceType == ImageReferenceType.CUSTOM_IMAGE &&
                     StringUtils.isNotBlank(imageId)) {
                 return Constants.OP_SUCCESS;
-            } else if (StringUtils.isNotBlank(imagePublisher)
+            } else if (referenceType == ImageReferenceType.REFERENCE
+                    && StringUtils.isNotBlank(imagePublisher)
                     && StringUtils.isNotBlank(imageOffer)
                     && StringUtils.isNotBlank(imageSku)
                     && StringUtils.isNotBlank(imageVersion)) {
                 return Constants.OP_SUCCESS;
-            } else if (StringUtils.isNotBlank(galleryName)
+            } else if (referenceType == ImageReferenceType.GALLERY
+                    && StringUtils.isNotBlank(galleryName)
                     && StringUtils.isNotBlank(galleryImageDefinition)
                     && StringUtils.isNotBlank(galleryImageVersion)
                     && StringUtils.isNotBlank(galleryResourceGroup)) {
@@ -2677,7 +2696,8 @@ public final class AzureVMManagementServiceDelegate {
         return getCloudBlobContainer(account, blobContainerName);
     }
 
-    private AzureVMManagementServiceDelegate(Azure azureClient) {
+    private AzureVMManagementServiceDelegate(Azure azureClient, String azureCredentialsId) {
         this.azureClient = azureClient;
+        this.azureCredentialsId = azureCredentialsId;
     }
 }

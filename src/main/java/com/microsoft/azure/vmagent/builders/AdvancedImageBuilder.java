@@ -84,6 +84,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getGalleryName(),
                 fluent.getGalleryImageDefinition(),
                 fluent.getGalleryImageVersion(),
+                fluent.getGallerySubscriptionId(),
                 fluent.getGalleryResourceGroup(),
                 fluent.getAgentLaunchMethod(),
                 fluent.isPreInstallSsh(),
