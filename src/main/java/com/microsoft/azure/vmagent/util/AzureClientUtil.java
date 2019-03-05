@@ -21,6 +21,7 @@ import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.logging.Logger;
 
@@ -43,7 +44,9 @@ public final class AzureClientUtil {
 
     public static Azure getClient(String credentialId, String subscriptionId) {
         TokenCredentialData token = getToken(credentialId);
-        token.setSubscriptionId(subscriptionId);
+        if (StringUtils.isNotBlank(subscriptionId)) {
+            token.setSubscriptionId(subscriptionId);
+        }
         return getClient(token);
     }
 
