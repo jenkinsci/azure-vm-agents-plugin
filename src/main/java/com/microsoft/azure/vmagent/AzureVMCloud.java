@@ -1005,7 +1005,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     public AzureVMManagementServiceDelegate getServiceDelegate() {
-        return AzureVMManagementServiceDelegate.getInstance(getAzureClient());
+        return AzureVMManagementServiceDelegate.getInstance(getAzureClient(), credentialsId);
     }
 
     @Extension
@@ -1089,7 +1089,8 @@ public class AzureVMCloud extends Cloud {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
             Azure azureClient = AzureClientHolder.get(azureCredentialsId);
-            final String validationResult = AzureVMManagementServiceDelegate.getInstance(azureClient)
+            final String validationResult = AzureVMManagementServiceDelegate
+                    .getInstance(azureClient, azureCredentialsId)
                     .verifyConfiguration(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
             if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
                 return FormValidation.error(validationResult);

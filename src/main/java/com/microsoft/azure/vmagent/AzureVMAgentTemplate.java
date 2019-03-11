@@ -88,6 +88,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String imageOffer;
         private String imageSku;
         private String imageVersion;
+        private String galleryName;
+        private String galleryImageDefinition;
+        private String galleryImageVersion;
+        private String gallerySubscriptionId;
+        private String galleryResourceGroup;
 
         @DataBoundConstructor
         public ImageReferenceTypeClass(
@@ -96,13 +101,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 String imagePublisher,
                 String imageOffer,
                 String imageSku,
-                String imageVersion) {
+                String imageVersion,
+                String galleryName,
+                String galleryImageDefinition,
+                String galleryImageVersion,
+                String gallerySubscriptionId,
+                String galleryResourceGroup) {
             this.image = image;
             this.imageId = imageId;
             this.imagePublisher = imagePublisher;
             this.imageOffer = imageOffer;
             this.imageSku = imageSku;
             this.imageVersion = imageVersion;
+            this.galleryName = galleryName;
+            this.galleryImageDefinition = galleryImageDefinition;
+            this.galleryImageVersion = galleryImageVersion;
+            this.gallerySubscriptionId = gallerySubscriptionId;
+            this.galleryResourceGroup = galleryResourceGroup;
         }
 
         public String getImage() {
@@ -127,6 +142,26 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public String getImageVersion() {
             return imageVersion;
+        }
+
+        public String getGalleryName() {
+            return galleryName;
+        }
+
+        public String getGalleryImageDefinition() {
+            return galleryImageDefinition;
+        }
+
+        public String getGalleryImageVersion() {
+            return galleryImageVersion;
+        }
+
+        public String getGallerySubscriptionId() {
+            return gallerySubscriptionId;
+        }
+
+        public String getGalleryResourceGroup() {
+            return galleryResourceGroup;
         }
     }
 
@@ -209,6 +244,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private final String imageSku;
 
     private final String imageVersion;
+
+    private final String galleryName;
+
+    private final String galleryImageDefinition;
+
+    private final String galleryImageVersion;
+
+    private final String gallerySubscriptionId;
+
+    private final String galleryResourceGroup;
 
     private final String agentLaunchMethod;
 
@@ -335,6 +380,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.imageOffer = imageReferenceTypeClass.getImageOffer();
         this.imageSku = imageReferenceTypeClass.getImageSku();
         this.imageVersion = imageReferenceTypeClass.getImageVersion();
+        this.galleryName = imageReferenceTypeClass.getGalleryName();
+        this.galleryImageDefinition = imageReferenceTypeClass.getGalleryImageDefinition();
+        this.galleryImageVersion = imageReferenceTypeClass.getGalleryImageVersion();
+        this.gallerySubscriptionId = imageReferenceTypeClass.getGallerySubscriptionId();
+        this.galleryResourceGroup = imageReferenceTypeClass.getGalleryResourceGroup();
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -380,6 +430,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? defaultProperties.get(imageSkuName) : template.getImageSku());
         templateProperties.put("imageVersion",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
+        templateProperties.put("galleryName",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_NAME) : template.getGalleryName());
+        templateProperties.put("galleryImageDefinition",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_DEFINITION)
+                        : template.getGalleryImageDefinition());
+        templateProperties.put("galleryImageVersion",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_VERSION)
+                        : template.getGalleryImageVersion());
+        templateProperties.put("gallerySubscriptionId",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_SUBSCRIPTION_ID)
+                : template.getGallerySubscriptionId());
+        templateProperties.put("galleryResourceGroup",
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_RESOURCE_GROUP)
+                        : template.getGalleryResourceGroup());
         templateProperties.put("osType",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
         templateProperties.put("agentLaunchMethod",
@@ -626,6 +690,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         if (imageReferenceTypeClass.imageId != null) {
             return ImageReferenceType.CUSTOM_IMAGE.getName();
         }
+        if (imageReferenceTypeClass.getGalleryName() != null) {
+            return ImageReferenceType.GALLERY.getName();
+        }
         return ImageReferenceType.REFERENCE.getName();
     }
 
@@ -675,6 +742,26 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getImageVersion() {
         return imageVersion;
+    }
+
+    public String getGalleryName() {
+        return galleryName;
+    }
+
+    public String getGalleryImageDefinition() {
+        return galleryImageDefinition;
+    }
+
+    public String getGalleryImageVersion() {
+        return galleryImageVersion;
+    }
+
+    public String getGallerySubscriptionId() {
+        return gallerySubscriptionId;
+    }
+
+    public String getGalleryResourceGroup() {
+        return galleryResourceGroup;
     }
 
     public String getInitScript() {
@@ -833,6 +920,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return new AdvancedImageBuilder()
                 .withCustomImage(getImage())
                 .withCustomManagedImage(getImageId())
+                .withGalleryImage(
+                        getGalleryName(),
+                        getGalleryImageDefinition(),
+                        getGalleryImageVersion(),
+                        getGallerySubscriptionId(),
+                        getGalleryResourceGroup()
+                )
                 .withReferenceImage(
                         getImagePublisher(),
                         getImageOffer(),
@@ -938,6 +1032,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 imageOffer,
                 imageSku,
                 imageVersion,
+                galleryName,
+                galleryImageDefinition,
+                galleryImageVersion,
+                gallerySubscriptionId,
+                galleryResourceGroup,
                 agentLaunchMethod,
                 initScript,
                 credentialsId,
@@ -975,6 +1074,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 throws IOException, ServletException {
 
             ListBoxModel model = new ListBoxModel();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
             List<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
 
             if (vmSizes != null) {
@@ -1007,6 +1109,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId) {
             ListBoxModel model = new ListBoxModel();
 
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
             final TokenCredentialData token = AzureClientUtil.getToken(azureCredentialsId);
             if (token != null) {
                 String envName = token.getAzureEnvironmentName();
@@ -1261,6 +1366,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String imageOffer,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String imageSku,
                 @RelativePath("imageReferenceTypeClass") @QueryParameter String imageVersion,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryName,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageDefinition,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageVersion,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String gallerySubscriptionId,
+                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
@@ -1316,7 +1426,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "subnetName: {25};\n\t"
                             + "privateIP: {26};\n\t"
                             + "nsgName: {27};\n\t"
-                            + "jvmOptions: {28};",
+                            + "jvmOptions: {28};\n\t"
+                            + "galleryName: {29}\n\t"
+                            + "galleryImageDefinition: {30}\n\t"
+                            + "galleryImageVersion: {31}\n\t"
+                            + "galleryResourceGroup: {32}\n\t"
+                            + "gallerySubscriptionId: {33}",
                     new Object[]{
                             "",
                             "",
@@ -1346,7 +1461,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             subnetName,
                             usePrivateIP,
                             nsgName,
-                            jvmOptions});
+                            jvmOptions,
+                            galleryName,
+                            galleryImageDefinition,
+                            galleryImageVersion,
+                            galleryResourceGroup,
+                            gallerySubscriptionId});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1374,6 +1494,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     imageOffer,
                     imageSku,
                     imageVersion,
+                    galleryName,
+                    galleryImageDefinition,
+                    galleryImageVersion,
+                    gallerySubscriptionId,
+                    galleryResourceGroup,
                     agentLaunchMethod,
                     initScript,
                     credentialsId,

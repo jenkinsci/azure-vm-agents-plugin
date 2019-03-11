@@ -29,6 +29,6 @@ public final class AzureClientHolder {
     }
 
     public static AzureVMManagementServiceDelegate getDelegate(String credentialId) {
-        return AzureVMManagementServiceDelegate.getInstance(get(credentialId));
+        return AzureVMManagementServiceDelegate.getInstance(get(credentialId), credentialId);
     }
 }

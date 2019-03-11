@@ -19,6 +19,9 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.microsoft.azure.PagedList;
+import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
@@ -443,6 +446,28 @@ public final class AzureUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Checks if the subscription id is valid in the current Azure client.
+     *
+     * @param credentialId credentials used to create an Azure client
+     * @param subscriptionId target subscription id
+     * @return true, if the subscription id is valid
+     */
+    public static boolean isValidSubscriptionId(String credentialId, String subscriptionId) {
+        if (StringUtils.isEmpty(subscriptionId)) {
+            return true;
+        }
+        Azure defaultClient = AzureClientUtil.getClient(credentialId);
+        PagedList<Subscription> subscriptions = defaultClient.subscriptions().list();
+        boolean isSubscriptionIdValid = false;
+        for (Subscription subscription : subscriptions) {
+            if (subscription.subscriptionId().equals(subscriptionId)) {
+                isSubscriptionIdValid = true;
+            }
+        }
+        return isSubscriptionIdValid;
     }
 
     public static class DeploymentTag {

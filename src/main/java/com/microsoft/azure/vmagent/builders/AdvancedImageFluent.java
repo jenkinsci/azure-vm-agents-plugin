@@ -22,6 +22,16 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String imageVersion;
 
+    private String galleryName;
+
+    private String galleryImageDefinition;
+
+    private String galleryImageVersion;
+
+    private String gallerySubscriptionId;
+
+    private String galleryResourceGroup;
+
     private String agentLaunchMethod;
 
     private boolean preInstallSsh;
@@ -86,6 +96,20 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.imageOffer = imageOffer;
         this.imageSku = imageSku;
         this.imageVersion = imageVersion;
+        return (T) this;
+    }
+
+    public T withGalleryImage(String galleryName,
+                              String galleryImageDefinition,
+                              String galleryImageVersion,
+                              String gallerySubscriptionId,
+                              String galleryResourceGroup) {
+        this.imageReferenceType = ImageReferenceType.GALLERY.getName();
+        this.galleryName = galleryName;
+        this.galleryImageDefinition = galleryImageDefinition;
+        this.galleryImageVersion = galleryImageVersion;
+        this.gallerySubscriptionId = gallerySubscriptionId;
+        this.galleryResourceGroup = galleryResourceGroup;
         return (T) this;
     }
 
@@ -194,6 +218,26 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public String getImageVersion() {
         return imageVersion;
+    }
+
+    public String getGalleryName() {
+        return galleryName;
+    }
+
+    public String getGalleryImageDefinition() {
+        return galleryImageDefinition;
+    }
+
+    public String getGalleryImageVersion() {
+        return galleryImageVersion;
+    }
+
+    public String getGallerySubscriptionId() {
+        return gallerySubscriptionId;
+    }
+
+    public String getGalleryResourceGroup() {
+        return galleryResourceGroup;
     }
 
     public String getAgentLaunchMethod() {
