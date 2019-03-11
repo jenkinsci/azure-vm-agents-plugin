@@ -1,5 +1,14 @@
 # Azure VM Agents Plugin Changelog
 
+## Version 0.9.0 2019-03-11
+
+* Support Image Gallery as an option for agents
+* Fix configuration with error pages [JENKINS-55935](https://issues.jenkins-ci.org/browse/JENKINS-55935)
+
+## Version 0.8.1 2019-03-04
+
+* Fix multiple security issues
+
 ## Version 0.8.0 2019-01-28
 * Add Availability Set support [JENKINS-40635](https://issues.jenkins-ci.org/browse/JENKINS-40635)
 * Remove periodic jobs' log from Jenkins default log level [JENKINS-51282](https://issues.jenkins-ci.org/browse/JENKINS-51282)
