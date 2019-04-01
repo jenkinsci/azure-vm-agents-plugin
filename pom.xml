@@ -50,7 +50,7 @@
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>1.4.0</azure-credentials.version>
-        <azure-commons.version>0.2.4</azure-commons.version>
+        <azure-commons.version>0.2.10</azure-commons.version>
         <guava.version>19.0</guava.version>
     </properties>
 
@@ -79,7 +79,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.5</version>
+                <version>4.4.11</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -178,7 +178,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5</version>
+            <version>4.5.7</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
