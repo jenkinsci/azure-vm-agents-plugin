@@ -26,18 +26,21 @@ import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
-import edu.emory.mathcs.backport.java.util.Arrays;
 import hudson.model.TaskListener;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.logging.Logger;
-
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
 
@@ -77,7 +80,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         final AzureUtil.DeploymentTag nonMatchingTagValue2 = new AzureUtil.DeploymentTag("some_other_value/9999123");
         final AzureUtil.DeploymentTag matchingTagValue = new AzureUtil.DeploymentTag("some_value/9999123");
         final String cloudName = "some_cloud_name";
-        final List<String> emptyValidVMsList = Arrays.asList(new Object[]{});
+        final List<String> emptyValidVMsList = Collections.emptyList();
         AzureVMCloud cloud = mock(AzureVMCloud.class);
         when(cloud.getCloudName()).thenReturn(cloudName);
         when(cloud.getAzureClient()).thenReturn(azureClient);
@@ -120,7 +123,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         when(deploymentRegistrarMock_matching.getDeploymentTag()).thenReturn(matchingTagValue);
 
         final AzureVMDeploymentInfo deployment = createDefaultDeployment(2, deploymentRegistrarMock);
-        final List<String> validVMs = Arrays.asList(new Object[]{deployment.getVmBaseName() + "0"});
+        final List<String> validVMs = Collections.singletonList(deployment.getVmBaseName() + "0");
 
         AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
         when(cleanUpTask.getValidVMs()).thenReturn(validVMs);
