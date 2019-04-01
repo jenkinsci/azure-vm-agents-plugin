@@ -49,7 +49,7 @@
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>1.4.0</azure-credentials.version>
+        <azure-credentials.version>1.6.1</azure-credentials.version>
         <azure-commons.version>0.2.10</azure-commons.version>
         <guava.version>19.0</guava.version>
     </properties>

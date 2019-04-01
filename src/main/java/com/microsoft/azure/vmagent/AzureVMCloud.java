@@ -27,6 +27,7 @@ import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.util.AzureImdsCredentials;
 import com.microsoft.azure.util.AzureMsiCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
@@ -1113,7 +1114,8 @@ public class AzureVMCloud extends Cloud {
             return new StandardListBoxModel()
                     .includeEmptyValue()
                     .includeAs(ACL.SYSTEM, owner, AzureCredentials.class)
-                    .includeAs(ACL.SYSTEM, owner, AzureMsiCredentials.class);
+                    .includeAs(ACL.SYSTEM, owner, AzureMsiCredentials.class)
+                    .includeAs(ACL.SYSTEM, owner, AzureImdsCredentials.class);
         }
 
         public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
