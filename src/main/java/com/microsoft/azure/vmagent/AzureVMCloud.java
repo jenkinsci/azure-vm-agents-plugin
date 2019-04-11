@@ -705,7 +705,7 @@ public class AzureVMCloud extends Cloud {
                                                     Jenkins.getInstance().addNode(agentNode);
                                                     if (agentNode.getAgentLaunchMethod()
                                                             .equalsIgnoreCase("SSH")) {
-                                                        azureComputer.connect(false).get();
+                                                        azureComputer.connect(true);
                                                     } else { // Wait until node is online
                                                         waitUntilJNLPNodeIsOnline(agentNode);
                                                     }
