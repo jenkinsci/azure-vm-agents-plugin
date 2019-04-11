@@ -52,6 +52,7 @@ import hudson.model.Node;
 import hudson.security.ACL;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
+import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
@@ -686,47 +687,45 @@ public class AzureVMCloud extends Cloud {
                             numberOfAgents--;
 
                             plannedNodes.add(new PlannedNode(agentNode.getNodeName(),
-                                    Computer.threadPoolForRemoting.submit(new Callable<Node>() {
-                                        @Override
-                                        public Node call() throws AzureCloudException {
-                                            synchronized (agentNode) {
-                                                if (agentNode.getComputer().isOnline()) {
-                                                    return agentNode;
-                                                }
-                                                LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
-                                                        agentNode.getNodeName());
+                                    Computer.threadPoolForRemoting.submit(() -> {
+                                        synchronized (agentNode) {
+                                            SlaveComputer computer = agentNode.getComputer();
 
-                                                try {
-                                                    getServiceDelegate().startVirtualMachine(agentNode);
-                                                    final int waitTimeInMillis = 30 * 1000; // wait for 30 seconds
-                                                    // set virtual machine details again
-                                                    getServiceDelegate().setVirtualMachineDetails(
-                                                            agentNode, template);
-                                                    Jenkins.getInstance().addNode(agentNode);
-                                                    if (agentNode.getAgentLaunchMethod()
-                                                            .equalsIgnoreCase("SSH")) {
-                                                        azureComputer.connect(false).get();
-                                                    } else { // Wait until node is online
-                                                        waitUntilJNLPNodeIsOnline(agentNode);
-                                                    }
-                                                    LOGGER.info(String.format("Remove suspended status for node: %s",
-                                                            agentNode.getNodeName()));
-                                                    azureComputer.setAcceptingTasks(true);
-                                                    agentNode.clearCleanUpAction();
-                                                    agentNode.setEligibleForReuse(false);
-                                                } catch (Exception e) {
-                                                    properties.put("Message", e.getMessage());
-                                                    AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
-                                                            "ProvisionFailed",
-                                                            properties);
-                                                    throw AzureCloudException.create(e);
-                                                }
-                                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
-                                                        "Provision",
-                                                        properties);
-                                                template.getTemplateProvisionStrategy().success();
+                                            if (computer != null && computer.isOnline()) {
                                                 return agentNode;
                                             }
+                                            LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
+                                                    agentNode.getNodeName());
+
+                                            try {
+                                                getServiceDelegate().startVirtualMachine(agentNode);
+                                                // set virtual machine details again
+                                                getServiceDelegate().setVirtualMachineDetails(
+                                                        agentNode, template);
+                                                Jenkins.get().addNode(agentNode);
+                                                if (agentNode.getAgentLaunchMethod()
+                                                        .equalsIgnoreCase("SSH")) {
+                                                    azureComputer.connect(false).get();
+                                                } else { // Wait until node is online
+                                                    waitUntilJNLPNodeIsOnline(agentNode);
+                                                }
+                                                LOGGER.info(String.format("Remove suspended status for node: %s",
+                                                        agentNode.getNodeName()));
+                                                azureComputer.setAcceptingTasks(true);
+                                                agentNode.clearCleanUpAction();
+                                                agentNode.setEligibleForReuse(false);
+                                            } catch (Exception e) {
+                                                properties.put("Message", e.getMessage());
+                                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                        "ProvisionFailed",
+                                                        properties);
+                                                throw AzureCloudException.create(e);
+                                            }
+                                            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                    "Provision",
+                                                    properties);
+                                            template.getTemplateProvisionStrategy().success();
+                                            return agentNode;
                                         }
                                     }), template.getNoOfParallelJobs()));
                         }
