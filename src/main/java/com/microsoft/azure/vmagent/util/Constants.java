@@ -194,6 +194,9 @@ public final class Constants {
             = "Post Provisioning Failure: Not able to authenticate via username and "
             + " Image may not be supporting password authentication , marking template has disabled";
 
+    public static final String AGENT_POST_PROV_NULL_COMPUTER
+            = "Post Provisioning Failure: 'Computer' was null";
+
     public static final String AGENT_POST_PROV_CONN_FAIL
             = "Post Provisioning Failure: Not able to connect to agent machine. "
             + "Ensure that ssh server is configured properly";

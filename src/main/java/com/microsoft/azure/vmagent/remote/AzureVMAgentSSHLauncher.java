@@ -107,9 +107,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         SlaveComputer slaveComputer = agent.getComputer();
         if (slaveComputer == null) {
             LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: Got null computer.");
-            handleLaunchFailure(agent, Constants.AGENT_POST_PROV_AUTH_FAIL);
+            handleLaunchFailure(agent, Constants.AGENT_POST_PROV_NULL_COMPUTER);
             return;
         }
+
         try {
             session = connectToSsh(agent);
         } catch (UnknownHostException e) {
