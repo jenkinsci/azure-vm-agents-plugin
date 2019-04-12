@@ -43,6 +43,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     private boolean doNotUseMachineIfInitFails;
 
     private boolean enableMSI;
+    
+    private boolean enableUAMI;
+    
+    private String uamiID;
 
     private String virtualNetworkName;
 
@@ -69,6 +73,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.executeInitScriptAsRoot = true;
         this.doNotUseMachineIfInitFails = true;
         this.enableMSI = false;
+        this.enableUAMI = false;
+        this.uamiID = "";
         this.usePrivateIP = false;
         this.noOfParallelJobs = "1";
         this.templateDisabled = false;
@@ -145,6 +151,16 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public T withEnableMSI(boolean enableMSI) {
         this.enableMSI = enableMSI;
+        return (T) this;
+    }    
+    
+    public T withEnableUAMI(boolean enableUAMI) {
+        this.enableUAMI = enableUAMI;
+        return (T) this;
+    }
+    
+    public T withGetUamiID(String uamiID) {
+        this.uamiID = uamiID;
         return (T) this;
     }
 
@@ -262,6 +278,14 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isEnableMSI() {
         return enableMSI;
+    }    
+    
+    public boolean isEnableUAMI() {
+        return enableUAMI;
+    }
+
+    public String getUamiID() {
+        return uamiID;
     }
 
     public String getVirtualNetworkName() {

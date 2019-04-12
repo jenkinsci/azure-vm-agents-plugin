@@ -79,7 +79,7 @@ import java.util.logging.Logger;
  * @author Suresh Nallamilli
  */
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, Serializable {
-    private static final long serialVersionUID = 1574325691L;
+    private static final long serialVersionUID = 1574325692L;
 
     public static class ImageReferenceTypeClass {
         private String image;
@@ -298,6 +298,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private boolean doNotUseMachineIfInitFails;
 
     private final boolean enableMSI;
+    
+    private final boolean enableUAMI;
+    
+    private final String uamiID;
 
     private AzureVMCloudBaseRetentionStrategy retentionStrategy;
 
@@ -342,7 +346,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateStatusDetails,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
-            boolean enableMSI) {
+            boolean enableMSI,
+            boolean enableUAMI,
+            String uamiID) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -400,6 +406,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.enableMSI = enableMSI;
+        this.enableUAMI = enableUAMI;
+        this.uamiID = uamiID;
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
@@ -472,6 +480,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? true : template.getDoNotUseMachineIfInitFails());
         templateProperties.put("enableMSI",
                 isBasic ? false : template.isEnableMSI());
+        templateProperties.put("enableUAMI",
+                isBasic ? false : template.isEnableUAMI());
+        templateProperties.put("uamiID",
+                isBasic ? false : template.getUamiID());
 
         return templateProperties;
     }
@@ -911,6 +923,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     public boolean isEnableMSI() {
         return enableMSI;
     }
+    
+    public boolean isEnableUAMI() {
+        return enableUAMI;
+    }
+
+    public String getUamiID() {
+        return uamiID;
+    }   
 
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
@@ -948,6 +968,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withRunScriptAsRoot(getExecuteInitScriptAsRoot())
                 .withDoNotUseMachineIfInitFails(getDoNotUseMachineIfInitFails())
                 .withEnableMSI(isEnableMSI())
+                .withEnableUAMI(isEnableUAMI())
+                .withGetUamiID(getUamiID())
                 .build();
     }
 

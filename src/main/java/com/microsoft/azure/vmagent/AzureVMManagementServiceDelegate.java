@@ -338,6 +338,8 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             boolean msiEnabled = template.isEnableMSI();
+            boolean uamiEnabled = template.isEnableUAMI();
+            String uamiID = template.getUamiID();
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = AvailabilityType.AVAILABILITY_SET.getName().equals(availabilityType);
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
@@ -955,6 +957,8 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
                     (Boolean) properties.get("enableMSI"),
+                    (Boolean) properties.get("enableUAMI"),
+                    (String) properties.get("uamiID"),
                     template,
                     fqdn);
         } catch (FormException e) {

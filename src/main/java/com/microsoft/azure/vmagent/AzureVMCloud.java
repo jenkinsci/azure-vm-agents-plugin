@@ -17,6 +17,9 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.microsoft.azure.PagedList;
@@ -24,6 +27,7 @@ import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.resources.Deployment;
+import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.resources.DeploymentOperation;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.util.AzureCredentials;
@@ -84,6 +88,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Date;
+
 import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
 import static hudson.init.InitMilestone.PLUGINS_STARTED;
 
@@ -123,6 +131,8 @@ public class AzureVMCloud extends Cloud {
 
     // Approximate virtual machine count.  Updated periodically.
     private int approximateVirtualMachineCount;
+
+    private static final String EMBEDDED_TEMPLATE_UAMI = "/enableUAMI.json";
 
     private transient Supplier<Azure> azureClient = createAzureClientSupplier();
 
@@ -510,6 +520,32 @@ public class AzureVMCloud extends Cloud {
         }
         return null;
     }
+    
+    private static void putVariable(JsonNode template, String name, String value) {
+        ObjectNode.class.cast(template.get("variables")).put(name, value);
+    }
+    
+    private String enableUAMI(String vmBaseName, String uamiID) throws IOException{
+        
+        InputStream embeddedTemplate = null;
+        JsonNode tmp = null;
+        try {
+         embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI);
+        final ObjectMapper mapper = new ObjectMapper();
+        
+        tmp = mapper.readTree(embeddedTemplate);
+        putVariable(tmp, "vmName", vmBaseName);
+        putVariable(tmp, "uamiID", uamiID);
+        
+       } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "AzureVMCloud: deployment: Unable to deploy", e);
+        } finally {
+            if (embeddedTemplate != null) {
+                embeddedTemplate.close();
+            }
+        }
+        return tmp.toString();
+    }
 
     /**
      * Returns agent template associated with the name.
@@ -603,7 +639,29 @@ public class AzureVMCloud extends Cloud {
                                 LOGGER.log(Level.INFO,
                                         "AzureVMCloud: createProvisionedAgent: VM available: {0}",
                                         resource);
+                                        
+                                Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
+                                boolean isEnabledUAMI = (boolean) properties.get("enableUAMI");
+                                                
+                                if (isEnabledUAMI) {
+                                    String uamiID = (String) properties.get("uamiID");
+                                    final Azure myAzureClient = AzureClientUtil.getClient(credentialsId);
+                                    final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), new Date(System.currentTimeMillis()));
 
+                                    // -- execute template UAMI
+                                    myAzureClient.deployments().define(deploymentName2)
+                                            .withExistingResourceGroup(template.getResourceGroupName())
+                                            .withTemplate(enableUAMI(resource,uamiID))
+                                            .withParameters("{}")
+                                            .withMode(DeploymentMode.INCREMENTAL)
+                                            .beginCreate();
+
+                                    try {
+                                        Thread.sleep(5 * MILLIS_IN_SECOND);
+                                    } catch (InterruptedException ex) {
+                                        // ignore
+                                    }
+                                }
                                 final VirtualMachine vm = newAzureClient.virtualMachines()
                                         .getByResourceGroup(resourceGroupName, resource);
                                 final OperatingSystemTypes osType = vm.storageProfile().osDisk().osType();
