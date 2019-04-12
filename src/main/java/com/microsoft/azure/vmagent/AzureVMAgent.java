@@ -32,6 +32,7 @@ import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
+import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
@@ -447,7 +448,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @CheckForNull
     public AzureVMCloud getCloud() {
-        return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+        return (AzureVMCloud) Jenkins.get().getCloud(cloudName);
     }
 
     public synchronized void shutdown(Localizable reason) {
@@ -459,8 +460,14 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
 
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: Add suspended status for node {0}", this.getNodeName());
-        this.getComputer().setAcceptingTasks(false);
-        this.getComputer().disconnect(OfflineCause.create(reason));
+        SlaveComputer computer = this.getComputer();
+        if (computer == null) {
+            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: could not retrieve computer for agent {0}",
+                    this.getDisplayName());
+            return;
+        }
+        computer.setAcceptingTasks(false);
+        computer.disconnect(OfflineCause.create(reason));
         LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
                 getDisplayName());
 
@@ -484,15 +491,16 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      * @throws Exception On error
      */
     public synchronized void deprovision(Localizable reason) throws Exception {
-        if (Jenkins.getInstance().getNode(this.name) == null || this.getComputer() == null) {
+        SlaveComputer computer = this.getComputer();
+        if (Jenkins.get().getNode(this.name) == null || computer == null) {
             return;
         }
 
         LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}, for reason: {1}",
                 new Object[]{this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()});
 
-        this.getComputer().setAcceptingTasks(false);
-        this.getComputer().disconnect(OfflineCause.create(reason));
+        computer.setAcceptingTasks(false);
+        computer.disconnect(OfflineCause.create(reason));
 
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
 
@@ -504,7 +512,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             parentCloud.adjustVirtualMachineCount(-1);
         }
 
-        Jenkins.getInstance().removeNode(this);
+        Jenkins.get().removeNode(this);
 
         final Map<String, String> properties = new HashMap<>();
         properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());

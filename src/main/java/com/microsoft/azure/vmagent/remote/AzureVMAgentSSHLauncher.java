@@ -104,6 +104,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         boolean successful = false;
         Session session = null;
 
+        SlaveComputer slaveComputer = agent.getComputer();
+        if (slaveComputer == null) {
+            LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: Got null computer.");
+            handleLaunchFailure(agent, Constants.AGENT_POST_PROV_NULL_COMPUTER);
+            return;
+        }
+
         try {
             session = connectToSsh(agent);
         } catch (UnknownHostException e) {
@@ -126,7 +133,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             }
         } finally {
             if (session == null) {
-                agent.getComputer().setAcceptingTasks(false);
+                slaveComputer.setAcceptingTasks(false);
                 agent.setCleanUpAction(CleanUpAction.DELETE, Messages._Agent_Failed_To_Connect());
                 return;
             }
@@ -278,7 +285,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 if (cleanUpReason == null) {
                     cleanUpReason = Messages._Agent_Failed_To_Connect();
                 }
-                agent.getComputer().setAcceptingTasks(false);
+                slaveComputer.setAcceptingTasks(false);
                 // Set the machine to be deleted by the cleanup task
                 agent.setCleanUpAction(CleanUpAction.DELETE, cleanUpReason);
             }
