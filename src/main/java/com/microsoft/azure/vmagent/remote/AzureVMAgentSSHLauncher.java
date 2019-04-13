@@ -319,6 +319,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     }
 
     private void copyFileToRemote(Session jschSession, InputStream stream, String remotePath) throws Exception {
+
         LOGGER.log(Level.INFO,
                 "AzureVMAgentSSHLauncher: copyFileToRemote: Initiating file transfer to {0}",
                 remotePath);
