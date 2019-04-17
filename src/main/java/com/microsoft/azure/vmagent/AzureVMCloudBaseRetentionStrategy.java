@@ -3,6 +3,7 @@ package com.microsoft.azure.vmagent;
 import hudson.model.Computer;
 import hudson.node_monitors.DiskSpaceMonitor;
 import hudson.node_monitors.DiskSpaceMonitorDescriptor;
+import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 
@@ -38,7 +39,12 @@ public abstract class AzureVMCloudBaseRetentionStrategy extends RetentionStrateg
         DiskSpaceMonitorDescriptor.DiskSpace freeSpace = monitor.getFreeSpace(agent);
         long freeSpaceInMb = freeSpace.size / BYTES_IN_MB;
         if (freeSpaceInMb < FREE_SPACE_THRESHOLD_MB) {
-            agent.setAcceptingTasks(false);
+            agent.setTemporarilyOffline(true, OfflineCause.create(Messages._Limit_Disk_Space()));
+        } else {
+            if (agent.isOffline() && agent.getOfflineCauseReason().equals(Messages.Limit_Disk_Space())) {
+                agent.setTemporarilyOffline(false, null);
+            }
+
         }
     }
 }
