@@ -132,6 +132,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             }
+        } else {
+            checkDiskSpace(agentNode);
         }
         return 1;
     }

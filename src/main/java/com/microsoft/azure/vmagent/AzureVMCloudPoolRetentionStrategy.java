@@ -129,7 +129,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         }
     }
 
-    private static synchronized void checkPoolSizeAndDelete(AzureVMComputer agentComputer, int poolSize) {
+    private synchronized void checkPoolSizeAndDelete(AzureVMComputer agentComputer, int currentPoolSize) {
         int count = 0;
         List<Computer> computers = Arrays.asList(Jenkins.getInstance().getComputers());
         for (Computer computer : computers) {
@@ -143,11 +143,13 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
             }
         }
 
-        if (count > poolSize) {
+        if (count > currentPoolSize) {
             LOGGER.log(Level.INFO, "Delete VM {0} for pool size exceed limit: {1}",
                     new Object[]{agentComputer, count});
             tryDeleteWhenIdle(agentComputer);
             return;
+        } else {
+            checkDiskSpace(agentComputer);
         }
     }
 

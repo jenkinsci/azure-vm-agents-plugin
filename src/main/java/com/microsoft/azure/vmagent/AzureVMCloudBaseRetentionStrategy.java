@@ -1,6 +1,8 @@
 package com.microsoft.azure.vmagent;
 
 import hudson.model.Computer;
+import hudson.node_monitors.DiskSpaceMonitor;
+import hudson.node_monitors.DiskSpaceMonitorDescriptor;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 
@@ -11,6 +13,8 @@ public abstract class AzureVMCloudBaseRetentionStrategy extends RetentionStrateg
         implements Serializable {
 
     private static final transient long LAPSE_START_JENKINS = TimeUnit.MINUTES.toMillis(3);
+    private static final int FREE_SPACE_THRESHOLD_MB = 100;
+    private static final int BYTES_IN_MB = 1024 * 1024;
 
     public void resetShutdownVMStatus(final AzureVMAgent agent) {
         Computer computer = Jenkins.getInstance().toComputer();
@@ -26,6 +30,15 @@ public abstract class AzureVMCloudBaseRetentionStrategy extends RetentionStrateg
                     }
                 }
             });
+        }
+    }
+
+    protected void checkDiskSpace(AzureVMComputer agent) {
+        DiskSpaceMonitor monitor = new DiskSpaceMonitor();
+        DiskSpaceMonitorDescriptor.DiskSpace freeSpace = monitor.getFreeSpace(agent);
+        long freeSpaceInMb = freeSpace.size / BYTES_IN_MB;
+        if (freeSpaceInMb < FREE_SPACE_THRESHOLD_MB) {
+            agent.setAcceptingTasks(false);
         }
     }
 }
