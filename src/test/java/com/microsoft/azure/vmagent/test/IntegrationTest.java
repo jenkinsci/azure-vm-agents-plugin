@@ -367,7 +367,7 @@ public class IntegrationTest {
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
-        when(templateMock.getImageReferenceType()).thenReturn(ImageReferenceType.REFERENCE.getName());
+        when(templateMock.getImageReferenceType().getType()).thenReturn(ImageReferenceType.REFERENCE); // TODO this probably needs fix
         when(templateMock.getImageId()).thenReturn(testEnv.azureImageId);
         when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
         when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);

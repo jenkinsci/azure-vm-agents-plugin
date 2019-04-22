@@ -93,6 +93,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String galleryImageVersion;
         private String gallerySubscriptionId;
         private String galleryResourceGroup;
+        private ImageReferenceType type;
 
         @DataBoundConstructor
         public ImageReferenceTypeClass(
@@ -118,6 +119,25 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.galleryImageVersion = galleryImageVersion;
             this.gallerySubscriptionId = gallerySubscriptionId;
             this.galleryResourceGroup = galleryResourceGroup;
+
+            this.type = getType(image, imageId, galleryName);
+        }
+
+        private ImageReferenceType getType(String image, String imageId, String galleryName) {
+            if (image != null) {
+                return ImageReferenceType.CUSTOM;
+            }
+            if (imageId != null) {
+                return ImageReferenceType.CUSTOM_IMAGE;
+            }
+            if (galleryName != null) {
+                return ImageReferenceType.GALLERY;
+            }
+            return ImageReferenceType.REFERENCE;
+        }
+
+        public ImageReferenceType getType() {
+            return type;
         }
 
         public String getImage() {
@@ -221,7 +241,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     // Image Configuration
     private String imageTopLevelType;
 
-    private final String imageReferenceType;
+    private final ImageReferenceTypeClass imageReferenceType;
 
     private String builtInImage;
 
@@ -307,7 +327,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateDesc,
             String labels,
             String location,
-            AvailabilityTypeClass availabilityTypeClass,
+            String availabilityType,
             String virtualMachineSize,
             String storageAccountNameReferenceType,
             String storageAccountType,
@@ -323,8 +343,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             boolean isInstallDocker,
             String osType,
             String imageTopLevelType,
-            boolean imageReference,
-            ImageReferenceTypeClass imageReferenceTypeClass,
+            ImageReferenceTypeClass imageReferenceType,
             String agentLaunchMethod,
             boolean preInstallSsh,
             String initScript,
@@ -339,7 +358,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             AzureVMCloudBaseRetentionStrategy retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
-            String templateStatusDetails,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI) {
@@ -347,8 +365,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.templateDesc = templateDesc;
         this.labels = labels;
         this.location = location;
-        this.availabilityType = getAvailabilityType(availabilityTypeClass);
-        this.availabilitySet = availabilityTypeClass == null ? null : availabilityTypeClass.getAvailabilitySet();
+        this.availabilityType = availabilityType;
+        this.availabilitySet = availabilityType; // TODO did this wrong, need to rework
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
         this.storageAccountName = getStorageAccountName(
@@ -368,23 +386,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
-        this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
         this.builtInImage = builtInImage;
         this.isInstallDocker = isInstallDocker;
         this.isInstallGit = isInstallGit;
         this.isInstallMaven = isInstallMaven;
-        this.image = imageReferenceTypeClass.getImage();
+        this.imageReferenceType = imageReferenceType;
+        this.image = imageReferenceType.getImage();
         this.osType = osType;
-        this.imageId = imageReferenceTypeClass.getImageId();
-        this.imagePublisher = imageReferenceTypeClass.getImagePublisher();
-        this.imageOffer = imageReferenceTypeClass.getImageOffer();
-        this.imageSku = imageReferenceTypeClass.getImageSku();
-        this.imageVersion = imageReferenceTypeClass.getImageVersion();
-        this.galleryName = imageReferenceTypeClass.getGalleryName();
-        this.galleryImageDefinition = imageReferenceTypeClass.getGalleryImageDefinition();
-        this.galleryImageVersion = imageReferenceTypeClass.getGalleryImageVersion();
-        this.gallerySubscriptionId = imageReferenceTypeClass.getGallerySubscriptionId();
-        this.galleryResourceGroup = imageReferenceTypeClass.getGalleryResourceGroup();
+        this.imageId = imageReferenceType.getImageId();
+        this.imagePublisher = imageReferenceType.getImagePublisher();
+        this.imageOffer = imageReferenceType.getImageOffer();
+        this.imageSku = imageReferenceType.getImageSku();
+        this.imageVersion = imageReferenceType.getImageVersion();
+        this.galleryName = imageReferenceType.getGalleryName();
+        this.galleryImageDefinition = imageReferenceType.getGalleryImageDefinition();
+        this.galleryImageVersion = imageReferenceType.getGalleryImageVersion();
+        this.gallerySubscriptionId = imageReferenceType.getGallerySubscriptionId();
+        this.galleryResourceGroup = imageReferenceType.getGalleryResourceGroup();
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -521,10 +539,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
 
     public boolean isType(String type) {
-        if (this.imageReferenceType == null && type.equals("reference")) {
+        if (this.imageReferenceType != null && this.imageReferenceType.type == ImageReferenceType.REFERENCE) {
             return true;
         }
-        return type != null && type.equalsIgnoreCase(this.imageReferenceType);
+        return type != null && this.imageReferenceType != null &&  ImageReferenceType.get(type) == this.imageReferenceType.type;
     }
 
     public boolean isTopLevelType(String type) {
@@ -665,7 +683,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return availabilityType;
     }
 
-    public String getImageReferenceType() {
+    public ImageReferenceTypeClass getImageReferenceType() {
         return imageReferenceType;
     }
 
@@ -1023,7 +1041,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 storageAccountType,
                 noOfParallelJobs + "",
                 imageTopLevelType,
-                ImageReferenceType.get(imageReferenceType),
+                imageReferenceType.type,
                 builtInImage,
                 image,
                 osType,

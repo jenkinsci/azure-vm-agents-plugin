@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.microsoft.azure.AzureClient;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
@@ -30,7 +29,6 @@ import com.microsoft.azure.management.network.NetworkSecurityGroup;
 import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
 import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.storage.*;
@@ -227,10 +225,10 @@ public final class AzureVMManagementServiceDelegate {
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
 
-            Boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
-            ImageReferenceType referenceType = ImageReferenceType.get(template.getImageReferenceType());
+            boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
+            ImageReferenceType referenceType = template.getImageReferenceType().getType();
 
-            final Boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
+            final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
                     && (isBasic || referenceType == ImageReferenceType.REFERENCE
                     || template.getPreInstallSsh());

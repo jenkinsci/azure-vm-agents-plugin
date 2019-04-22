@@ -25,7 +25,7 @@ public final class TemplateUtil {
                 && a.getIsInstallDocker() == b.getIsInstallDocker()
                 && a.getIsInstallGit() == b.getIsInstallGit()
                 && a.getIsInstallMaven() == b.getIsInstallMaven()
-                && StringUtils.equals(a.getImageReferenceType(), b.getImageReferenceType())
+                && a.getImageReferenceType().getType() == b.getImageReferenceType().getType()
                 && StringUtils.equals(a.getImage(), b.getImage())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
                 && StringUtils.equals(a.getImageId(), b.getImageId())

@@ -17,7 +17,6 @@ package com.microsoft.azure.vmagent;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -40,7 +39,6 @@ import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
 import hudson.Extension;
-import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
 import hudson.logging.LogRecorderManager;
@@ -81,6 +79,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -127,36 +126,10 @@ public class AzureVMCloud extends Cloud {
     private transient Supplier<Azure> azureClient = createAzureClientSupplier();
 
     private Supplier<Azure> createAzureClientSupplier() {
-        return Suppliers.memoize(new Supplier<Azure>() {
-            @Override
-            public Azure get() {
-                return AzureClientUtil.getClient(credentialsId);
-            }
-        });
+        return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
     }
 
     @DataBoundConstructor
-    public AzureVMCloud(
-            String cloudName,
-            String id,
-            String azureCredentialsId,
-            String maxVirtualMachinesLimit,
-            String deploymentTimeout,
-            String resourceGroupReferenceType,
-            String newResourceGroupName,
-            String existingResourceGroupName,
-            List<AzureVMAgentTemplate> vmTemplates) {
-        this(
-                cloudName,
-                azureCredentialsId,
-                maxVirtualMachinesLimit,
-                deploymentTimeout,
-                resourceGroupReferenceType,
-                newResourceGroupName,
-                existingResourceGroupName,
-                vmTemplates);
-    }
-
     public AzureVMCloud(
             String cloudName,
             String azureCredentialsId,
@@ -1017,7 +990,7 @@ public class AzureVMCloud extends Cloud {
             return LOG_RECORDER_NAME;
         }
 
-        @Initializer(before = InitMilestone.PLUGINS_STARTED)
+        @Initializer(before = PLUGINS_STARTED)
         public static void addAliases() {
             Jenkins.XSTREAM2.addCompatibilityAlias(
                     "com.microsoft.azure.AzureVMCloud", AzureVMCloud.class);
