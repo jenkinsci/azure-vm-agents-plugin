@@ -691,29 +691,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return imageTopLevelType;
     }
 
-    public String getAvailabilityType(AvailabilityTypeClass availabilityTypeClass) {
-        if (availabilityTypeClass == null) {
-            return AvailabilityType.UNKNOWN.getName();
-        }
-        if (availabilityTypeClass.getAvailabilitySet() != null) {
-            return AvailabilityType.AVAILABILITY_SET.getName();
-        }
-        return AvailabilityType.UNKNOWN.getName();
-    }
-
-    public String getImageReferenceType(ImageReferenceTypeClass imageReferenceTypeClass) {
-        if (imageReferenceTypeClass.image != null) {
-            return ImageReferenceType.CUSTOM.getName();
-        }
-        if (imageReferenceTypeClass.imageId != null) {
-            return ImageReferenceType.CUSTOM_IMAGE.getName();
-        }
-        if (imageReferenceTypeClass.getGalleryName() != null) {
-            return ImageReferenceType.GALLERY.getName();
-        }
-        return ImageReferenceType.REFERENCE.getName();
-    }
-
     public String getBuiltInImage() {
         return builtInImage;
     }
