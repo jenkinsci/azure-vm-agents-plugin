@@ -158,7 +158,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
     @Extension
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
-    @Symbol("azureVMCloudRetentionStrategy")
+    @Symbol("azureVMCloudRetentionStrategy") //  TODO evaluate impact of renaming class to fix the default symbol name
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
         @Override
         public String getDisplayName() {

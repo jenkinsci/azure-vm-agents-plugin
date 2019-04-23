@@ -230,7 +230,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 shutdownOnIdle,
                 eligibleForReuse,
                 deploymentName,
-                0,
+                template.getRetentionTimeInMin(),
                 initScript,
                 azureCredentialsId,
                 null,
