@@ -1,6 +1,7 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.Constants;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class ProvisionStrategy {
     private static final long INIT_INTERVAL = 10 * 1000; // 10 seconds
@@ -13,6 +14,7 @@ public class ProvisionStrategy {
 
     private String configurationStatus;
 
+    @DataBoundConstructor // needed by jcasc
     public ProvisionStrategy() {
         this.interval = INIT_INTERVAL;
         this.configurationStatus = Constants.UNVERIFIED;

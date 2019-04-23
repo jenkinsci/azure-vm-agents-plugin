@@ -196,7 +196,7 @@ public class AzureVMCloud extends Cloud {
             // Walk the list of templates and assign the parent cloud (which is transient).
             ensureVmTemplateList();
             for (AzureVMAgentTemplate template : vmTemplates) {
-                template.setAzureCloud(this);
+                template.addAzureCloudReference(this);
             }
         }
 
@@ -312,7 +312,7 @@ public class AzureVMCloud extends Cloud {
         synchronized (this) {
             ensureVmTemplateList();
             vmTemplates.add(newTemplate);
-            newTemplate.setAzureCloud(this);
+            newTemplate.addAzureCloudReference(this);
         }
     }
 
@@ -329,7 +329,7 @@ public class AzureVMCloud extends Cloud {
             vmTemplates.clear();
             for (AzureVMAgentTemplate newTemplate : newTemplates) {
                 vmTemplates.add(newTemplate);
-                newTemplate.setAzureCloud(this);
+                newTemplate.addAzureCloudReference(this);
             }
         }
     }
@@ -906,7 +906,7 @@ public class AzureVMCloud extends Cloud {
                                         terminateEx);
                                 // Do not throw to avoid it being recorded
                             }
-                            template.getAzureCloud().adjustVirtualMachineCount(-1);
+                            template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1);
                             // Update the template status given this new issue.
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }

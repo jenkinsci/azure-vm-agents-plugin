@@ -16,7 +16,6 @@
 package com.microsoft.azure.vmagent.test;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
@@ -54,13 +53,10 @@ import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
-import jenkins.model.Jenkins;
-import org.eclipse.jetty.util.security.Credential;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 
@@ -368,15 +364,15 @@ public class IntegrationTest {
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
         when(templateMock.getImageReferenceType().getType()).thenReturn(ImageReferenceType.REFERENCE); // TODO this probably needs fix
-        when(templateMock.getImageId()).thenReturn(testEnv.azureImageId);
-        when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
-        when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
-        when(templateMock.getImageSku()).thenReturn(testEnv.azureImageSku);
-        when(templateMock.getImageVersion()).thenReturn(testEnv.azureImageVersion);
+        when(templateMock.getImageReferenceType().getImageId()).thenReturn(testEnv.azureImageId);
+        when(templateMock.getImageReferenceType().getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
+        when(templateMock.getImageReferenceType().getImageOffer()).thenReturn(testEnv.azureImageOffer);
+        when(templateMock.getImageReferenceType().getImageSku()).thenReturn(testEnv.azureImageSku);
+        when(templateMock.getImageReferenceType().getImageVersion()).thenReturn(testEnv.azureImageVersion);
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
-        when(templateMock.getImage()).thenReturn("");
+        when(templateMock.getImageReferenceType().getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
-        when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+        when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
