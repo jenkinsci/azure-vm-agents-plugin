@@ -68,7 +68,7 @@ public class ConfigAsCodeTest {
         assertThat(template.getPreInstallSsh(), is(true));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
-        assertThat(retentionStrategy.getIdleTerminationMinutes(), is(60));
+        assertThat(retentionStrategy.getIdleTerminationMinutes(), is(60L));
 
         assertThat(template.isShutdownOnIdle(), is(false));
 

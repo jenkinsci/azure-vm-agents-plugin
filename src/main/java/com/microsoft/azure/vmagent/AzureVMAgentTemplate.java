@@ -296,7 +296,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final boolean enableMSI;
 
-    private AzureVMCloudBaseRetentionStrategy retentionStrategy;
+    private RetentionStrategy retentionStrategy;
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(
@@ -332,7 +332,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            AzureVMCloudBaseRetentionStrategy retentionStrategy,
+            RetentionStrategy retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
             boolean executeInitScriptAsRoot,
@@ -896,7 +896,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return labelDataSet;
     }
 
-    public AzureVMCloudBaseRetentionStrategy getRetentionStrategy() {
+    public RetentionStrategy getRetentionStrategy() {
         return retentionStrategy;
     }
 
@@ -955,7 +955,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 virtualNetworkName,
                 virtualNetworkResourceGroupName,
                 subnetName,
-                retentionStrategy,
+                (AzureVMCloudBaseRetentionStrategy) retentionStrategy,
                 jvmOptions,
                 getResourceGroupName(),
                 true,
