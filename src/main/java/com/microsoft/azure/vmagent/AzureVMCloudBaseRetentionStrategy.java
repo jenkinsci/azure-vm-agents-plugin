@@ -3,7 +3,6 @@ package com.microsoft.azure.vmagent;
 import hudson.model.Computer;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
