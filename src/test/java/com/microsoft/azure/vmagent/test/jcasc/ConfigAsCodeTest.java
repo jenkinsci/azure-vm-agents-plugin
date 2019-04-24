@@ -1,30 +1,46 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
+import com.google.common.io.Resources;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
-import com.microsoft.azure.vmagent.builders.AzureVMCloudBuilder;
+import hudson.DescriptorExtensionList;
+import hudson.ExtensionList;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
+import hudson.slaves.Cloud;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
+import io.jenkins.plugins.casc.ConfigurationContext;
+import io.jenkins.plugins.casc.Configurator;
+import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.model.CNode;
+import io.jenkins.plugins.casc.model.Mapping;
+import io.jenkins.plugins.casc.model.Sequence;
 import jenkins.model.Jenkins;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
-import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
+import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
+import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class ConfigAsCodeTest {
 
-    @Rule
-    public JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
+    @ClassRule
+    @ConfiguredWithCode("basic.yaml")
+    public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    @ConfiguredWithCode("basic.yaml")
     public void importBasicConfiguration() {
         AzureVMCloud cloud = (AzureVMCloud) r.jenkins.clouds.get(0);
 
@@ -85,34 +101,16 @@ public class ConfigAsCodeTest {
     }
 
     @Test
-    public void export_configuration() throws Exception {
-        AzureVMCloud myCloud = new AzureVMCloudBuilder()
-                .withCloudName("myAzure")
-                .withAzureCredentialsId("<your azure credential ID>")
-                .withNewResourceGroupName("<your Resource Group Name>")
-                .addNewTemplate()
-                .withName("ubuntu")
-                .withLabels("ubuntu")
-                .withLocation("East US")
-                .withVirtualMachineSize("Standard_DS2_v2")
-                .withNewStorageAccount("<your Storage Account Name>")
-                .addNewBuiltInImage()
-                .withBuiltInImageName("Ubuntu 16.14 LTS")
-                .withInstallGit(true)
-                .withInstallMaven(true)
-                .withInstallDocker(true)
-                .endBuiltInImage()
-                .withAdminCredential("<your admin credential ID>")
-                .endTemplate()
-                .build();
+    public void exportBasicConfiguration() throws Exception {
+        ConfiguratorRegistry registry = ConfiguratorRegistry.get();
+        ConfigurationContext context = new ConfigurationContext(registry);
+        final CNode cloud = getJenkinsRoot(context).get("clouds");
 
-        Jenkins.get().clouds.add(myCloud);
+        String exportedCloud = toYamlString(cloud);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ConfigurationAsCode.get().export(outputStream);
+        String expectedYaml = new String(Files.readAllBytes(Paths.get(getClass()
+                .getResource("expectedBasic.yaml").toURI())));
 
-        String output = outputStream.toString(StandardCharsets.UTF_8.name());
-
-        System.out.println(output);
+        assertThat(exportedCloud, is(expectedYaml));
     }
 }

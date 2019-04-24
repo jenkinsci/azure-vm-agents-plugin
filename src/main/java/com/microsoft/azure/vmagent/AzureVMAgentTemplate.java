@@ -296,7 +296,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final boolean enableMSI;
 
-    private RetentionStrategy retentionStrategy;
+    private RetentionStrategy retentionStrategy; // TODO add unit test in jcasc demonstrating this
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(

@@ -1,0 +1,39 @@
+- azureVM:
+    azureCredentialsId: "azure-cred"
+    cloudName: "azure"
+    deploymentTimeout: 1200
+    maxVirtualMachinesLimit: 10
+    newResourceGroupName: "vm-agent"
+    resourceGroupReferenceType: "new"
+    vmTemplates:
+    - agentLaunchMethod: "SSH"
+      builtInImage: "Ubuntu 16.14 LTS"
+      credentialsId: "admin-cred"
+      diskType: "managed"
+      doNotUseMachineIfInitFails: true
+      enableMSI: false
+      executeInitScriptAsRoot: true
+      imageReferenceType:
+        imageVersion: "latest"
+      imageTopLevelType: "basic"
+      isInstallDocker: true
+      isInstallGit: true
+      isInstallMaven: true
+      labels: "ubuntu"
+      location: "East US"
+      newStorageAccountName: "agent-storage"
+      noOfParallelJobs: 1
+      osDiskSize: 0
+      osType: "Linux"
+      preInstallSsh: true
+      retentionStrategy:
+        azureVMCloudRetentionStrategy:
+          idleTerminationMinutes: 60
+      shutdownOnIdle: false
+      storageAccountNameReferenceType: "new"
+      storageAccountType: "Standard_LRS"
+      templateDisabled: false
+      templateName: "ubuntu"
+      usageMode: "Use this node as much as possible"
+      usePrivateIP: false
+      virtualMachineSize: "Standard_DS2_v2"
