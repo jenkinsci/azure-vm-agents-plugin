@@ -16,9 +16,9 @@
       imageReferenceType:
         imageVersion: "latest"
       imageTopLevelType: "basic"
-      isInstallDocker: true
-      isInstallGit: true
-      isInstallMaven: true
+      installDocker: true
+      installGit: true
+      installMaven: true
       labels: "ubuntu"
       location: "East US"
       newStorageAccountName: "agent-storage"

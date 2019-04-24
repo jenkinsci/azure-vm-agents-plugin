@@ -1,32 +1,18 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
-import com.google.common.io.Resources;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
-import hudson.DescriptorExtensionList;
-import hudson.ExtensionList;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
-import hudson.slaves.Cloud;
-import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
-import io.jenkins.plugins.casc.Configurator;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
-import io.jenkins.plugins.casc.model.Mapping;
-import io.jenkins.plugins.casc.model.Sequence;
-import jenkins.model.Jenkins;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -69,9 +55,9 @@ public class ConfigAsCodeTest {
 
         assertThat(template.getImageTopLevelType(), is("basic"));
 
-        assertThat(template.getIsInstallDocker(), is(true));
-        assertThat(template.getIsInstallGit(), is(true));
-        assertThat(template.getIsInstallMaven(), is(true));
+        assertThat(template.isInstallDocker(), is(true));
+        assertThat(template.isInstallGit(), is(true));
+        assertThat(template.isInstallMaven(), is(true));
 
         assertThat(template.getLabels(), is("ubuntu"));
         assertThat(template.getLocation(), is("East US"));

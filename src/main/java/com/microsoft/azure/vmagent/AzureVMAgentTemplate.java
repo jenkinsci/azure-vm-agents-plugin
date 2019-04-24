@@ -244,11 +244,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String builtInImage;
 
-    private final boolean isInstallGit;
+    private final boolean installGit;
 
-    private final boolean isInstallMaven;
+    private final boolean installMaven;
 
-    private final boolean isInstallDocker;
+    private final boolean installDocker;
 
     private final String osType;
 
@@ -315,9 +315,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String noOfParallelJobs,
             String usageMode,
             String builtInImage,
-            boolean isInstallGit,
-            boolean isInstallMaven,
-            boolean isInstallDocker,
+            boolean installGit,
+            boolean installMaven,
+            boolean installDocker,
             String osType,
             String imageTopLevelType,
             ImageReferenceTypeClass imageReferenceType,
@@ -364,9 +364,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
         this.builtInImage = builtInImage;
-        this.isInstallDocker = isInstallDocker;
-        this.isInstallGit = isInstallGit;
-        this.isInstallMaven = isInstallMaven;
+        this.installDocker = installDocker;
+        this.installGit = installGit;
+        this.installMaven = installMaven;
         this.imageReferenceType = imageReferenceType;
         this.osType = osType;
         this.shutdownOnIdle = shutdownOnIdle;
@@ -402,7 +402,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
         boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
         String imageSkuName =
-                template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
+                template.isInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
 
         templateProperties.put("imageId",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID)
@@ -471,19 +471,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             stringBuilder.append(
                     AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                             .get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
-            if (template.getIsInstallMaven()) {
+            if (template.isInstallMaven()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
             }
-            if (template.getIsInstallGit()) {
+            if (template.isInstallGit()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
             }
-            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
+            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.isInstallDocker()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
@@ -667,16 +667,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return builtInImage;
     }
 
-    public boolean getIsInstallGit() {
-        return isInstallGit;
+    public boolean isInstallGit() {
+        return installGit;
     }
 
-    public boolean getIsInstallMaven() {
-        return isInstallMaven;
+    public boolean isInstallMaven() {
+        return installMaven;
     }
 
-    public boolean getIsInstallDocker() {
-        return isInstallDocker;
+    public boolean isInstallDocker() {
+        return installDocker;
     }
 
     public String getOsType() {
@@ -876,9 +876,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public BuiltInImage getBuiltInImageInside() {
         return new BuiltInImageBuilder().withBuiltInImageName(getBuiltInImage())
-                .withInstallGit(getIsInstallGit())
-                .withInstallDocker(getIsInstallDocker())
-                .withInstallMaven(getIsInstallMaven())
+                .withInstallGit(isInstallGit())
+                .withInstallDocker(isInstallDocker())
+                .withInstallMaven(isInstallMaven())
                 .build();
     }
 
