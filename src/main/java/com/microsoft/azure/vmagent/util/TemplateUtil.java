@@ -29,10 +29,13 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getImageReferenceType().getImage(), b.getImageReferenceType().getImage())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
                 && StringUtils.equals(a.getImageReferenceType().getImageId(), b.getImageReferenceType().getImageId())
-                && StringUtils.equals(a.getImageReferenceType().getImagePublisher(), b.getImageReferenceType().getImagePublisher())
-                && StringUtils.equals(a.getImageReferenceType().getImageOffer(), b.getImageReferenceType().getImageOffer())
+                && StringUtils.equals(a.getImageReferenceType().getImagePublisher(),
+                b.getImageReferenceType().getImagePublisher())
+                && StringUtils.equals(a.getImageReferenceType().getImageOffer(),
+                b.getImageReferenceType().getImageOffer())
                 && StringUtils.equals(a.getImageReferenceType().getImageSku(), b.getImageReferenceType().getImageSku())
-                && StringUtils.equals(a.getImageReferenceType().getImageVersion(), b.getImageReferenceType().getImageVersion())
+                && StringUtils.equals(a.getImageReferenceType().getImageVersion(),
+                b.getImageReferenceType().getImageVersion())
                 && StringUtils.equals(a.getAgentLaunchMethod(), b.getAgentLaunchMethod())
                 && a.getPreInstallSsh() == b.getPreInstallSsh()
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())

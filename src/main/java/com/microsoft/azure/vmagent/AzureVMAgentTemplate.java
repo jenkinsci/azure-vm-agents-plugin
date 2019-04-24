@@ -52,8 +52,6 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -122,10 +120,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.gallerySubscriptionId = gallerySubscriptionId;
             this.galleryResourceGroup = galleryResourceGroup;
 
-            this.type = getType(image, imageId, galleryName);
+            this.type = determineType();
         }
 
-        private ImageReferenceType getType(String image, String imageId, String galleryName) {
+        private ImageReferenceType determineType() {
             if (image != null) {
                 return ImageReferenceType.CUSTOM;
             }
@@ -407,17 +405,22 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
 
         templateProperties.put("imageId",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID) : template.getImageReferenceType().getImageId());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID)
+                        : template.getImageReferenceType().getImageId());
         templateProperties.put("imagePublisher",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImageReferenceType().getImagePublisher());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER)
+                        : template.getImageReferenceType().getImagePublisher());
         templateProperties.put("imageOffer",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageReferenceType().getImageOffer());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER)
+                        : template.getImageReferenceType().getImageOffer());
         templateProperties.put("imageSku",
                 isBasic ? defaultProperties.get(imageSkuName) : template.getImageReferenceType().getImageSku());
         templateProperties.put("imageVersion",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageReferenceType().getImageVersion());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION)
+                        : template.getImageReferenceType().getImageVersion());
         templateProperties.put("galleryName",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_NAME) : template.getImageReferenceType().getGalleryName());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_NAME)
+                        : template.getImageReferenceType().getGalleryName());
         templateProperties.put("galleryImageDefinition",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_DEFINITION)
                         : template.getImageReferenceType().getGalleryImageDefinition());
@@ -510,7 +513,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         if (this.imageReferenceType != null && this.imageReferenceType.type == ImageReferenceType.REFERENCE) {
             return true;
         }
-        return type != null && this.imageReferenceType != null &&  ImageReferenceType.get(type) == this.imageReferenceType.type;
+        return type != null && this.imageReferenceType != null
+                && ImageReferenceType.get(type) == this.imageReferenceType.type;
     }
 
     public boolean isTopLevelType(String type) {

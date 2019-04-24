@@ -1,8 +1,6 @@
 package com.microsoft.azure.vmagent;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 public enum ImageReferenceType {
     UNKNOWN("unknown"),
