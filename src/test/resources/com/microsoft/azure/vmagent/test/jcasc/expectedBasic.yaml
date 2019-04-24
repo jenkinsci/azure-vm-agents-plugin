@@ -13,8 +13,8 @@
       doNotUseMachineIfInitFails: true
       enableMSI: false
       executeInitScriptAsRoot: true
-      imageReferenceType:
-        imageVersion: "latest"
+      image:
+        version: "latest"
       imageTopLevelType: "basic"
       installDocker: true
       installGit: true

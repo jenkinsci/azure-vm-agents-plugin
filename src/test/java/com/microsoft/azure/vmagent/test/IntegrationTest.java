@@ -363,14 +363,14 @@ public class IntegrationTest {
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
-        when(templateMock.getImageReferenceType().getType()).thenReturn(ImageReferenceType.REFERENCE); // TODO this probably needs fix
-        when(templateMock.getImageReferenceType().getImageId()).thenReturn(testEnv.azureImageId);
-        when(templateMock.getImageReferenceType().getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
-        when(templateMock.getImageReferenceType().getImageOffer()).thenReturn(testEnv.azureImageOffer);
-        when(templateMock.getImageReferenceType().getImageSku()).thenReturn(testEnv.azureImageSku);
-        when(templateMock.getImageReferenceType().getImageVersion()).thenReturn(testEnv.azureImageVersion);
+        when(templateMock.getImage().getType()).thenReturn(ImageReferenceType.REFERENCE); // TODO this probably needs fix
+        when(templateMock.getImage().getId()).thenReturn(testEnv.azureImageId);
+        when(templateMock.getImage().getPublisher()).thenReturn(testEnv.azureImagePublisher);
+        when(templateMock.getImage().getOffer()).thenReturn(testEnv.azureImageOffer);
+        when(templateMock.getImage().getSku()).thenReturn(testEnv.azureImageSku);
+        when(templateMock.getImage().getVersion()).thenReturn(testEnv.azureImageVersion);
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
-        when(templateMock.getImageReferenceType().getImage()).thenReturn("");
+        when(templateMock.getImage().getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
         when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);

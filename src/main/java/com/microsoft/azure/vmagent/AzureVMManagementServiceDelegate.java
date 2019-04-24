@@ -226,7 +226,7 @@ public final class AzureVMManagementServiceDelegate {
 
 
             boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
-            ImageReferenceType referenceType = template.getImageReferenceType().getType();
+            ImageReferenceType referenceType = template.getImage().getType();
 
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
@@ -304,17 +304,17 @@ public final class AzureVMManagementServiceDelegate {
 
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
-            // getImageId()->Custom Managed Image, here we need the last one: Image Reference
+            // getId()->Custom Managed Image, here we need the last one: Image Reference
             if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
-                    String imageVersion = StringUtils.isNotEmpty(template.getImageReferenceType().getImageVersion())
-                            ? template.getImageReferenceType().getImageVersion() : "latest";
+                    String imageVersion = StringUtils.isNotEmpty(template.getImage().getVersion())
+                            ? template.getImage().getVersion() : "latest";
                     VirtualMachineImage image = azureClient.virtualMachineImages().getImage(
                             locationName,
-                            template.getImageReferenceType().getImagePublisher(),
-                            template.getImageReferenceType().getImageOffer(),
-                            template.getImageReferenceType().getImageSku(),
+                            template.getImage().getPublisher(),
+                            template.getImage().getOffer(),
+                            template.getImage().getSku(),
                             imageVersion
                     );
                     if (image != null) {
@@ -335,9 +335,9 @@ public final class AzureVMManagementServiceDelegate {
                     } else {
                         LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
                                 "version:{3} when trying to add purchase plan to ARM template", new Object[]{
-                                template.getImageReferenceType().getImagePublisher(),
-                                template.getImageReferenceType().getImageOffer(),
-                                template.getImageReferenceType().getImageSku(),
+                                template.getImage().getPublisher(),
+                                template.getImage().getOffer(),
+                                template.getImage().getSku(),
                                 imageVersion});
                     }
                 }
@@ -379,16 +379,16 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imageSku");
             copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
-            putVariableIfNotBlank(tmp, "image", template.getImageReferenceType().getImage());
+            putVariableIfNotBlank(tmp, "image", template.getImage().getImage());
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion  galleryImageVersion;
-                String galleryImageVersionStr = template.getImageReferenceType().getGalleryImageVersion();
-                String galleryImageDefinition = template.getImageReferenceType().getGalleryImageDefinition();
-                String gallerySubscriptionId = template.getImageReferenceType().getGallerySubscriptionId();
-                String galleryResourceGroup = template.getImageReferenceType().getGalleryResourceGroup();
-                String galleryName = template.getImageReferenceType().getGalleryName();
+                String galleryImageVersionStr = template.getImage().getGalleryImageVersion();
+                String galleryImageDefinition = template.getImage().getGalleryImageDefinition();
+                String gallerySubscriptionId = template.getImage().getGallerySubscriptionId();
+                String galleryResourceGroup = template.getImage().getGalleryResourceGroup();
+                String galleryName = template.getImage().getGalleryName();
                 if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
                         StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
@@ -516,9 +516,9 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private boolean checkImageParameter(AzureVMAgentTemplate template) {
-        if (StringUtils.isBlank(template.getImageReferenceType().getImagePublisher())
-                || StringUtils.isBlank(template.getImageReferenceType().getImageOffer())
-                || StringUtils.isBlank(template.getImageReferenceType().getImageSku())) {
+        if (StringUtils.isBlank(template.getImage().getPublisher())
+                || StringUtils.isBlank(template.getImage().getOffer())
+                || StringUtils.isBlank(template.getImage().getSku())) {
             LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }
@@ -2191,7 +2191,7 @@ public final class AzureVMManagementServiceDelegate {
         } else if (imageReference.getType() == ImageReferenceType.CUSTOM_IMAGE) {
             // checkExistenceById would be better here but it returns HTTP 405
             try {
-                GenericResource r = azureClient.genericResources().getById(imageReference.getImageId());
+                GenericResource r = azureClient.genericResources().getById(imageReference.getId());
                 if (r == null) {
                     return Messages.Azure_GC_Template_ImageID_Not_Valid();
                 }
@@ -2232,25 +2232,25 @@ public final class AzureVMManagementServiceDelegate {
                 List<VirtualMachinePublisher> publishers =
                         azureClient.virtualMachineImages().publishers().listByRegion(locationName);
                 for (VirtualMachinePublisher publisher : publishers) {
-                    if (!publisher.name().equalsIgnoreCase(imageReference.getImagePublisher())) {
+                    if (!publisher.name().equalsIgnoreCase(imageReference.getPublisher())) {
                         continue;
                     }
                     for (VirtualMachineOffer offer : publisher.offers().list()) {
-                        if (!offer.name().equalsIgnoreCase(imageReference.getImageOffer())) {
+                        if (!offer.name().equalsIgnoreCase(imageReference.getOffer())) {
                             continue;
                         }
                         for (VirtualMachineSku sku : offer.skus().list()) {
-                            if (!sku.name().equalsIgnoreCase(imageReference.getImageSku())) {
+                            if (!sku.name().equalsIgnoreCase(imageReference.getSku())) {
                                 continue;
                             }
                             PagedList<VirtualMachineImage> images = sku.images().list();
                             if ((imageReference.getGalleryImageVersion().equalsIgnoreCase("latest")
-                                    || StringUtils.isEmpty(imageReference.getImageVersion())) && images.size() > 0) {
+                                    || StringUtils.isEmpty(imageReference.getVersion())) && images.size() > 0) {
                                 //the empty check is here to maintain backward compatibility
                                 return Constants.OP_SUCCESS;
                             }
                             for (VirtualMachineImage vmImage : images) {
-                                if (vmImage.version().equalsIgnoreCase(imageReference.getImageVersion())) {
+                                if (vmImage.version().equalsIgnoreCase(imageReference.getVersion())) {
                                     return Constants.OP_SUCCESS;
                                 }
                             }
@@ -2362,13 +2362,13 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 return Constants.OP_SUCCESS;
             } else if (imageReference.getType() == ImageReferenceType.CUSTOM_IMAGE &&
-                    StringUtils.isNotBlank(imageReference.getImageId())) {
+                    StringUtils.isNotBlank(imageReference.getId())) {
                 return Constants.OP_SUCCESS;
             } else if (imageReference.getType() == ImageReferenceType.REFERENCE
-                    && StringUtils.isNotBlank(imageReference.getImagePublisher())
-                    && StringUtils.isNotBlank(imageReference.getImageOffer())
-                    && StringUtils.isNotBlank(imageReference.getImageSku())
-                    && StringUtils.isNotBlank(imageReference.getImageVersion())) {
+                    && StringUtils.isNotBlank(imageReference.getPublisher())
+                    && StringUtils.isNotBlank(imageReference.getOffer())
+                    && StringUtils.isNotBlank(imageReference.getSku())
+                    && StringUtils.isNotBlank(imageReference.getVersion())) {
                 return Constants.OP_SUCCESS;
             } else if (imageReference.getType() == ImageReferenceType.GALLERY
                     && StringUtils.isNotBlank(imageReference.getGalleryName())

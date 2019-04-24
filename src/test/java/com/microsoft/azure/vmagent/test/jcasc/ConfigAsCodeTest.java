@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class ConfigAsCodeTest {
@@ -50,8 +49,8 @@ public class ConfigAsCodeTest {
         assertThat(template.isEnableMSI(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
 
-        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImageReferenceType();
-        assertThat(imageReference.getImageVersion(), is("latest"));
+        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImage();
+        assertThat(imageReference.getVersion(), is("latest"));
 
         assertThat(template.getImageTopLevelType(), is("basic"));
 

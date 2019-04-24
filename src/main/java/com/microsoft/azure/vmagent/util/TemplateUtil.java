@@ -25,17 +25,17 @@ public final class TemplateUtil {
                 && a.isInstallDocker() == b.isInstallDocker()
                 && a.isInstallGit() == b.isInstallGit()
                 && a.isInstallMaven() == b.isInstallMaven()
-                && a.getImageReferenceType().getType() == b.getImageReferenceType().getType()
-                && StringUtils.equals(a.getImageReferenceType().getImage(), b.getImageReferenceType().getImage())
+                && a.getImage().getType() == b.getImage().getType()
+                && StringUtils.equals(a.getImage().getImage(), b.getImage().getImage())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
-                && StringUtils.equals(a.getImageReferenceType().getImageId(), b.getImageReferenceType().getImageId())
-                && StringUtils.equals(a.getImageReferenceType().getImagePublisher(),
-                b.getImageReferenceType().getImagePublisher())
-                && StringUtils.equals(a.getImageReferenceType().getImageOffer(),
-                b.getImageReferenceType().getImageOffer())
-                && StringUtils.equals(a.getImageReferenceType().getImageSku(), b.getImageReferenceType().getImageSku())
-                && StringUtils.equals(a.getImageReferenceType().getImageVersion(),
-                b.getImageReferenceType().getImageVersion())
+                && StringUtils.equals(a.getImage().getId(), b.getImage().getId())
+                && StringUtils.equals(a.getImage().getPublisher(),
+                b.getImage().getPublisher())
+                && StringUtils.equals(a.getImage().getOffer(),
+                b.getImage().getOffer())
+                && StringUtils.equals(a.getImage().getSku(), b.getImage().getSku())
+                && StringUtils.equals(a.getImage().getVersion(),
+                b.getImage().getVersion())
                 && StringUtils.equals(a.getAgentLaunchMethod(), b.getAgentLaunchMethod())
                 && a.getPreInstallSsh() == b.getPreInstallSsh()
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())
