@@ -17,16 +17,17 @@ import java.nio.file.Paths;
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
-public class ConfigAsCodeTest {
+public class AdvancedConfigAsCodeTest {
 
     @ClassRule
-    @ConfiguredWithCode("basic.yaml")
+    @ConfiguredWithCode("advanced.yaml")
     public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    public void importBasicConfiguration() {
+    public void importAdvancedConfiguration() {
         AzureVMCloud cloud = (AzureVMCloud) r.jenkins.clouds.get(0);
 
         // cloud
@@ -35,14 +36,15 @@ public class ConfigAsCodeTest {
         assertThat(cloud.getDeploymentTimeout(), is(1200));
         assertThat(cloud.getMaxVirtualMachinesLimit(), is(10));
 
-        assertThat(cloud.getNewResourceGroupName(), is("vm-agent"));
-        assertThat(cloud.getResourceGroupReferenceType(), is("new"));
+        assertThat(cloud.getNewResourceGroupName(), nullValue());
+        assertThat(cloud.getExistingResourceGroupName(), is("vm-agents"));
+        assertThat(cloud.getResourceGroupReferenceType(), is("existing"));
 
         // vmTemplate
         AzureVMAgentTemplate template = cloud.getVmTemplates().get(0);
 
         assertThat(template.getAgentLaunchMethod(), is("SSH"));
-        assertThat(template.getBuiltInImage(), is("Ubuntu 16.14 LTS"));
+        assertThat(template.getBuiltInImage(), is("Windows Server 2016"));
         assertThat(template.getCredentialsId(), is("admin-cred"));
         assertThat(template.getDiskType(), is("managed"));
         assertThat(template.getDoNotUseMachineIfInitFails(), is(true));
@@ -50,26 +52,31 @@ public class ConfigAsCodeTest {
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
 
         AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImage();
-        assertThat(imageReference.getVersion(), is("latest"));
+        assertThat(imageReference.getVersion(), nullValue());
+        assertThat(imageReference.getGalleryImageVersion(), is("latest"));
+        assertThat(imageReference.getGalleryImageDefinition(), is("Linux"));
+        assertThat(imageReference.getGalleryName(), is("gallery"));
+        assertThat(imageReference.getGalleryResourceGroup(), is("gallery"));
+        assertThat(imageReference.getGallerySubscriptionId(), is("e5587777-5750-4d2e-9e45-d6fbae67b8ea"));
 
-        assertThat(template.getImageTopLevelType(), is("basic"));
+        assertThat(template.getImageTopLevelType(), is("advanced"));
 
-        assertThat(template.isInstallDocker(), is(true));
-        assertThat(template.isInstallGit(), is(true));
-        assertThat(template.isInstallMaven(), is(true));
+        assertThat(template.isInstallDocker(), is(false));
+        assertThat(template.isInstallGit(), is(false));
+        assertThat(template.isInstallMaven(), is(false));
 
-        assertThat(template.getLabels(), is("ubuntu"));
-        assertThat(template.getLocation(), is("East US"));
+        assertThat(template.getLabels(), is("linux"));
+        assertThat(template.getLocation(), is("UK South"));
         assertThat(template.getNewStorageAccountName(), is("agent-storage"));
 
         assertThat(template.getNoOfParallelJobs(), is(1));
-        assertThat(template.getOsDiskSize(), is(0));
+        assertThat(template.getOsDiskSize(), is(40));
         assertThat(template.getOsType(), is("Linux"));
 
-        assertThat(template.getPreInstallSsh(), is(true));
+        assertThat(template.getPreInstallSsh(), is(false));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
-        assertThat(retentionStrategy.getIdleTerminationMinutes(), is(60L));
+        assertThat(retentionStrategy.getIdleTerminationMinutes(), is(40L));
 
         assertThat(template.isShutdownOnIdle(), is(false));
 
@@ -77,16 +84,16 @@ public class ConfigAsCodeTest {
         assertThat(template.getStorageAccountType(), is("Standard_LRS"));
 
         assertThat(template.isTemplateDisabled(), is(false));
-        assertThat(template.getTemplateName(), is("ubuntu"));
+        assertThat(template.getTemplateName(), is("azure"));
 
         assertThat(template.getUsageMode(), is("Use this node as much as possible"));
-        assertThat(template.getUsePrivateIP(), is(false));
+        assertThat(template.getUsePrivateIP(), is(true));
 
-        assertThat(template.getVirtualMachineSize(), is("Standard_DS2_v2"));
+        assertThat(template.getVirtualMachineSize(), is("Standard_A2"));
     }
 
     @Test
-    public void exportBasicConfiguration() throws Exception {
+    public void exportExportConfiguration() throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
         final CNode cloud = getJenkinsRoot(context).get("clouds");
@@ -94,7 +101,7 @@ public class ConfigAsCodeTest {
         String exportedCloud = toYamlString(cloud);
 
         String expectedYaml = new String(Files.readAllBytes(Paths.get(getClass()
-                .getResource("expectedBasic.yaml").toURI())));
+                .getResource("expectedAdvanced.yaml").toURI())));
 
         assertThat(exportedCloud, is(expectedYaml));
     }
