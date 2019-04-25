@@ -189,7 +189,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String availabilitySet;
 
         @DataBoundConstructor
-        public AvailabilityTypeClass(String availabilitySet) {
+        public  AvailabilityTypeClass(String availabilitySet) {
             this.availabilitySet = availabilitySet;
         }
 
@@ -211,9 +211,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String location;
 
-    private final String availabilityType;
-
-    private final String availabilitySet;
+    private final AvailabilityTypeClass availabilityType;
 
     private final String virtualMachineSize;
 
@@ -304,7 +302,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateDesc,
             String labels,
             String location,
-            String availabilityType,
+            AvailabilityTypeClass availabilityType,
             String virtualMachineSize,
             String storageAccountNameReferenceType,
             String storageAccountType,
@@ -343,7 +341,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.labels = labels;
         this.location = location;
         this.availabilityType = availabilityType;
-        this.availabilitySet = availabilityType; // TODO did this wrong, need to rework
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
         this.storageAccountName = getStorageAccountName(
@@ -572,10 +569,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return location;
     }
 
-    public String getAvailabilitySet() {
-        return availabilitySet;
-    }
-
     public String getVirtualMachineSize() {
         return virtualMachineSize;
     }
@@ -651,7 +644,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return shutdownOnIdle;
     }
 
-    public String getAvailabilityType() {
+    public AvailabilityTypeClass getAvailabilityType() {
         return availabilityType;
     }
 
@@ -883,7 +876,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     }
 
     public Availability getAvailabilityInside() {
-        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilitySet())
+        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilityType().getAvailabilitySet())
                 .build();
     }
 

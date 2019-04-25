@@ -74,11 +74,12 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     }
 
     public AzureVMAgentTemplate build() {
-        return new AzureVMAgentTemplate(fluent.getName(),
+        return new AzureVMAgentTemplate(
+                fluent.getName(),
                 fluent.getDescription(),
                 fluent.getLabels(),
                 fluent.getLocation(),
-                fluent.getAvailability().getAvailabilitySet(),
+                new AzureVMAgentTemplate.AvailabilityTypeClass(fluent.getAvailability().getAvailabilitySet()),
                 fluent.getVirtualMachineSize(),
                 fluent.getStorageAccountNameReferenceType(),
                 fluent.getStorageAccountType(),

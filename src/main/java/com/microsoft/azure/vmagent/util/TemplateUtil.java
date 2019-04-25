@@ -10,8 +10,8 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getLabels(), b.getLabels())
                 && StringUtils.equals(a.getAgentWorkspace(), b.getAgentWorkspace())
                 && StringUtils.equals(a.getLocation(), b.getLocation())
-                && StringUtils.equals(a.getAvailabilityType(), b.getAvailabilityType())
-                && StringUtils.equals(a.getAvailabilitySet(), b.getAvailabilitySet())
+                && StringUtils.equals(a.getAvailabilityType().getAvailabilitySet(),
+                b.getAvailabilityType().getAvailabilitySet())
                 && StringUtils.equals(a.getVirtualMachineSize(), b.getVirtualMachineSize())
                 && StringUtils.equals(a.getStorageAccountType(), b.getStorageAccountType())
                 && StringUtils.equals(a.getStorageAccountNameReferenceType(), b.getStorageAccountNameReferenceType())

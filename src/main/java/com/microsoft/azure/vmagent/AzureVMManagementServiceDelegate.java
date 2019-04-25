@@ -201,8 +201,8 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
             final int osDiskSize = template.getOsDiskSize();
-            final String availabilityType = template.getAvailabilityType();
-            final String availabilitySet = template.getAvailabilitySet();
+            final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
+            final String availabilitySet = availabilityType.getAvailabilitySet();
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,

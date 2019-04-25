@@ -26,7 +26,7 @@
                 <f:select/>
             </f:entry>
 
-            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityType" name="availabilityTypeClass" help="/plugin/azure-vm-agents/help-availability.html">
+            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityTypeValue" name="availabilityType" help="/plugin/azure-vm-agents/help-availability.html">
                 <f:dropdownListBlock title="${%No_Availability}" value="unknown" selected="${instance == null || instance.getAvailabilityType() == 'unknown'}">
                 </f:dropdownListBlock>
                 <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilityType() == 'availabilitySet'}">
