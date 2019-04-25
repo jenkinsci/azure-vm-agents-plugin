@@ -97,7 +97,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.getCredentialsId()).thenReturn(credentialsId);
             when(templateMock.getJvmOptions()).thenReturn(jvmOptions);
             when(templateMock.isShutdownOnIdle()).thenReturn(isShutdownOnIdle);
-//            when(templateMock.getRetentionTimeInMin()).thenReturn(retentionTimeInMin);
+            when(templateMock.getRetentionTimeInMin()).thenReturn(retentionTimeInMin);
             when(templateMock.getInitScript()).thenReturn(initScript);
             when(templateMock.getAgentLaunchMethod()).thenReturn(agentLaunchMethod);
             when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
