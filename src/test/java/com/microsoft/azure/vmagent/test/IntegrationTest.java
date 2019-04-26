@@ -358,7 +358,7 @@ public class IntegrationTest {
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
 
         when(templateMock.getImage()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
-                "",
+                null,
                 testEnv.azureImageId,
                 testEnv.azureImagePublisher,
                 testEnv.azureImageOffer,
