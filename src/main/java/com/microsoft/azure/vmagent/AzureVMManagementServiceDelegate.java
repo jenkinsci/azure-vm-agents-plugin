@@ -486,6 +486,8 @@ public final class AzureVMManagementServiceDelegate {
                 addNSGNode(tmp, mapper, (String) properties.get("nsgName"));
             }
 
+            System.out.println(tmp);
+
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
                     template.retrieveAzureCloudReference().getCloudName(), template.getResourceGroupName(), deploymentName, scriptUri);
