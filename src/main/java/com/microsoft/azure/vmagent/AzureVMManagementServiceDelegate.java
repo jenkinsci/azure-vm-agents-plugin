@@ -375,7 +375,7 @@ public final class AzureVMManagementServiceDelegate {
 
             putVariableIfNotBlank(tmp, "imageId", template.getImage().getId());
             putVariableIfNotBlank(tmp, "imagePublisher", template.getImage().getPublisher());
-            putVariableIfNotBlank(tmp, "imageOffer", "imageOffer");
+            putVariableIfNotBlank(tmp, "imageOffer", template.getImage().getOffer());
             putVariableIfNotBlank(tmp, "imageSku", template.getImage().getSku());
             putVariableIfNotBlank(tmp, "imageVersion", template.getImage().getVersion());
             putVariableIfNotBlank(tmp, "osType", template.getOsType());
