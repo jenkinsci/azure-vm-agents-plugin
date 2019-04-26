@@ -373,12 +373,12 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
-            copyVariableIfNotBlank(tmp, properties, "imageId");
-            copyVariableIfNotBlank(tmp, properties, "imagePublisher");
-            copyVariableIfNotBlank(tmp, properties, "imageOffer");
-            copyVariableIfNotBlank(tmp, properties, "imageSku");
-            copyVariableIfNotBlank(tmp, properties, "imageVersion");
-            copyVariableIfNotBlank(tmp, properties, "osType");
+            putVariableIfNotBlank(tmp, "imageId", template.getImage().getId());
+            putVariableIfNotBlank(tmp, "imagePublisher", template.getImage().getPublisher());
+            putVariableIfNotBlank(tmp, "imageOffer", "imageOffer");
+            putVariableIfNotBlank(tmp, "imageSku", template.getImage().getSku());
+            putVariableIfNotBlank(tmp, "imageVersion", template.getImage().getVersion());
+            putVariableIfNotBlank(tmp, "osType", template.getOsType());
             putVariableIfNotBlank(tmp, "image", template.getImage().getImage());
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here

@@ -39,6 +39,7 @@ import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import hudson.Extension;
 import hudson.RelativePath;
+import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -124,13 +125,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         private ImageReferenceType determineType() {
-            if (image != null) {
+            if (Util.fixEmpty(image) != null) {
                 return ImageReferenceType.CUSTOM;
             }
-            if (id != null) {
+            if (Util.fixEmpty(id) != null) {
                 return ImageReferenceType.CUSTOM_IMAGE;
             }
-            if (galleryName != null) {
+            if (Util.fixEmpty(galleryName) != null) {
                 return ImageReferenceType.GALLERY;
             }
             return ImageReferenceType.REFERENCE;
