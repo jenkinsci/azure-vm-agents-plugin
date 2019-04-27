@@ -203,8 +203,6 @@ public final class AzureVMManagementServiceDelegate {
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
             final String availabilitySet = availabilityType.getAvailabilitySet();
-            System.out.println(availabilitySet);
-            System.out.println(availabilityType);
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
