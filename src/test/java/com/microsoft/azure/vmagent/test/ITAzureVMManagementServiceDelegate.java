@@ -56,7 +56,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -370,7 +373,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
         Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
         Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
-        Assert.assertTrue(availabilitySet.id().equalsIgnoreCase(actualVM.availabilitySetId()));
+        assertThat(availabilitySet.id(), is(equalToIgnoringCase(actualVM.availabilitySetId())));
     }
 
     @Test
@@ -830,7 +833,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.shutdownVirtualMachine(agentMock);
             PowerState state = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
-            Assert.assertThat(state, anyOf(
+            assertThat(state, anyOf(
                     is(PowerState.STOPPING),
                     is(PowerState.STOPPED),
                     is(PowerState.DEALLOCATING),

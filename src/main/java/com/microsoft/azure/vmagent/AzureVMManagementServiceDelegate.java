@@ -2246,7 +2246,7 @@ public final class AzureVMManagementServiceDelegate {
                                 continue;
                             }
                             PagedList<VirtualMachineImage> images = sku.images().list();
-                            if ((imageReference.getGalleryImageVersion().equalsIgnoreCase("latest")
+                            if ((imageReference.getVersion().equalsIgnoreCase("latest")
                                     || StringUtils.isEmpty(imageReference.getVersion())) && images.size() > 0) {
                                 //the empty check is here to maintain backward compatibility
                                 return Constants.OP_SUCCESS;
