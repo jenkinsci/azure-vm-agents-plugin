@@ -33,7 +33,6 @@ import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
-import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
@@ -56,7 +55,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.junit.Assert.assertThat;

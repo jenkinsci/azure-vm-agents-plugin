@@ -203,6 +203,8 @@ public final class AzureVMManagementServiceDelegate {
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
             final String availabilitySet = availabilityType.getAvailabilitySet();
+            System.out.println(availabilitySet);
+            System.out.println(availabilityType);
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
@@ -345,7 +347,7 @@ public final class AzureVMManagementServiceDelegate {
 
             boolean msiEnabled = template.isEnableMSI();
             boolean osDiskSizeChanged = osDiskSize > 0;
-            boolean availabilitySetEnabled = AvailabilityType.AVAILABILITY_SET.getName().equals(availabilityType);
+            boolean availabilitySetEnabled = availabilityType.getAvailabilitySet() != null;
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
@@ -355,18 +357,18 @@ public final class AzureVMManagementServiceDelegate {
                         if (msiEnabled) {
                             ObjectNode identityNode = mapper.createObjectNode();
                             identityNode.put("type", "systemAssigned");
-                            ObjectNode.class.cast(resource).replace("identity", identityNode);
+                            ((ObjectNode) resource).replace("identity", identityNode);
                         }
                         if (osDiskSizeChanged) {
                             JsonNode jsonNode = resource.get("properties").get("storageProfile").get("osDisk");
-                            ObjectNode.class.cast(jsonNode).replace("diskSizeGB", new IntNode(osDiskSize));
+                            ((ObjectNode) jsonNode).replace("diskSizeGB", new IntNode(osDiskSize));
                         }
                         if (availabilitySetEnabled) {
                             ObjectNode availabilitySetNode = mapper.createObjectNode();
                             availabilitySetNode.put("id", String.format(
                                     "[resourceId('Microsoft.Compute/availabilitySets', '%s')]", availabilitySet));
                             JsonNode propertiesNode = resource.get("properties");
-                            ObjectNode.class.cast(propertiesNode).replace("availabilitySet",
+                            ((ObjectNode) propertiesNode).replace("availabilitySet",
                                     availabilitySetNode);
                         }
                     }

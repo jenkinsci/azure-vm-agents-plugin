@@ -349,7 +349,7 @@ public class IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
-        when(templateMock.getAvailabilityType()).thenReturn(new AzureVMAgentTemplate.AvailabilityTypeClass(testEnv.availabilityType));
+        when(templateMock.getAvailabilityType()).thenReturn(new AzureVMAgentTemplate.AvailabilityTypeClass(testEnv.availabilitySet));
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);

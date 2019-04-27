@@ -191,7 +191,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @DataBoundConstructor
         public  AvailabilityTypeClass(String availabilitySet) {
-            this.availabilitySet = availabilitySet;
+            this.availabilitySet = Util.fixEmpty(availabilitySet);
         }
 
         public String getAvailabilitySet() {
