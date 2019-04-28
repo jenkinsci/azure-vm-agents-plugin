@@ -126,6 +126,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.type = determineType();
         }
 
+        private ImageReferenceTypeClass() {} // used for readResolve
+
         private ImageReferenceType determineType() {
             if (Util.fixEmpty(uri) != null) {
                 return ImageReferenceType.CUSTOM;
@@ -241,7 +243,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     // Image Configuration
     private String imageTopLevelType;
 
-    private final ImageReferenceTypeClass imageReference;
+    private ImageReferenceTypeClass imageReference;
 
     private String builtInImage;
 
@@ -688,6 +690,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (isInstallMaven) {
             installMaven = true;
+        }
+
+        if (imageReference == null) {
+            imageReference = new ImageReferenceTypeClass();
         }
 
         if (Util.fixNull(image) != null) {
