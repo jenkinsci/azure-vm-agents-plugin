@@ -84,7 +84,7 @@ import java.util.logging.Logger;
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, Serializable {
     private static final long serialVersionUID = 1574325691L;
 
-    public static class ImageReferenceTypeClass {
+    public static class ImageReferenceTypeClass implements Serializable {
         private String uri;
         private String id;
         private String publisher;
@@ -188,7 +188,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
-    public static class AvailabilityTypeClass {
+    public static class AvailabilityTypeClass implements Serializable {
         private String availabilitySet;
 
         @DataBoundConstructor
