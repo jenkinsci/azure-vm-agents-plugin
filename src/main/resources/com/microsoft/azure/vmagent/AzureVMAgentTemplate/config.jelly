@@ -29,7 +29,7 @@
             <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityTypeValue" name="availabilityType" help="/plugin/azure-vm-agents/help-availability.html">
                 <f:dropdownListBlock title="${%No_Availability}" value="unknown" selected="${instance == null || instance.getAvailabilityType() == 'unknown'}">
                 </f:dropdownListBlock>
-                <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilityType() == 'availabilitySet'}">
+                <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilitySet() != null}">
                     <f:entry title="${%name}" field="availabilitySet" help="/plugin/azure-vm-agents/help-availabilitySet.html">
                         <f:select/>
                     </f:entry>
@@ -105,7 +105,7 @@
             <ui:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
                 <ui:dropdownList selectedName="imageReferenceTypeValue" name="image">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
-                        <f:entry title="${%Image}" field="image" help="/plugin/azure-vm-agents/help-image.html">
+                        <f:entry title="${%Image}" field="uri" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
                         </f:entry>
                     </f:dropdownListBlock>

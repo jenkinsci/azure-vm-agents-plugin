@@ -26,7 +26,7 @@ public final class TemplateUtil {
                 && a.isInstallGit() == b.isInstallGit()
                 && a.isInstallMaven() == b.isInstallMaven()
                 && a.getImage().getType() == b.getImage().getType()
-                && StringUtils.equals(a.getImage().getImage(), b.getImage().getImage())
+                && StringUtils.equals(a.getImage().getUri(), b.getImage().getUri())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
                 && StringUtils.equals(a.getImage().getId(), b.getImage().getId())
                 && StringUtils.equals(a.getImage().getPublisher(),

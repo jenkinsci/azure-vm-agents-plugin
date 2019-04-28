@@ -379,7 +379,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariableIfNotBlank(tmp, "imageSku", template.getImage().getSku());
             putVariableIfNotBlank(tmp, "imageVersion", template.getImage().getVersion());
             putVariableIfNotBlank(tmp, "osType", template.getOsType());
-            putVariableIfNotBlank(tmp, "image", template.getImage().getImage());
+            putVariableIfNotBlank(tmp, "image", template.getImage().getUri());
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
@@ -2156,7 +2156,7 @@ public final class AzureVMManagementServiceDelegate {
             } else {
                 return Messages.Azure_GC_Template_BuiltIn_Not_Valid();
             }
-        } else if ((imageReference.getType() == ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(imageReference.getImage()))
+        } else if ((imageReference.getType() == ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(imageReference.getUri()))
                 || imageReference.getType() == ImageReferenceType.CUSTOM) {
             try {
                 // Custom image verification.  We must verify that the VM image
@@ -2168,7 +2168,7 @@ public final class AzureVMManagementServiceDelegate {
                 // a URI
                 final URI u;
                 try {
-                    u = URI.create(imageReference.getImage());
+                    u = URI.create(imageReference.getUri());
                 } catch (Exception e) {
                     return Messages.Azure_GC_Template_ImageURI_Not_Valid();
                 }
@@ -2352,11 +2352,11 @@ public final class AzureVMManagementServiceDelegate {
             }
         } else {
             if ((imageReference.getType() == ImageReferenceType.UNKNOWN
-                    && (StringUtils.isNotBlank(imageReference.getImage()) && StringUtils.isNotBlank(osType)))
+                    && (StringUtils.isNotBlank(imageReference.getUri()) && StringUtils.isNotBlank(osType)))
                     || imageReference.getType() == ImageReferenceType.CUSTOM) {
                 // Check that the image string is a URI by attempting to create a URI
                 try {
-                    URI.create(imageReference.getImage());
+                    URI.create(imageReference.getUri());
                 } catch (Exception e) {
                     return Messages.Azure_GC_Template_ImageURI_Not_Valid();
                 }

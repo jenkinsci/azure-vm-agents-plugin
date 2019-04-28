@@ -53,6 +53,8 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -83,7 +85,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private static final long serialVersionUID = 1574325691L;
 
     public static class ImageReferenceTypeClass {
-        private String image;
+        private String uri;
         private String id;
         private String publisher;
         private String offer;
@@ -98,7 +100,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @DataBoundConstructor
         public ImageReferenceTypeClass(
-                String image,
+                String uri,
                 String id,
                 String publisher,
                 String offer,
@@ -109,7 +111,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 String galleryImageVersion,
                 String gallerySubscriptionId,
                 String galleryResourceGroup) {
-            this.image = image;
+            this.uri = uri;
             this.id = id;
             this.publisher = publisher;
             this.offer = offer;
@@ -125,7 +127,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         private ImageReferenceType determineType() {
-            if (Util.fixEmpty(image) != null) {
+            if (Util.fixEmpty(uri) != null) {
                 return ImageReferenceType.CUSTOM;
             }
             if (Util.fixEmpty(id) != null) {
@@ -141,8 +143,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return type;
         }
 
-        public String getImage() {
-            return image;
+        public String getUri() {
+            return uri;
         }
 
         public String getId() {
@@ -393,6 +395,102 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         labelDataSet = Label.parse(labels);
     }
 
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGallerySubscriptionId() {
+        return image != null ? image.getGallerySubscriptionId() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryResourceGroup() {
+        return image != null ? image.getGalleryResourceGroup() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryName() {
+        return image != null ? image.getGalleryName() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryImageDefinition() {
+        return image != null ? image.getGalleryImageDefinition() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryImageVersion() {
+        return image != null ? image.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getId() {
+        return image != null ? image.getId() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getUri() {
+        return image != null ? image.getUri() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getPublisher() {
+        return image != null ? image.getPublisher() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getOffer() {
+        return image != null ? image.getOffer() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getSku() {
+        return image != null ? image.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getVersion() {
+        return image != null ? image.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getAvailabilitySet() {
+        return availabilityType != null ? availabilityType.getAvailabilitySet() : null;
+    }
+
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
         Map<String, Object> templateProperties = new HashMap<>();
         String builtInImage = template.getBuiltInImage();
@@ -539,7 +637,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
 
         if (StringUtils.isBlank(imageTopLevelType)) {
-            if (image != null  && (StringUtils.isNotBlank(image.getImage())
+            if (image != null  && (StringUtils.isNotBlank(image.getUri())
                     || StringUtils.isNotBlank(image.getId())
                     || StringUtils.isNotBlank(image.getOffer())
                     || StringUtils.isNotBlank(image.getSku())
@@ -835,7 +933,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public AdvancedImage getAdvancedImageInside() {
         return new AdvancedImageBuilder()
-                .withCustomImage(image.image)
+                .withCustomImage(image.uri)
                 .withCustomManagedImage(image.id)
                 .withGalleryImage(
                         image.galleryName,
