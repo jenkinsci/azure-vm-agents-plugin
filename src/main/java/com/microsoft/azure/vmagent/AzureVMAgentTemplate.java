@@ -472,7 +472,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      */
     @Restricted(NoExternalUse.class)
     public String getSku() {
-        return image != null ? image.getGalleryImageVersion() : null;
+        return image != null ? image.getSku() : null;
     }
 
     /**
@@ -480,7 +480,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
      */
     @Restricted(NoExternalUse.class)
     public String getVersion() {
-        return image != null ? image.getGalleryImageVersion() : null;
+        return image != null ? image.getVersion() : null;
     }
 
     /**
@@ -604,13 +604,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
-
+    @SuppressWarnings("unused") // called by stapler in jelly
     public boolean isType(String type) {
-        if (this.image != null && this.image.type == ImageReferenceType.REFERENCE) {
-            return true;
+        if (type == null || image == null) {
+            return false;
         }
-        return type != null && this.image != null
-                && ImageReferenceType.get(type) == this.image.type;
+
+        return image.type.getName().equals(type);
     }
 
     public boolean isTopLevelType(String type) {
@@ -1363,18 +1363,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String imageTopLevelType,
                 @QueryParameter String builtInImage,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String image,
+                @QueryParameter("uri") String imageUri,
                 @QueryParameter String osType,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageId,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imagePublisher,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageOffer,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageSku,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageVersion,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryName,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageDefinition,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageVersion,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String gallerySubscriptionId,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryResourceGroup,
+                @QueryParameter("id") String imageId,
+                @QueryParameter("publisher") String imagePublisher,
+                @QueryParameter("offer") String imageOffer,
+                @QueryParameter("sku") String imageSku,
+                @QueryParameter("version") String imageVersion,
+                @QueryParameter String galleryName,
+                @QueryParameter String galleryImageDefinition,
+                @QueryParameter String galleryImageVersion,
+                @QueryParameter String gallerySubscriptionId,
+                @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
@@ -1383,17 +1383,22 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String jvmOptions,
-                @QueryParameter String imageReferenceType) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+                @QueryParameter String jvmOptions) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
-            /*
-            image will not be passed to doVerifyConfiguration
-            unless Jenkins core has https://github.com/jenkinsci/jenkins/pull/2734
-            The plugin should be able to run in both modes.
-            */
-
-            ImageReferenceType referenceType = ImageReferenceType.get(imageReferenceType);
+            ImageReferenceTypeClass image = new ImageReferenceTypeClass(
+                    imageUri,
+                    imageId,
+                    imagePublisher,
+                    imageOffer,
+                    imageSku,
+                    imageVersion,
+                    galleryName,
+                    galleryImageDefinition,
+                    galleryImageVersion,
+                    gallerySubscriptionId,
+                    galleryResourceGroup
+            );
 
             String resourceGroupName = AzureVMCloud.getResourceGroupName(
                     resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -1450,7 +1455,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             noOfParallelJobs,
                             imageTopLevelType,
                             builtInImage,
-                            image,
+                            imageUri,
                             osType,
                             imageId,
                             imagePublisher,
@@ -1489,7 +1494,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     storageAccountType,
                     noOfParallelJobs,
                     imageTopLevelType,
-                    null, // TODO fix this
+                    image,
                     builtInImage,
                     osType,
                     agentLaunchMethod,
