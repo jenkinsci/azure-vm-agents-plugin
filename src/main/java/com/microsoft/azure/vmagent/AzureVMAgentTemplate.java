@@ -126,7 +126,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.type = determineType();
         }
 
-        private ImageReferenceTypeClass() {} // used for readResolve
+        private ImageReferenceTypeClass() {
+            // used for readResolve to maintain compatibility
+        }
 
         private ImageReferenceType determineType() {
             if (Util.fixEmpty(uri) != null) {
