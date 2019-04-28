@@ -218,6 +218,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     }
 
+    /**
+     * This test requires legal terms accepted in order for it to pass
+     * You can run: az vm image accept-terms --urn kali-linux:kali-linux:kali:2018.4.0
+     */
     @Test
     public void createDeploymentWithPurchasePlan() throws Exception {
         testEnv.azureImagePublisher = "kali-linux";
