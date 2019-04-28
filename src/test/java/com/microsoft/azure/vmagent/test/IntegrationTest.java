@@ -41,14 +41,12 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
-import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
@@ -357,7 +355,7 @@ public class IntegrationTest {
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
 
-        when(templateMock.getImage()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
+        when(templateMock.getImageReference()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
                 null,
                 testEnv.azureImageId,
                 testEnv.azureImagePublisher,

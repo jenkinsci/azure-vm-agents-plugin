@@ -25,17 +25,17 @@ public final class TemplateUtil {
                 && a.isInstallDocker() == b.isInstallDocker()
                 && a.isInstallGit() == b.isInstallGit()
                 && a.isInstallMaven() == b.isInstallMaven()
-                && a.getImage().getType() == b.getImage().getType()
-                && StringUtils.equals(a.getImage().getUri(), b.getImage().getUri())
+                && a.getImageReference().getType() == b.getImageReference().getType()
+                && StringUtils.equals(a.getImageReference().getUri(), b.getImageReference().getUri())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
-                && StringUtils.equals(a.getImage().getId(), b.getImage().getId())
-                && StringUtils.equals(a.getImage().getPublisher(),
-                b.getImage().getPublisher())
-                && StringUtils.equals(a.getImage().getOffer(),
-                b.getImage().getOffer())
-                && StringUtils.equals(a.getImage().getSku(), b.getImage().getSku())
-                && StringUtils.equals(a.getImage().getVersion(),
-                b.getImage().getVersion())
+                && StringUtils.equals(a.getImageReference().getId(), b.getImageReference().getId())
+                && StringUtils.equals(a.getImageReference().getPublisher(),
+                b.getImageReference().getPublisher())
+                && StringUtils.equals(a.getImageReference().getOffer(),
+                b.getImageReference().getOffer())
+                && StringUtils.equals(a.getImageReference().getSku(), b.getImageReference().getSku())
+                && StringUtils.equals(a.getImageReference().getVersion(),
+                b.getImageReference().getVersion())
                 && StringUtils.equals(a.getAgentLaunchMethod(), b.getAgentLaunchMethod())
                 && a.getPreInstallSsh() == b.getPreInstallSsh()
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())

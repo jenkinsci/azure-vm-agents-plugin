@@ -49,7 +49,7 @@ public class BasicConfigAsCodeTest {
         assertThat(template.isEnableMSI(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
 
-        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImage();
+        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImageReference();
         assertThat(imageReference.getVersion(), is("latest"));
 
         assertThat(template.getImageTopLevelType(), is("basic"));

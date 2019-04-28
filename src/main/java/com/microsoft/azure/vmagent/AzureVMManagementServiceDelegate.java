@@ -226,7 +226,7 @@ public final class AzureVMManagementServiceDelegate {
 
 
             boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
-            ImageReferenceType referenceType = template.getImage().getType();
+            ImageReferenceType referenceType = template.getImageReference().getType();
 
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
@@ -308,13 +308,13 @@ public final class AzureVMManagementServiceDelegate {
             if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
-                    String imageVersion = StringUtils.isNotEmpty(template.getImage().getVersion())
-                            ? template.getImage().getVersion() : "latest";
+                    String imageVersion = StringUtils.isNotEmpty(template.getImageReference().getVersion())
+                            ? template.getImageReference().getVersion() : "latest";
                     VirtualMachineImage image = azureClient.virtualMachineImages().getImage(
                             locationName,
-                            template.getImage().getPublisher(),
-                            template.getImage().getOffer(),
-                            template.getImage().getSku(),
+                            template.getImageReference().getPublisher(),
+                            template.getImageReference().getOffer(),
+                            template.getImageReference().getSku(),
                             imageVersion
                     );
                     if (image != null) {
@@ -335,9 +335,9 @@ public final class AzureVMManagementServiceDelegate {
                     } else {
                         LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
                                 "version:{3} when trying to add purchase plan to ARM template", new Object[]{
-                                template.getImage().getPublisher(),
-                                template.getImage().getOffer(),
-                                template.getImage().getSku(),
+                                template.getImageReference().getPublisher(),
+                                template.getImageReference().getOffer(),
+                                template.getImageReference().getSku(),
                                 imageVersion});
                     }
                 }
@@ -373,22 +373,22 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
-            putVariableIfNotBlank(tmp, "imageId", template.getImage().getId());
-            putVariableIfNotBlank(tmp, "imagePublisher", template.getImage().getPublisher());
-            putVariableIfNotBlank(tmp, "imageOffer", template.getImage().getOffer());
-            putVariableIfNotBlank(tmp, "imageSku", template.getImage().getSku());
-            putVariableIfNotBlank(tmp, "imageVersion", template.getImage().getVersion());
+            putVariableIfNotBlank(tmp, "imageId", template.getImageReference().getId());
+            putVariableIfNotBlank(tmp, "imagePublisher", template.getImageReference().getPublisher());
+            putVariableIfNotBlank(tmp, "imageOffer", template.getImageReference().getOffer());
+            putVariableIfNotBlank(tmp, "imageSku", template.getImageReference().getSku());
+            putVariableIfNotBlank(tmp, "imageVersion", template.getImageReference().getVersion());
             putVariableIfNotBlank(tmp, "osType", template.getOsType());
-            putVariableIfNotBlank(tmp, "image", template.getImage().getUri());
+            putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion  galleryImageVersion;
-                String galleryImageVersionStr = template.getImage().getGalleryImageVersion();
-                String galleryImageDefinition = template.getImage().getGalleryImageDefinition();
-                String gallerySubscriptionId = template.getImage().getGallerySubscriptionId();
-                String galleryResourceGroup = template.getImage().getGalleryResourceGroup();
-                String galleryName = template.getImage().getGalleryName();
+                String galleryImageVersionStr = template.getImageReference().getGalleryImageVersion();
+                String galleryImageDefinition = template.getImageReference().getGalleryImageDefinition();
+                String gallerySubscriptionId = template.getImageReference().getGallerySubscriptionId();
+                String galleryResourceGroup = template.getImageReference().getGalleryResourceGroup();
+                String galleryName = template.getImageReference().getGalleryName();
                 if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
                         StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
@@ -516,9 +516,9 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private boolean checkImageParameter(AzureVMAgentTemplate template) {
-        if (StringUtils.isBlank(template.getImage().getPublisher())
-                || StringUtils.isBlank(template.getImage().getOffer())
-                || StringUtils.isBlank(template.getImage().getSku())) {
+        if (StringUtils.isBlank(template.getImageReference().getPublisher())
+                || StringUtils.isBlank(template.getImageReference().getOffer())
+                || StringUtils.isBlank(template.getImageReference().getSku())) {
             LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }

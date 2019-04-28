@@ -16,7 +16,7 @@
       doNotUseMachineIfInitFails: true
       enableMSI: false
       executeInitScriptAsRoot: true
-      image:
+      imageReference:
         galleryImageDefinition: "Linux"
         galleryImageVersion: "latest"
         galleryName: "gallery"

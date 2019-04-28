@@ -15,7 +15,7 @@ jenkins:
             doNotUseMachineIfInitFails: true
             enableMSI: false
             executeInitScriptAsRoot: true
-            image:
+            imageReference:
               version: "latest"
             imageTopLevelType: "basic"
             installDocker: true

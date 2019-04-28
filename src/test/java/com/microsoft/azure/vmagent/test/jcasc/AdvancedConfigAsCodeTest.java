@@ -51,7 +51,7 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.isEnableMSI(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
 
-        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImage();
+        AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImageReference();
         assertThat(imageReference.getVersion(), nullValue());
         assertThat(imageReference.getGalleryImageVersion(), is("latest"));
         assertThat(imageReference.getGalleryImageDefinition(), is("Linux"));
