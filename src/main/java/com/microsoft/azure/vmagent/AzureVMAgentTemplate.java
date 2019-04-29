@@ -301,7 +301,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final boolean enableMSI;
 
-    private RetentionStrategy retentionStrategy; // TODO add unit test in jcasc demonstrating this
+    private RetentionStrategy retentionStrategy;
 
 
     // deprecated fields
