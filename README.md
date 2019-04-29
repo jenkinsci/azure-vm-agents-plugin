@@ -131,7 +131,7 @@ Note: Until credentials support is merged into the credentials plugin you will n
 
 ## Configure VM Template using Groovy Script
 
-It is recommended that you use the configuration-as-code plugin for automating the plugin configuration. If you can't do that for some reason then you can use groovy script
+It is recommended that you use the `configuration-as-code` plugin for automating the plugin configuration. If you can't do that for some reason then you can use groovy script
 
 Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
 
