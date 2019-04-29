@@ -8,11 +8,15 @@ import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
+import jenkins.security.ClassFilterImpl;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.LoggerRule;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -24,6 +28,9 @@ public class BasicConfigAsCodeTest {
     @ClassRule
     @ConfiguredWithCode("basic.yaml")
     public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
+
+    @Rule
+    public LoggerRule logging = new LoggerRule().record(ClassFilterImpl.class, Level.ALL);
 
     @Test
     public void importBasicConfiguration() {
