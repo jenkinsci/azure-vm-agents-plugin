@@ -742,6 +742,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             imageReference.galleryResourceGroup = galleryResourceGroup;
         }
 
+        if (imageReference.type == null) {
+            imageReference.type = imageReference.determineType();
+        }
+
         return this;
     }
 

@@ -2,6 +2,7 @@ package com.microsoft.azure.vmagent.test.datamigration;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
+import com.microsoft.azure.vmagent.ImageReferenceType;
 import jenkins.model.Jenkins;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,5 +38,7 @@ public class AzureVMAgentTemplateReadResolveTest {
         assertThat(reference.getOffer(), is("UbuntuServer"));
         assertThat(reference.getSku(), is("16.04-LTS"));
         assertThat(reference.getVersion(), is("latest"));
+
+        assertThat(reference.getType(), is(ImageReferenceType.REFERENCE));
     }
 }
