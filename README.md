@@ -128,8 +128,11 @@ Configure the plugin using the UI initially and then export the configuration an
 
 Note: Until credentials support is merged into the credentials plugin you will need to also install the `configuration-as-code-support` plugin
 
-## Configure VM Template using Groovy Script (deprecated)
-In some cases you may want to configure the VM template using script so it can be automated instead of manually configure it in UI. Jenkins supports groovy script that can automates such operation. Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
+## Configure VM Template using Groovy Script
+
+It is recommended that you use the configuration-as-code plugin for automating the plugin configuration. If you can't do that for some reason then you can use groovy script
+
+Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
 
 ```groovy
 //Configure cloud with built-in image
