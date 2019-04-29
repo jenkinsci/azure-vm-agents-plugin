@@ -123,7 +123,8 @@ If you choose Use Advanced Image Configurations, you can click on Advanced butto
 
 ## Configure VM Template using configuration-as-code plugin
 
-This plugin can be fully configured by the [Jenkins Configuration as Code plugin](https://github.com/jenkinsci/configuration-as-code-plugin)
+This plugin can be fully configured by the [Jenkins Configuration as Code plugin](https://github.com/jenkinsci/configuration-as-code-plugin).
+
 Configure the plugin using the UI initially and then export the configuration and tweak to your needs
 
 Note: Until credentials support is merged into the credentials plugin you will need to also install the `configuration-as-code-support` plugin
