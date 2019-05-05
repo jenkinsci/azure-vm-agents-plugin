@@ -1805,7 +1805,7 @@ public final class AzureVMManagementServiceDelegate {
                 LOGGER.log(Level.INFO,
                         "AzureVMManagementServiceDelegate: startVirtualMachine: got exception while "
                                 + "starting VM {0}. Will retry again after 30 seconds. Current retry count {1} / {2}\n",
-                        new Object[]{agent.getNodeName(), retryCount, Constants.MAX_PROV_RETRIES});
+                        new Object[]{agent.getNodeName(), retryCount, getStartVirtualMachineRetryCount()});
                 if (retryCount > getStartVirtualMachineRetryCount()) {
                     throw AzureCloudException.create(e);
                 } else {
