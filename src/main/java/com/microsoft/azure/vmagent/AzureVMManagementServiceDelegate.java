@@ -147,6 +147,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
+    private static final int VM_START_TIMEOUT_IN_MINUTES = 5;
+
     private final Azure azureClient;
 
     private final String azureCredentialsId;
@@ -159,7 +161,7 @@ public final class AzureVMManagementServiceDelegate {
         if (azureClient == null) {
             throw new NullPointerException("the azure client is null!");
         }
-        return new AzureVMManagementServiceDelegate(azureClient,  azureCredentialsId);
+        return new AzureVMManagementServiceDelegate(azureClient, azureCredentialsId);
     }
 
     /**
@@ -377,7 +379,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
-                GalleryImageVersion  galleryImageVersion;
+                GalleryImageVersion galleryImageVersion;
                 String galleryImageVersionStr = template.getGalleryImageVersion();
                 String galleryImageDefinition = template.getGalleryImageDefinition();
                 String gallerySubscriptionId = template.getGallerySubscriptionId();
@@ -1785,17 +1787,26 @@ public final class AzureVMManagementServiceDelegate {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: startVirtualMachine: {0}", agent.getNodeName());
         int retryCount = 0;
         boolean successful = false;
+        boolean isStartTimeout = false;
 
         while (!successful) {
             try {
-                azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).start();
-                successful = true; // may be we can just return
+                VirtualMachine virtualMachine = azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName());
+                if (isStartTimeout) {
+                    successful = virtualMachine.restartAsync().await(VM_START_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
+                } else {
+                    successful = virtualMachine.startAsync().await(VM_START_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
+                }
+                isStartTimeout = !successful;
+                if (!successful) {
+                    throw AzureCloudException.create(String.format("Start/Restart VM %s timeout", agent.getNodeName()));
+                }
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
                         "AzureVMManagementServiceDelegate: startVirtualMachine: got exception while "
                                 + "starting VM {0}. Will retry again after 30 seconds. Current retry count {1} / {2}\n",
                         new Object[]{agent.getNodeName(), retryCount, Constants.MAX_PROV_RETRIES});
-                if (retryCount > Constants.MAX_PROV_RETRIES) {
+                if (retryCount > getStartVirtualMachineRetryCount()) {
                     throw AzureCloudException.create(e);
                 } else {
                     retryCount++;
@@ -1809,6 +1820,10 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
         }
+    }
+
+    public int getStartVirtualMachineRetryCount() {
+        return Constants.MAX_PROV_RETRIES;
     }
 
     /**
