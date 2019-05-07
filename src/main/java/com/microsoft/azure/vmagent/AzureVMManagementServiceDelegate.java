@@ -202,7 +202,7 @@ public final class AzureVMManagementServiceDelegate {
             final String diskType = template.getDiskType();
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
-            final String availabilitySet = availabilityType.getAvailabilitySet();
+            final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE,
@@ -345,7 +345,7 @@ public final class AzureVMManagementServiceDelegate {
 
             boolean msiEnabled = template.isEnableMSI();
             boolean osDiskSizeChanged = osDiskSize > 0;
-            boolean availabilitySetEnabled = availabilityType.getAvailabilitySet() != null;
+            boolean availabilitySetEnabled = availabilitySet != null;
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
