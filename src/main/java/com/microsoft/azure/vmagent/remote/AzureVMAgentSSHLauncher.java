@@ -195,8 +195,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
                 //In Windows, restart sshd to get new system environment variables
                 if (!isUnix) {
-                    executeRemoteCommand(
-                            session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger, isUnix);
+                    int retryTimes = 5;
+                    int exitCode = -1;
+                    while (retryTimes > 0 && exitCode != 0) {
+                        retryTimes--;
+                        exitCode = executeRemoteCommand(
+                                session, "powershell -ExecutionPolicy Bypass Restart-Service sshd", logger, isUnix);
+                    }
                 }
 
                 /* Create a new session after the init script has executed to
