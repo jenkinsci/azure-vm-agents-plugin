@@ -661,19 +661,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         storageAccountName = getStorageAccountName(
                 storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
 
-        if (StringUtils.isBlank(imageTopLevelType)) {
-            if (imageReference != null  && (StringUtils.isNotBlank(imageReference.getUri())
-                    || StringUtils.isNotBlank(imageReference.getId())
-                    || StringUtils.isNotBlank(imageReference.getOffer())
-                    || StringUtils.isNotBlank(imageReference.getSku())
-                    || StringUtils.isNotBlank(imageReference.getPublisher()))) {
-                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
-            } else {
-                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
-            }
-            builtInImage = Constants.WINDOWS_SERVER_2016;
-        }
-
         if (StringUtils.isBlank(diskType)) {
             diskType = Constants.DISK_UNMANAGED;
         }
@@ -744,6 +731,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (imageReference.type == null) {
             imageReference.type = imageReference.determineType();
+        }
+
+        if (StringUtils.isBlank(imageTopLevelType)) {
+            if (imageReference != null  && (StringUtils.isNotBlank(imageReference.getUri())
+                    || StringUtils.isNotBlank(imageReference.getId())
+                    || StringUtils.isNotBlank(imageReference.getOffer())
+                    || StringUtils.isNotBlank(imageReference.getSku())
+                    || StringUtils.isNotBlank(imageReference.getPublisher()))) {
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
+            } else {
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
+            }
+            builtInImage = Constants.WINDOWS_SERVER_2016;
         }
 
         return this;
