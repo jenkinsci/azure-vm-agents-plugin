@@ -527,15 +527,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("imageId",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID)
                         : template.getImageReference().getId());
-        templateProperties.put("publisher",
+        templateProperties.put("imagePublisher",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER)
                         : template.getImageReference().getPublisher());
-        templateProperties.put("offer",
+        templateProperties.put("imageOffer",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER)
                         : template.getImageReference().getOffer());
-        templateProperties.put("sku",
+        templateProperties.put("imageSku",
                 isBasic ? defaultProperties.get(imageSkuName) : template.getImageReference().getSku());
-        templateProperties.put("version",
+        templateProperties.put("imageVersion",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION)
                         : template.getImageReference().getVersion());
         templateProperties.put("galleryName",
