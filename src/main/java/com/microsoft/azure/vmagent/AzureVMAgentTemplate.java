@@ -39,6 +39,7 @@ import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import hudson.Extension;
 import hudson.RelativePath;
+import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -52,6 +53,8 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -81,67 +84,91 @@ import java.util.logging.Logger;
 public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, Serializable {
     private static final long serialVersionUID = 1574325691L;
 
-    public static class ImageReferenceTypeClass {
-        private String image;
-        private String imageId;
-        private String imagePublisher;
-        private String imageOffer;
-        private String imageSku;
-        private String imageVersion;
+    public static class ImageReferenceTypeClass implements Serializable {
+        private String uri;
+        private String id;
+        private String publisher;
+        private String offer;
+        private String sku;
+        private String version;
         private String galleryName;
         private String galleryImageDefinition;
         private String galleryImageVersion;
         private String gallerySubscriptionId;
         private String galleryResourceGroup;
+        private ImageReferenceType type;
 
         @DataBoundConstructor
         public ImageReferenceTypeClass(
-                String image,
-                String imageId,
-                String imagePublisher,
-                String imageOffer,
-                String imageSku,
-                String imageVersion,
+                String uri,
+                String id,
+                String publisher,
+                String offer,
+                String sku,
+                String version,
                 String galleryName,
                 String galleryImageDefinition,
                 String galleryImageVersion,
                 String gallerySubscriptionId,
                 String galleryResourceGroup) {
-            this.image = image;
-            this.imageId = imageId;
-            this.imagePublisher = imagePublisher;
-            this.imageOffer = imageOffer;
-            this.imageSku = imageSku;
-            this.imageVersion = imageVersion;
+            this.uri = uri;
+            this.id = id;
+            this.publisher = publisher;
+            this.offer = offer;
+            this.sku = sku;
+            this.version = version;
             this.galleryName = galleryName;
             this.galleryImageDefinition = galleryImageDefinition;
             this.galleryImageVersion = galleryImageVersion;
             this.gallerySubscriptionId = gallerySubscriptionId;
             this.galleryResourceGroup = galleryResourceGroup;
+
+            this.type = determineType();
         }
 
-        public String getImage() {
-            return image;
+        private ImageReferenceTypeClass() {
+            // used for readResolve to maintain compatibility
         }
 
-        public String getImageId() {
-            return imageId;
+        private ImageReferenceType determineType() {
+            if (Util.fixEmpty(uri) != null) {
+                return ImageReferenceType.CUSTOM;
+            }
+            if (Util.fixEmpty(id) != null) {
+                return ImageReferenceType.CUSTOM_IMAGE;
+            }
+            if (Util.fixEmpty(galleryName) != null) {
+                return ImageReferenceType.GALLERY;
+            }
+            return ImageReferenceType.REFERENCE;
         }
 
-        public String getImagePublisher() {
-            return imagePublisher;
+        public ImageReferenceType getType() {
+            return type;
         }
 
-        public String getImageOffer() {
-            return imageOffer;
+        public String getUri() {
+            return uri;
         }
 
-        public String getImageSku() {
-            return imageSku;
+        public String getId() {
+            return id;
         }
 
-        public String getImageVersion() {
-            return imageVersion;
+        public String getPublisher() {
+            return publisher;
+        }
+
+        public String getOffer() {
+            return offer;
+        }
+
+        public String getSku() {
+            return sku;
+        }
+
+        public String getVersion() {
+            return version;
         }
 
         public String getGalleryName() {
@@ -165,13 +192,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
-    public static class AvailabilityTypeClass {
+    public static class AvailabilityTypeClass implements Serializable {
         private String availabilitySet;
 
         @DataBoundConstructor
-        public AvailabilityTypeClass(
-                String availabilitySet) {
-            this.availabilitySet = availabilitySet;
+        public  AvailabilityTypeClass(String availabilitySet) {
+            this.availabilitySet = Util.fixEmpty(availabilitySet);
         }
 
         public String getAvailabilitySet() {
@@ -192,9 +218,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String location;
 
-    private final String availabilityType;
-
-    private final String availabilitySet;
+    private final AvailabilityTypeClass availabilityType;
 
     private final String virtualMachineSize;
 
@@ -221,39 +245,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     // Image Configuration
     private String imageTopLevelType;
 
-    private final String imageReferenceType;
+    private ImageReferenceTypeClass imageReference;
 
     private String builtInImage;
 
-    private final boolean isInstallGit;
+    private boolean installGit;
 
-    private final boolean isInstallMaven;
+    private boolean installMaven;
 
-    private final boolean isInstallDocker;
-
-    private final String image;
+    private boolean installDocker;
 
     private final String osType;
-
-    private final String imageId;
-
-    private final String imagePublisher;
-
-    private final String imageOffer;
-
-    private final String imageSku;
-
-    private final String imageVersion;
-
-    private final String galleryName;
-
-    private final String galleryImageDefinition;
-
-    private final String galleryImageVersion;
-
-    private final String gallerySubscriptionId;
-
-    private final String galleryResourceGroup;
 
     private final String agentLaunchMethod;
 
@@ -299,7 +301,27 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final boolean enableMSI;
 
-    private AzureVMCloudBaseRetentionStrategy retentionStrategy;
+    private RetentionStrategy retentionStrategy;
+
+
+    // deprecated fields
+    private transient boolean isInstallDocker;
+    private transient boolean isInstallMaven;
+    private transient boolean isInstallGit;
+
+    private transient String image;
+    private transient String imageId;
+    private transient String imagePublisher;
+    private transient String imageOffer;
+    private transient String imageSku;
+    private transient String imageVersion;
+
+    private transient String galleryName;
+    private transient String galleryImageDefinition;
+    private transient String galleryImageVersion;
+    private transient String gallerySubscriptionId;
+    private transient String galleryResourceGroup;
+
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(
@@ -307,7 +329,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateDesc,
             String labels,
             String location,
-            AvailabilityTypeClass availabilityTypeClass,
+            AvailabilityTypeClass availabilityType,
             String virtualMachineSize,
             String storageAccountNameReferenceType,
             String storageAccountType,
@@ -318,13 +340,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String noOfParallelJobs,
             String usageMode,
             String builtInImage,
-            boolean isInstallGit,
-            boolean isInstallMaven,
-            boolean isInstallDocker,
+            boolean installGit,
+            boolean installMaven,
+            boolean installDocker,
             String osType,
             String imageTopLevelType,
-            boolean imageReference,
-            ImageReferenceTypeClass imageReferenceTypeClass,
+            ImageReferenceTypeClass imageReference,
             String agentLaunchMethod,
             boolean preInstallSsh,
             String initScript,
@@ -336,10 +357,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            AzureVMCloudBaseRetentionStrategy retentionStrategy,
+            RetentionStrategy retentionStrategy,
             boolean shutdownOnIdle,
             boolean templateDisabled,
-            String templateStatusDetails,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI) {
@@ -347,8 +367,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.templateDesc = templateDesc;
         this.labels = labels;
         this.location = location;
-        this.availabilityType = getAvailabilityType(availabilityTypeClass);
-        this.availabilitySet = availabilityTypeClass == null ? null : availabilityTypeClass.getAvailabilitySet();
+        this.availabilityType = availabilityType;
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
         this.storageAccountName = getStorageAccountName(
@@ -368,23 +387,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
-        this.imageReferenceType = getImageReferenceType(imageReferenceTypeClass);
         this.builtInImage = builtInImage;
-        this.isInstallDocker = isInstallDocker;
-        this.isInstallGit = isInstallGit;
-        this.isInstallMaven = isInstallMaven;
-        this.image = imageReferenceTypeClass.getImage();
+        this.installDocker = installDocker;
+        this.installGit = installGit;
+        this.installMaven = installMaven;
+        this.imageReference = imageReference;
         this.osType = osType;
-        this.imageId = imageReferenceTypeClass.getImageId();
-        this.imagePublisher = imageReferenceTypeClass.getImagePublisher();
-        this.imageOffer = imageReferenceTypeClass.getImageOffer();
-        this.imageSku = imageReferenceTypeClass.getImageSku();
-        this.imageVersion = imageReferenceTypeClass.getImageVersion();
-        this.galleryName = imageReferenceTypeClass.getGalleryName();
-        this.galleryImageDefinition = imageReferenceTypeClass.getGalleryImageDefinition();
-        this.galleryImageVersion = imageReferenceTypeClass.getGalleryImageVersion();
-        this.gallerySubscriptionId = imageReferenceTypeClass.getGallerySubscriptionId();
-        this.galleryResourceGroup = imageReferenceTypeClass.getGalleryResourceGroup();
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -411,6 +419,102 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         labelDataSet = Label.parse(labels);
     }
 
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGallerySubscriptionId() {
+        return imageReference != null ? imageReference.getGallerySubscriptionId() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryResourceGroup() {
+        return imageReference != null ? imageReference.getGalleryResourceGroup() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryName() {
+        return imageReference != null ? imageReference.getGalleryName() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryImageDefinition() {
+        return imageReference != null ? imageReference.getGalleryImageDefinition() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getGalleryImageVersion() {
+        return imageReference != null ? imageReference.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getId() {
+        return imageReference != null ? imageReference.getId() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getUri() {
+        return imageReference != null ? imageReference.getUri() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getPublisher() {
+        return imageReference != null ? imageReference.getPublisher() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getOffer() {
+        return imageReference != null ? imageReference.getOffer() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getSku() {
+        return imageReference != null ? imageReference.getSku() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getVersion() {
+        return imageReference != null ? imageReference.getVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public String getAvailabilitySet() {
+        return availabilityType != null ? availabilityType.getAvailabilitySet() : null;
+    }
+
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
         Map<String, Object> templateProperties = new HashMap<>();
         String builtInImage = template.getBuiltInImage();
@@ -418,32 +522,37 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 AzureVMManagementServiceDelegate.DEFAULT_IMAGE_PROPERTIES.get(builtInImage);
         boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
         String imageSkuName =
-                template.getIsInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
+                template.isInstallDocker() ? Constants.DEFAULT_DOCKER_IMAGE_SKU : Constants.DEFAULT_IMAGE_SKU;
 
         templateProperties.put("imageId",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID) : template.getImageId());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_ID)
+                        : template.getImageReference().getId());
         templateProperties.put("imagePublisher",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER) : template.getImagePublisher());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_PUBLISHER)
+                        : template.getImageReference().getPublisher());
         templateProperties.put("imageOffer",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER) : template.getImageOffer());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_OFFER)
+                        : template.getImageReference().getOffer());
         templateProperties.put("imageSku",
-                isBasic ? defaultProperties.get(imageSkuName) : template.getImageSku());
+                isBasic ? defaultProperties.get(imageSkuName) : template.getImageReference().getSku());
         templateProperties.put("imageVersion",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION) : template.getImageVersion());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_IMAGE_VERSION)
+                        : template.getImageReference().getVersion());
         templateProperties.put("galleryName",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_NAME) : template.getGalleryName());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_NAME)
+                        : template.getImageReference().getGalleryName());
         templateProperties.put("galleryImageDefinition",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_DEFINITION)
-                        : template.getGalleryImageDefinition());
+                        : template.getImageReference().getGalleryImageDefinition());
         templateProperties.put("galleryImageVersion",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_IMAGE_VERSION)
-                        : template.getGalleryImageVersion());
+                        : template.getImageReference().getGalleryImageVersion());
         templateProperties.put("gallerySubscriptionId",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_SUBSCRIPTION_ID)
-                : template.getGallerySubscriptionId());
+                : template.getImageReference().getGallerySubscriptionId());
         templateProperties.put("galleryResourceGroup",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_RESOURCE_GROUP)
-                        : template.getGalleryResourceGroup());
+                        : template.getImageReference().getGalleryResourceGroup());
         templateProperties.put("osType",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
         templateProperties.put("agentLaunchMethod",
@@ -482,19 +591,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             stringBuilder.append(
                     AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                             .get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
-            if (template.getIsInstallMaven()) {
+            if (template.isInstallMaven()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
             }
-            if (template.getIsInstallGit()) {
+            if (template.isInstallGit()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
             }
-            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.getIsInstallDocker()) {
+            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.isInstallDocker()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
@@ -519,12 +628,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
-
+    @SuppressWarnings("unused") // called by stapler in jelly
     public boolean isType(String type) {
-        if (this.imageReferenceType == null && type.equals("reference")) {
-            return true;
+        if (type == null || imageReference == null) {
+            return false;
         }
-        return type != null && type.equalsIgnoreCase(this.imageReferenceType);
+
+        return imageReference.type.getName().equals(type);
     }
 
     public boolean isTopLevelType(String type) {
@@ -534,6 +644,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return type != null && type.equalsIgnoreCase(this.imageTopLevelType);
     }
 
+    @SuppressWarnings("ConstantConditions") // fields are assigned by xstream
     private Object readResolve() {
         labelDataSet = Label.parse(labels);
         templateProvisionStrategy = new ProvisionStrategy();
@@ -550,25 +661,89 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         storageAccountName = getStorageAccountName(
                 storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
 
-        if (StringUtils.isBlank(imageTopLevelType)) {
-            if (StringUtils.isNotBlank(image)
-                    || StringUtils.isNotBlank(imageId)
-                    || StringUtils.isNotBlank(imageOffer)
-                    || StringUtils.isNotBlank(imageSku)
-                    || StringUtils.isNotBlank(imagePublisher)) {
-                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
-            } else {
-                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
-            }
-            builtInImage = Constants.WINDOWS_SERVER_2016;
-        }
-
         if (StringUtils.isBlank(diskType)) {
             diskType = Constants.DISK_UNMANAGED;
         }
 
         if (retentionStrategy == null) {
-            retentionStrategy = new AzureVMCloudRetensionStrategy(retentionTimeInMin);
+            retentionStrategy = new AzureVMCloudRetensionStrategy(0);
+        }
+
+        if (isInstallDocker) {
+            installDocker = true;
+        }
+
+        if (isInstallGit) {
+            installGit = true;
+        }
+
+        if (isInstallMaven) {
+            installMaven = true;
+        }
+
+        if (imageReference == null) {
+            imageReference = new ImageReferenceTypeClass();
+        }
+
+        if (Util.fixNull(image) != null) {
+            imageReference.uri = image;
+        }
+
+        if (Util.fixNull(imageId) != null) {
+            imageReference.id = imageId;
+        }
+
+        if (Util.fixNull(imagePublisher) != null) {
+            imageReference.publisher = imagePublisher;
+        }
+
+        if (Util.fixNull(imageOffer) != null) {
+            imageReference.offer = imageOffer;
+        }
+
+        if (Util.fixNull(imageSku) != null) {
+            imageReference.sku = imageSku;
+        }
+
+        if (Util.fixNull(imageVersion) != null) {
+            imageReference.version = imageVersion;
+        }
+
+        if (Util.fixNull(galleryName) != null) {
+            imageReference.galleryName = galleryName;
+        }
+
+        if (Util.fixNull(galleryImageDefinition) != null) {
+            imageReference.galleryImageDefinition = galleryImageDefinition;
+        }
+
+        if (Util.fixNull(galleryImageVersion) != null) {
+            imageReference.galleryImageVersion = galleryImageVersion;
+        }
+
+        if (Util.fixNull(gallerySubscriptionId) != null) {
+            imageReference.gallerySubscriptionId = gallerySubscriptionId;
+        }
+
+        if (Util.fixNull(galleryResourceGroup) != null) {
+            imageReference.galleryResourceGroup = galleryResourceGroup;
+        }
+
+        if (imageReference.type == null) {
+            imageReference.type = imageReference.determineType();
+        }
+
+        if (StringUtils.isBlank(imageTopLevelType)) {
+            if (imageReference != null  && (StringUtils.isNotBlank(imageReference.getUri())
+                    || StringUtils.isNotBlank(imageReference.getId())
+                    || StringUtils.isNotBlank(imageReference.getOffer())
+                    || StringUtils.isNotBlank(imageReference.getSku())
+                    || StringUtils.isNotBlank(imageReference.getPublisher()))) {
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_ADVANCED;
+            } else {
+                imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
+            }
+            builtInImage = Constants.WINDOWS_SERVER_2016;
         }
 
         return this;
@@ -580,10 +755,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getLocation() {
         return location;
-    }
-
-    public String getAvailabilitySet() {
-        return availabilitySet;
     }
 
     public String getVirtualMachineSize() {
@@ -661,59 +832,32 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return shutdownOnIdle;
     }
 
-    public String getAvailabilityType() {
+    public AvailabilityTypeClass getAvailabilityType() {
         return availabilityType;
     }
 
-    public String getImageReferenceType() {
-        return imageReferenceType;
+    public ImageReferenceTypeClass getImageReference() {
+        return imageReference;
     }
 
     public String getImageTopLevelType() {
         return imageTopLevelType;
     }
 
-    public String getAvailabilityType(AvailabilityTypeClass availabilityTypeClass) {
-        if (availabilityTypeClass == null) {
-            return AvailabilityType.UNKNOWN.getName();
-        }
-        if (availabilityTypeClass.getAvailabilitySet() != null) {
-            return AvailabilityType.AVAILABILITY_SET.getName();
-        }
-        return AvailabilityType.UNKNOWN.getName();
-    }
-
-    public String getImageReferenceType(ImageReferenceTypeClass imageReferenceTypeClass) {
-        if (imageReferenceTypeClass.image != null) {
-            return ImageReferenceType.CUSTOM.getName();
-        }
-        if (imageReferenceTypeClass.imageId != null) {
-            return ImageReferenceType.CUSTOM_IMAGE.getName();
-        }
-        if (imageReferenceTypeClass.getGalleryName() != null) {
-            return ImageReferenceType.GALLERY.getName();
-        }
-        return ImageReferenceType.REFERENCE.getName();
-    }
-
     public String getBuiltInImage() {
         return builtInImage;
     }
 
-    public boolean getIsInstallGit() {
-        return isInstallGit;
+    public boolean isInstallGit() {
+        return installGit;
     }
 
-    public boolean getIsInstallMaven() {
-        return isInstallMaven;
+    public boolean isInstallMaven() {
+        return installMaven;
     }
 
-    public boolean getIsInstallDocker() {
-        return isInstallDocker;
-    }
-
-    public String getImage() {
-        return image;
+    public boolean isInstallDocker() {
+        return installDocker;
     }
 
     public String getOsType() {
@@ -722,46 +866,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public boolean getPreInstallSsh() {
         return preInstallSsh;
-    }
-
-    public String getImageId() {
-        return imageId;
-    }
-
-    public String getImagePublisher() {
-        return imagePublisher;
-    }
-
-    public String getImageOffer() {
-        return imageOffer;
-    }
-
-    public String getImageSku() {
-        return imageSku;
-    }
-
-    public String getImageVersion() {
-        return imageVersion;
-    }
-
-    public String getGalleryName() {
-        return galleryName;
-    }
-
-    public String getGalleryImageDefinition() {
-        return galleryImageDefinition;
-    }
-
-    public String getGalleryImageVersion() {
-        return galleryImageVersion;
-    }
-
-    public String getGallerySubscriptionId() {
-        return gallerySubscriptionId;
-    }
-
-    public String getGalleryResourceGroup() {
-        return galleryResourceGroup;
     }
 
     public String getInitScript() {
@@ -808,19 +912,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return agentWorkspace;
     }
 
-    public int getRetentionTimeInMin() {
-        return retentionTimeInMin;
-    }
-
     public String getJvmOptions() {
         return jvmOptions;
     }
 
-    public AzureVMCloud getAzureCloud() {
+    public AzureVMCloud retrieveAzureCloudReference() {
         return azureCloud;
     }
 
-    public void setAzureCloud(AzureVMCloud cloud) {
+    public void addAzureCloudReference(AzureVMCloud cloud) {
         azureCloud = cloud;
         if (StringUtils.isBlank(storageAccountName)) {
             storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(
@@ -893,7 +993,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getResourceGroupName() {
         // Allow overriding?
-        return getAzureCloud().getResourceGroupName();
+        return retrieveAzureCloudReference().getResourceGroupName();
+    }
+
+    public int getRetentionTimeInMin() {
+        return retentionTimeInMin;
     }
 
     public boolean getExecuteInitScriptAsRoot() {
@@ -918,20 +1022,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public AdvancedImage getAdvancedImageInside() {
         return new AdvancedImageBuilder()
-                .withCustomImage(getImage())
-                .withCustomManagedImage(getImageId())
+                .withCustomImage(imageReference.uri)
+                .withCustomManagedImage(imageReference.id)
                 .withGalleryImage(
-                        getGalleryName(),
-                        getGalleryImageDefinition(),
-                        getGalleryImageVersion(),
-                        getGallerySubscriptionId(),
-                        getGalleryResourceGroup()
+                        imageReference.galleryName,
+                        imageReference.galleryImageDefinition,
+                        imageReference.galleryImageVersion,
+                        imageReference.gallerySubscriptionId,
+                        imageReference.galleryResourceGroup
                 )
                 .withReferenceImage(
-                        getImagePublisher(),
-                        getImageOffer(),
-                        getImageSku(),
-                        getImageVersion()
+                        imageReference.publisher,
+                        imageReference.offer,
+                        imageReference.sku,
+                        imageReference.version
                 )
                 .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
                 .withOsType(getOsType())
@@ -953,14 +1057,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public BuiltInImage getBuiltInImageInside() {
         return new BuiltInImageBuilder().withBuiltInImageName(getBuiltInImage())
-                .withInstallGit(getIsInstallGit())
-                .withInstallDocker(getIsInstallDocker())
-                .withInstallMaven(getIsInstallMaven())
+                .withInstallGit(isInstallGit())
+                .withInstallDocker(isInstallDocker())
+                .withInstallMaven(isInstallMaven())
                 .build();
     }
 
     public Availability getAvailabilityInside() {
-        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilitySet())
+        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilityType().getAvailabilitySet())
                 .build();
     }
 
@@ -973,7 +1077,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return labelDataSet;
     }
 
-    public AzureVMCloudBaseRetentionStrategy getRetentionStrategy() {
+    public RetentionStrategy getRetentionStrategy() {
         return retentionStrategy;
     }
 
@@ -990,7 +1094,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     }
 
     private AzureVMManagementServiceDelegate getServiceDelegate() {
-        return getAzureCloud().getServiceDelegate();
+        return retrieveAzureCloudReference().getServiceDelegate();
     }
 
     /**
@@ -1023,27 +1127,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 storageAccountType,
                 noOfParallelJobs + "",
                 imageTopLevelType,
-                ImageReferenceType.get(imageReferenceType),
+                imageReference,
                 builtInImage,
-                image,
                 osType,
-                imageId,
-                imagePublisher,
-                imageOffer,
-                imageSku,
-                imageVersion,
-                galleryName,
-                galleryImageDefinition,
-                galleryImageVersion,
-                gallerySubscriptionId,
-                galleryResourceGroup,
                 agentLaunchMethod,
                 initScript,
                 credentialsId,
                 virtualNetworkName,
                 virtualNetworkResourceGroupName,
                 subnetName,
-                retentionStrategy,
+                (AzureVMCloudBaseRetentionStrategy) retentionStrategy,
                 jvmOptions,
                 getResourceGroupName(),
                 true,
@@ -1128,7 +1221,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public String doFillAvailabilityTypeItems() {
+        public String doFillAvailabilityTypeValueItems() {
             return null;
         }
 
@@ -1263,7 +1356,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public String doFillImageReferenceTypeItems() {
+        public String doFillImageReferenceTypeValueItems() {
             return null;
         }
 
@@ -1359,18 +1452,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String imageTopLevelType,
                 @QueryParameter String builtInImage,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String image,
+                @QueryParameter("uri") String imageUri,
                 @QueryParameter String osType,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageId,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imagePublisher,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageOffer,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageSku,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String imageVersion,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryName,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageDefinition,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryImageVersion,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String gallerySubscriptionId,
-                @RelativePath("imageReferenceTypeClass") @QueryParameter String galleryResourceGroup,
+                @QueryParameter("id") String imageId,
+                @QueryParameter("publisher") String imagePublisher,
+                @QueryParameter("offer") String imageOffer,
+                @QueryParameter("sku") String imageSku,
+                @QueryParameter("version") String imageVersion,
+                @QueryParameter String galleryName,
+                @QueryParameter String galleryImageDefinition,
+                @QueryParameter String galleryImageVersion,
+                @QueryParameter String gallerySubscriptionId,
+                @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
@@ -1379,17 +1472,22 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String jvmOptions,
-                @QueryParameter String imageReferenceType) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+                @QueryParameter String jvmOptions) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
-            /*
-            imageReferenceType will not be passed to doVerifyConfiguration
-            unless Jenkins core has https://github.com/jenkinsci/jenkins/pull/2734
-            The plugin should be able to run in both modes.
-            */
-
-            ImageReferenceType referenceType = ImageReferenceType.get(imageReferenceType);
+            ImageReferenceTypeClass image = new ImageReferenceTypeClass(
+                    imageUri,
+                    imageId,
+                    imagePublisher,
+                    imageOffer,
+                    imageSku,
+                    imageVersion,
+                    galleryName,
+                    galleryImageDefinition,
+                    galleryImageVersion,
+                    gallerySubscriptionId,
+                    galleryResourceGroup
+            );
 
             String resourceGroupName = AzureVMCloud.getResourceGroupName(
                     resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -1413,11 +1511,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "builtInImage: {12};\n\t"
                             + "image: {13};\n\t"
                             + "osType: {14};\n\t"
-                            + "imageId: {15};\n\t"
-                            + "imagePublisher: {16};\n\t"
-                            + "imageOffer: {17};\n\t"
-                            + "imageSku: {18};\n\t"
-                            + "imageVersion: {19};\n\t"
+                            + "id: {15};\n\t"
+                            + "publisher: {16};\n\t"
+                            + "offer: {17};\n\t"
+                            + "sku: {18};\n\t"
+                            + "version: {19};\n\t"
                             + "agentLaunchMethod: {20};\n\t"
                             + "initScript: {21};\n\t"
                             + "credentialsId: {22};\n\t"
@@ -1446,7 +1544,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             noOfParallelJobs,
                             imageTopLevelType,
                             builtInImage,
-                            image,
+                            imageUri,
                             osType,
                             imageId,
                             imagePublisher,
@@ -1485,20 +1583,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     storageAccountType,
                     noOfParallelJobs,
                     imageTopLevelType,
-                    referenceType,
-                    builtInImage,
                     image,
+                    builtInImage,
                     osType,
-                    imageId,
-                    imagePublisher,
-                    imageOffer,
-                    imageSku,
-                    imageVersion,
-                    galleryName,
-                    galleryImageDefinition,
-                    galleryImageVersion,
-                    gallerySubscriptionId,
-                    galleryResourceGroup,
                     agentLaunchMethod,
                     initScript,
                     credentialsId,

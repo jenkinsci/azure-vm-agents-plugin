@@ -1,0 +1,62 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<hudson>
+    <clouds>
+        <com.microsoft.azure.vmagent.AzureVMCloud plugin="azure-vm-agents@0.9.0">
+            <name>myAzure</name>
+            <cloudName>myAzure</cloudName>
+            <credentialsId>azure</credentialsId>
+            <maxVirtualMachinesLimit>10</maxVirtualMachinesLimit>
+            <resourceGroupReferenceType>new</resourceGroupReferenceType>
+            <newResourceGroupName>an-rg</newResourceGroupName>
+            <existingResourceGroupName></existingResourceGroupName>
+            <vmTemplates>
+                <com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+                    <templateName>template</templateName>
+                    <labels>ubuntu</labels>
+                    <location>East US</location>
+                    <availabilityType>unknown</availabilityType>
+                    <virtualMachineSize>Standard_DS2_v2</virtualMachineSize>
+                    <storageAccountNameReferenceType>new</storageAccountNameReferenceType>
+                    <diskType>managed</diskType>
+                    <osDiskSize>0</osDiskSize>
+                    <newStorageAccountName>storageaccount</newStorageAccountName>
+                    <storageAccountType>Standard_LRS</storageAccountType>
+                    <noOfParallelJobs>1</noOfParallelJobs>
+                    <usageMode>NORMAL</usageMode>
+                    <shutdownOnIdle>false</shutdownOnIdle>
+                    <imageTopLevelType>advanced</imageTopLevelType>
+                    <imageReferenceType>reference</imageReferenceType>
+                    <builtInImage>Windows Server 2016</builtInImage>
+                    <isInstallGit>false</isInstallGit>
+                    <isInstallMaven>false</isInstallMaven>
+                    <isInstallDocker>false</isInstallDocker>
+                    <osType>Linux</osType>
+                    <imagePublisher>Canonical</imagePublisher>
+                    <imageOffer>UbuntuServer</imageOffer>
+                    <imageSku>16.04-LTS</imageSku>
+                    <imageVersion>latest</imageVersion>
+                    <agentLaunchMethod>SSH</agentLaunchMethod>
+                    <preInstallSsh>true</preInstallSsh>
+                    <initScript>sudo add-apt-repository ppa:openjdk-r/ppa -y
+                        sudo apt-get -y update
+                        sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y</initScript>
+                    <credentialsId>ssh-username-password</credentialsId>
+                    <retentionTimeInMin>0</retentionTimeInMin>
+                    <usePrivateIP>false</usePrivateIP>
+                    <templateDisabled>false</templateDisabled>
+                    <templateStatusDetails></templateStatusDetails>
+                    <templateVerified>false</templateVerified>
+                    <executeInitScriptAsRoot>true</executeInitScriptAsRoot>
+                    <doNotUseMachineIfInitFails>true</doNotUseMachineIfInitFails>
+                    <enableMSI>false</enableMSI>
+                    <retentionStrategy class="com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy">
+                        <idleTerminationMillis>3600000</idleTerminationMillis>
+                        <idleTerminationMinutes>60</idleTerminationMinutes>
+                    </retentionStrategy>
+                </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+            </vmTemplates>
+            <deploymentTimeout>1200</deploymentTimeout>
+            <approximateVirtualMachineCount>0</approximateVirtualMachineCount>
+        </com.microsoft.azure.vmagent.AzureVMCloud>
+    </clouds>
+</hudson>

@@ -16,11 +16,11 @@
 package com.microsoft.azure.vmagent.test;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.CloudException;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -41,26 +41,21 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.azure.util.AzureCredentials.ServicePrincipal;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
-import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
-import jenkins.model.Jenkins;
-import org.eclipse.jetty.util.security.Credential;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 
@@ -100,7 +95,7 @@ public class IntegrationTest {
         public final String subscriptionId;
         public final String clientId;
         public final String clientSecret;
-        public final String oauth2TokenEndpoint;
+        public final String tenantId;
         public final String serviceManagementURL;
         public final String authenticationEndpoint;
         public final String resourceManagerEndpoint;
@@ -135,7 +130,7 @@ public class IntegrationTest {
             clientId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_CLIENT_ID");
             clientSecret = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_CLIENT_SECRET");
 
-            oauth2TokenEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_TOKEN_ENDPOINT");
+            tenantId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_TENANT_ID");
             serviceManagementURL = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_URL", "https://management.core.windows.net/");
             authenticationEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_AUTH_URL", "https://login.microsoftonline.com/");
             resourceManagerEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_RESOURCE_URL", "https://management.azure.com/");
@@ -159,12 +154,12 @@ public class IntegrationTest {
             osDiskSize = 0;
             availabilityType = AvailabilityType.UNKNOWN.getName();
             availabilitySet = "";
-            blobEndpointSuffixForTemplate = new HashMap<String, String>();
+            blobEndpointSuffixForTemplate = new HashMap<>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
             blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
             blobEndpointSuffixForTemplate.put(AZUREUSGOVERMENT, ".blob.core.usgovcloudapi.net/");
             blobEndpointSuffixForTemplate.put(AZUREGERMAN, ".blob.core.cloudapi.de/");
-            blobEndpointSuffixForCloudStorageAccount = new HashMap<String, String>();
+            blobEndpointSuffixForCloudStorageAccount = new HashMap<>();
             blobEndpointSuffixForCloudStorageAccount.put(AZUREPUBLIC, "core.windows.net/");
             blobEndpointSuffixForCloudStorageAccount.put(AZURECHINA, "core.chinacloudapi.cn/");
             blobEndpointSuffixForCloudStorageAccount.put(AZUREUSGOVERMENT, "core.usgovcloudapi.net/");
@@ -208,21 +203,14 @@ public class IntegrationTest {
     public void setUp() {
         testEnv = new TestEnvironment();
         LOGGER.log(Level.INFO, "=========================== {0}", testEnv.azureResourceGroup);
-        ServicePrincipal servicePrincipal = new ServicePrincipal(
-                testEnv.subscriptionId,
+
+        azureClient = AzureClientFactory.getClient(
                 testEnv.clientId,
                 testEnv.clientSecret,
-                testEnv.oauth2TokenEndpoint,
-                testEnv.serviceManagementURL,
-                testEnv.authenticationEndpoint,
-                testEnv.resourceManagerEndpoint,
-                testEnv.graphEndpoint);
-        azureClient = AzureClientFactory.getClient(
-                servicePrincipal.getClientId(),
-                servicePrincipal.getClientSecret(),
-                servicePrincipal.getTenant(),
-                servicePrincipal.getSubscriptionId(),
-                servicePrincipal.getAzureEnvironment());
+                testEnv.tenantId,
+                testEnv.subscriptionId,
+                AzureEnvironment.AZURE
+        );
         String azureCredentialsId = "testId";
         addAzureCredentials(azureCredentialsId, "test", testEnv.subscriptionId, testEnv.clientId, testEnv.clientSecret);
         delegate = AzureVMManagementServiceDelegate.getInstance(azureClient, azureCredentialsId);
@@ -359,24 +347,31 @@ public class IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
-        when(templateMock.getAvailabilityType()).thenReturn(testEnv.availabilityType);
-        when(templateMock.getAvailabilitySet()).thenReturn(testEnv.availabilitySet);
+        when(templateMock.getAvailabilityType()).thenReturn(new AzureVMAgentTemplate.AvailabilityTypeClass(testEnv.availabilitySet));
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
-        when(templateMock.getImageReferenceType()).thenReturn(ImageReferenceType.REFERENCE.getName());
-        when(templateMock.getImageId()).thenReturn(testEnv.azureImageId);
-        when(templateMock.getImagePublisher()).thenReturn(testEnv.azureImagePublisher);
-        when(templateMock.getImageOffer()).thenReturn(testEnv.azureImageOffer);
-        when(templateMock.getImageSku()).thenReturn(testEnv.azureImageSku);
-        when(templateMock.getImageVersion()).thenReturn(testEnv.azureImageVersion);
+
+        when(templateMock.getImageReference()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                null,
+                testEnv.azureImageId,
+                testEnv.azureImagePublisher,
+                testEnv.azureImageOffer,
+                testEnv.azureImageSku,
+                testEnv.azureImageVersion,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
-        when(templateMock.getImage()).thenReturn("");
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
-        when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+        when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
@@ -388,7 +383,7 @@ public class IntegrationTest {
         AzureVMDeploymentInfo ret = delegate.createDeployment(templateMock, numberOfAgents, deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();
         for (int i = 0; i < numberOfAgents; i++) {
-            vmNames.add(ret.getVmBaseName() + String.valueOf(i));
+            vmNames.add(ret.getVmBaseName() + i);
         }
 
         //wait for deployment to complete
