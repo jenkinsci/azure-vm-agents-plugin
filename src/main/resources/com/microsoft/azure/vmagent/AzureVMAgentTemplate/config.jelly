@@ -103,7 +103,7 @@
             </ui:radioBlock>
 
             <ui:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
-                <ui:dropdownList selectedName="imageReferenceTypeValue" name="image">
+                <ui:dropdownList selectedName="imageReferenceTypeValue" name="imageReference">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
                         <f:entry title="${%Image}" field="uri" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
