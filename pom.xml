@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
-    <version>0.9.1-SNAPSHOT</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
 
     <name>Azure VM Agents</name>
@@ -35,10 +35,12 @@
         <connection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/azure-vm-agents-plugin</url>
-        <tag>HEAD</tag>
+        <tag>${scmTag}</tag>
     </scm>
 
     <properties>
+        <revision>0.9.1</revision>
+        <changelist>-SNAPSHOT</changelist>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <azuresdk.version>1.19.0</azuresdk.version>
