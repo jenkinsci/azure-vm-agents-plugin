@@ -211,13 +211,16 @@ public final class AzureVMManagementServiceDelegate {
                         new Object[]{template.getResourceGroupName()});
                 throw new Exception("ResourceGroup Name is invalid");
             }
-            final String resourceGroupName = template.getResourceGroupName();
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment:"
                             + " Creating a new deployment {0} with VM base name {1}",
                     new Object[]{deploymentName, vmBaseName});
+            final String resourceGroupName = template.getResourceGroupName();
+            final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
-            createAzureResourceGroup(azureClient, locationName, resourceGroupName);
+            if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
+                createAzureResourceGroup(azureClient, locationName, resourceGroupName);
+            }
             //For blob endpoint url in arm template, it's different based on different environments
             //So create StorageAccount and get suffix
             createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName);
@@ -727,11 +730,14 @@ public final class AzureVMManagementServiceDelegate {
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
+        String resourceGroupReferenceType = template.getResourceGroupReferenceType();
         String location = template.getLocation();
 
         //make sure the resource group and storage account exist
         try {
-            createAzureResourceGroup(azureClient, location, resourceGroupName);
+            if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
+                createAzureResourceGroup(azureClient, location, resourceGroupName);
+            }
             createStorageAccount(
                     azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName);
         } catch (Exception e) {

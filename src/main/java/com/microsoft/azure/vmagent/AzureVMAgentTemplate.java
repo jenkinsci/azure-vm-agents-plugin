@@ -996,6 +996,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return retrieveAzureCloudReference().getResourceGroupName();
     }
 
+    public String getResourceGroupReferenceType() {
+        return retrieveAzureCloudReference().getResourceGroupReferenceType();
+    }
+
     public int getRetentionTimeInMin() {
         return retentionTimeInMin;
     }

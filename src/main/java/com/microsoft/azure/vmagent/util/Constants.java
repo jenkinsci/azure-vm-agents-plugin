@@ -124,6 +124,12 @@ public final class Constants {
     public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
 
     /**
+     * ResourceGroup reference type.
+     */
+    public static final String RESOURCE_GROUP_REFERENCE_TYPE_NEW = "new";
+    public static final String RESOURCE_GROUP_REFERENCE_TYPE_EXISTING = "existing";
+
+    /**
      * Default Image Properties.
      */
     public static final String DEFAULT_IMAGE_ID = "defaultImageId";
