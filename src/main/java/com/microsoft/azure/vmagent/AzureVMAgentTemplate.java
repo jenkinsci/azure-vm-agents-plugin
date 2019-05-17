@@ -200,6 +200,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.availabilitySet = Util.fixEmpty(availabilitySet);
         }
 
+        private AvailabilityTypeClass() {
+            // used for readResolve to maintain compatibility
+        }
+
         public String getAvailabilitySet() {
             return availabilitySet;
         }
@@ -218,7 +222,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String location;
 
-    private final AvailabilityTypeClass availabilityType;
+    private AvailabilityTypeClass availabilityType;
 
     private final String virtualMachineSize;
 
@@ -683,6 +687,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (imageReference == null) {
             imageReference = new ImageReferenceTypeClass();
+        }
+
+        if (availabilityType == null) {
+            availabilityType = new AvailabilityTypeClass();
         }
 
         if (Util.fixNull(image) != null) {
