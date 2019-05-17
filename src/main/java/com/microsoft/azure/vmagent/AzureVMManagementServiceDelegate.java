@@ -2412,6 +2412,7 @@ public final class AzureVMManagementServiceDelegate {
             azureClient.resourceGroups()
                     .define(resourceGroupName)
                     .withRegion(locationName)
+                    .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                     .create();
         } catch (Exception e) {
             throw AzureCloudException.create(
@@ -2441,10 +2442,12 @@ public final class AzureVMManagementServiceDelegate {
             // Reuse existing to prevent failure.
 
             if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
+                SkuName skuName = SkuName.fromString(targetStorageAccountType);
                 azureClient.storageAccounts().define(targetStorageAccount)
                         .withRegion(location)
                         .withExistingResourceGroup(resourceGroupName)
-                        .withSku(SkuName.fromString(targetStorageAccountType))
+                        .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
+                        .withSku(StorageAccountSkuType.fromSkuName(skuName))
                         .create();
             }
         } catch (Exception e) {
