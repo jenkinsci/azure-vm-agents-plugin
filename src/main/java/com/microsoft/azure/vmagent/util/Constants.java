@@ -238,6 +238,8 @@ public final class Constants {
 
     public static final String AZURE_CLOUD_TAG_NAME = "JenkinsCloudTag";
 
+    public static final String AZURE_TEMPLATE_TAG_NAME = "JenkinsTemplateTag";
+
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
     public static final String VERSION_LATEST = "latest";

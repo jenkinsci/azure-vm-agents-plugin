@@ -218,12 +218,14 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
+            String cloudName = template.retrieveAzureCloudReference().getCloudName();
             if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
-                createAzureResourceGroup(azureClient, locationName, resourceGroupName);
+                createAzureResourceGroup(azureClient, locationName, resourceGroupName, cloudName);
             }
+
             //For blob endpoint url in arm template, it's different based on different environments
             //So create StorageAccount and get suffix
-            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName);
+            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName());
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
@@ -303,7 +305,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "location", locationName);
             putVariable(tmp, "jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             putVariable(tmp, "resourceTag", deploymentRegistrar.getDeploymentTag().get());
-            putVariable(tmp, "cloudTag", template.retrieveAzureCloudReference().getCloudName());
+            putVariable(tmp, "cloudTag", cloudName);
 
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
@@ -491,7 +493,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
-                    template.retrieveAzureCloudReference().getCloudName(), template.getResourceGroupName(), deploymentName, scriptUri);
+                    cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
@@ -736,10 +738,12 @@ public final class AzureVMManagementServiceDelegate {
         //make sure the resource group and storage account exist
         try {
             if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
-                createAzureResourceGroup(azureClient, location, resourceGroupName);
+                AzureVMCloud azureVMCloud = template.retrieveAzureCloudReference();
+                createAzureResourceGroup(azureClient, location, resourceGroupName, azureVMCloud.getCloudName());
             }
+
             createStorageAccount(
-                    azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName);
+                    azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName, template.getTemplateName());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Got exception when checking the storage account for custom scripts", e);
         }
@@ -2413,11 +2417,14 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      */
     private void createAzureResourceGroup(
-            Azure azureClient, String locationName, String resourceGroupName) throws AzureCloudException {
+            Azure azureClient, String locationName, String resourceGroupName,
+            String cloudName) throws AzureCloudException {
         try {
             azureClient.resourceGroups()
                     .define(resourceGroupName)
                     .withRegion(locationName)
+                    .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
+                    .withTag(Constants.AZURE_CLOUD_TAG_NAME, cloudName)
                     .create();
         } catch (Exception e) {
             throw AzureCloudException.create(
@@ -2441,16 +2448,20 @@ public final class AzureVMManagementServiceDelegate {
             String targetStorageAccountType,
             String targetStorageAccount,
             String location,
-            String resourceGroupName) throws AzureCloudException {
+            String resourceGroupName,
+            String templateName) throws AzureCloudException {
         try {
             // Get storage account before creating.
             // Reuse existing to prevent failure.
 
             if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
+                SkuName skuName = SkuName.fromString(targetStorageAccountType);
                 azureClient.storageAccounts().define(targetStorageAccount)
                         .withRegion(location)
                         .withExistingResourceGroup(resourceGroupName)
-                        .withSku(SkuName.fromString(targetStorageAccountType))
+                        .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
+                        .withTag(Constants.AZURE_TEMPLATE_TAG_NAME, templateName)
+                        .withSku(StorageAccountSkuType.fromSkuName(skuName))
                         .create();
             }
         } catch (Exception e) {

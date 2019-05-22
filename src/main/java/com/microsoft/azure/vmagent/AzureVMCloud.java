@@ -675,7 +675,7 @@ public class AzureVMCloud extends Cloud {
                                                 // set virtual machine details again
                                                 getServiceDelegate().setVirtualMachineDetails(
                                                         agentNode, template);
-                                                Jenkins.get().addNode(agentNode);
+                                                Jenkins.getInstance().addNode(agentNode);
                                                 if (agentNode.getAgentLaunchMethod()
                                                         .equalsIgnoreCase("SSH")) {
                                                     azureComputer.connect(false).get();

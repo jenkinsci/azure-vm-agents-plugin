@@ -334,7 +334,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
        and are not accounted for.
     */
     public void cleanLeakedResources() {
-        Jenkins instance = Jenkins.getInstance();
+        Jenkins instance = Jenkins.getInstanceOrNull();
         if (instance == null) {
             return;
         }
@@ -345,7 +345,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
     public List<String> getValidVMs() {
         List<String> vms = new ArrayList<>();
-        Jenkins instance = Jenkins.getInstance();
+        Jenkins instance = Jenkins.getInstanceOrNull();
         if (instance != null) {
             for (Computer computer : instance.getComputers()) {
                 if (computer instanceof AzureVMComputer) {
@@ -609,7 +609,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public AzureVMCloud getCloud(String cloudName) {
-        return Jenkins.getInstance() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+        return Jenkins.getInstanceOrNull() == null ? null : (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
     private void clean() {
