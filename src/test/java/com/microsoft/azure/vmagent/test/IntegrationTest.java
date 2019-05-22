@@ -104,6 +104,7 @@ public class IntegrationTest {
         public String availabilityType;
         public String availabilitySet;
         public final String azureResourceGroup;
+        public final String azureResourceGroupReferenceType;
         public final String azureStorageAccountName;
         public final String azureStorageAccountType;
         public final String azureImageId;
@@ -138,6 +139,7 @@ public class IntegrationTest {
 
             azureLocation = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_LOCATION", "East US");
             azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
+            azureResourceGroupReferenceType = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_REFERENCE_TYPE", Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW);
             azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst") + TestEnvironment.GenerateRandomString(19);
             azureStorageAccountType = SkuName.STANDARD_LRS.toString();
             azureImageId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_ID", "");
@@ -345,6 +347,7 @@ public class IntegrationTest {
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
         when(cloudMock.getCloudName()).thenReturn("testCloud");
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
+        when(templateMock.getResourceGroupReferenceType()).thenReturn(testEnv.azureResourceGroupReferenceType);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
         when(templateMock.getAvailabilityType()).thenReturn(new AzureVMAgentTemplate.AvailabilityTypeClass(testEnv.availabilitySet));
