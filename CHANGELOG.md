@@ -1,5 +1,14 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.0.0 2019-05-22
+
+* Bump Jenkins baseline to 2.60.3
+* Add IMDS credential type
+* Support configuration as code
+* Support incrementalified plugin
+* Add management tags for plugin created resource group and storage account
+* Fix not support different templates in different regions
+
 ## Version 0.9.0 2019-03-11
 
 * Support Image Gallery as an option for agents
