@@ -325,6 +325,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private transient String galleryImageVersion;
     private transient String gallerySubscriptionId;
     private transient String galleryResourceGroup;
+    private transient String availabilitySet;
 
 
     @DataBoundConstructor
@@ -693,52 +694,56 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             availabilityType = new AvailabilityTypeClass();
         }
 
-        if (Util.fixNull(image) != null) {
+        if (StringUtils.isNotBlank(image)) {
             imageReference.uri = image;
         }
 
-        if (Util.fixNull(imageId) != null) {
+        if (StringUtils.isNotBlank(imageId)) {
             imageReference.id = imageId;
         }
 
-        if (Util.fixNull(imagePublisher) != null) {
+        if (StringUtils.isNotBlank(imagePublisher)) {
             imageReference.publisher = imagePublisher;
         }
 
-        if (Util.fixNull(imageOffer) != null) {
+        if (StringUtils.isNotBlank(imageOffer)) {
             imageReference.offer = imageOffer;
         }
 
-        if (Util.fixNull(imageSku) != null) {
+        if (StringUtils.isNotBlank(imageSku)) {
             imageReference.sku = imageSku;
         }
 
-        if (Util.fixNull(imageVersion) != null) {
+        if (StringUtils.isNotBlank(imageVersion)) {
             imageReference.version = imageVersion;
         }
 
-        if (Util.fixNull(galleryName) != null) {
+        if (StringUtils.isNotBlank(galleryName)) {
             imageReference.galleryName = galleryName;
         }
 
-        if (Util.fixNull(galleryImageDefinition) != null) {
+        if (StringUtils.isNotBlank(galleryImageDefinition)) {
             imageReference.galleryImageDefinition = galleryImageDefinition;
         }
 
-        if (Util.fixNull(galleryImageVersion) != null) {
+        if (StringUtils.isNotBlank(galleryImageVersion)) {
             imageReference.galleryImageVersion = galleryImageVersion;
         }
 
-        if (Util.fixNull(gallerySubscriptionId) != null) {
+        if (StringUtils.isNotBlank(gallerySubscriptionId)) {
             imageReference.gallerySubscriptionId = gallerySubscriptionId;
         }
 
-        if (Util.fixNull(galleryResourceGroup) != null) {
+        if (StringUtils.isNotBlank(galleryResourceGroup)) {
             imageReference.galleryResourceGroup = galleryResourceGroup;
         }
 
         if (imageReference.type == null) {
             imageReference.type = imageReference.determineType();
+        }
+
+        if (StringUtils.isNotBlank(availabilitySet)) {
+            availabilityType.availabilitySet = availabilitySet;
         }
 
         if (StringUtils.isBlank(imageTopLevelType)) {
