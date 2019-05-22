@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.0.1 2019-05-22
+* Fix deserialize losing configuration issue
+
 ## version 1.0.0 2019-05-22
 
 * Bump Jenkins baseline to 2.60.3
