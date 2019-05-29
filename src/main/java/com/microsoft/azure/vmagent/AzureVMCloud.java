@@ -525,7 +525,7 @@ public class AzureVMCloud extends Cloud {
         ObjectNode.class.cast(template.get("variables")).put(name, value);
     }
     
-    private String enableUAMI(String vmBaseName, String uamiID) throws IOException{
+    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException{
         
         InputStream embeddedTemplate = null;
         JsonNode tmp = null;
@@ -536,6 +536,7 @@ public class AzureVMCloud extends Cloud {
         tmp = mapper.readTree(embeddedTemplate);
         putVariable(tmp, "vmName", vmBaseName);
         putVariable(tmp, "uamiID", uamiID);
+        putVariable(tmp, "location", location);
         
        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMCloud: deployment: Unable to deploy", e);
@@ -645,13 +646,15 @@ public class AzureVMCloud extends Cloud {
                                                 
                                 if (isEnabledUAMI) {
                                     String uamiID = (String) properties.get("uamiID");
+                                    String location = template.getLocation();
+
                                     final Azure myAzureClient = AzureClientUtil.getClient(credentialsId);
                                     final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), new Date(System.currentTimeMillis()));
 
                                     // -- execute template UAMI
                                     myAzureClient.deployments().define(deploymentName2)
                                             .withExistingResourceGroup(template.getResourceGroupName())
-                                            .withTemplate(enableUAMI(resource,uamiID))
+                                            .withTemplate(enableUAMI(resource,uamiID,location))
                                             .withParameters("{}")
                                             .withMode(DeploymentMode.INCREMENTAL)
                                             .beginCreate();
