@@ -990,6 +990,8 @@ public final class AzureVMManagementServiceDelegate {
      */
     private static Set<String> getAvailableLocationsStandard() {
         final Set<String> locations = new HashSet<>();
+        locations.add("UK South");
+        locations.add("UK West");
         locations.add("East US");
         locations.add("West US");
         locations.add("South Central US");
