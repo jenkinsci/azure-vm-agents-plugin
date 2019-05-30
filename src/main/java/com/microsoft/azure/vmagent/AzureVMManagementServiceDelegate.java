@@ -80,15 +80,20 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME = "/referenceImageTemplateWithManagedDisk.json";
 
-    private static final String EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME = "/referenceImageTemplateWithScriptAndManagedDisk.json";
+    private static final String EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME =
+            "/referenceImageTemplateWithScriptAndManagedDisk.json";
 
-    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME = "/customImageTemplateWithManagedDisk.json";
+    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME =
+            "/customImageTemplateWithManagedDisk.json";
 
-    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME = "/customImageTemplateWithScriptAndManagedDisk.json";
+    private static final String EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME =
+            "/customImageTemplateWithScriptAndManagedDisk.json";
 
-    private static final String EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME = "/referenceImageIDTemplateWithManagedDisk.json";
+    private static final String EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME =
+            "/referenceImageIDTemplateWithManagedDisk.json";
 
-    private static final String EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME = "/referenceImageIDTemplateWithScriptAndManagedDisk.json";
+    private static final String EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME =
+            "/referenceImageIDTemplateWithScriptAndManagedDisk.json";
 
     private static final String VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME = "/virtualNetworkFragment.json";
 
@@ -100,18 +105,22 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final Set<String> AVAILABLE_LOCATIONS_CHINA = getAvailableLocationsChina();
 
-    private static final List<String> DEFAULT_VM_SIZES = Arrays.asList("Standard_A0", "Standard_A1", "Standard_A2",
-            "Standard_A3", "Standard_A4", "Standard_A5", "Standard_A6", "Standard_A7", "Basic_A0", "Basic_A1",
-            "Basic_A2", "Basic_A3", "Basic_A4", "Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2",
-            "Standard_DS4_v2", "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
-            "Standard_DS14_v2", "Standard_DS15_v2", "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4",
-            "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_F1s", "Standard_F2s",
-            "Standard_F4s", "Standard_F8s", "Standard_F16s", "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4",
-            "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14", "Standard_A1_v2", "Standard_A2m_v2",
-            "Standard_A2_v2", "Standard_A4m_v2", "Standard_A4_v2", "Standard_A8m_v2", "Standard_A8_v2",
-            "Standard_D1_v2", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_D11_v2",
-            "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D15_v2", "Standard_F1", "Standard_F2",
-            "Standard_F4", "Standard_F8", "Standard_F16");
+    private static final List<String> DEFAULT_VM_SIZES = Arrays.asList(
+            "Standard_A0", "Standard_A1", "Standard_A2", "Standard_A3",
+            "Standard_A4", "Standard_A5", "Standard_A6", "Standard_A7",
+            "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+            "Standard_DS1_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2",
+            "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS15_v2",
+            "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4",
+            "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14",
+            "Standard_F1s", "Standard_F2s", "Standard_F4s", "Standard_F8s", "Standard_F16s",
+            "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4",
+            "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14",
+            "Standard_A1_v2", "Standard_A2m_v2", "Standard_A2_v2", "Standard_A4m_v2",
+            "Standard_A4_v2", "Standard_A8m_v2", "Standard_A8_v2", "Standard_D1_v2",
+            "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2",
+            "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2",
+            "Standard_D15_v2", "Standard_F1", "Standard_F2", "Standard_F4", "Standard_F8", "Standard_F16");
 
     public static final Map<String, Map<String, String>> DEFAULT_IMAGE_PROPERTIES = getDefaultImageProperties();
 
@@ -133,6 +142,7 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
 
+
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
     private final Azure azureClient;
@@ -147,7 +157,7 @@ public final class AzureVMManagementServiceDelegate {
         if (azureClient == null) {
             throw new NullPointerException("the azure client is null!");
         }
-        return new AzureVMManagementServiceDelegate(azureClient, azureCredentialsId);
+        return new AzureVMManagementServiceDelegate(azureClient,  azureCredentialsId);
     }
 
     /**
@@ -161,10 +171,16 @@ public final class AzureVMManagementServiceDelegate {
      */
     public AzureVMDeploymentInfo createDeployment(AzureVMAgentTemplate template, int numberOfAgents)
             throws AzureCloudException, IOException {
-        return createDeployment(template, numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance());
+        return createDeployment(
+                template,
+                numberOfAgents,
+                AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance()
+        );
     }
 
-    public AzureVMDeploymentInfo createDeployment(AzureVMAgentTemplate template, int numberOfAgents,
+    public AzureVMDeploymentInfo createDeployment(
+            AzureVMAgentTemplate template,
+            int numberOfAgents,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws AzureCloudException, IOException {
 
         InputStream embeddedTemplate = null;
@@ -178,8 +194,8 @@ public final class AzureVMManagementServiceDelegate {
 
             final Date timestamp = new Date(System.currentTimeMillis());
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
-            final String vmBaseName = AzureUtil.getVMBaseName(template.getTemplateName(), deploymentName,
-                    (String) properties.get("osType"), numberOfAgents);
+            final String vmBaseName = AzureUtil.getVMBaseName(
+                    template.getTemplateName(), deploymentName, (String) properties.get("osType"), numberOfAgents);
             final String locationName = AzureUtil.getLocationNameByLabel(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
@@ -192,13 +208,13 @@ public final class AzureVMManagementServiceDelegate {
                 LOGGER.log(Level.SEVERE,
                         "AzureVMManagementServiceDelegate: createDeployment: "
                                 + "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
-                        new Object[] { template.getResourceGroupName() });
+                        new Object[]{template.getResourceGroupName()});
                 throw new Exception("ResourceGroup Name is invalid");
             }
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment:"
                             + " Creating a new deployment {0} with VM base name {1}",
-                    new Object[] { deploymentName, vmBaseName });
+                    new Object[]{deploymentName, vmBaseName});
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
@@ -207,28 +223,28 @@ public final class AzureVMManagementServiceDelegate {
                 createAzureResourceGroup(azureClient, locationName, resourceGroupName, cloudName);
             }
 
-            // For blob endpoint url in arm template, it's different based on different
-            // environments
-            // So create StorageAccount and get suffix
-            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName,
-                    template.getTemplateName());
+            //For blob endpoint url in arm template, it's different based on different environments
+            //So create StorageAccount and get suffix
+            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName());
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
+
 
             boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
             ImageReferenceType referenceType = template.getImageReference().getType();
 
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
-                    && (isBasic || referenceType == ImageReferenceType.REFERENCE || template.getPreInstallSsh());
+                    && (isBasic || referenceType == ImageReferenceType.REFERENCE
+                    || template.getPreInstallSsh());
 
-            final boolean useCustomScriptExtension = preInstallSshInWindows
+            final boolean useCustomScriptExtension
+                    = preInstallSshInWindows
                     || properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
-                            && !StringUtils.isBlank((String) properties.get("initScript"))
-                            && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
+                    && !StringUtils.isBlank((String) properties.get("initScript"))
+                    && ((String) properties.get("agentLaunchMethod")).equals(Constants.LAUNCH_METHOD_JNLP);
 
-            // check if a custom image id has been provided otherwise work with publisher
-            // and offer
+            // check if a custom image id has been provided otherwise work with publisher and offer
             boolean useManagedDisk = diskType.equals(Constants.DISK_MANAGED);
             String msg;
             String templateLocation;
@@ -242,13 +258,14 @@ public final class AzureVMManagementServiceDelegate {
                     } else {
                         templateLocation = (referenceType == ImageReferenceType.CUSTOM_IMAGE
                                 || referenceType == ImageReferenceType.GALLERY)
-                                        ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME
-                                        : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
+                                ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_SCRIPT_MANAGED_FILENAME
+                                : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
                     }
                 } else {
                     msg = "AzureVMManagementServiceDelegate: createDeployment: "
                             + "Use embedded deployment template (with script) {0}";
-                    templateLocation = useCustomImage ? EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME
+                    templateLocation = useCustomImage
+                            ? EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME
                             : EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME;
                 }
             } else {
@@ -260,17 +277,20 @@ public final class AzureVMManagementServiceDelegate {
                     } else {
                         templateLocation = (referenceType == ImageReferenceType.CUSTOM_IMAGE
                                 || referenceType == ImageReferenceType.GALLERY)
-                                        ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
-                                        : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
+                                ? EMBEDDED_TEMPLATE_IMAGE_ID_WITH_MANAGED_FILENAME
+                                : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
                 } else {
                     msg = "AzureVMManagementServiceDelegate: createDeployment: "
                             + "Use embedded deployment template {0}";
-                    templateLocation = useCustomImage ? EMBEDDED_TEMPLATE_IMAGE_FILENAME : EMBEDDED_TEMPLATE_FILENAME;
+                    templateLocation = useCustomImage
+                            ? EMBEDDED_TEMPLATE_IMAGE_FILENAME
+                            : EMBEDDED_TEMPLATE_FILENAME;
                 }
             }
             LOGGER.log(Level.INFO, msg, templateLocation);
-            embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(templateLocation);
+            embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                    templateLocation);
 
             final ObjectMapper mapper = new ObjectMapper();
             final JsonNode tmp = mapper.readTree(embeddedTemplate);
@@ -288,18 +308,20 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "cloudTag", cloudName);
 
             // add purchase plan for image if needed in reference configuration
-            // Image Configuration has four choices, isBasic->Built-in Image,
-            // useCustomImage->Custom User Image
+            // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
             // getId()->Custom Managed Image, here we need the last one: Image Reference
             if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
                 boolean isImageParameterValid = checkImageParameter(template);
                 if (isImageParameterValid) {
                     String imageVersion = StringUtils.isNotEmpty(template.getImageReference().getVersion())
-                            ? template.getImageReference().getVersion()
-                            : "latest";
-                    VirtualMachineImage image = azureClient.virtualMachineImages().getImage(locationName,
-                            template.getImageReference().getPublisher(), template.getImageReference().getOffer(),
-                            template.getImageReference().getSku(), imageVersion);
+                            ? template.getImageReference().getVersion() : "latest";
+                    VirtualMachineImage image = azureClient.virtualMachineImages().getImage(
+                            locationName,
+                            template.getImageReference().getPublisher(),
+                            template.getImageReference().getOffer(),
+                            template.getImageReference().getSku(),
+                            imageVersion
+                    );
                     if (image != null) {
                         PurchasePlan plan = image.plan();
                         if (plan != null) {
@@ -316,12 +338,12 @@ public final class AzureVMManagementServiceDelegate {
                             }
                         }
                     } else {
-                        LOGGER.log(Level.SEVERE,
-                                "Failed to find the image with publisher:{0} offer:{1} sku:{2} "
-                                        + "version:{3} when trying to add purchase plan to ARM template",
-                                new Object[] { template.getImageReference().getPublisher(),
-                                        template.getImageReference().getOffer(), template.getImageReference().getSku(),
-                                        imageVersion });
+                        LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
+                                "version:{3} when trying to add purchase plan to ARM template", new Object[]{
+                                template.getImageReference().getPublisher(),
+                                template.getImageReference().getOffer(),
+                                template.getImageReference().getSku(),
+                                imageVersion});
                     }
                 }
             }
@@ -349,7 +371,8 @@ public final class AzureVMManagementServiceDelegate {
                             availabilitySetNode.put("id", String.format(
                                     "[resourceId('Microsoft.Compute/availabilitySets', '%s')]", availabilitySet));
                             JsonNode propertiesNode = resource.get("properties");
-                            ((ObjectNode) propertiesNode).replace("availabilitySet", availabilitySetNode);
+                            ((ObjectNode) propertiesNode).replace("availabilitySet",
+                                    availabilitySetNode);
                         }
                     }
                 }
@@ -363,48 +386,47 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "osType");
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
-            // Gallery Image is a special case for custom image, reuse the logic of custom
-            // image by replacing the imageId here
+            // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
-                GalleryImageVersion galleryImageVersion;
+                GalleryImageVersion  galleryImageVersion;
                 String galleryImageVersionStr = template.getImageReference().getGalleryImageVersion();
                 String galleryImageDefinition = template.getImageReference().getGalleryImageDefinition();
                 String gallerySubscriptionId = template.getImageReference().getGallerySubscriptionId();
                 String galleryResourceGroup = template.getImageReference().getGalleryResourceGroup();
                 String galleryName = template.getImageReference().getGalleryName();
-                if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition)
-                        || StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
+                if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
+                        StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
                             + "one of gallery name, gallery image version, image definition and image resource group "
                             + "is blank.");
                 }
                 if (Constants.VERSION_LATEST.equals(galleryImageVersionStr)) {
-                    galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup, galleryName,
-                            galleryImageDefinition, gallerySubscriptionId);
+                    galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup,
+                            galleryName, galleryImageDefinition, gallerySubscriptionId);
                 } else {
                     Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
-                    galleryImageVersion = client.galleryImageVersions().getByGalleryImage(galleryResourceGroup,
-                            galleryName, galleryImageDefinition, galleryImageVersionStr);
+                    galleryImageVersion = client.galleryImageVersions()
+                            .getByGalleryImage(galleryResourceGroup, galleryName,
+                                    galleryImageDefinition, galleryImageVersionStr);
                 }
                 if (galleryImageVersion == null) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
                             + "Can not find the right version for the gallery image.");
                 }
                 String galleryImageId = galleryImageVersion.id();
-                LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[] { galleryImageId });
+                LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{galleryImageId});
                 putVariableIfNotBlank(tmp, "imageId", galleryImageId);
             }
 
-            // If using the custom script extension (vs. SSH) to startup the powershell
-            // scripts,
+            // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
             if (useCustomScriptExtension) {
                 putVariable(tmp, "jenkinsServerURL", Jenkins.getInstance().getRootUrl());
-                // Calculate the client secrets. The secrets are based off the machine name,
+                // Calculate the client secrets.  The secrets are based off the machine name,
                 ArrayNode clientSecretsNode = ObjectNode.class.cast(tmp.get("variables")).putArray("clientSecrets");
                 for (int i = 0; i < numberOfAgents; i++) {
-                    clientSecretsNode
-                            .add(JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(String.format("%s%d", vmBaseName, i)));
+                    clientSecretsNode.add(
+                            JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(String.format("%s%d", vmBaseName, i)));
                 }
                 // Upload the startup script to blob storage
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
@@ -421,7 +443,8 @@ public final class AzureVMManagementServiceDelegate {
                 putVariable(tmp, "startupScriptName", scriptName);
 
                 List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                        .getByResourceGroup(template.getResourceGroupName(), storageAccountName).getKeys();
+                        .getByResourceGroup(template.getResourceGroupName(), storageAccountName)
+                        .getKeys();
                 if (storageKeys.isEmpty()) {
                     throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
                             + "Exception occurred while fetching the storage account key");
@@ -446,7 +469,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariableIfNotBlank(tmp, "storageAccountType", storageAccountType);
             putVariableIfNotBlank(tmp, "blobEndpointSuffix", blobEndpointSuffix);
 
-            // Network properties. If the vnet name isn't blank then
+            // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
             if (!isBasic && StringUtils.isNotBlank((String) properties.get("virtualNetworkName"))) {
                 copyVariableIfNotBlank(tmp, properties, "virtualNetworkName");
@@ -469,11 +492,14 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             // Register the deployment for cleanup
-            deploymentRegistrar.registerDeployment(cloudName, template.getResourceGroupName(), deploymentName,
-                    scriptUri);
+            deploymentRegistrar.registerDeployment(
+                    cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
-            azureClient.deployments().define(deploymentName).withExistingResourceGroup(template.getResourceGroupName())
-                    .withTemplate(tmp.toString()).withParameters("{}").withMode(DeploymentMode.INCREMENTAL)
+            azureClient.deployments().define(deploymentName)
+                    .withExistingResourceGroup(template.getResourceGroupName())
+                    .withTemplate(tmp.toString())
+                    .withParameters("{}")
+                    .withMode(DeploymentMode.INCREMENTAL)
                     .beginCreate();
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
         } catch (Exception e) {
@@ -483,8 +509,8 @@ public final class AzureVMManagementServiceDelegate {
             try {
                 removeStorageBlob(new URI(scriptUri), template.getResourceGroupName());
             } catch (Exception ex) {
-                LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: deployment: Delete initScript failed: {0}",
-                        scriptUri);
+                LOGGER.log(Level.WARNING,
+                        "AzureVMManagementServiceDelegate: deployment: Delete initScript failed: {0}", scriptUri);
             }
             throw AzureCloudException.create(e);
         } finally {
@@ -498,18 +524,16 @@ public final class AzureVMManagementServiceDelegate {
         if (StringUtils.isBlank(template.getImageReference().getPublisher())
                 || StringUtils.isBlank(template.getImageReference().getOffer())
                 || StringUtils.isBlank(template.getImageReference().getSku())) {
-            LOGGER.log(Level.SEVERE,
-                    "Missing Image Reference information when trying to add purchase plan to ARM template");
+            LOGGER.log(Level.SEVERE, "Missing Image Reference information when trying to add purchase plan to ARM template");
             return false;
         }
         return true;
     }
 
     private GalleryImageVersion getGalleryImageLatestVersion(String galleryResourceGroup, String galleryName,
-            String galleryImageDefinition, String gallerySubscriptionId) throws AzureCloudException {
+                                                             String galleryImageDefinition, String gallerySubscriptionId) throws AzureCloudException {
         Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
-        PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions()
-                .listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+        PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
         if (galleryImageVersions.isEmpty()) {
             return null;
         }
@@ -541,21 +565,21 @@ public final class AzureVMManagementServiceDelegate {
         putVariableIfNotBlank(template, name, (String) properties.get(name));
     }
 
-    private static void addPublicIPResourceNode(JsonNode template, ObjectMapper mapper) throws IOException {
+    private static void addPublicIPResourceNode(
+            JsonNode template,
+            ObjectMapper mapper) throws IOException {
 
         final String ipName = "variables('vmName'), copyIndex(), 'IPName'";
-        try (InputStream fragmentStream = AzureVMManagementServiceDelegate.class
-                .getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
+        try (InputStream fragmentStream =
+                     AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
 
             final JsonNode publicIPFragment = mapper.readTree(fragmentStream);
             // Add the virtual network fragment
             ArrayNode.class.cast(template.get("resources")).add(publicIPFragment);
 
-            // Because we created/updated this in the template, we need to add the
-            // appropriate
+            // Because we created/updated this in the template, we need to add the appropriate
             // dependsOn node to the networkInterface and the ipConfigurations properties
-            // "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'),
-            // copyIndex(), 'IPName')]"
+            // "[concat('Microsoft.Network/publicIPAddresses/', variables('vmName'), copyIndex(), 'IPName')]"
             // Find the network interfaces node
             ArrayNode resourcesNodes = ArrayNode.class.cast(template.get("resources"));
             Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
@@ -570,9 +594,9 @@ public final class AzureVMManagementServiceDelegate {
                 // Add to the depends on node.
                 dependsOnNode.add("[concat('Microsoft.Network/publicIPAddresses/'," + ipName + ")]");
 
-                // Find the ipConfigurations/ipconfig1 node
-                ArrayNode ipConfigurationsNode = ArrayNode.class
-                        .cast(resourcesNode.get("properties").get("ipConfigurations"));
+                //Find the ipConfigurations/ipconfig1 node
+                ArrayNode ipConfigurationsNode =
+                        ArrayNode.class.cast(resourcesNode.get("properties").get("ipConfigurations"));
                 Iterator<JsonNode> ipConfigNodeIter = ipConfigurationsNode.elements();
                 while (ipConfigNodeIter.hasNext()) {
                     JsonNode ipConfigNode = ipConfigNodeIter.next();
@@ -580,12 +604,13 @@ public final class AzureVMManagementServiceDelegate {
                     if (nameNode == null || !nameNode.asText().equals("ipconfig1")) {
                         continue;
                     }
-                    // find the properties node
+                    //find the properties node
                     ObjectNode propertiesNode = ObjectNode.class.cast(ipConfigNode.get("properties"));
-                    // add the publicIPAddress node
+                    //add the publicIPAddress node
                     ObjectNode publicIPIdNode = mapper.createObjectNode();
-                    publicIPIdNode.put("id",
-                            "[resourceId('Microsoft.Network/publicIPAddresses', concat(" + ipName + "))]");
+                    publicIPIdNode.put("id", "[resourceId('Microsoft.Network/publicIPAddresses', concat("
+                            + ipName
+                            + "))]");
                     // propertiesNode.putObject("publicIPAddress").put
                     propertiesNode.set("publicIPAddress", publicIPIdNode);
                     break;
@@ -595,7 +620,10 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private static void addNSGNode(JsonNode template, ObjectMapper mapper, String nsgName) throws IOException {
+    private static void addNSGNode(
+            JsonNode template,
+            ObjectMapper mapper,
+            String nsgName) throws IOException {
 
         ObjectNode.class.cast(template.get("variables")).put("nsgName", nsgName);
 
@@ -609,38 +637,43 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             ObjectNode nsgNode = mapper.createObjectNode();
-            nsgNode.put("id", "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]");
+            nsgNode.put(
+                    "id",
+                    "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+            );
 
             // Find the properties node
-            // We will attach the provided NSG and not check if it's valid because that's
-            // done in the verification step
+            // We will attach the provided NSG and not check if it's valid because that's done in the verification step
             ObjectNode propertiesNode = ObjectNode.class.cast(resourcesNode.get("properties"));
             propertiesNode.set("networkSecurityGroup", nsgNode);
             break;
         }
     }
 
-    private static void addDefaultVNetResourceNode(JsonNode template, ObjectMapper mapper, String resourceGroupName)
-            throws IOException {
+
+    private static void addDefaultVNetResourceNode(
+            JsonNode template,
+            ObjectMapper mapper,
+            String resourceGroupName) throws IOException {
         InputStream fragmentStream = null;
         try {
             // Add the definition of the vnet and subnet into the template
             final String virtualNetworkName = Constants.DEFAULT_VNET_NAME;
             final String subnetName = Constants.DEFAULT_SUBNET_NAME;
             ObjectNode.class.cast(template.get("variables")).put("virtualNetworkName", virtualNetworkName);
-            ObjectNode.class.cast(template.get("variables")).put("virtualNetworkResourceGroupName", resourceGroupName);
+            ObjectNode.class.cast(template.get("variables")).put(
+                    "virtualNetworkResourceGroupName", resourceGroupName);
             ObjectNode.class.cast(template.get("variables")).put("subnetName", subnetName);
 
             // Read the vnet fragment
-            fragmentStream = AzureVMManagementServiceDelegate.class
-                    .getResourceAsStream(VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
+            fragmentStream = AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                    VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
 
             final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
             // Add the virtual network fragment
             ArrayNode.class.cast(template.get("resources")).add(virtualNetworkFragment);
 
-            // Because we created/updated this in the template, we need to add the
-            // appropriate
+            // Because we created/updated this in the template, we need to add the appropriate
             // dependsOn node to the networkInterface
             // Microsoft.Network/virtualNetworks/<vnet name>
             // Find the network interfaces node
@@ -668,7 +701,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private static String paddedScriptForPageBlob(String sourceString) throws Exception {
-        /* Page blob must align to 512-byte page boundaries */
+        /*Page blob must align to 512-byte page boundaries*/
         final int pageSize = 512;
         int currentStringLength = sourceString.getBytes(StandardCharsets.UTF_8).length;
         int paddedStringLength = (currentStringLength + pageSize - 1) / pageSize * pageSize;
@@ -682,6 +715,7 @@ public final class AzureVMManagementServiceDelegate {
         return sourceString.concat(fillString.toString());
     }
 
+
     /**
      * Uploads the custom script for a template to blob storage.
      *
@@ -691,31 +725,33 @@ public final class AzureVMManagementServiceDelegate {
      * @return URI of script
      * @throws AzureCloudException
      */
-    public String uploadCustomScript(AzureVMAgentTemplate template, String targetScriptName, String initScript)
-            throws AzureCloudException {
+    public String uploadCustomScript(
+            AzureVMAgentTemplate template,
+            String targetScriptName,
+            String initScript) throws AzureCloudException {
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
         String resourceGroupReferenceType = template.getResourceGroupReferenceType();
         String location = template.getLocation();
 
-        // make sure the resource group and storage account exist
+        //make sure the resource group and storage account exist
         try {
             if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
                 AzureVMCloud azureVMCloud = template.retrieveAzureCloudReference();
                 createAzureResourceGroup(azureClient, location, resourceGroupName, azureVMCloud.getCloudName());
             }
 
-            createStorageAccount(azureClient, targetStorageAccountType, targetStorageAccount, location,
-                    resourceGroupName, template.getTemplateName());
+            createStorageAccount(
+                    azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName, template.getTemplateName());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Got exception when checking the storage account for custom scripts", e);
         }
 
         int scriptLength = 0;
         try {
-            CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, targetStorageAccount,
-                    Constants.CONFIG_CONTAINER_NAME);
+            CloudBlobContainer container = getCloudBlobContainer(
+                    azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
             container.createIfNotExists();
             CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
             String scriptText = paddedScriptForPageBlob(initScript);
@@ -725,13 +761,14 @@ public final class AzureVMManagementServiceDelegate {
             blob.upload(stream, scriptText.length(), AccessCondition.generateEmptyCondition(), null, null);
             return blob.getUri().toString();
         } catch (Exception e) {
-            throw AzureCloudException
-                    .create(String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
+            throw AzureCloudException.create(
+                    String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
         }
     }
 
-    public String uploadCustomScript(AzureVMAgentTemplate template, String targetScriptName)
-            throws AzureCloudException {
+    public String uploadCustomScript(
+            AzureVMAgentTemplate template,
+            String targetScriptName) throws AzureCloudException {
         return uploadCustomScript(template, targetScriptName, template.getInitScript());
     }
 
@@ -742,11 +779,11 @@ public final class AzureVMManagementServiceDelegate {
      * @param template
      * @throws AzureCloudException
      */
-    public void setVirtualMachineDetails(AzureVMAgent azureAgent, AzureVMAgentTemplate template)
-            throws AzureCloudException {
+    public void setVirtualMachineDetails(
+            AzureVMAgent azureAgent, AzureVMAgentTemplate template) throws AzureCloudException {
 
-        VirtualMachine vm = azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(),
-                azureAgent.getNodeName());
+        VirtualMachine vm =
+                azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), azureAgent.getNodeName());
 
         // Getting the first virtual IP
         final PublicIPAddress publicIP = vm.getPrimaryPublicIPAddress();
@@ -765,34 +802,40 @@ public final class AzureVMManagementServiceDelegate {
         azureAgent.setPublicIP(publicIPStr);
         azureAgent.setPrivateIP(privateIP);
 
-        LOGGER.log(Level.INFO,
-                "Azure agent details:\n" + "nodeName{0}\n" + "adminUserName={1}\n" + "shutdownOnIdle={2}\n"
-                        + "retentionTimeInMin={3}\n" + "labels={4}",
-                new Object[] { azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
-                        azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString() });
+        LOGGER.log(Level.INFO, "Azure agent details:\n"
+                        + "nodeName{0}\n"
+                        + "adminUserName={1}\n"
+                        + "shutdownOnIdle={2}\n"
+                        + "retentionTimeInMin={3}\n"
+                        + "labels={4}",
+                new Object[]{azureAgent.getNodeName(), azureAgent.getVMCredentialsId(), azureAgent.isShutdownOnIdle(),
+                        azureAgent.getRetentionTimeInMin(), azureAgent.getLabelString()});
     }
 
-    public void attachPublicIP(AzureVMAgent azureAgent, AzureVMAgentTemplate template) throws AzureCloudException {
+    public void attachPublicIP(AzureVMAgent azureAgent, AzureVMAgentTemplate template)
+            throws AzureCloudException {
 
         VirtualMachine vm = null;
         try {
-            vm = azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(),
-                    azureAgent.getNodeName());
+            vm = azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), azureAgent.getNodeName());
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
 
         LOGGER.log(Level.INFO, "Trying to attach a public IP to the agent {0}", azureAgent.getNodeName());
         if (vm != null) {
-            // check if the VM already has a public IP
+            //check if the VM already has a public IP
             if (vm.getPrimaryPublicIPAddress() == null) {
                 try {
-                    vm.getPrimaryNetworkInterface().update()
-                            .withNewPrimaryPublicIPAddress(azureClient.publicIPAddresses()
-                                    .define(azureAgent.getNodeName() + "IPName").withRegion(template.getLocation())
-                                    .withExistingResourceGroup(template.getResourceGroupName())
-                                    .withLeafDomainLabel(azureAgent.getNodeName()))
-                            .apply();
+                    vm.getPrimaryNetworkInterface()
+                            .update()
+                            .withNewPrimaryPublicIPAddress(
+                                    azureClient.publicIPAddresses()
+                                            .define(azureAgent.getNodeName() + "IPName")
+                                            .withRegion(template.getLocation())
+                                            .withExistingResourceGroup(template.getResourceGroupName())
+                                            .withLeafDomainLabel(azureAgent.getNodeName())
+                            ).apply();
                 } catch (Exception e) {
                     throw AzureCloudException.create(e);
                 }
@@ -813,7 +856,9 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName Resource group of the VM.
      * @return If the virtual machine exists
      */
-    private boolean virtualMachineExists(String vmName, String resourceGroupName) throws AzureCloudException {
+    private boolean virtualMachineExists(
+            String vmName,
+            String resourceGroupName) throws AzureCloudException {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: check for {0}", vmName);
 
         VirtualMachine vm = null;
@@ -827,7 +872,9 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
             return true;
         } else {
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist", vmName);
+            LOGGER.log(Level.INFO,
+                    "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
+                    vmName);
             return false;
         }
     }
@@ -847,8 +894,10 @@ public final class AzureVMManagementServiceDelegate {
                 return false;
             }
         } catch (AzureCloudException e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: virtualMachineExists: "
-                    + "error while determining whether vm exists", e);
+            LOGGER.log(Level.WARNING,
+                    "AzureVMManagementServiceDelegate: virtualMachineExists: "
+                            + "error while determining whether vm exists",
+                    e);
             return false;
         }
     }
@@ -863,22 +912,27 @@ public final class AzureVMManagementServiceDelegate {
      * @return
      * @throws AzureCloudException
      */
-    public AzureVMAgent parseResponse(ProvisioningActivity.Id id, String vmname, String deploymentName,
-            AzureVMAgentTemplate template, OperatingSystemTypes osType) throws AzureCloudException {
+    public AzureVMAgent parseResponse(
+            ProvisioningActivity.Id id,
+            String vmname,
+            String deploymentName,
+            AzureVMAgentTemplate template,
+            OperatingSystemTypes osType) throws AzureCloudException {
 
         try {
 
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: parseDeploymentResponse: \n" + "\tfound agent {0}\n"
-                            + "\tOS type {1}\n" + "\tnumber of executors {2}",
-                    new Object[] { vmname, osType, template.getNoOfParallelJobs() });
+            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: parseDeploymentResponse: \n"
+                            + "\tfound agent {0}\n"
+                            + "\tOS type {1}\n"
+                            + "\tnumber of executors {2}",
+                    new Object[]{vmname, osType, template.getNoOfParallelJobs()});
 
             AzureVMCloud azureCloud = template.retrieveAzureCloudReference();
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
 
-            VirtualMachine vm = azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(),
-                    vmname);
+            VirtualMachine vm =
+                    azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), vmname);
 
             final PublicIPAddress publicIP = vm.getPrimaryPublicIPAddress();
             String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIP();
@@ -889,17 +943,36 @@ public final class AzureVMManagementServiceDelegate {
                 fqdn = publicIP.fqdn();
             }
 
-            return new AzureVMAgent(id, vmname, template.getTemplateName(), template.getTemplateDesc(), osType,
-                    template.getAgentWorkspace(), (int) properties.get("noOfParallelJobs"),
-                    template.getUseAgentAlwaysIfAvail(), template.getLabels(),
-                    template.retrieveAzureCloudReference().getDisplayName(), template.getCredentialsId(), null, null,
-                    (String) properties.get("jvmOptions"), template.isShutdownOnIdle(), false, deploymentName,
-                    template.getRetentionStrategy(), (String) properties.get("initScript"),
-                    azureCloud.getAzureCredentialsId(), (String) properties.get("agentLaunchMethod"),
-                    CleanUpAction.DEFAULT, null, template.getResourceGroupName(),
+            return new AzureVMAgent(
+                    id,
+                    vmname,
+                    template.getTemplateName(),
+                    template.getTemplateDesc(),
+                    osType,
+                    template.getAgentWorkspace(),
+                    (int) properties.get("noOfParallelJobs"),
+                    template.getUseAgentAlwaysIfAvail(),
+                    template.getLabels(),
+                    template.retrieveAzureCloudReference().getDisplayName(),
+                    template.getCredentialsId(),
+                    null,
+                    null,
+                    (String) properties.get("jvmOptions"),
+                    template.isShutdownOnIdle(),
+                    false,
+                    deploymentName,
+                    template.getRetentionStrategy(),
+                    (String) properties.get("initScript"),
+                    azureCloud.getAzureCredentialsId(),
+                    (String) properties.get("agentLaunchMethod"),
+                    CleanUpAction.DEFAULT,
+                    null,
+                    template.getResourceGroupName(),
                     (Boolean) properties.get("executeInitScriptAsRoot"),
-                    (Boolean) properties.get("doNotUseMachineIfInitFails"), (Boolean) properties.get("enableMSI"),
-                    template, fqdn);
+                    (Boolean) properties.get("doNotUseMachineIfInitFails"),
+                    (Boolean) properties.get("enableMSI"),
+                    template,
+                    fqdn);
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occurred while creating agent object", e);
@@ -947,8 +1020,9 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Creates a map containing location -> vm role size list. This is hard coded
-     * and should be removed eventually once a transition to the 1.0.0 SDK is made
+     * Creates a map containing location -> vm role size list. This is hard
+     * coded and should be removed eventually once a transition to the 1.0.0 SDK
+     * is made
      * <p>
      * TODO: load SKU size from Azure dynamically
      *
@@ -956,207 +1030,247 @@ public final class AzureVMManagementServiceDelegate {
      */
     private static Map<String, List<String>> getAvailableRoleSizes() {
         final Map<String, List<String>> sizes = new HashMap<>();
-        sizes.put("East US", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
-                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
-                "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("West US", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
-                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
-                "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1",
-                "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
-                "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("South Central US", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
-                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
-                "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("Central US", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2", "Standard_D13",
-                "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3",
-                "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2",
-                "Standard_DS11", "Standard_DS11_v2", "Standard_DS12", "Standard_DS12_v2", "Standard_DS13",
-                "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
-                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1",
-                "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4",
+        sizes.put("East US", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
+                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2",
+                "Standard_D2", "Standard_D2_v2", "Standard_D3", "Standard_D3_v2",
+                "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
+                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s",
+                "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4",
                 "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("North Central US", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+        sizes.put("West US", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2",
+                "Standard_D12", "Standard_D12_v2", "Standard_D13", "Standard_D13_v2",
+                "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
+                "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s",
+                "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
+                "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"));
+        sizes.put("South Central US", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2",
+                "Standard_D12", "Standard_D12_v2", "Standard_D13", "Standard_D13_v2",
+                "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
+                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s",
+                "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
+                "Standard_F8", "Standard_F8s"));
+        sizes.put("Central US", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2",
+                "Standard_D12", "Standard_D12_v2", "Standard_D13", "Standard_D13_v2",
+                "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3", "Standard_D3_v2",
+                "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2",
+                "Standard_DS11", "Standard_DS11_v2", "Standard_DS12", "Standard_DS12_v2",
+                "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
+                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
+                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s",
+                "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
+                "Standard_F8", "Standard_F8s"));
+        sizes.put("North Central US", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
                 "Standard_DS1_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2",
-                "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1",
-                "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4",
-                "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("East US 2",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                        "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
-                        "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                        "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
-                        "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
-                        "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14",
-                        "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2",
-                        "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16",
-                        "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
-                        "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4",
-                        "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("North Europe", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
-                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
-                "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("West Europe", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
-                "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
-                "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1",
-                "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
+                "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("East US 2", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2",
+                "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
                 "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("Southeast Asia",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                        "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
-                        "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                        "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
-                        "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
-                        "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14",
-                        "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2",
-                        "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16",
-                        "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
-                        "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4",
-                        "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("East Asia", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2", "Standard_D13",
-                "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3",
-                "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS11",
-                "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_DS2", "Standard_DS3", "Standard_DS4",
-                "Standard_F1", "Standard_F16", "Standard_F2", "Standard_F4", "Standard_F8"));
-        sizes.put("Japan West", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2", "Standard_D13",
-                "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3",
-                "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2",
-                "Standard_DS11", "Standard_DS11_v2", "Standard_DS12", "Standard_DS12_v2", "Standard_DS13",
-                "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
-                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1",
-                "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4",
-                "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("Japan East", Arrays.asList("A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1",
-                "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2",
-                "Standard_A1", "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12",
-                "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
-                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2", "Standard_DS12",
-                "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2",
-                "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2",
+        sizes.put("North Europe", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("West Europe", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9",
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2",
+                "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3",
+                "Standard_GS4", "Standard_GS5"));
+        sizes.put("Southeast Asia", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2",
+                "Standard_D12", "Standard_D12_v2", "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2",
+                "Standard_D2", "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
+                "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2",
+                "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3",
+                "Standard_GS4", "Standard_GS5"));
+        sizes.put("East Asia", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1",
+                "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_DS2", "Standard_DS3",
+                "Standard_DS4", "Standard_F1", "Standard_F16", "Standard_F2", "Standard_F4", "Standard_F8"));
+        sizes.put("Japan West", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("Japan East", Arrays.asList(
+                "A10", "A11", "A5", "A6", "A7", "A8", "A9", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("Brazil South", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2",
+                "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("Australia Southeast", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("Australia East", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2",
+                "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3",
+                "Standard_GS4", "Standard_GS5"));
+        sizes.put("Central India", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2",
+                "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2",
+                "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1_v2", "Standard_DS11_v2",
+                "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS2_v2", "Standard_DS3_v2",
+                "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s",
+                "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
+        sizes.put("South India", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4",
+                "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2", "Standard_D11_v2",
+                "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2", "Standard_D3_v2",
+                "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1_v2", "Standard_DS11_v2", "Standard_DS12_v2",
+                "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
                 "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2",
                 "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("Brazil South",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                        "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
-                        "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                        "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
-                        "Standard_D5_v2", "Standard_DS1_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
-                        "Standard_DS14_v2", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2", "Standard_DS5_v2",
-                        "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
-                        "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("Australia Southeast", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2", "Standard_D13",
-                "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3",
-                "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2",
-                "Standard_DS11", "Standard_DS11_v2", "Standard_DS12", "Standard_DS12_v2", "Standard_DS13",
-                "Standard_DS13_v2", "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
-                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1",
-                "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4",
-                "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("Australia East",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                        "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
-                        "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                        "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
-                        "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
-                        "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14",
-                        "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2",
-                        "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16",
-                        "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
-                        "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4",
-                        "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("Central India", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2",
-                "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2",
-                "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1_v2", "Standard_DS11_v2",
-                "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS2_v2", "Standard_DS3_v2",
-                "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s",
-                "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("South India", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2",
-                "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2",
-                "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1_v2", "Standard_DS11_v2",
-                "Standard_DS12_v2", "Standard_DS13_v2", "Standard_DS14_v2", "Standard_DS2_v2", "Standard_DS3_v2",
-                "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s",
-                "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s"));
-        sizes.put("West India",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2",
-                        "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2",
-                        "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2", "Standard_F1", "Standard_F16",
-                        "Standard_F2", "Standard_F4", "Standard_F8"));
+        sizes.put("West India", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4", "Standard_A4",
+                "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1_v2", "Standard_D11_v2",
+                "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2", "Standard_D2_v2", "Standard_D3_v2",
+                "Standard_D4_v2", "Standard_D5_v2", "Standard_F1", "Standard_F16", "Standard_F2", "Standard_F4",
+                "Standard_F8"));
 
         // China sizes, may not be exact
-        sizes.put("China North",
-                Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
-                        "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                        "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
-                        "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2",
-                        "Standard_D2_v2", "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2",
-                        "Standard_D5_v2", "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
-                        "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2", "Standard_DS14",
-                        "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2", "Standard_DS3", "Standard_DS3_v2",
-                        "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2", "Standard_F1", "Standard_F16",
-                        "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s", "Standard_F4", "Standard_F4s",
-                        "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4",
-                        "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"));
-        sizes.put("China East", Arrays.asList("A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
-                "Basic_A4", "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1", "Standard_D1",
-                "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2", "Standard_D13",
-                "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2", "Standard_D3",
-                "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2", "Standard_DS1", "Standard_DS11",
-                "Standard_DS12", "Standard_DS13", "Standard_DS14", "Standard_DS2", "Standard_DS3", "Standard_DS4",
-                "Standard_F1", "Standard_F16", "Standard_F2", "Standard_F4", "Standard_F8"));
+        sizes.put("China North", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS1_v2", "Standard_DS11", "Standard_DS11_v2",
+                "Standard_DS12", "Standard_DS12_v2", "Standard_DS13", "Standard_DS13_v2",
+                "Standard_DS14", "Standard_DS14_v2", "Standard_DS2", "Standard_DS2_v2",
+                "Standard_DS3", "Standard_DS3_v2", "Standard_DS4", "Standard_DS4_v2", "Standard_DS5_v2",
+                "Standard_F1", "Standard_F16", "Standard_F16s", "Standard_F1s", "Standard_F2", "Standard_F2s",
+                "Standard_F4", "Standard_F4s", "Standard_F8", "Standard_F8s", "Standard_G1", "Standard_G2",
+                "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2", "Standard_GS3",
+                "Standard_GS4", "Standard_GS5"));
+        sizes.put("China East", Arrays.asList(
+                "A5", "A6", "A7", "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A4", "Standard_A0", "Standard_A3", "Standard_A2", "Standard_A1",
+                "Standard_D1", "Standard_D1_v2", "Standard_D11", "Standard_D11_v2", "Standard_D12", "Standard_D12_v2",
+                "Standard_D13", "Standard_D13_v2", "Standard_D14", "Standard_D14_v2", "Standard_D2", "Standard_D2_v2",
+                "Standard_D3", "Standard_D3_v2", "Standard_D4", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_DS1", "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14",
+                "Standard_DS2", "Standard_DS3", "Standard_DS4", "Standard_F1", "Standard_F16", "Standard_F2",
+                "Standard_F4", "Standard_F8"));
 
         return sizes;
     }
@@ -1166,16 +1280,15 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
         imageProperties.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
 
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_PUBLISHER,
-                "MicrosoftWindowsServer");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(
+                Constants.DEFAULT_IMAGE_PUBLISHER, "MicrosoftWindowsServer");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_OFFER, "WindowsServer");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_DOCKER_IMAGE_SKU,
-                "2016-Datacenter-with-Containers");
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "2016-Datacenter-with-Containers");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_LAUNCH_METHOD,
-                Constants.LAUNCH_METHOD_SSH);
+        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(
+                Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
 
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
@@ -1183,8 +1296,8 @@ public final class AzureVMManagementServiceDelegate {
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "16.04-LTS");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
         imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_LINUX);
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_LAUNCH_METHOD,
-                Constants.LAUNCH_METHOD_SSH);
+        imageProperties.get(Constants.UBUNTU_1604_LTS).put(
+                Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
         return imageProperties;
     }
 
@@ -1193,44 +1306,52 @@ public final class AzureVMManagementServiceDelegate {
         tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
         tools.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
         try {
-            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_JAVA,
-                    IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JAVA_WINDOWS_FILENAME),
-                            "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_MAVEN,
-                    IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_MAVEN_WINDOWS_FILENAME),
-                            "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_GIT, IOUtils.toString(
-                    AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_GIT_WINDOWS_FILENAME), "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(Constants.INSTALL_JNLP,
-                    IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JNLP_WINDOWS_FILENAME),
-                            "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_JAVA, IOUtils.toString(
-                    AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_JAVA_UBUNTU_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_MAVEN,
-                    IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_MAVEN_UBUNTU_FILENAME),
-                            "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_GIT, IOUtils.toString(
-                    AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_GIT_UBUNTU_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(Constants.INSTALL_DOCKER,
-                    IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(INSTALL_DOCKER_UBUNTU_FILENAME),
-                            "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(
+                    Constants.INSTALL_JAVA,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_JAVA_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(
+                    Constants.INSTALL_MAVEN,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_MAVEN_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(
+                    Constants.INSTALL_GIT,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_GIT_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.WINDOWS_SERVER_2016).put(
+                    Constants.INSTALL_JNLP,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_JNLP_WINDOWS_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(
+                    Constants.INSTALL_JAVA,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_JAVA_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(
+                    Constants.INSTALL_MAVEN,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_MAVEN_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(
+                    Constants.INSTALL_GIT,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_GIT_UBUNTU_FILENAME), "UTF-8"));
+            tools.get(Constants.UBUNTU_1604_LTS).put(
+                    Constants.INSTALL_DOCKER,
+                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                            INSTALL_DOCKER_UBUNTU_FILENAME), "UTF-8"));
 
             return tools;
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: "
-                    + "Get pre-installed tools script {0} failed.", e);
+            LOGGER.log(Level.WARNING,
+                    "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: "
+                            + "Get pre-installed tools script {0} failed.",
+                    e);
             return tools;
         }
     }
 
     /**
-     * Gets map of Azure datacenter locations which supports Persistent VM role. If
-     * it can't fetch the data then it will return a default hardcoded set
+     * Gets map of Azure datacenter locations which supports Persistent VM role.
+     * If it can't fetch the data then it will return a default hardcoded set
      * certificate based auth appears to be required.
      *
      * @return Set of available regions
@@ -1243,8 +1364,10 @@ public final class AzureVMManagementServiceDelegate {
         try {
             return LocationCache.getLocation(azureClient, envNameOrUrl);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
-                    + "error while fetching the regions {0}. Will return default list ", e);
+            LOGGER.log(Level.WARNING,
+                    "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
+                            + "error while fetching the regions {0}. Will return default list ",
+                    e);
             if (envNameOrUrl.contains("china")) {
                 return AVAILABLE_LOCATIONS_CHINA;
             }
@@ -1253,16 +1376,14 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Gets list of virtual machine sizes. If it can't fetch the data then it will
-     * return a default hardcoded list
+     * Gets list of virtual machine sizes. If it can't fetch the data then it will return a default hardcoded list
      *
      * @param location Location to obtain VM sizes for
      * @return List of VM sizes
      */
     public List<String> getVMSizes(String location) {
         if (location == null || location.isEmpty()) {
-            // if the location is not available we'll just return a default list with some
-            // of the most common VM sizes
+            //if the location is not available we'll just return a default list with some of the most common VM sizes
             return DEFAULT_VM_SIZES;
         }
         try {
@@ -1273,8 +1394,10 @@ public final class AzureVMManagementServiceDelegate {
             }
             return ret;
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: getVMSizes: "
-                    + "error while fetching the VM sizes {0}. Will return default list ", e);
+            LOGGER.log(Level.WARNING,
+                    "AzureVMManagementServiceDelegate: getVMSizes: "
+                            + "error while fetching the VM sizes {0}. Will return default list ",
+                    e);
             return AVAILABLE_ROLE_SIZES.get(location);
         }
     }
@@ -1287,7 +1410,10 @@ public final class AzureVMManagementServiceDelegate {
      * @param timeOut           Timeout of the verification.
      * @return Verification result.
      */
-    public String verifyConfiguration(String resourceGroupName, String maxVMLimit, String timeOut) {
+    public String verifyConfiguration(
+            String resourceGroupName,
+            String maxVMLimit,
+            String timeOut) {
         try {
             if (!AzureUtil.isValidTimeOut(timeOut)) {
                 return "Invalid Timeout, Should be a positive number, minimum value "
@@ -1332,7 +1458,10 @@ public final class AzureVMManagementServiceDelegate {
             final int maxRetries = 3;
             final int maxWaitIntervalInSeconds = 2;
             return ExecutionEngine.executeWithRetry(task,
-                    new ExponentialRetryStrategy(maxRetries, maxWaitIntervalInSeconds));
+                    new ExponentialRetryStrategy(
+                            maxRetries,
+                            maxWaitIntervalInSeconds
+                    ));
         } catch (AzureCloudException e) {
             LOGGER.log(Level.SEVERE, "Error validating configuration", e);
             return "Failure: Exception occurred while validating subscription configuration " + e;
@@ -1340,8 +1469,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     public static class VMStatus extends ExpandableStringEnum<VMStatus> {
-        public static final VMStatus PROVISIONING_OR_DEPROVISIONING = fromString(
-                Constants.PROVISIONING_OR_DEPROVISIONING_VM_STATUS);
+        public static final VMStatus PROVISIONING_OR_DEPROVISIONING = fromString(Constants.PROVISIONING_OR_DEPROVISIONING_VM_STATUS);
         public static final VMStatus UPDATING = fromString(Constants.UPDATING_VM_STATUS);
 
         public static final VMStatus RUNNING = fromString("PowerState/running");
@@ -1370,7 +1498,9 @@ public final class AzureVMManagementServiceDelegate {
      * @throws AzureCloudException
      */
 
-    private VMStatus getVirtualMachineStatus(String vmName, String resourceGroupName) throws AzureCloudException {
+    private VMStatus getVirtualMachineStatus(
+            String vmName,
+            String resourceGroupName) throws AzureCloudException {
 
         VirtualMachine vm;
         try {
@@ -1392,8 +1522,8 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Checks if VM is reachable and in a valid state to connect (or getting ready
-     * to do so).
+     * Checks if VM is reachable and in a valid state to connect (or getting
+     * ready to do so).
      *
      * @param agent
      * @return
@@ -1404,13 +1534,13 @@ public final class AzureVMManagementServiceDelegate {
         // Change to 20 minutes. It takes around 10 minutes in A0.
         final int maxRetryCount = 40;
         int currentRetryCount = 0;
-        // When launching Windows via SSH, this function will be executed before
-        // extension done.
-        // Thus status will be "Updating".
+        //When launching Windows via SSH, this function will be executed before extension done.
+        //Thus status will be "Updating".
         while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
             status = getVirtualMachineStatus(agent.getNodeName(), agent.getResourceGroupName());
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: "
-                    + "Status is Updating, wait for another 30 seconds");
+            LOGGER.log(Level.INFO,
+                    "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: "
+                            + "Status is Updating, wait for another 30 seconds");
             final int sleepInMills = 30 * 1000;
             try {
                 Thread.sleep(sleepInMills);
@@ -1419,16 +1549,20 @@ public final class AzureVMManagementServiceDelegate {
             }
             currentRetryCount++;
         }
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: status {0}", status.toString());
-        return !(VMStatus.PROVISIONING_OR_DEPROVISIONING.equals(status) || VMStatus.UPDATING.equals(status)
-                || VMStatus.DEALLOCATING.equals(status) || VMStatus.STOPPED.equals(status)
+        LOGGER.log(Level.INFO,
+                "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: status {0}",
+                status.toString());
+        return !(VMStatus.PROVISIONING_OR_DEPROVISIONING.equals(status)
+                || VMStatus.UPDATING.equals(status)
+                || VMStatus.DEALLOCATING.equals(status)
+                || VMStatus.STOPPED.equals(status)
                 || VMStatus.DEALLOCATED.equals(status));
     }
 
     /**
      * Retrieves count of virtual machine in a azure subscription. This count is
-     * based off of the VMs that the current credential set has access to. It also
-     * does not deal with the classic, model. So keep this in mind.
+     * based off of the VMs that the current credential set has access to. It
+     * also does not deal with the classic, model. So keep this in mind.
      *
      * @param resourceGroupName
      * @return Total VM count
@@ -1440,7 +1574,8 @@ public final class AzureVMManagementServiceDelegate {
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
             for (VirtualMachine vm : vms) {
                 final Map<String, String> tags = vm.tags();
-                if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME) && deployTag.isFromSameInstance(
+                if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME)
+                        && deployTag.isFromSameInstance(
                         new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
                     if (tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME)) {
                         if (tags.get(Constants.AZURE_CLOUD_TAG_NAME).equals(cloudName)) {
@@ -1457,8 +1592,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
-                            + "services info, assuming that there are no hosted services {0}",
-                    e);
+                            + "services info, assuming that there are no hosted services {0}", e);
             return 0;
         }
     }
@@ -1474,12 +1608,12 @@ public final class AzureVMManagementServiceDelegate {
                 agent.getNodeName());
 
         try {
-            azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName())
-                    .deallocate();
+            azureClient.virtualMachines()
+                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).deallocate();
         } catch (Exception e) {
             LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: provision: could not terminate or shutdown {0}, {1}",
-                    new Object[] { agent.getNodeName(), e });
+                    new Object[]{agent.getNodeName(), e});
         }
     }
 
@@ -1503,7 +1637,9 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName Resource group containing the VM
      * @throws Exception
      */
-    public void terminateVirtualMachine(String vmName, String resourceGroupName) throws AzureCloudException {
+    public void terminateVirtualMachine(
+            String vmName,
+            String resourceGroupName) throws AzureCloudException {
         terminateVirtualMachine(vmName, resourceGroupName, new ExecutionEngine());
     }
 
@@ -1515,26 +1651,29 @@ public final class AzureVMManagementServiceDelegate {
      * @param executionEngine
      * @throws Exception
      */
-    public void terminateVirtualMachine(final String vmName, final String resourceGroupName,
+    public void terminateVirtualMachine(
+            final String vmName,
+            final String resourceGroupName,
             ExecutionEngine executionEngine) throws AzureCloudException {
         try {
             if (virtualMachineExists(vmName, resourceGroupName)) {
                 List<URI> diskUrisToRemove = new ArrayList<>();
                 List<String> diskIdToRemove = new ArrayList<>();
-                if (!azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName)
-                        .isManagedDiskEnabled()) {
+                if (!azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).isManagedDiskEnabled()) {
                     // Mark OS disk for removal
-                    diskUrisToRemove.add(new URI(azureClient.virtualMachines()
-                            .getByResourceGroup(resourceGroupName, vmName).osUnmanagedDiskVhdUri()));
+                    diskUrisToRemove.add(new URI(
+                            azureClient.virtualMachines()
+                                    .getByResourceGroup(resourceGroupName, vmName)
+                                    .osUnmanagedDiskVhdUri()));
                 } else {
-                    diskIdToRemove.add(
-                            azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).osDiskId());
+                    diskIdToRemove.add(azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).osDiskId());
                 }
                 // TODO: Remove data disks or add option to do so?
 
                 // Remove the VM
                 LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: " + "Removing virtual machine {0}",
+                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
+                                + "Removing virtual machine {0}",
                         vmName);
                 azureClient.virtualMachines().deleteByResourceGroup(resourceGroupName, vmName);
 
@@ -1543,21 +1682,22 @@ public final class AzureVMManagementServiceDelegate {
                     this.removeStorageBlob(diskUri, resourceGroupName);
                 }
                 for (String id : diskIdToRemove) {
-                    LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
-                            + "Removing managed disk with id: {0}", id);
+                    LOGGER.log(Level.INFO,
+                            "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
+                                    + "Removing managed disk with id: {0}",
+                            id);
                     azureClient.disks().deleteById(id);
                 }
 
-                // If used managed Disk with custom vhd, we need to delete the temporary image.
+                //If used managed Disk with custom vhd, we need to delete the temporary image.
                 if (!diskIdToRemove.isEmpty()) {
                     removeImage(azureClient, vmName, resourceGroupName);
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM",
-                    e);
-            // Check if VM is already deleted: if VM is already deleted then just ignore
-            // exception.
+            LOGGER.log(Level.WARNING,
+                    "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM", e);
+            // Check if VM is already deleted: if VM is already deleted then just ignore exception.
             if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
                 throw AzureCloudException.create(e);
             }
@@ -1575,13 +1715,14 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     public void removeImage(Azure azureClient, String vmName, String resourceGroupName) {
-        List<VirtualMachineCustomImage> customImages = azureClient.virtualMachineCustomImages()
-                .listByResourceGroup(resourceGroupName);
+        List<VirtualMachineCustomImage> customImages =
+                azureClient.virtualMachineCustomImages().listByResourceGroup(resourceGroupName);
         for (VirtualMachineCustomImage image : customImages) {
             String prefix = StringUtils.substringBefore(image.name(), "Image");
             if (StringUtils.contains(vmName, prefix)) {
                 LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: " + "Removing image with name: {0}",
+                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
+                                + "Removing image with name: {0}",
                         image.name());
                 azureClient.virtualMachineCustomImages().deleteById(image.id());
             }
@@ -1594,10 +1735,11 @@ public final class AzureVMManagementServiceDelegate {
         String containerName = PathUtility.getContainerNameFromUri(blobURI, false);
         String blobName = PathUtility.getBlobNameFromURI(blobURI, false);
 
-        LOGGER.log(Level.INFO, "removeStorageBlob: Removing blob {0}, in container {1} of storage account {2}",
-                new Object[] { blobName, containerName, storageAccountName });
-        CloudBlobContainer container = getCloudBlobContainer(azureClient, resourceGroupName, storageAccountName,
-                containerName);
+        LOGGER.log(Level.INFO,
+                "removeStorageBlob: Removing blob {0}, in container {1} of storage account {2}",
+                new Object[]{blobName, containerName, storageAccountName});
+        CloudBlobContainer container =
+                getCloudBlobContainer(azureClient, resourceGroupName, storageAccountName, containerName);
         container.getBlockBlobReference(blobName).deleteIfExists();
         if (containerName.startsWith("jnk")) {
             Iterable<ListBlobItem> blobs = container.listBlobs();
@@ -1617,7 +1759,8 @@ public final class AzureVMManagementServiceDelegate {
      * @param vmName
      * @throws AzureCloudException
      */
-    public void removeIPName(String resourceGroupName, String vmName) throws AzureCloudException {
+    public void removeIPName(String resourceGroupName,
+                             String vmName) throws AzureCloudException {
         final String nic = vmName + "NIC";
         try {
             LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
@@ -1643,8 +1786,8 @@ public final class AzureVMManagementServiceDelegate {
      */
     public void restartVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         try {
-            azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName())
-                    .restart();
+            azureClient.virtualMachines()
+                    .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).restart();
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
@@ -1663,14 +1806,13 @@ public final class AzureVMManagementServiceDelegate {
 
         while (!successful) {
             try {
-                azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName())
-                        .start();
+                azureClient.virtualMachines().getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).start();
                 successful = true; // may be we can just return
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
                         "AzureVMManagementServiceDelegate: startVirtualMachine: got exception while "
                                 + "starting VM {0}. Will retry again after 30 seconds. Current retry count {1} / {2}\n",
-                        new Object[] { agent.getNodeName(), retryCount, Constants.MAX_PROV_RETRIES });
+                        new Object[]{agent.getNodeName(), retryCount, Constants.MAX_PROV_RETRIES});
                 if (retryCount > Constants.MAX_PROV_RETRIES) {
                     throw AzureCloudException.create(e);
                 } else {
@@ -1742,13 +1884,30 @@ public final class AzureVMManagementServiceDelegate {
      * @param usePrivateIP
      * @return
      */
-    public List<String> verifyTemplate(String templateName, String labels, String location, String virtualMachineSize,
-            String storageAccountName, String storageAccountType, String noOfParallelJobs, String imageTopLevelType,
-            AzureVMAgentTemplate.ImageReferenceTypeClass imageReferenceType, String builtInImage, String osType,
-            String agentLaunchMethod, String initScript, String credentialsId, String virtualNetworkName,
-            String virtualNetworkResourceGroupName, String subnetName,
-            AzureVMCloudBaseRetentionStrategy retentionStrategy, String jvmOptions, String resourceGroupName,
-            boolean returnOnSingleError, boolean usePrivateIP, String nsgName) {
+    public List<String> verifyTemplate(
+            String templateName,
+            String labels,
+            String location,
+            String virtualMachineSize,
+            String storageAccountName,
+            String storageAccountType,
+            String noOfParallelJobs,
+            String imageTopLevelType,
+            AzureVMAgentTemplate.ImageReferenceTypeClass imageReferenceType,
+            String builtInImage,
+            String osType,
+            String agentLaunchMethod,
+            String initScript,
+            String credentialsId,
+            String virtualNetworkName,
+            String virtualNetworkResourceGroupName,
+            String subnetName,
+            AzureVMCloudBaseRetentionStrategy retentionStrategy,
+            String jvmOptions,
+            String resourceGroupName,
+            boolean returnOnSingleError,
+            boolean usePrivateIP,
+            String nsgName) {
 
         List<String> errors = new ArrayList<String>();
 
@@ -1757,7 +1916,7 @@ public final class AzureVMManagementServiceDelegate {
             String validationResult;
 
             // Verify basic info about the template
-            // Verify number of parallel jobs
+            //Verify number of parallel jobs
 
             validationResult = verifyTemplateName(templateName);
             addValidationResultIfFailed(validationResult, errors);
@@ -1777,7 +1936,7 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            // verify password
+            //verify password
             String adminPassword = "";
             try {
                 StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(credentialsId);
@@ -1792,22 +1951,39 @@ public final class AzureVMManagementServiceDelegate {
                 return errors;
             }
 
-            // verify JVM Options
+            //verify JVM Options
             validationResult = verifyJvmOptions(jvmOptions);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
             }
 
-            validationResult = verifyImageParameters(imageTopLevelType, imageReferenceType, builtInImage, osType);
+            validationResult = verifyImageParameters(
+                    imageTopLevelType,
+                    imageReferenceType,
+                    builtInImage,
+                    osType
+            );
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
             }
 
-            verifyTemplateAsync(location, imageTopLevelType, imageReferenceType, builtInImage, storageAccountName,
-                    storageAccountType, virtualNetworkName, virtualNetworkResourceGroupName, subnetName,
-                    resourceGroupName, errors, usePrivateIP, nsgName);
+            verifyTemplateAsync(
+                    location,
+                    imageTopLevelType,
+                    imageReferenceType,
+                    builtInImage,
+                    storageAccountName,
+                    storageAccountType,
+                    virtualNetworkName,
+                    virtualNetworkResourceGroupName,
+                    subnetName,
+                    resourceGroupName,
+                    errors,
+                    usePrivateIP,
+                    nsgName
+            );
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error validating template", e);
@@ -1817,11 +1993,20 @@ public final class AzureVMManagementServiceDelegate {
         return errors;
     }
 
-    private void verifyTemplateAsync(final String location, final String imageTopLevelType,
-            final AzureVMAgentTemplate.ImageReferenceTypeClass imageReferenceType, final String builtInImage,
-            final String storageAccountName, final String storageAccountType, final String virtualNetworkName,
-            final String virtualNetworkResourceGroupName, final String subnetName, final String resourceGroupName,
-            List<String> errors, final boolean usePrivateIP, final String nsgName) {
+    private void verifyTemplateAsync(
+            final String location,
+            final String imageTopLevelType,
+            final AzureVMAgentTemplate.ImageReferenceTypeClass imageReferenceType,
+            final String builtInImage,
+            final String storageAccountName,
+            final String storageAccountType,
+            final String virtualNetworkName,
+            final String virtualNetworkResourceGroupName,
+            final String subnetName,
+            final String resourceGroupName,
+            List<String> errors,
+            final boolean usePrivateIP,
+            final String nsgName) {
 
         List<Callable<String>> verificationTaskList = new ArrayList<Callable<String>>();
 
@@ -1830,8 +2015,12 @@ public final class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyVirtualNetwork(virtualNetworkName, virtualNetworkResourceGroupName, subnetName,
-                        usePrivateIP, resourceGroupName);
+                return verifyVirtualNetwork(
+                        virtualNetworkName,
+                        virtualNetworkResourceGroupName,
+                        subnetName,
+                        usePrivateIP,
+                        resourceGroupName);
             }
         };
         verificationTaskList.add(callVerifyVirtualNetwork);
@@ -1841,8 +2030,13 @@ public final class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyVirtualMachineImage(location, storageAccountName, imageTopLevelType, imageReferenceType,
-                        builtInImage);
+                return verifyVirtualMachineImage(
+                        location,
+                        storageAccountName,
+                        imageTopLevelType,
+                        imageReferenceType,
+                        builtInImage
+                );
             }
         };
         verificationTaskList.add(callVerifyVirtualMachineImage);
@@ -1852,7 +2046,8 @@ public final class AzureVMManagementServiceDelegate {
 
             @Override
             public String call() throws Exception {
-                return verifyStorageAccountName(resourceGroupName, storageAccountName, storageAccountType);
+                return verifyStorageAccountName(
+                        resourceGroupName, storageAccountName, storageAccountType);
             }
         };
         verificationTaskList.add(callVerifyStorageAccountName);
@@ -1894,8 +2089,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     public String verifyTemplateName(String templateName) {
-        // See reserved name:
-        // https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-reserved-resource-name
+        // See reserved name: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-reserved-resource-name
         if (StringUtils.lowerCase(templateName).contains("login")
                 || StringUtils.lowerCase(templateName).contains("microsoft")
                 || StringUtils.lowerCase(templateName).contains("windows")
@@ -1930,8 +2124,12 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public String verifyVirtualNetwork(String virtualNetworkName, String virtualNetworkResourceGroupName,
-            String subnetName, boolean usePrivateIP, String resourceGroupName) {
+    public String verifyVirtualNetwork(
+            String virtualNetworkName,
+            String virtualNetworkResourceGroupName,
+            String subnetName,
+            boolean usePrivateIP,
+            String resourceGroupName) {
         if (StringUtils.isNotBlank(virtualNetworkName)) {
             String finalResourceGroupName = resourceGroupName;
             if (StringUtils.isNotBlank(virtualNetworkResourceGroupName)) {
@@ -1955,8 +2153,13 @@ public final class AzureVMManagementServiceDelegate {
         return Constants.OP_SUCCESS;
     }
 
-    public String verifyVirtualMachineImage(String locationLabel, String storageAccountName, String imageTopLevelType,
-            AzureVMAgentTemplate.ImageReferenceTypeClass imageReference, String builtInImage) {
+    public String verifyVirtualMachineImage(
+            String locationLabel,
+            String storageAccountName,
+            String imageTopLevelType,
+            AzureVMAgentTemplate.ImageReferenceTypeClass imageReference,
+            String builtInImage
+    ) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             if (StringUtils.isNotBlank(builtInImage)) {
                 // As imageTopLevelType have to be null before save the template,
@@ -1965,11 +2168,10 @@ public final class AzureVMManagementServiceDelegate {
             } else {
                 return Messages.Azure_GC_Template_BuiltIn_Not_Valid();
             }
-        } else if ((imageReference.getType() == ImageReferenceType.UNKNOWN
-                && StringUtils.isNotBlank(imageReference.getUri()))
+        } else if ((imageReference.getType() == ImageReferenceType.UNKNOWN && StringUtils.isNotBlank(imageReference.getUri()))
                 || imageReference.getType() == ImageReferenceType.CUSTOM) {
             try {
-                // Custom image verification. We must verify that the VM image
+                // Custom image verification.  We must verify that the VM image
                 // storage account is the same as the target storage account.
                 // The URI for he storage account should be https://<storageaccountname>.
                 // Parse that out and verify against the image storageAccountName
@@ -2014,15 +2216,18 @@ public final class AzureVMManagementServiceDelegate {
                 Azure client = AzureClientUtil.getClient(azureCredentialsId, imageReference.getGallerySubscriptionId());
                 if (Constants.VERSION_LATEST.equals(imageReference.getGalleryImageVersion())) {
                     PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions()
-                            .listByGalleryImage(imageReference.getGalleryResourceGroup(),
-                                    imageReference.getGalleryName(), imageReference.getGalleryImageDefinition());
+                            .listByGalleryImage(imageReference.getGalleryResourceGroup(), imageReference.getGalleryName(), imageReference.getGalleryImageDefinition());
                     if (galleryImageVersions.isEmpty()) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 } else {
-                    GalleryImageVersion galleryImage = client.galleryImageVersions().getByGalleryImage(
-                            imageReference.getGalleryResourceGroup(), imageReference.getGalleryName(),
-                            imageReference.getGalleryImageDefinition(), imageReference.getGalleryImageVersion());
+                    GalleryImageVersion galleryImage = client.galleryImageVersions()
+                            .getByGalleryImage(
+                                    imageReference.getGalleryResourceGroup(),
+                                    imageReference.getGalleryName(),
+                                    imageReference.getGalleryImageDefinition(),
+                                    imageReference.getGalleryImageVersion()
+                            );
                     if (galleryImage == null) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
@@ -2036,8 +2241,8 @@ public final class AzureVMManagementServiceDelegate {
         } else {
             try {
                 final String locationName = AzureUtil.getLocationNameByLabel(locationLabel);
-                List<VirtualMachinePublisher> publishers = azureClient.virtualMachineImages().publishers()
-                        .listByRegion(locationName);
+                List<VirtualMachinePublisher> publishers =
+                        azureClient.virtualMachineImages().publishers().listByRegion(locationName);
                 for (VirtualMachinePublisher publisher : publishers) {
                     if (!publisher.name().equalsIgnoreCase(imageReference.getPublisher())) {
                         continue;
@@ -2053,7 +2258,7 @@ public final class AzureVMManagementServiceDelegate {
                             PagedList<VirtualMachineImage> images = sku.images().list();
                             if ((imageReference.getVersion().equalsIgnoreCase("latest")
                                     || StringUtils.isEmpty(imageReference.getVersion())) && images.size() > 0) {
-                                // the empty check is here to maintain backward compatibility
+                                //the empty check is here to maintain backward compatibility
                                 return Constants.OP_SUCCESS;
                             }
                             for (VirtualMachineImage vmImage : images) {
@@ -2075,7 +2280,9 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    public String verifyStorageAccountName(String resourceGroupName, String storageAccountName,
+    public String verifyStorageAccountName(
+            String resourceGroupName,
+            String storageAccountName,
             String storageAccountType) {
         boolean isAvailable = false;
         try {
@@ -2083,29 +2290,24 @@ public final class AzureVMManagementServiceDelegate {
                 return Messages.Azure_GC_Template_SA_Type_Null_Or_Empty();
             }
 
-            CheckNameAvailabilityResult checkResult = azureClient.storageAccounts()
-                    .checkNameAvailability(storageAccountName);
+            CheckNameAvailabilityResult checkResult =
+                    azureClient.storageAccounts().checkNameAvailability(storageAccountName);
             isAvailable = checkResult.isAvailable();
             if (!isAvailable && Reason.ACCOUNT_NAME_INVALID.equals(checkResult.reason())) {
                 return Messages.Azure_GC_Template_SA_Not_Valid();
             } else if (!isAvailable) {
-                /*
-                 * if it's not available we need to check if it's already in our resource group
-                 */
-                StorageAccount checkAccount = azureClient.storageAccounts().getByResourceGroup(resourceGroupName,
-                        storageAccountName);
+                /*if it's not available we need to check if it's already in our resource group*/
+                StorageAccount checkAccount =
+                        azureClient.storageAccounts().getByResourceGroup(resourceGroupName, storageAccountName);
                 if (null == checkAccount) {
                     return Messages.Azure_GC_Template_SA_Already_Exists();
                 } else {
-                    /*
-                     * if the storage account is already in out resource group, check whether they
-                     * are the same type
-                     */
+                    /*if the storage account is already in out resource group, check whether they are the same type*/
                     if (checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType)) {
                         return Constants.OP_SUCCESS;
                     } else {
-                        return Messages.Azure_GC_Template_SA_Type_Not_Match(storageAccountType,
-                                checkAccount.inner().sku().name().toString());
+                        return Messages.Azure_GC_Template_SA_Type_Not_Match(
+                                storageAccountType, checkAccount.inner().sku().name().toString());
                     }
                 }
             } else {
@@ -2142,11 +2344,16 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Verify the validity of the image parameters (does not verify actual values).
+     * Verify the validity of the image parameters (does not verify actual
+     * values).
      *
      */
-    private static String verifyImageParameters(String imageTopLevelType,
-            AzureVMAgentTemplate.ImageReferenceTypeClass imageReference, String builtInImage, String osType) {
+    private static String verifyImageParameters(
+            String imageTopLevelType,
+            AzureVMAgentTemplate.ImageReferenceTypeClass imageReference,
+            String builtInImage,
+            String osType
+    ) {
         if (imageTopLevelType == null || imageTopLevelType.equals(Constants.IMAGE_TOP_LEVEL_BASIC)) {
             // As imageTopLevelType have to be null before save the template,
             // so the verifyImageParameters always return success.
@@ -2166,8 +2373,8 @@ public final class AzureVMManagementServiceDelegate {
                     return Messages.Azure_GC_Template_ImageURI_Not_Valid();
                 }
                 return Constants.OP_SUCCESS;
-            } else if (imageReference.getType() == ImageReferenceType.CUSTOM_IMAGE
-                    && StringUtils.isNotBlank(imageReference.getId())) {
+            } else if (imageReference.getType() == ImageReferenceType.CUSTOM_IMAGE &&
+                    StringUtils.isNotBlank(imageReference.getId())) {
                 return Constants.OP_SUCCESS;
             } else if (imageReference.getType() == ImageReferenceType.REFERENCE
                     && StringUtils.isNotBlank(imageReference.getPublisher())
@@ -2182,16 +2389,18 @@ public final class AzureVMManagementServiceDelegate {
                     && StringUtils.isNotBlank(imageReference.getGalleryResourceGroup())) {
                 return Constants.OP_SUCCESS;
             } else {
-                return Messages.Azure_GC_Template_ImageReference_Not_Valid("Image parameters should not be blank.");
+                return Messages.Azure_GC_Template_ImageReference_Not_Valid(
+                        "Image parameters should not be blank.");
             }
         }
     }
 
-    public String verifyNSG(String resourceGroupName, String nsgName) {
+    public String verifyNSG(
+            String resourceGroupName,
+            String nsgName) {
         if (StringUtils.isNotBlank(nsgName)) {
             try {
-                NetworkSecurityGroup nsg = azureClient.networkSecurityGroups().getByResourceGroup(resourceGroupName,
-                        nsgName);
+                NetworkSecurityGroup nsg = azureClient.networkSecurityGroups().getByResourceGroup(resourceGroupName, nsgName);
                 if (nsg == null) {
                     return Messages.Azure_GC_Template_NSG_NotFound(nsgName);
                 }
@@ -2209,16 +2418,22 @@ public final class AzureVMManagementServiceDelegate {
      * @param locationName
      * @param resourceGroupName
      */
-    private void createAzureResourceGroup(Azure azureClient, String locationName, String resourceGroupName,
+    private void createAzureResourceGroup(
+            Azure azureClient, String locationName, String resourceGroupName,
             String cloudName) throws AzureCloudException {
         try {
-            azureClient.resourceGroups().define(resourceGroupName).withRegion(locationName)
+            azureClient.resourceGroups()
+                    .define(resourceGroupName)
+                    .withRegion(locationName)
                     .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
-                    .withTag(Constants.AZURE_CLOUD_TAG_NAME, cloudName).create();
+                    .withTag(Constants.AZURE_CLOUD_TAG_NAME, cloudName)
+                    .create();
         } catch (Exception e) {
-            throw AzureCloudException
-                    .create(String.format(" Failed to create resource group with group name %s, location %s",
-                            resourceGroupName, locationName), e);
+            throw AzureCloudException.create(
+                    String.format(
+                            " Failed to create resource group with group name %s, location %s",
+                            resourceGroupName, locationName),
+                    e);
         }
     }
 
@@ -2230,24 +2445,34 @@ public final class AzureVMManagementServiceDelegate {
      * @param location
      * @param resourceGroupName
      */
-    private void createStorageAccount(Azure azureClient, String targetStorageAccountType, String targetStorageAccount,
-            String location, String resourceGroupName, String templateName) throws AzureCloudException {
+    private void createStorageAccount(
+            Azure azureClient,
+            String targetStorageAccountType,
+            String targetStorageAccount,
+            String location,
+            String resourceGroupName,
+            String templateName) throws AzureCloudException {
         try {
             // Get storage account before creating.
             // Reuse existing to prevent failure.
 
             if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
                 SkuName skuName = SkuName.fromString(targetStorageAccountType);
-                azureClient.storageAccounts().define(targetStorageAccount).withRegion(location)
+                azureClient.storageAccounts().define(targetStorageAccount)
+                        .withRegion(location)
                         .withExistingResourceGroup(resourceGroupName)
                         .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                         .withTag(Constants.AZURE_TEMPLATE_TAG_NAME, templateName)
-                        .withSku(StorageAccountSkuType.fromSkuName(skuName)).create();
+                        .withSku(StorageAccountSkuType.fromSkuName(skuName))
+                        .create();
             }
         } catch (Exception e) {
-            throw AzureCloudException.create(String.format(
-                    "Failed to create storage account with account name %s, location %s, " + "resourceGroupName %s",
-                    targetStorageAccount, location, resourceGroupName), e);
+            throw AzureCloudException.create(
+                    String.format(
+                            "Failed to create storage account with account name %s, location %s, "
+                                    + "resourceGroupName %s",
+                            targetStorageAccount, location, resourceGroupName),
+                    e);
         }
     }
 
@@ -2259,7 +2484,8 @@ public final class AzureVMManagementServiceDelegate {
      * @param resourceGroupName
      * @return StorageAccount object
      */
-    private StorageAccount getStorageAccount(Azure azureClient, String targetStorageAccount, String resourceGroupName)
+    private StorageAccount getStorageAccount(
+            Azure azureClient, String targetStorageAccount, String resourceGroupName)
             throws AzureCloudException {
         try {
             return azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount);
@@ -2269,20 +2495,20 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Get the blob endpoint suffix for , it's like ".blob.core.windows.net/" for
-     * public azure or ".blob.core.chinacloudapi.cn" for Azure China.
+     * Get the blob endpoint suffix for , it's like ".blob.core.windows.net/" for public azure
+     * or ".blob.core.chinacloudapi.cn" for Azure China.
      *
      * @param storageAccount
      * @return endpointSuffix
      */
     public static String getBlobEndpointSuffixForTemplate(StorageAccount storageAccount) {
-        return getBlobEndPointSuffix(storageAccount, Constants.BLOB, Constants.BLOB_ENDPOINT_PREFIX,
-                Constants.FWD_SLASH);
+        return getBlobEndPointSuffix(
+                storageAccount, Constants.BLOB, Constants.BLOB_ENDPOINT_PREFIX, Constants.FWD_SLASH);
     }
 
     /**
-     * Get the blob endpoint suffix for constructing CloudStorageAccount , it's like
-     * "core.windows.net" or "core.chinacloudapi.cn" for AzureChina.
+     * Get the blob endpoint suffix for constructing CloudStorageAccount  , it's like "core.windows.net"
+     * or "core.chinacloudapi.cn" for AzureChina.
      *
      * @param storageAccount
      * @return endpointSuffix
@@ -2295,17 +2521,15 @@ public final class AzureVMManagementServiceDelegate {
      * Get the blob endpoint substring with prefix and suffix.
      *
      * @param storageAccount
-     * @param startKey       uses to get the start position of sub string, if it's
-     *                       null or empty then whole input string will be used
-     * @param prefix         the prefix of substring will be added, if it's null or
-     *                       empty then it will not be added'
-     * @param suffix         the suffix will be append to substring if substring
-     *                       doesn't contain it, if it's null or empty then it will
-     *                       not be added
+     * @param startKey       uses to get the start position of sub string,
+     *                       if it's null or empty then whole input string will be used
+     * @param prefix         the prefix of substring will be added, if it's null or empty then it will not be added'
+     * @param suffix         the suffix will be append to substring if substring doesn't contain it,
+     *                       if it's null or empty then it will not be added
      * @return endpointSuffix
      */
-    private static String getBlobEndPointSuffix(StorageAccount storageAccount, String startKey, String prefix,
-            String suffix) {
+    private static String getBlobEndPointSuffix(
+            StorageAccount storageAccount, String startKey, String prefix, String suffix) {
         String endpointSuffix = null;
         if (storageAccount != null) {
             String blobUri = storageAccount.endPoints().primary().blob().toLowerCase();
@@ -2315,15 +2539,15 @@ public final class AzureVMManagementServiceDelegate {
         return endpointSuffix;
     }
 
+
     /**
-     * Get substring with startKey, endSuffix and prefix.
+     * Get substring with startKey,  endSuffix and prefix.
      *
-     * @param startKey startKey used to get the start position of string, if it's
-     *                 null or empty then whole input string will be used
-     * @param prefix   the prefix of substring will be added, if it's null or empty
-     *                 then it will not be added'
-     * @param suffix   the suffix will be append to substring if substring doesn't
-     *                 contain it, if it's null or empty then it will not be added
+     * @param startKey startKey used to get the start position of string,
+     *                 if it's null or empty then whole input string will be used
+     * @param prefix   the prefix of substring will be added, if it's null or empty then it will not be added'
+     * @param suffix   the suffix will be append to substring if substring doesn't contain it,
+     *                 if it's null or empty then it will not be added
      * @return
      */
     private static String getSubString(String uri, String startKey, String prefix, String suffix) {
@@ -2358,20 +2582,24 @@ public final class AzureVMManagementServiceDelegate {
 
         String storageAccountKey = storageKeys.get(0).value();
         String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
-                + "the suffix for construct CloudStorageCloud is {0}", blobSuffix);
+        LOGGER.log(Level.INFO,
+                "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
+                        + "the suffix for construct CloudStorageCloud is {0}",
+                blobSuffix);
         if (StringUtils.isEmpty(blobSuffix)) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
                     + "Exception occurred while getting blobSuffix, it's empty'");
         }
         try {
             return new CloudStorageAccount(
-                    new StorageCredentialsAccountAndKey(storageAccount.name(), storageAccountKey), true, blobSuffix);
+                    new StorageCredentialsAccountAndKey(storageAccount.name(), storageAccountKey),
+                    true,
+                    blobSuffix);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: GetCloudStorageAccount: "
                             + "unable to get CloudStorageAccount with storage account {0} and blob Suffix {1}",
-                    new Object[] { storageAccount.name(), blobSuffix });
+                    new Object[]{storageAccount.name(), blobSuffix});
             throw AzureCloudException.create(e);
         }
     }
@@ -2383,25 +2611,27 @@ public final class AzureVMManagementServiceDelegate {
      * @param containerName
      * @return CloudBlobContainer
      */
-    public static CloudBlobContainer getCloudBlobContainer(CloudStorageAccount account, String containerName)
-            throws AzureCloudException {
+    public static CloudBlobContainer getCloudBlobContainer(
+            CloudStorageAccount account, String containerName) throws AzureCloudException {
         try {
             return account.createCloudBlobClient().getContainerReference(containerName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: getCloudBlobContainer: "
                             + "unable to get CloudStorageAccount with container name {1}",
-                    new Object[] { containerName });
+                    new Object[]{containerName});
             throw AzureCloudException.create(e);
         }
     }
 
-    public CloudBlobContainer getCloudBlobContainer(Azure azureClient, String resourceGroupName,
-            String targetStorageAccount, String blobContainerName) throws AzureCloudException {
+    public CloudBlobContainer getCloudBlobContainer(
+            Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContainerName)
+            throws AzureCloudException {
 
         StorageAccount storageAccount = null;
         try {
-            storageAccount = azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount);
+            storageAccount = azureClient.storageAccounts()
+                    .getByResourceGroup(resourceGroupName, targetStorageAccount);
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
