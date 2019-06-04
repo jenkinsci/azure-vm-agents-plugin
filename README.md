@@ -121,13 +121,23 @@ If you choose Use Advanced Image Configurations, you can click on Advanced butto
 5. Number of Executors: specify the number concurrent builds that a VM agent can run at the same time.
 6. Disable template: disable this template temporarily.
 
+## Configure VM Template using configuration-as-code plugin
+
+This plugin can be fully configured by the [Jenkins Configuration as Code plugin](https://github.com/jenkinsci/configuration-as-code-plugin).
+
+Configure the plugin using the UI initially and then export the configuration and tweak to your needs
+
+Note: Until credentials support is merged into the credentials plugin you will need to also install the `configuration-as-code-support` plugin
+
 ## Configure VM Template using Groovy Script
-In some cases you may want to configure the VM template using script so it can be automated instead of manually configure it in UI. Jenkins supports groovy script that can automates such operation. Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
+
+It is recommended that you use the `configuration-as-code` plugin for automating the plugin configuration. If you can't do that for some reason then you can use groovy script
+
+Here is a sample groovy script that creates a new Azure cloud and VM template. You can run it in Manage Jenkins -> Script Console.
 
 ```groovy
 //Configure cloud with built-in image
 import com.microsoft.azure.vmagent.builders.*
-
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
 .withAzureCredentialsId("<your azure credential ID>")
@@ -147,13 +157,11 @@ def myCloud = new AzureVMCloudBuilder()
     .withAdminCredential("<your admin credential ID>")
 .endTemplate()
 .build()
-
 Jenkins.getInstance().clouds.add(myCloud)
 ```
 ```groovy
 //Configure cloud with mutli-template of advanced images
 import com.microsoft.azure.vmagent.builders.*
-
 def firstTemplate = new AzureVMTemplateBuilder()
 .withName("first-template")
 .withLabels("ubuntu")
@@ -168,7 +176,6 @@ def firstTemplate = new AzureVMTemplateBuilder()
 .endAdvancedImage()
 .withAdminCredential("<your admin credential ID>")
 .build()
-
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
 .withAzureCredentialsId("<your azure credential ID>")
@@ -186,14 +193,12 @@ def myCloud = new AzureVMCloudBuilder()
     .withAdminCredential("<your admin credential ID>")
 .endTemplate()
 .build()
-
 Jenkins.getInstance().clouds.add(myCloud)
 ```
 ```groovy
 //inherit existing template
 import com.microsoft.azure.vmagent.builders.*
 import com.microsoft.azure.vmagent.*
-
 AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
 .withLocation("Southeast Asia")
 .withVirtualMachineSize("Standard_DS2_v2")
@@ -204,7 +209,6 @@ AzureVMAgentTemplate baseTemplate = new AzureVMTemplateBuilder()
     .endAdvancedImage()
     .withAdminCredential("<your admin credential ID>")
 .build()
-
 def myCloud = new AzureVMCloudBuilder()
 .withCloudName("myAzure")
 .withAzureCredentialsId("<your azure credential ID>")
@@ -219,8 +223,6 @@ def myCloud = new AzureVMCloudBuilder()
     .endAdvancedImage()
 .endTemplate()
 .build()
-
 Jenkins.getInstance().clouds.add(myCloud)
-
 ```
 This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).

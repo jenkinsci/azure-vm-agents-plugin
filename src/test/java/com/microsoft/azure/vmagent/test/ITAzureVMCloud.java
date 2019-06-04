@@ -45,7 +45,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud("", "xyz", "42", "0", "new", testEnv.azureResourceGroup, null,null));
 
-            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
 
             try {
                 cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
@@ -87,7 +87,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
 
-            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
             when(templateMock.getTemplateName()).thenReturn(templateName);
             when(templateMock.getTemplateDesc()).thenReturn(templateDesc);
             when(templateMock.getAgentWorkspace()).thenReturn(agentWorkspace);
