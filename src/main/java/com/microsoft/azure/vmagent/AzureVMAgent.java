@@ -109,9 +109,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     private final boolean doNotUseMachineIfInitFails;
 
     private final boolean enableMSI;
-    
+
     private final boolean enableUAMI;
-    
+
     private final String uamiID;
 
     private boolean eligibleForReuse;
