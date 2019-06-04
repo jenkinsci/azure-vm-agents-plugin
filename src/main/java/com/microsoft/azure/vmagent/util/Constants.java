@@ -124,6 +124,12 @@ public final class Constants {
     public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
 
     /**
+     * ResourceGroup reference type.
+     */
+    public static final String RESOURCE_GROUP_REFERENCE_TYPE_NEW = "new";
+    public static final String RESOURCE_GROUP_REFERENCE_TYPE_EXISTING = "existing";
+
+    /**
      * Default Image Properties.
      */
     public static final String DEFAULT_IMAGE_ID = "defaultImageId";
@@ -231,6 +237,8 @@ public final class Constants {
     public static final String AZURE_RESOURCES_TAG_NAME = "JenkinsResourceTag";
 
     public static final String AZURE_CLOUD_TAG_NAME = "JenkinsCloudTag";
+
+    public static final String AZURE_TEMPLATE_TAG_NAME = "JenkinsTemplateTag";
 
     public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 

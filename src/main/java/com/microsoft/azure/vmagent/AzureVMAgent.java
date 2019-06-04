@@ -460,7 +460,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @CheckForNull
     public AzureVMCloud getCloud() {
-        return (AzureVMCloud) Jenkins.get().getCloud(cloudName);
+        return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
     }
 
     public synchronized void shutdown(Localizable reason) {
@@ -504,7 +504,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public synchronized void deprovision(Localizable reason) throws Exception {
         SlaveComputer computer = this.getComputer();
-        if (Jenkins.get().getNode(this.name) == null || computer == null) {
+        if (Jenkins.getInstance().getNode(this.name) == null || computer == null) {
             return;
         }
 
@@ -524,7 +524,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             parentCloud.adjustVirtualMachineCount(-1);
         }
 
-        Jenkins.get().removeNode(this);
+        Jenkins.getInstance().removeNode(this);
 
         final Map<String, String> properties = new HashMap<>();
         properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());

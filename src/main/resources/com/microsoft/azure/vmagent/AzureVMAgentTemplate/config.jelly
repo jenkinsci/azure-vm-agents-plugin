@@ -26,10 +26,10 @@
                 <f:select/>
             </f:entry>
 
-            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityType" name="availabilityTypeClass" help="/plugin/azure-vm-agents/help-availability.html">
+            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityTypeValue" name="availabilityType" help="/plugin/azure-vm-agents/help-availability.html">
                 <f:dropdownListBlock title="${%No_Availability}" value="unknown" selected="${instance == null || instance.getAvailabilityType() == 'unknown'}">
                 </f:dropdownListBlock>
-                <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilityType() == 'availabilitySet'}">
+                <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilitySet() != null}">
                     <f:entry title="${%name}" field="availabilitySet" help="/plugin/azure-vm-agents/help-availabilitySet.html">
                         <f:select/>
                     </f:entry>
@@ -88,48 +88,48 @@
                 </f:entry>
 
                 <f:section title="${%Pre_Installed_Tools}">
-                    <f:entry title="Install Git (Latest)" field="isInstallGit">
+                    <f:entry title="Install Git (Latest)" field="installGit">
                         <f:checkbox/>
                     </f:entry>
 
-                    <f:entry title="Install Maven (V3.5.2)" field="isInstallMaven">
+                    <f:entry title="Install Maven (V3.5.2)" field="installMaven">
                         <f:checkbox/>
                     </f:entry>
 
-                    <f:entry title="Install Docker" field="isInstallDocker">
+                    <f:entry title="Install Docker" field="installDocker">
                         <f:checkbox/>
                     </f:entry>
                 </f:section>
             </ui:radioBlock>
 
             <ui:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
-                <ui:dropdownList selectedName="imageReferenceType" name="imageReferenceTypeClass">
+                <ui:dropdownList selectedName="imageReferenceTypeValue" name="imageReference">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
-                        <f:entry title="${%Image}" field="image" help="/plugin/azure-vm-agents/help-image.html">
+                        <f:entry title="${%Image}" field="uri" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
                         </f:entry>
                     </f:dropdownListBlock>
 
                     <f:dropdownListBlock title="${%Custom_Managed_Image}" value="customImage" selected="${instance.isType('customImage')}">
-                        <f:entry title="${%Image_Id}" field="imageId"
+                        <f:entry title="${%Image_Id}" field="id"
                                  help="/plugin/azure-vm-agents/help-customReference.html">
                             <f:textbox/>
                         </f:entry>
                     </f:dropdownListBlock>
 
                     <f:dropdownListBlock title="${%Marketplace_Image}" value="reference" selected="${instance.isType('reference')}">
-                        <f:entry title="${%Image_Publisher}" field="imagePublisher"
+                        <f:entry title="${%Image_Publisher}" field="publisher"
                                  help="/plugin/azure-vm-agents/help-imageReference.html">
                             <f:textbox/>
                         </f:entry>
-                        <f:entry title="${%Image_Offer}" field="imageOffer"
+                        <f:entry title="${%Image_Offer}" field="offer"
                                  help="/plugin/azure-vm-agents/help-imageReference.html">
                             <f:textbox/>
                         </f:entry>
-                        <f:entry title="${%Image_Sku}" field="imageSku" help="/plugin/azure-vm-agents/help-imageReference.html">
+                        <f:entry title="${%Image_Sku}" field="sku" help="/plugin/azure-vm-agents/help-imageReference.html">
                             <f:textbox/>
                         </f:entry>
-                        <f:entry title="${%Image_Version}" field="imageVersion"
+                        <f:entry title="${%Image_Version}" field="version"
                                  help="/plugin/azure-vm-agents/help-imageReference.html">
                             <f:textbox default="latest"/>
                         </f:entry>
@@ -260,6 +260,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,imageId,imagePublisher,imageOffer,imageSku,imageVersion,galleryName,galleryImageDefinition,galleryImageVersion,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions,imageReferenceType"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
     </table>
 </j:jelly>

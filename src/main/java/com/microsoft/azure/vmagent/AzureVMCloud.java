@@ -20,7 +20,6 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -44,7 +43,6 @@ import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsConstants;
 import hudson.Extension;
-import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
 import hudson.logging.LogRecorderManager;
@@ -85,6 +83,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -137,36 +136,10 @@ public class AzureVMCloud extends Cloud {
     private transient Supplier<Azure> azureClient = createAzureClientSupplier();
 
     private Supplier<Azure> createAzureClientSupplier() {
-        return Suppliers.memoize(new Supplier<Azure>() {
-            @Override
-            public Azure get() {
-                return AzureClientUtil.getClient(credentialsId);
-            }
-        });
+        return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
     }
 
     @DataBoundConstructor
-    public AzureVMCloud(
-            String cloudName,
-            String id,
-            String azureCredentialsId,
-            String maxVirtualMachinesLimit,
-            String deploymentTimeout,
-            String resourceGroupReferenceType,
-            String newResourceGroupName,
-            String existingResourceGroupName,
-            List<AzureVMAgentTemplate> vmTemplates) {
-        this(
-                cloudName,
-                azureCredentialsId,
-                maxVirtualMachinesLimit,
-                deploymentTimeout,
-                resourceGroupReferenceType,
-                newResourceGroupName,
-                existingResourceGroupName,
-                vmTemplates);
-    }
-
     public AzureVMCloud(
             String cloudName,
             String azureCredentialsId,
@@ -233,7 +206,7 @@ public class AzureVMCloud extends Cloud {
             // Walk the list of templates and assign the parent cloud (which is transient).
             ensureVmTemplateList();
             for (AzureVMAgentTemplate template : vmTemplates) {
-                template.setAzureCloud(this);
+                template.addAzureCloudReference(this);
             }
         }
 
@@ -349,7 +322,7 @@ public class AzureVMCloud extends Cloud {
         synchronized (this) {
             ensureVmTemplateList();
             vmTemplates.add(newTemplate);
-            newTemplate.setAzureCloud(this);
+            newTemplate.addAzureCloudReference(this);
         }
     }
 
@@ -366,7 +339,7 @@ public class AzureVMCloud extends Cloud {
             vmTemplates.clear();
             for (AzureVMAgentTemplate newTemplate : newTemplates) {
                 vmTemplates.add(newTemplate);
-                newTemplate.setAzureCloud(this);
+                newTemplate.addAzureCloudReference(this);
             }
         }
     }
@@ -763,7 +736,7 @@ public class AzureVMCloud extends Cloud {
                                                 // set virtual machine details again
                                                 getServiceDelegate().setVirtualMachineDetails(
                                                         agentNode, template);
-                                                Jenkins.get().addNode(agentNode);
+                                                Jenkins.getInstance().addNode(agentNode);
                                                 if (agentNode.getAgentLaunchMethod()
                                                         .equalsIgnoreCase("SSH")) {
                                                     azureComputer.connect(false).get();
@@ -994,7 +967,7 @@ public class AzureVMCloud extends Cloud {
                                         terminateEx);
                                 // Do not throw to avoid it being recorded
                             }
-                            template.getAzureCloud().adjustVirtualMachineCount(-1);
+                            template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1);
                             // Update the template status given this new issue.
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }
@@ -1078,7 +1051,7 @@ public class AzureVMCloud extends Cloud {
             return LOG_RECORDER_NAME;
         }
 
-        @Initializer(before = InitMilestone.PLUGINS_STARTED)
+        @Initializer(before = PLUGINS_STARTED)
         public static void addAliases() {
             Jenkins.XSTREAM2.addCompatibilityAlias(
                     "com.microsoft.azure.AzureVMCloud", AzureVMCloud.class);
