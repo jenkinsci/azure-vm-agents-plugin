@@ -12,6 +12,7 @@
       diskType: "managed"
       doNotUseMachineIfInitFails: true
       enableMSI: false
+      enableUAMI: false
       executeInitScriptAsRoot: true
       imageReference:
         version: "latest"

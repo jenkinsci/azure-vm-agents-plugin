@@ -49,6 +49,7 @@
                     <executeInitScriptAsRoot>true</executeInitScriptAsRoot>
                     <doNotUseMachineIfInitFails>true</doNotUseMachineIfInitFails>
                     <enableMSI>false</enableMSI>
+                    <enableUAMI>false</enableUAMI>
                     <retentionStrategy class="com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy">
                         <idleTerminationMillis>3600000</idleTerminationMillis>
                         <idleTerminationMinutes>60</idleTerminationMinutes>
