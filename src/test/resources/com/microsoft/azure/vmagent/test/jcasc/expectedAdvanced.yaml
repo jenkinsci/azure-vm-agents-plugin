@@ -1,0 +1,53 @@
+- azureVM:
+    azureCredentialsId: "azure-cred"
+    cloudName: "azure"
+    deploymentTimeout: 1200
+    existingResourceGroupName: "vm-agents"
+    maxVirtualMachinesLimit: 10
+    resourceGroupReferenceType: "existing"
+    vmTemplates:
+    - agentLaunchMethod: "SSH"
+      agentWorkspace: "/opt/jenkins"
+      availabilityType:
+        availabilitySet: "vm-agents"
+      builtInImage: "Windows Server 2016"
+      credentialsId: "admin-cred"
+      diskType: "managed"
+      doNotUseMachineIfInitFails: true
+      enableMSI: false
+      executeInitScriptAsRoot: true
+      imageReference:
+        galleryImageDefinition: "Linux"
+        galleryImageVersion: "latest"
+        galleryName: "gallery"
+        galleryResourceGroup: "gallery"
+        gallerySubscriptionId: "e5587777-5750-4d2e-9e45-d6fbae67b8ea"
+      imageTopLevelType: "advanced"
+      initScript: "yum install -y java\nyum install -y nodejs\ncat /etc/hosts"
+      installDocker: false
+      installGit: false
+      installMaven: false
+      jvmOptions: "-xmx"
+      labels: "linux"
+      location: "UK South"
+      newStorageAccountName: "agent-storage"
+      noOfParallelJobs: 1
+      nsgName: "an-nsg"
+      osDiskSize: 40
+      osType: "Linux"
+      preInstallSsh: false
+      retentionStrategy:
+        azureVMCloudRetentionStrategy:
+          idleTerminationMinutes: 40
+      shutdownOnIdle: false
+      storageAccountNameReferenceType: "new"
+      storageAccountType: "Standard_LRS"
+      subnetName: "jenkins"
+      templateDesc: "desc"
+      templateDisabled: false
+      templateName: "azure"
+      usageMode: "Use this node as much as possible"
+      usePrivateIP: true
+      virtualMachineSize: "Standard_A2"
+      virtualNetworkName: "vm-agent"
+      virtualNetworkResourceGroupName: "vm-agent"

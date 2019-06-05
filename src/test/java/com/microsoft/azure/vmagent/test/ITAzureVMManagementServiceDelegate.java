@@ -33,7 +33,6 @@ import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
-import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
@@ -41,13 +40,13 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
-import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -57,6 +56,8 @@ import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -88,6 +89,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
         when(templateMock.getInitScript()).thenReturn(writtenData);
         when(templateMock.getStorageAccountType()).thenReturn(SkuName.STANDARD_LRS.toString());
+        when(templateMock.getResourceGroupReferenceType()).thenReturn(testEnv.azureResourceGroupReferenceType);
+        AzureVMCloud cloudMock = mock(AzureVMCloud.class);
+        when(cloudMock.getCloudName()).thenReturn("testCloudName");
+        when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
 
         try {
             delegate.uploadCustomScript(templateMock, uploadFileName);
@@ -217,6 +222,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
     }
 
+    /**
+     * This test requires legal terms accepted in order for it to pass
+     * You can run: az vm image accept-terms --urn kali-linux:kali-linux:kali:2018.4.0
+     */
     @Test
     public void createDeploymentWithPurchasePlan() throws Exception {
         testEnv.azureImagePublisher = "kali-linux";
@@ -370,7 +379,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         Assert.assertNotNull("The deployed VM doesn't exist: " + commonAssertMsg, actualVM);
         Assert.assertNotNull("The deployed Network interface doesn't exist: " + commonAssertMsg, actualNetIface);
         Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
-        Assert.assertTrue(availabilitySet.id().equalsIgnoreCase(actualVM.availabilitySetId()));
+        assertThat(availabilitySet.id(), is(equalToIgnoringCase(actualVM.availabilitySetId())));
     }
 
     @Test
@@ -443,7 +452,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             }
             Assert.assertNotNull("The deployed VNet doesn't exist: " + testEnv.azureResourceGroup, actualVNet);
             Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
-            final List<String> baseVMNames = Arrays.asList(new Object[]{firstDeployment.getVmBaseName(), secondDeployment.getVmBaseName(), thirdDeployment.getVmBaseName()});
+            final List<String> baseVMNames = Arrays.asList(firstDeployment.getVmBaseName(), secondDeployment.getVmBaseName(), thirdDeployment.getVmBaseName());
             for (String base : baseVMNames) {
                 final String baseName = base + "0";
                 final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
@@ -482,7 +491,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
 
-        when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+        when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(agentMock.getNodeName()).thenReturn(vmName);
 
@@ -540,7 +549,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             AzureVMAgent agentMock = mock(AzureVMAgent.class);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = mock(AzureVMCloud.class);
-            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
             when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
             when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
             when(agentMock.getNodeName()).thenReturn(nodeName);
@@ -571,7 +580,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             AzureVMAgent agentMock = mock(AzureVMAgent.class);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = mock(AzureVMCloud.class);
-            when(templateMock.getAzureCloud()).thenReturn(cloudMock);
+            when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
             when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
             when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
             when(agentMock.getNodeName()).thenReturn(nodeName);
@@ -830,7 +839,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.shutdownVirtualMachine(agentMock);
             PowerState state = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).powerState();
-            Assert.assertThat(state, anyOf(
+            assertThat(state, anyOf(
                     is(PowerState.STOPPING),
                     is(PowerState.STOPPED),
                     is(PowerState.DEALLOCATING),
@@ -904,36 +913,172 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     public void verifyVirtualMachineImageTest() {
         try {
             Assert.assertEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku,
+                                    "latest",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku,
+                                    "",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "wrong_version", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku,
+                                    "wrong_version",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation + "wrong", "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "",testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation + "wrong",
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku,
+                                    "",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher + "wrong", testEnv.azureImageOffer, testEnv.azureImageSku, "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher + "wrong",
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku,
+                                    "latest",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer + "wrong", testEnv.azureImageSku, "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer + "wrong",
+                                    testEnv.azureImageSku,
+                                    "",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.REFERENCE, "", "",
-                            "", testEnv.azureImagePublisher, testEnv.azureImageOffer, testEnv.azureImageSku + "wrong", "latest", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    testEnv.azureImagePublisher,
+                                    testEnv.azureImageOffer,
+                                    testEnv.azureImageSku + "wrong",
+                                    "latest",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
             Assert.assertNotEquals(Constants.OP_SUCCESS, delegate
-                    .verifyVirtualMachineImage(testEnv.azureLocation, "", Constants.IMAGE_TOP_LEVEL_ADVANCED, ImageReferenceType.CUSTOM_IMAGE, "", "",
-                            "", "", "", "", "", testEnv.galleryName, testEnv.galleryImageDefinition, testEnv.galleryImageVersion, testEnv.gallerySubscriptionId, testEnv.galleryResourceGroup));
+                    .verifyVirtualMachineImage(
+                            testEnv.azureLocation,
+                            "",
+                            Constants.IMAGE_TOP_LEVEL_ADVANCED,
+                            new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    testEnv.galleryName,
+                                    testEnv.galleryImageDefinition,
+                                    testEnv.galleryImageVersion,
+                                    testEnv.gallerySubscriptionId,
+                                    testEnv.galleryResourceGroup
+                            ),
+                            ""
+                    ));
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);

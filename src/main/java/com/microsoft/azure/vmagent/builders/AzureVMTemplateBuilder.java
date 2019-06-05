@@ -1,6 +1,7 @@
 package com.microsoft.azure.vmagent.builders;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
+import com.microsoft.azure.vmagent.AzureVMCloudBaseRetentionStrategy;
 
 public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplateBuilder> {
 
@@ -26,7 +27,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
         fluent.withOsDiskSize(template.getOsDiskSize());
-        fluent.withRetentionStrategy(template.getRetentionStrategy());
+        fluent.withRetentionStrategy((AzureVMCloudBaseRetentionStrategy) template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
@@ -59,7 +60,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
         fluent.withOsDiskSize(template.getOsDiskSize());
-        fluent.withRetentionStrategy(template.getRetentionStrategy());
+        fluent.withRetentionStrategy((AzureVMCloudBaseRetentionStrategy) template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
@@ -73,7 +74,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     }
 
     public AzureVMAgentTemplate build() {
-        return new AzureVMAgentTemplate(fluent.getName(),
+        return new AzureVMAgentTemplate(
+                fluent.getName(),
                 fluent.getDescription(),
                 fluent.getLabels(),
                 fluent.getLocation(),
@@ -93,7 +95,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getBuiltInImage().isInstallDocker(),
                 fluent.getAdvancedImage().getOsType(),
                 fluent.getImageTopLevelType(),
-                false,
                 new AzureVMAgentTemplate.ImageReferenceTypeClass(fluent.getAdvancedImage().getImage(),
                         fluent.getAdvancedImage().getImageId(),
                         fluent.getAdvancedImage().getImagePublisher(),
@@ -119,7 +120,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getRetentionStrategy(),
                 fluent.isShutdownOnIdle(),
                 fluent.getAdvancedImage().isTemplateDisabled(),
-                null,
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
                 fluent.getAdvancedImage().isEnableMSI());

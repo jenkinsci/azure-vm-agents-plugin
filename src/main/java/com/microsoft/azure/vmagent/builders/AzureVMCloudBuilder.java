@@ -108,7 +108,6 @@ public class AzureVMCloudBuilder {
 
     public AzureVMCloud build() {
         return new AzureVMCloud(StringUtils.defaultString(cloudName),
-                "",
                 StringUtils.defaultString(azureCredentialsId),
                 maxVirtualMachinesLimit,
                 deploymentTimeout,
