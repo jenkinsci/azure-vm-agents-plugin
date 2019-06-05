@@ -40,9 +40,9 @@ public class AdvancedImage {
     private boolean doNotUseMachineIfInitFails;
 
     private boolean enableMSI;
-    
+
     private boolean enableUAMI;
-    
+
     private String uamiID;
 
     private String virtualNetworkName;

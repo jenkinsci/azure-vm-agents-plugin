@@ -1044,7 +1044,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     public boolean isEnableMSI() {
         return enableMSI;
     }
- 
+
     public boolean isEnableUAMI() {
         return enableUAMI;
     }

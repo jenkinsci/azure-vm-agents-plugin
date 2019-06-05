@@ -492,12 +492,12 @@ public class AzureVMCloud extends Cloud {
         }
         return null;
     }
-    
+
     private static void putVariable(JsonNode template, String name, String value) {
         ObjectNode.class.cast(template.get("variables")).put(name, value);
     }
-    
-    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException {        
+
+    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException {
         InputStream embeddedTemplate = null;
         JsonNode tmp = null;
         try {
@@ -610,14 +610,15 @@ public class AzureVMCloud extends Cloud {
                                 LOGGER.log(Level.INFO,
                                         "AzureVMCloud: createProvisionedAgent: VM available: {0}",
                                         resource);
-                                        
+
                                 Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
-                                boolean isEnabledUAMI = (boolean) properties.get("enableUAMI");       
+                                boolean isEnabledUAMI = (boolean) properties.get("enableUAMI");
                                 if (isEnabledUAMI) {
                                     String uamiID = (String) properties.get("uamiID");
                                     String location = template.getLocation();
                                     final Azure myAzureClient = AzureClientUtil.getClient(credentialsId);
-                                    final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), new Date(System.currentTimeMillis()));
+                                    final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), 
+                                            new Date(System.currentTimeMillis()));
                                     // -- execute template UAMI
                                     myAzureClient.deployments().define(deploymentName2)
                                             .withExistingResourceGroup(template.getResourceGroupName())
