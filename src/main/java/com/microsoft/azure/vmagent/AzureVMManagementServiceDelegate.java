@@ -349,6 +349,8 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             boolean msiEnabled = template.isEnableMSI();
+            boolean uamiEnabled = template.isEnableUAMI();
+            String uamiID = template.getUamiID();
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = availabilitySet != null;
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
@@ -971,6 +973,8 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
                     (Boolean) properties.get("enableMSI"),
+                    (Boolean) properties.get("enableUAMI"),
+                    (String) properties.get("uamiID"),
                     template,
                     fqdn);
         } catch (FormException e) {
@@ -990,6 +994,8 @@ public final class AzureVMManagementServiceDelegate {
      */
     private static Set<String> getAvailableLocationsStandard() {
         final Set<String> locations = new HashSet<>();
+        locations.add("UK South");
+        locations.add("UK West");
         locations.add("East US");
         locations.add("West US");
         locations.add("South Central US");
