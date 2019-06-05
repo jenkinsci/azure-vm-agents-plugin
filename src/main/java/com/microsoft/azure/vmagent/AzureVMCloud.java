@@ -88,7 +88,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Date;
 
 import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
@@ -498,19 +497,16 @@ public class AzureVMCloud extends Cloud {
         ObjectNode.class.cast(template.get("variables")).put(name, value);
     }
     
-    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException{
-        
+    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException {        
         InputStream embeddedTemplate = null;
         JsonNode tmp = null;
         try {
          embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI);
         final ObjectMapper mapper = new ObjectMapper();
-        
         tmp = mapper.readTree(embeddedTemplate);
         putVariable(tmp, "vmName", vmBaseName);
         putVariable(tmp, "uamiID", uamiID);
         putVariable(tmp, "location", location);
-        
        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMCloud: deployment: Unable to deploy", e);
         } finally {
@@ -565,6 +561,7 @@ public class AzureVMCloud extends Cloud {
         final int sleepTimeInSeconds = 30;
         final int timeoutInSeconds = getDeploymentTimeout();
         final int maxTries = timeoutInSeconds / sleepTimeInSeconds;
+        final int fivetimes = 5;
         int triesLeft = maxTries;
         do {
             triesLeft--;
@@ -615,25 +612,22 @@ public class AzureVMCloud extends Cloud {
                                         resource);
                                         
                                 Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
-                                boolean isEnabledUAMI = (boolean) properties.get("enableUAMI");
-                                                
+                                boolean isEnabledUAMI = (boolean) properties.get("enableUAMI");       
                                 if (isEnabledUAMI) {
                                     String uamiID = (String) properties.get("uamiID");
                                     String location = template.getLocation();
-
                                     final Azure myAzureClient = AzureClientUtil.getClient(credentialsId);
                                     final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), new Date(System.currentTimeMillis()));
-
                                     // -- execute template UAMI
                                     myAzureClient.deployments().define(deploymentName2)
                                             .withExistingResourceGroup(template.getResourceGroupName())
-                                            .withTemplate(enableUAMI(resource,uamiID,location))
+                                            .withTemplate(enableUAMI(resource, uamiID, location))
                                             .withParameters("{}")
                                             .withMode(DeploymentMode.INCREMENTAL)
                                             .beginCreate();
 
                                     try {
-                                        Thread.sleep(5 * MILLIS_IN_SECOND);
+                                        Thread.sleep(fivetimes * MILLIS_IN_SECOND);
                                     } catch (InterruptedException ex) {
                                         // ignore
                                     }

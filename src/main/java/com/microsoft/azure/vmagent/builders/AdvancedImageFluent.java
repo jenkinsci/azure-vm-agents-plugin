@@ -43,9 +43,9 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     private boolean doNotUseMachineIfInitFails;
 
     private boolean enableMSI;
-    
+
     private boolean enableUAMI;
-    
+
     private String uamiID;
 
     private String virtualNetworkName;
@@ -278,8 +278,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isEnableMSI() {
         return enableMSI;
-    }    
-    
+    }
+
     public boolean isEnableUAMI() {
         return enableUAMI;
     }

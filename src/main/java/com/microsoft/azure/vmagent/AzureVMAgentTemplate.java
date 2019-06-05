@@ -304,9 +304,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private boolean doNotUseMachineIfInitFails;
 
     private final boolean enableMSI;
-    
+
     private final boolean enableUAMI;
-    
+
     private final String uamiID;
 
     private RetentionStrategy retentionStrategy;
@@ -1044,14 +1044,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     public boolean isEnableMSI() {
         return enableMSI;
     }
-    
+ 
     public boolean isEnableUAMI() {
         return enableUAMI;
     }
 
     public String getUamiID() {
         return uamiID;
-    }   
+    }
 
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
