@@ -433,6 +433,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return enableMSI;
     }
 
+    public boolean isEnableUAMI() {
+        return enableUAMI;
+    }
+
     public AzureVMAgentTemplate getTemplate() {
         return template;
     }

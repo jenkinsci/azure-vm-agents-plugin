@@ -280,7 +280,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         AzureVMDeploymentInfo deploymentInfo;
-        deploymentInfo = createDefaultDeployment(1, true, true, "", deploymentRegistrar);
+        deploymentInfo = createDefaultDeployment(1, true, true, false, "", deploymentRegistrar);
 
         verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         Network actualVNet = null;
