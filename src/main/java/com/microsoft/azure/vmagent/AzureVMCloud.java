@@ -617,7 +617,8 @@ public class AzureVMCloud extends Cloud {
                                     String uamiID = (String) properties.get("uamiID");
                                     String location = template.getLocation();
                                     final Azure myAzureClient = AzureClientUtil.getClient(credentialsId);
-                                    final String deploymentName2 = AzureUtil.getDeploymentName(template.getTemplateName(), 
+                                    final String deploymentName2 = AzureUtil.getDeploymentName(
+                                            template.getTemplateName(),
                                             new Date(System.currentTimeMillis()));
                                     // -- execute template UAMI
                                     myAzureClient.deployments().define(deploymentName2)
