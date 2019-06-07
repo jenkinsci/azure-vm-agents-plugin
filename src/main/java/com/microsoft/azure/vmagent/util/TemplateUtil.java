@@ -42,7 +42,7 @@ public final class TemplateUtil {
                 && a.getExecuteInitScriptAsRoot() == b.getExecuteInitScriptAsRoot()
                 && a.isEnableMSI() == b.isEnableMSI()
                 && a.isEnableUAMI() == b.isEnableUAMI()
-                && a.getUamiID() == b.getUamiID()
+                && StringUtils.equals(a.getUamiID(), b.getUamiID())
                 && StringUtils.equals(a.getVirtualNetworkName(), b.getVirtualNetworkName())
                 && StringUtils.equals(a.getVirtualNetworkResourceGroupName(), b.getVirtualNetworkResourceGroupName())
                 && StringUtils.equals(a.getSubnetName(), b.getSubnetName())
