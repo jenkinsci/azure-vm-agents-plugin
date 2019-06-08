@@ -498,7 +498,8 @@ public class AzureVMCloud extends Cloud {
     }
 
     private String enableUAMI(String vmBaseName, String uamiID, String location) {
-        try (InputStream embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI)) {
+        try (InputStream embeddedTemplate =
+                     AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI)) {
             ObjectMapper mapper = new ObjectMapper();
 
             JsonNode tmp = mapper.readTree(embeddedTemplate);
