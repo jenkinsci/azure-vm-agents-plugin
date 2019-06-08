@@ -497,24 +497,22 @@ public class AzureVMCloud extends Cloud {
         ObjectNode.class.cast(template.get("variables")).put(name, value);
     }
 
-    private String enableUAMI(String vmBaseName, String uamiID, String location) throws IOException {
-        InputStream embeddedTemplate = null;
-        JsonNode tmp = null;
-        try {
-         embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI);
-        final ObjectMapper mapper = new ObjectMapper();
-        tmp = mapper.readTree(embeddedTemplate);
-        putVariable(tmp, "vmName", vmBaseName);
-        putVariable(tmp, "uamiID", uamiID);
-        putVariable(tmp, "location", location);
-       } catch (Exception e) {
+    private String enableUAMI(String vmBaseName, String uamiID, String location) {
+        try (InputStream embeddedTemplate = AzureVMManagementServiceDelegate.class.getResourceAsStream(EMBEDDED_TEMPLATE_UAMI)) {
+            ObjectMapper mapper = new ObjectMapper();
+
+            JsonNode tmp = mapper.readTree(embeddedTemplate);
+
+            putVariable(tmp, "vmName", vmBaseName);
+            putVariable(tmp, "uamiID", uamiID);
+            putVariable(tmp, "location", location);
+
+            return tmp.toString();
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMCloud: deployment: Unable to deploy", e);
-        } finally {
-            if (embeddedTemplate != null) {
-                embeddedTemplate.close();
-            }
         }
-        return tmp.toString();
+
+        return null;
     }
 
     /**
