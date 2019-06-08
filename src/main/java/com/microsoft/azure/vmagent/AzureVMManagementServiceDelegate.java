@@ -349,8 +349,6 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             boolean msiEnabled = template.isEnableMSI();
-            //boolean uamiEnabled = template.isEnableUAMI();
-            //String uamiID = template.getUamiID();
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = availabilitySet != null;
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
