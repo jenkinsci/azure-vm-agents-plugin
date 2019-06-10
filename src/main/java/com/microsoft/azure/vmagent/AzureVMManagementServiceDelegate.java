@@ -510,7 +510,6 @@ public final class AzureVMManagementServiceDelegate {
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
 
-            System.out.println(tmp.toString());
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
                     .withTemplate(tmp.toString())
