@@ -485,11 +485,7 @@ public class AzureVMCloud extends Cloud {
         }
         return null;
     }
-
-    private static void putVariable(JsonNode template, String name, String value) {
-        ObjectNode.class.cast(template.get("variables")).put(name, value);
-    }
-
+    
     /**
      * Returns agent template associated with the name.
      *
