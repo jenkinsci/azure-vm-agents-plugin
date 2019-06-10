@@ -485,7 +485,7 @@ public class AzureVMCloud extends Cloud {
         }
         return null;
     }
-    
+
     /**
      * Returns agent template associated with the name.
      *
@@ -530,7 +530,6 @@ public class AzureVMCloud extends Cloud {
         final int sleepTimeInSeconds = 30;
         final int timeoutInSeconds = getDeploymentTimeout();
         final int maxTries = timeoutInSeconds / sleepTimeInSeconds;
-        final int fivetimes = 5;
         int triesLeft = maxTries;
         do {
             triesLeft--;
