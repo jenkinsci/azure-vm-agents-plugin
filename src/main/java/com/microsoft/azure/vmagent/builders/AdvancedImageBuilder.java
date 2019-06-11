@@ -92,6 +92,8 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.isExecuteInitScriptAsRoot(),
                 fluent.isDoNotUseMachineIfInitFails(),
                 fluent.isEnableMSI(),
+                fluent.isEnableUAMI(),
+                fluent.getUamiID(),
                 fluent.getVirtualNetworkName(),
                 fluent.getVirtualNetworkResourceGroupName(),
                 fluent.getSubnetName(),

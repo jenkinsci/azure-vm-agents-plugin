@@ -309,7 +309,7 @@ public class IntegrationTest {
             boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
-        return createDefaultDeployment(numberOfAgents, usePrivateIP, false, "", deploymentRegistrar);
+        return createDefaultDeployment(numberOfAgents, usePrivateIP, false, false, "", deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
@@ -317,13 +317,14 @@ public class IntegrationTest {
             String nsgName,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
-        return createDefaultDeployment(numberOfAgents, true, false, nsgName, deploymentRegistrar);
+        return createDefaultDeployment(numberOfAgents, true, false, false, nsgName, deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
             int numberOfAgents,
             boolean usePrivateIP,
             boolean enableMSI,
+            boolean enableUAMI,
             String nsgName,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
@@ -382,6 +383,7 @@ public class IntegrationTest {
         when(templateMock.getOsDiskSize()).thenReturn(testEnv.osDiskSize);
         when(templateMock.getPreInstallSsh()).thenReturn(true);
         when(templateMock.isEnableMSI()).thenReturn(enableMSI);
+        when(templateMock.isEnableUAMI()).thenReturn(enableUAMI);
 
         AzureVMDeploymentInfo ret = delegate.createDeployment(templateMock, numberOfAgents, deploymentRegistrar);
         List<String> vmNames = new ArrayList<>();

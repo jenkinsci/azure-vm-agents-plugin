@@ -110,6 +110,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final boolean enableMSI;
 
+    private final boolean enableUAMI;
+
+    private final String uamiID;
+
     private boolean eligibleForReuse;
 
     private final AzureVMAgentTemplate template;
@@ -148,6 +152,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
+            boolean enableUAMI,
+            String uamiID,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -173,6 +179,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.enableMSI = enableMSI;
+        this.enableUAMI = enableUAMI;
+        this.uamiID = uamiID;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
     }
@@ -205,6 +213,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
+            boolean enableUAMI,
+            String uamiID,
             AzureVMAgentTemplate template,
             String fqdn) throws FormException, IOException {
 
@@ -241,6 +251,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 executeInitScriptAsRoot,
                 doNotUseMachineIfInitFails,
                 enableMSI,
+                enableUAMI,
+                uamiID,
                 template);
 
         this.provisioningId = id;
@@ -419,6 +431,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean isEnableMSI() {
         return enableMSI;
+    }
+
+    public boolean isEnableUAMI() {
+        return enableUAMI;
     }
 
     public AzureVMAgentTemplate getTemplate() {

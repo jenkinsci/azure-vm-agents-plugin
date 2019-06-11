@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.RawValue;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
@@ -349,6 +350,8 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             boolean msiEnabled = template.isEnableMSI();
+            boolean uamiEnabled = template.isEnableUAMI();
+
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = availabilitySet != null;
             if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
@@ -362,6 +365,17 @@ public final class AzureVMManagementServiceDelegate {
                             identityNode.put("type", "systemAssigned");
                             ((ObjectNode) resource).replace("identity", identityNode);
                         }
+                        if (uamiEnabled) {
+                            String uamiID = template.getUamiID();
+                            ObjectNode identityNode = mapper.createObjectNode();
+                            identityNode.put("type", "UserAssigned");
+                            ObjectNode resourceId = mapper.createObjectNode();
+                            resourceId.replace(uamiID, mapper.createObjectNode());
+                            identityNode.replace("userAssignedIdentities", resourceId);
+
+                            ((ObjectNode) resource).replace("identity", identityNode);
+                        }
+
                         if (osDiskSizeChanged) {
                             JsonNode jsonNode = resource.get("properties").get("storageProfile").get("osDisk");
                             ((ObjectNode) jsonNode).replace("diskSizeGB", new IntNode(osDiskSize));
@@ -495,6 +509,7 @@ public final class AzureVMManagementServiceDelegate {
             deploymentRegistrar.registerDeployment(
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
+
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
                     .withTemplate(tmp.toString())
@@ -971,6 +986,8 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("executeInitScriptAsRoot"),
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
                     (Boolean) properties.get("enableMSI"),
+                    (Boolean) properties.get("enableUAMI"),
+                    (String) properties.get("uamiID"),
                     template,
                     fqdn);
         } catch (FormException e) {

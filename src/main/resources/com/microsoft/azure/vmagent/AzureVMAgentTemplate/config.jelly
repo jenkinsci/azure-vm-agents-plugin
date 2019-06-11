@@ -187,6 +187,15 @@
                         help="/plugin/azure-vm-agents/help-enableMSI.html">
                         <f:checkbox/>
                     </f:entry>
+
+                    <f:entry title="${%Enable_UAMI}" field="enableUAMI">
+                        <f:checkbox/>
+                    </f:entry>
+
+                    <f:entry title="${%UAMI_ID}" field="uamiID">
+                        <f:textbox/>
+                    </f:entry>
+
                 </f:section>
 
                 <f:advanced>

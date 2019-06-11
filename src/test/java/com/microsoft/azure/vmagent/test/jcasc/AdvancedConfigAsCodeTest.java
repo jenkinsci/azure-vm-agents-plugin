@@ -49,6 +49,7 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.getDiskType(), is("managed"));
         assertThat(template.getDoNotUseMachineIfInitFails(), is(true));
         assertThat(template.isEnableMSI(), is(false));
+        assertThat(template.isEnableUAMI(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
 
         AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImageReference();
