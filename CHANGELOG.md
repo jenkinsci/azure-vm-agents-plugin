@@ -1,5 +1,9 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.1.0 2019-06-18
+* Add more location options like UK
+* Add support for user assigned managed identity
+
 ## version 1.0.1 2019-05-22
 * Fix deserialize losing configuration issue
 
