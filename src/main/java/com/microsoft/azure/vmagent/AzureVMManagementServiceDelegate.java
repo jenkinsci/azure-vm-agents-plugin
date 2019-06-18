@@ -354,7 +354,7 @@ public final class AzureVMManagementServiceDelegate {
 
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = availabilitySet != null;
-            if (msiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
+            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
