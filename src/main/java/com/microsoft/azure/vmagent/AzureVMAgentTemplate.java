@@ -597,7 +597,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("enableUAMI",
                 isBasic ? false : template.isEnableUAMI());
         templateProperties.put("uamiID",
-                isBasic ? false : template.getUamiID());
+                isBasic ? "" : template.getUamiID());
 
         return templateProperties;
     }
