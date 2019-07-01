@@ -57,7 +57,7 @@
       }
     },
     {
-      "apiVersion": "2018-04-01",
+      "apiVersion": "2019-03-01",
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[concat(variables('vmName'), copyIndex())]",
       "location": "[variables('location')]",
@@ -74,7 +74,7 @@
           "vmSize": "[variables('vmSize')]"
         },
         "osProfile": {
-          "computername": "[concat(variables('vmName'), copyIndex())]",
+          "computerName": "[concat(variables('vmName'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
           "adminPassword": "[variables('adminPassword')]"
         },
