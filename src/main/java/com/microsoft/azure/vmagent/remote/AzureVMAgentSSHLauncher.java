@@ -233,13 +233,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 return;
             }
 
-            LOGGER.info("AzureVMAgentSSHLauncher: launch: java runtime present, copying slave.jar to remote");
-            InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("slave.jar").
+            LOGGER.info("AzureVMAgentSSHLauncher: launch: java runtime present, copying remoting.jar to remote");
+            InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("remoting.jar").
                     readFully());
-            copyFileToRemote(session, inputStream, "slave.jar");
+            copyFileToRemote(session, inputStream, "remoting.jar");
 
             String jvmopts = agent.getJvmOptions();
-            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar slave.jar";
+            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar remoting.jar";
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launching agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");
