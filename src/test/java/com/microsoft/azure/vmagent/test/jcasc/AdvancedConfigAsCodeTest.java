@@ -1,5 +1,6 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
+import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
@@ -32,6 +33,7 @@ public class AdvancedConfigAsCodeTest {
 
         // cloud
         assertThat(cloud.getCloudName(), is("azure"));
+        assertThat(cloud.getCloudTags().get(0), is(new AzureTagPair("author", "gavin")));
         assertThat(cloud.getAzureCredentialsId(), is("azure-cred"));
         assertThat(cloud.getDeploymentTimeout(), is(1200));
         assertThat(cloud.getMaxVirtualMachinesLimit(), is(10));

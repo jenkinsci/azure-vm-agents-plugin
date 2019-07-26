@@ -1,0 +1,9 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:entry title="${%TagName_title}" field="name">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%TagValue_title}" field="value">
+        <f:textbox/>
+    </f:entry>
+</j:jelly>

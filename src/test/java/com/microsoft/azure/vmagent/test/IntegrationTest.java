@@ -42,6 +42,7 @@ import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.AvailabilityType;
+import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -117,6 +118,7 @@ public class IntegrationTest {
         public String galleryImageVersion;
         public String gallerySubscriptionId;
         public String galleryResourceGroup;
+        public List<AzureTagPair> customTags;
         public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
@@ -156,6 +158,8 @@ public class IntegrationTest {
             osDiskSize = 0;
             availabilityType = AvailabilityType.UNKNOWN.getName();
             availabilitySet = "";
+            customTags = new ArrayList<>();
+            customTags.add(new AzureTagPair("author", "gavin"));
             blobEndpointSuffixForTemplate = new HashMap<>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
             blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
