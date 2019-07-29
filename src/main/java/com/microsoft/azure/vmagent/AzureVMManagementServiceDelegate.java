@@ -158,7 +158,7 @@ public final class AzureVMManagementServiceDelegate {
         if (azureClient == null) {
             throw new NullPointerException("the azure client is null!");
         }
-        return new AzureVMManagementServiceDelegate(azureClient,  azureCredentialsId);
+        return new AzureVMManagementServiceDelegate(azureClient, azureCredentialsId);
     }
 
     /**
@@ -392,6 +392,12 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
+            AzureVMCloud cloud = template.retrieveAzureCloudReference();
+            ArrayNode resources = (ArrayNode) tmp.get("resources");
+            for (JsonNode resource : resources) {
+                injectCustomTag(resource, cloud);
+            }
+
             copyVariableIfNotBlank(tmp, properties, "imageId");
             copyVariableIfNotBlank(tmp, properties, "imagePublisher");
             copyVariableIfNotBlank(tmp, properties, "imageOffer");
@@ -402,7 +408,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
-                GalleryImageVersion  galleryImageVersion;
+                GalleryImageVersion galleryImageVersion;
                 String galleryImageVersionStr = template.getImageReference().getGalleryImageVersion();
                 String galleryImageDefinition = template.getImageReference().getGalleryImageDefinition();
                 String gallerySubscriptionId = template.getImageReference().getGallerySubscriptionId();
@@ -494,11 +500,11 @@ public final class AzureVMManagementServiceDelegate {
                     putVariable(tmp, "virtualNetworkResourceGroupName", resourceGroupName);
                 }
             } else {
-                addDefaultVNetResourceNode(tmp, mapper, resourceGroupName);
+                addDefaultVNetResourceNode(tmp, mapper, resourceGroupName, cloud);
             }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
-                addPublicIPResourceNode(tmp, mapper);
+                addPublicIPResourceNode(tmp, mapper, cloud);
             }
 
             if (StringUtils.isNotBlank((String) properties.get("nsgName"))) {
@@ -531,6 +537,16 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             if (embeddedTemplate != null) {
                 embeddedTemplate.close();
+            }
+        }
+    }
+
+    private void injectCustomTag(JsonNode resource, AzureVMCloud cloud) {
+        ObjectNode tagsNode = (ObjectNode) resource.get("tags");
+        List<AzureTagPair> cloudTags = cloud.getCloudTags();
+        if (cloudTags != null) {
+            for (AzureTagPair cloudTag : cloudTags) {
+                tagsNode.put(cloudTag.getName(), cloudTag.getValue());
             }
         }
     }
@@ -580,15 +596,17 @@ public final class AzureVMManagementServiceDelegate {
         putVariableIfNotBlank(template, name, (String) properties.get(name));
     }
 
-    private static void addPublicIPResourceNode(
+    private void addPublicIPResourceNode(
             JsonNode template,
-            ObjectMapper mapper) throws IOException {
+            ObjectMapper mapper,
+            AzureVMCloud cloud) throws IOException {
 
         final String ipName = "variables('vmName'), copyIndex(), 'IPName'";
         try (InputStream fragmentStream =
                      AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
 
             final JsonNode publicIPFragment = mapper.readTree(fragmentStream);
+            injectCustomTag(publicIPFragment, cloud);
             // Add the virtual network fragment
             ArrayNode.class.cast(template.get("resources")).add(publicIPFragment);
 
@@ -666,10 +684,11 @@ public final class AzureVMManagementServiceDelegate {
     }
 
 
-    private static void addDefaultVNetResourceNode(
+    private void addDefaultVNetResourceNode(
             JsonNode template,
             ObjectMapper mapper,
-            String resourceGroupName) throws IOException {
+            String resourceGroupName,
+            AzureVMCloud cloud) throws IOException {
         InputStream fragmentStream = null;
         try {
             // Add the definition of the vnet and subnet into the template
@@ -685,6 +704,7 @@ public final class AzureVMManagementServiceDelegate {
                     VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
 
             final JsonNode virtualNetworkFragment = mapper.readTree(fragmentStream);
+            injectCustomTag(virtualNetworkFragment, cloud);
             // Add the virtual network fragment
             ArrayNode.class.cast(template.get("resources")).add(virtualNetworkFragment);
 
@@ -2363,7 +2383,6 @@ public final class AzureVMManagementServiceDelegate {
     /**
      * Verify the validity of the image parameters (does not verify actual
      * values).
-     *
      */
     private static String verifyImageParameters(
             String imageTopLevelType,

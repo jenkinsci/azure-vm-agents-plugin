@@ -34,6 +34,10 @@
             "location": "[variables('location')]",
             "sku": {
                 "name": "[variables('storageAccountType')]"
+            },
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
             }
         },
         {

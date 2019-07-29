@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -160,6 +161,12 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertNotNull("The deployed public IP doesn't exist: " + commonAssertMsg, actualIP);
             Assert.assertFalse(actualVM.isManagedServiceIdentityEnabled());
             Assert.assertEquals(getDefaultOsDiskSize(OS_TYPE), actualVM.osDiskSize());
+
+            Assert.assertEquals("gavin", actualVM.tags().get("author"));
+            Assert.assertEquals("gavin", actualIP.tags().get("author"));
+            Assert.assertEquals("gavin", actualNetIface.tags().get("author"));
+            Assert.assertEquals("gavin", actualStorageAcc.tags().get("author"));
+            Assert.assertEquals("gavin", actualVNet.tags().get("author"));
         }
     }
 

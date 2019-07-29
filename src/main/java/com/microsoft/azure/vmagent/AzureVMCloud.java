@@ -61,6 +61,7 @@ import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
@@ -124,6 +125,8 @@ public class AzureVMCloud extends Cloud {
     private int approximateVirtualMachineCount;
 
     private transient Supplier<Azure> azureClient = createAzureClientSupplier();
+
+    private List<AzureTagPair> cloudTags;
 
     private Supplier<Azure> createAzureClientSupplier() {
         return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
@@ -332,6 +335,15 @@ public class AzureVMCloud extends Cloud {
                 newTemplate.addAzureCloudReference(this);
             }
         }
+    }
+
+    public List<AzureTagPair> getCloudTags() {
+        return cloudTags;
+    }
+
+    @DataBoundSetter
+    public void setCloudTags(List<AzureTagPair> cloudTags) {
+        this.cloudTags = cloudTags;
     }
 
     /**
