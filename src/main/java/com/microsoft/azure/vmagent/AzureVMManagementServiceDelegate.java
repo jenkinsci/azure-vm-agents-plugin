@@ -311,40 +311,66 @@ public final class AzureVMManagementServiceDelegate {
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
             // getId()->Custom Managed Image, here we need the last one: Image Reference
-            if (!isBasic && referenceType == ImageReferenceType.REFERENCE) {
-                boolean isImageParameterValid = checkImageParameter(template);
-                if (isImageParameterValid) {
-                    String imageVersion = StringUtils.isNotEmpty(template.getImageReference().getVersion())
-                            ? template.getImageReference().getVersion() : "latest";
-                    VirtualMachineImage image = azureClient.virtualMachineImages().getImage(
-                            locationName,
-                            template.getImageReference().getPublisher(),
-                            template.getImageReference().getOffer(),
-                            template.getImageReference().getSku(),
-                            imageVersion
-                    );
-                    if (image != null) {
-                        PurchasePlan plan = image.plan();
-                        if (plan != null) {
+            if (!isBasic) {
+                if (referenceType == ImageReferenceType.REFERENCE) {
+                    boolean isImageParameterValid = checkImageParameter(template);
+                    if (isImageParameterValid) {
+                        String imageVersion = StringUtils.isNotEmpty(template.getImageReference().getVersion())
+                                ? template.getImageReference().getVersion() : "latest";
+                        VirtualMachineImage image = azureClient.virtualMachineImages().getImage(
+                                locationName,
+                                template.getImageReference().getPublisher(),
+                                template.getImageReference().getOffer(),
+                                template.getImageReference().getSku(),
+                                imageVersion
+                        );
+                        if (image != null) {
+                            PurchasePlan plan = image.plan();
+                            if (plan != null) {
+                                ArrayNode resources = (ArrayNode) tmp.get("resources");
+                                for (JsonNode resource : resources) {
+                                    String type = resource.get("type").asText();
+                                    if (type.contains("virtualMachine")) {
+                                        ObjectNode planNode = mapper.createObjectNode();
+                                        planNode.put("name", plan.name());
+                                        planNode.put("publisher", plan.publisher());
+                                        planNode.put("product", plan.product());
+                                        ObjectNode.class.cast(resource).replace("plan", planNode);
+                                    }
+                                }
+                            }
+                        } else {
+                            LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
+                                    "version:{3} when trying to add purchase plan to ARM template", new Object[]{
+                                    template.getImageReference().getPublisher(),
+                                    template.getImageReference().getOffer(),
+                                    template.getImageReference().getSku(),
+                                    imageVersion});
+                        }
+                    }
+                } else if (referenceType == ImageReferenceType.CUSTOM_IMAGE) {
+                    String id = template.getId();
+                    VirtualMachineCustomImage customImage = azureClient.virtualMachineCustomImages().getById(id);
+                    if (customImage != null) {
+                        Map<String, String> tags = customImage.tags();
+                        if (tags != null) {
+                            String planInfo = tags.get("PlanInfo");
+                            String planProduct = tags.get("PlanProduct");
+                            String planPublisher = tags.get("PlanPublisher");
+
                             ArrayNode resources = (ArrayNode) tmp.get("resources");
                             for (JsonNode resource : resources) {
                                 String type = resource.get("type").asText();
                                 if (type.contains("virtualMachine")) {
                                     ObjectNode planNode = mapper.createObjectNode();
-                                    planNode.put("name", plan.name());
-                                    planNode.put("publisher", plan.publisher());
-                                    planNode.put("product", plan.product());
+                                    planNode.put("name", planInfo);
+                                    planNode.put("publisher", planPublisher);
+                                    planNode.put("product", planProduct);
                                     ObjectNode.class.cast(resource).replace("plan", planNode);
                                 }
                             }
+
                         }
-                    } else {
-                        LOGGER.log(Level.SEVERE, "Failed to find the image with publisher:{0} offer:{1} sku:{2} " +
-                                "version:{3} when trying to add purchase plan to ARM template", new Object[]{
-                                template.getImageReference().getPublisher(),
-                                template.getImageReference().getOffer(),
-                                template.getImageReference().getSku(),
-                                imageVersion});
                     }
                 }
             }
