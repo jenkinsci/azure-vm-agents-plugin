@@ -3,6 +3,8 @@ package com.microsoft.azure.vmagent.util;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
+
 public final class TemplateUtil {
 
     public static boolean checkSame(AzureVMAgentTemplate a, AzureVMAgentTemplate b) {
@@ -10,8 +12,8 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getLabels(), b.getLabels())
                 && StringUtils.equals(a.getAgentWorkspace(), b.getAgentWorkspace())
                 && StringUtils.equals(a.getLocation(), b.getLocation())
-                && StringUtils.equals(a.getAvailabilityType().getAvailabilitySet(),
-                b.getAvailabilityType().getAvailabilitySet())
+                && Objects.equals(a.getAvailabilityType(),
+                b.getAvailabilityType())
                 && StringUtils.equals(a.getVirtualMachineSize(), b.getVirtualMachineSize())
                 && StringUtils.equals(a.getStorageAccountType(), b.getStorageAccountType())
                 && StringUtils.equals(a.getStorageAccountNameReferenceType(), b.getStorageAccountNameReferenceType())
