@@ -72,6 +72,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -196,7 +197,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String availabilitySet;
 
         @DataBoundConstructor
-        public  AvailabilityTypeClass(String availabilitySet) {
+        public AvailabilityTypeClass(String availabilitySet) {
             this.availabilitySet = Util.fixEmpty(availabilitySet);
         }
 
@@ -206,6 +207,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public String getAvailabilitySet() {
             return availabilitySet;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            AvailabilityTypeClass that = (AvailabilityTypeClass) o;
+            return Objects.equals(availabilitySet, that.availabilitySet);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(availabilitySet);
         }
     }
 
@@ -562,7 +580,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         : template.getImageReference().getGalleryImageVersion());
         templateProperties.put("gallerySubscriptionId",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_SUBSCRIPTION_ID)
-                : template.getImageReference().getGallerySubscriptionId());
+                        : template.getImageReference().getGallerySubscriptionId());
         templateProperties.put("galleryResourceGroup",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_GALLERY_RESOURCE_GROUP)
                         : template.getImageReference().getGalleryResourceGroup());
@@ -759,7 +777,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         if (StringUtils.isBlank(imageTopLevelType)) {
-            if (imageReference != null  && (StringUtils.isNotBlank(imageReference.getUri())
+            if (imageReference != null && (StringUtils.isNotBlank(imageReference.getUri())
                     || StringUtils.isNotBlank(imageReference.getId())
                     || StringUtils.isNotBlank(imageReference.getOffer())
                     || StringUtils.isNotBlank(imageReference.getSku())
