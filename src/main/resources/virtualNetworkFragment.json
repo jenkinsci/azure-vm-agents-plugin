@@ -1,5 +1,5 @@
 {
-    "apiVersion": "2015-05-01-preview",
+    "apiVersion": "2019-04-01",
     "type": "Microsoft.Network/virtualNetworks",
     "name": "[variables('virtualNetworkName')]",
     "location": "[variables('location')]",
