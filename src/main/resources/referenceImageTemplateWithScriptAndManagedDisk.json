@@ -1,9 +1,9 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json",
-  "contentVersion": "1.0.0.0",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "2.0.0.0",
   "parameters": {
     "storageAccountKey": {
-      "type": "secureString"
+      "type": "securestring"
     }
   },
   "variables": {
@@ -41,7 +41,7 @@
       }
     },
     {
-      "apiVersion": "2015-05-01-preview",
+      "apiVersion": "2019-04-01",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[concat(variables('vmName'), copyIndex(), 'NIC')]",
       "location": "[variables('location')]",
@@ -113,7 +113,7 @@
         {
           "type": "extensions",
           "name": "[concat('customScript', variables('vmName'), copyIndex())]",
-          "apiVersion": "2015-05-01-preview",
+          "apiVersion": "2019-03-01",
           "location": "[variables('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex())]"
