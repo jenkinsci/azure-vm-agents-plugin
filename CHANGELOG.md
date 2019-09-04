@@ -1,5 +1,11 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.2.0 2019-09-04
+* Enable adding custom tags for created resources
+* Support purchase plan for custom image
+* Fix possible NullPointer exception for template
+* Bump arm template version
+
 ## version 1.1.1 2019-07-02
 * Fix UAMI for reference image id template
 
