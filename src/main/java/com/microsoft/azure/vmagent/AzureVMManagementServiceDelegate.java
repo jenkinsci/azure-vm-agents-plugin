@@ -358,18 +358,20 @@ public final class AzureVMManagementServiceDelegate {
                             String planProduct = tags.get("PlanProduct");
                             String planPublisher = tags.get("PlanPublisher");
 
-                            ArrayNode resources = (ArrayNode) tmp.get("resources");
-                            for (JsonNode resource : resources) {
-                                String type = resource.get("type").asText();
-                                if (type.contains("virtualMachine")) {
-                                    ObjectNode planNode = mapper.createObjectNode();
-                                    planNode.put("name", planInfo);
-                                    planNode.put("publisher", planPublisher);
-                                    planNode.put("product", planProduct);
-                                    ObjectNode.class.cast(resource).replace("plan", planNode);
+                            if (StringUtils.isNotBlank(planInfo) && StringUtils.isNotBlank(planProduct)
+                                    && StringUtils.isNotBlank(planPublisher)) {
+                                ArrayNode resources = (ArrayNode) tmp.get("resources");
+                                for (JsonNode resource : resources) {
+                                    String type = resource.get("type").asText();
+                                    if (type.contains("virtualMachine")) {
+                                        ObjectNode planNode = mapper.createObjectNode();
+                                        planNode.put("name", planInfo);
+                                        planNode.put("publisher", planPublisher);
+                                        planNode.put("product", planProduct);
+                                        ObjectNode.class.cast(resource).replace("plan", planNode);
+                                    }
                                 }
                             }
-
                         }
                     }
                 }
