@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.2.1 2019-09-12
+* Fix invalid template error for custom image
+
 ## version 1.2.0 2019-09-04
 * Enable adding custom tags for created resources
 * Support purchase plan for custom image
