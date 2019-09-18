@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.2.2 2019-09-18
+* Revert images to previous API version
+
 ## version 1.2.1 2019-09-12
 * Fix invalid template error for custom image
 
