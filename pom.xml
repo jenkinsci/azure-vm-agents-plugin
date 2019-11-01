@@ -45,7 +45,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <azuresdk.version>1.19.0</azuresdk.version>
         <azure-storage.version>6.1.0</azure-storage.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.10.0</jackson.version>
         <jenkins.version>2.60.3</jenkins.version>
         <java.level>8</java.level>
         <findbugs.failOnError>true</findbugs.failOnError>
