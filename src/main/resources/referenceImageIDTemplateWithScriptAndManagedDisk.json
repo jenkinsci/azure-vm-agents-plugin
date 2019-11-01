@@ -95,7 +95,10 @@
             "id": "[variables('imageId')]"
           },
           "osDisk": {
-            "createOption": "FromImage"
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[variables('storageAccountType')]"
+            }
           }
         },
         "networkProfile": {
