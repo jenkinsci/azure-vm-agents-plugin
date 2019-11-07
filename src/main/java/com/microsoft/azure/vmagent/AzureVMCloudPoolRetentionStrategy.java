@@ -2,9 +2,12 @@ package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.TemplateUtil;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
+import hudson.model.DescriptorVisibilityFilter;
 import hudson.slaves.Cloud;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
@@ -181,6 +184,14 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         @Override
         public String getDisplayName() {
             return "Azure VM Pool Retention Strategy";
+        }
+    }
+
+    @Extension
+    public static class DescriptorVisibilityFilterImpl extends DescriptorVisibilityFilter {
+        @Override
+        public boolean filter(@CheckForNull Object context, @NonNull Descriptor descriptor) {
+            return !(descriptor instanceof DescriptorImpl);
         }
     }
 }

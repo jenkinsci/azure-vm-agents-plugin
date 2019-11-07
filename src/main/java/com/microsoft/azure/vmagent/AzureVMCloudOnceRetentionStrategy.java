@@ -1,8 +1,11 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.CleanUpAction;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Descriptor;
+import hudson.model.DescriptorVisibilityFilter;
 import hudson.model.Executor;
 import hudson.model.ExecutorListener;
 import hudson.model.Queue;
@@ -101,6 +104,14 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
         @Override
         public String getDisplayName() {
             return "Azure VM Once Retention Strategy";
+        }
+    }
+
+    @Extension
+    public static class DescriptorVisibilityFilterImpl extends DescriptorVisibilityFilter {
+        @Override
+        public boolean filter(@CheckForNull Object context, @NonNull Descriptor descriptor) {
+            return !(descriptor instanceof DescriptorImpl);
         }
     }
 }
