@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
     "contentVersion": "2.0.0.0",
     "parameters": {
         "storageAccountKey": {
@@ -28,9 +28,9 @@
     },
     "resources": [
         {
+            "apiVersion": "2016-01-01",
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
-            "apiVersion": "2016-01-01",
             "location": "[variables('location')]",
             "sku": {
                 "name": "[variables('storageAccountType')]"
@@ -86,7 +86,7 @@
                     "vmSize": "[variables('vmSize')]"
                 },
                 "osProfile": {
-                    "computername": "[concat(variables('vmName'), copyIndex())]",
+                    "computerName": "[concat(variables('vmName'), copyIndex())]",
                     "adminUsername": "[variables('adminUsername')]",
                     "adminPassword": "[variables('adminPassword')]"
                 },
