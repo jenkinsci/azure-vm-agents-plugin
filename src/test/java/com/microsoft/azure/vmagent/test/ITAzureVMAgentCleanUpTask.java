@@ -134,8 +134,9 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         StorageAccount jenkinsStorage = null;
         PagedList<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
         for (GenericResource resource : resources) {
-            if (StringUtils.containsIgnoreCase(resource.type(), "storageAccounts")) {
-                jenkinsStorage = azureClient.storageAccounts().getById(resource.id());
+            if (StringUtils.containsIgnoreCase(resource.type(), "storageAccounts") ||
+                    StringUtils.containsIgnoreCase(resource.type(), "virtualNetworks")) {
+                continue;
             }
             if (resource.tags().get(Constants.AZURE_RESOURCES_TAG_NAME) != null &&
                     matchingTagValue.matches(new AzureUtil.DeploymentTag(resource.tags().get(Constants.AZURE_RESOURCES_TAG_NAME)))) {

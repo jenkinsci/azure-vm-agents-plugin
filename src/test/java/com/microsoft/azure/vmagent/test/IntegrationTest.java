@@ -351,6 +351,7 @@ public class IntegrationTest {
         AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
         when(cloudMock.getCloudName()).thenReturn("testCloud");
+        when(cloudMock.getCloudTags()).thenReturn(testEnv.customTags);
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getResourceGroupReferenceType()).thenReturn(testEnv.azureResourceGroupReferenceType);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
