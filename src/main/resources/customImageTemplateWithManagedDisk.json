@@ -28,6 +28,7 @@
                     "osDisk": {
                         "osState": "Generalized",
                         "osType": "[variables('osType')]",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
                         "blobUri": "[variables('image')]",
                         "storageAccountType": "[variables('storageAccountType')]"
                     }

@@ -79,7 +79,8 @@
                     "osDisk": {
                         "name": "[concat(variables('vmName'), copyIndex())]",
                         "osType": "[variables('osType')]",
-                        "caching": "ReadWrite",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('ReadWrite'))]",
+
                         "image": {
                             "uri": "[variables('image')]"
                         },

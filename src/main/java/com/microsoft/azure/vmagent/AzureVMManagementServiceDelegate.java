@@ -201,6 +201,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
+            final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
             final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
@@ -214,8 +215,8 @@ public final class AzureVMManagementServiceDelegate {
             }
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment:"
-                            + " Creating a new deployment {0} with VM base name {1}",
-                    new Object[]{deploymentName, vmBaseName});
+                            + " Creating a new deployment {0} with VM base name {1}, ephemeralOSDisk={2}",
+                    new Object[]{deploymentName, vmBaseName, ephemeralOSDisk});
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
@@ -432,6 +433,7 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imageSku");
             copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
+            putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
@@ -1035,6 +1037,7 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("doNotUseMachineIfInitFails"),
                     (Boolean) properties.get("enableMSI"),
                     (Boolean) properties.get("enableUAMI"),
+                    (Boolean) properties.get("ephemeralOSDisk"),
                     (String) properties.get("uamiID"),
                     template,
                     fqdn);

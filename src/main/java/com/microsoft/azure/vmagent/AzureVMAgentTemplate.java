@@ -250,6 +250,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String diskType;
 
+    private final boolean ephemeralOSDisk;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -363,6 +365,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String newStorageAccountName,
             String existingStorageAccountName,
             String diskType,
+            boolean ephemeralOSDisk,
             int osDiskSize,
             String noOfParallelJobs,
             String usageMode,
@@ -405,6 +408,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.existingStorageAccountName = existingStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
         this.diskType = diskType;
+        this.ephemeralOSDisk = ephemeralOSDisk;
         this.osDiskSize = osDiskSize;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
@@ -614,6 +618,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? false : template.isEnableMSI());
         templateProperties.put("enableUAMI",
                 isBasic ? false : template.isEnableUAMI());
+        templateProperties.put("ephemeralOSDisk",
+                isBasic ? false : template.isEphemeralOSDisk());
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
 
@@ -823,6 +829,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getDiskType() {
         return diskType;
+    }
+
+    public boolean isEphemeralOSDisk() {
+        return ephemeralOSDisk;
     }
 
     public int getOsDiskSize() {

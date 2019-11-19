@@ -27,6 +27,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String diskType;
 
+    private boolean ephemeralOSDisk;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -118,6 +120,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T withDiskType(String diskType) {
         this.diskType = diskType;
+        return (T) this;
+    }
+
+    public T withEphemeralOSDisk(boolean isEphemeral) {
+        this.ephemeralOSDisk = isEphemeral;
         return (T) this;
     }
 
@@ -224,6 +231,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getDiskType() {
         return diskType;
+    }
+
+    public boolean isEphemeralOSDisk() {
+        return ephemeralOSDisk;
     }
 
     public int getOsDiskSize() {

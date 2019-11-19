@@ -26,6 +26,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
+        fluent.withEphemeralOSDisk(template.isEphemeralOSDisk());
         fluent.withOsDiskSize(template.getOsDiskSize());
         fluent.withRetentionStrategy((AzureVMCloudBaseRetentionStrategy) template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
@@ -86,6 +87,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getNewStorageAccountName(),
                 fluent.getExistingStorageAccountName(),
                 fluent.getDiskType(),
+                fluent.isEphemeralOSDisk(),
                 fluent.getOsDiskSize(),
                 fluent.getAdvancedImage().getNoOfParallelJobs(),
                 fluent.getUsageMode(),

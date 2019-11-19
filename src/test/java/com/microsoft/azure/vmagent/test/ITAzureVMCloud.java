@@ -83,6 +83,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final boolean doNotUseMachineIfInitFails = true;
             final boolean enableMSI = false;
             final boolean enableUAMI = false;
+            final boolean ephemeralOSDisk = false;
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
@@ -106,6 +107,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.getDoNotUseMachineIfInitFails()).thenReturn(doNotUseMachineIfInitFails);
             when(templateMock.isEnableMSI()).thenReturn(enableMSI);
             when(templateMock.isEnableUAMI()).thenReturn(enableUAMI);
+            when(templateMock.isEphemeralOSDisk()).thenReturn(ephemeralOSDisk);
 
             AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
@@ -124,6 +126,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             Assert.assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());
             Assert.assertEquals(enableMSI, newAgent.isEnableMSI());
             Assert.assertEquals(enableUAMI, newAgent.isEnableUAMI());
+            Assert.assertEquals(ephemeralOSDisk, newAgent.isEphemeralOSDisk());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
