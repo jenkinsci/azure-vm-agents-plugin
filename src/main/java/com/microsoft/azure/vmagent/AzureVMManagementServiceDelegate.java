@@ -215,8 +215,8 @@ public final class AzureVMManagementServiceDelegate {
             }
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment:"
-                            + " Creating a new deployment {0} with VM base name {1}, ephemeralOSDisk={2}",
-                    new Object[]{deploymentName, vmBaseName, ephemeralOSDisk});
+                            + " Creating a new deployment {0} with VM base name {1}",
+                    new Object[]{deploymentName, vmBaseName});
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
