@@ -36,7 +36,6 @@
                     "osDisk": {
                         "osState": "Generalized",
                         "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
-                        "diffDiskSettings": "[if(bool(variables('ephemeralOSDisk')), json('{\"option\": \"Local\"}'), json('null'))]",
                         "osType": "[variables('osType')]",
                         "blobUri": "[variables('image')]",
                         "storageAccountType": "[variables('storageAccountType')]"
