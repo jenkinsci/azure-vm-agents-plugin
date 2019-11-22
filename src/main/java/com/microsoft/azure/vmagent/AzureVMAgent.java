@@ -112,6 +112,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final boolean enableUAMI;
 
+    private final boolean ephemeralOSDisk;
+
     private final String uamiID;
 
     private boolean eligibleForReuse;
@@ -153,6 +155,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
             boolean enableUAMI,
+            boolean ephemeralOSDisk,
             String uamiID,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
@@ -180,6 +183,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.enableMSI = enableMSI;
         this.enableUAMI = enableUAMI;
+        this.ephemeralOSDisk = ephemeralOSDisk;
         this.uamiID = uamiID;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
@@ -214,6 +218,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
             boolean enableUAMI,
+            boolean ephemeralOSDisk,
             String uamiID,
             AzureVMAgentTemplate template,
             String fqdn) throws FormException, IOException {
@@ -252,6 +257,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 doNotUseMachineIfInitFails,
                 enableMSI,
                 enableUAMI,
+                ephemeralOSDisk,
                 uamiID,
                 template);
 
@@ -435,6 +441,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean isEnableUAMI() {
         return enableUAMI;
+    }
+
+    public boolean isEphemeralOSDisk() {
+        return ephemeralOSDisk;
     }
 
     public AzureVMAgentTemplate getTemplate() {

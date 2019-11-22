@@ -102,7 +102,8 @@
                         "vhd": {
                             "uri": "[concat('http://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
                         },
-                        "caching": "ReadWrite",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
+                        "diffDiskSettings": "[if(bool(variables('ephemeralOSDisk')), json('{\"option\": \"Local\"}'), json('null'))]",
                         "createOption": "FromImage"
                     }
                 },

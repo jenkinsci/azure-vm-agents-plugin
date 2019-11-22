@@ -19,6 +19,7 @@
       doNotUseMachineIfInitFails: true
       enableMSI: false
       enableUAMI: false
+      ephemeralOSDisk: false
       executeInitScriptAsRoot: true
       imageReference:
         galleryImageDefinition: "Linux"

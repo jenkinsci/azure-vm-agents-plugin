@@ -35,6 +35,7 @@
                 "storageProfile": {
                     "osDisk": {
                         "osState": "Generalized",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
                         "osType": "[variables('osType')]",
                         "blobUri": "[variables('image')]",
                         "storageAccountType": "[variables('storageAccountType')]"
@@ -102,6 +103,8 @@
                     },
                     "osDisk": {
                         "createOption": "FromImage",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
+                        "diffDiskSettings": "[if(bool(variables('ephemeralOSDisk')), json('{\"option\": \"Local\"}'), json('null'))]",
                         "managedDisk": {
                             "storageAccountType": "[variables('storageAccountType')]"
                         }
