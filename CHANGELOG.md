@@ -1,5 +1,9 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.3.0 2019-11-22
+* Add descriptor visibility filter
+* Support OS ephemeral disk
+
 ## version 1.2.2 2019-09-18
 * Revert images to previous API version
 
