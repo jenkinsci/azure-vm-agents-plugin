@@ -4,7 +4,7 @@ $latestRelease = Invoke-WebRequest -UseBasicParsing $source -Headers @{"Accept"=
 $json = $latestRelease.Content | ConvertFrom-Json
 $latestVersion = $json.tag_name
 $versionHead = $latestVersion.Substring(1, $latestVersion.IndexOf("windows")-2)
-$source = "https://github.com/git-for-windows/git/releases/download/v${versionHead}.windows.1/Git-${versionHead}-64-bit.exe"
+$source = "https://github.com/git-for-windows/git/releases/download/v${versionHead}.windows.2/Git-${versionHead}.1-64-bit.exe"
 $destination = "C:\Git-${versionHead}-64-bit.exe"
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($source, $destination)
