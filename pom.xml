@@ -14,7 +14,7 @@
 
     <name>Azure VM Agents</name>
     <description>Provisions agents on Azure cloud</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Azure+VM+Agents+Plugin</url>
+    <url>https://github.com/jenkinsci/azure-vm-agents-plugin</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
