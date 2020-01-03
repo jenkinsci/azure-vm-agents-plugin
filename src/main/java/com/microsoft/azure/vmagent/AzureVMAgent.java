@@ -567,7 +567,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 }
             };
 
-            PrintStream terminateStream = new PrintStream(terminateResults);
+            PrintStream terminateStream = new PrintStream(terminateResults, true, "UTF-8");
 
             final boolean isUnix = this.getOsType().equals(OperatingSystemTypes.LINUX);
             // Check if VM is already stopped or stopping or getting deleted ,
