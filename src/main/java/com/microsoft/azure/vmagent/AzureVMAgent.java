@@ -587,12 +587,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             }
 
             Thread loggingThread = new Thread(new Runnable() {
-                private final static int flushInterval = 30000;
+                private static final int FLUSH_INTERVAL = 30000;
                 public void run() {
                     try {
                         while (terminateResults != null) {
                             terminateResults.flush();
-                            Thread.sleep(flushInterval);
+                            Thread.sleep(FLUSH_INTERVAL);
                         }
                     } catch (IOException e) {
                         // ignoring exception purposefully
