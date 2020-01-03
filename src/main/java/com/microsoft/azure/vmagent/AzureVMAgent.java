@@ -15,9 +15,11 @@
  */
 package com.microsoft.azure.vmagent;
 
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
+import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.Extension;
@@ -35,6 +37,8 @@ import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
+
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedItem;
@@ -46,6 +50,10 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.OutputStream;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +64,10 @@ import java.util.logging.Logger;
 public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private static final long serialVersionUID = -760014706860995557L;
+
+    private static final String REMOTE_TERMINATE_FILE_NAME = "terminate.sh";
+
+    private static final String REMOTE_TERMINATE_FILE_NAME_WINDOWS = "/terminate.ps1";
 
     private ProvisioningActivity.Id provisioningId;
 
@@ -78,6 +90,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     private final String agentLaunchMethod;
 
     private final String initScript;
+
+    private final String terminateScript;
 
     private final String deploymentName;
 
@@ -145,6 +159,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String deploymentName,
             int retentionTimeInMin,
             String initScript,
+            String terminateScript,
             String azureCredentialsId,
             AzureCredentials.ServicePrincipal servicePrincipal,
             String agentLaunchMethod,
@@ -173,6 +188,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.deploymentName = deploymentName;
         this.retentionTimeInMin = retentionTimeInMin;
         this.initScript = initScript;
+        this.terminateScript = terminateScript;
         this.osType = osType;
         this.mode = mode;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -209,6 +225,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String deploymentName,
             RetentionStrategy<AzureVMComputer> retentionStrategy,
             String initScript,
+            String terminateScript,
             String azureCredentialsId,
             String agentLaunchMethod,
             CleanUpAction cleanUpAction,
@@ -247,6 +264,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 deploymentName,
                 template.getRetentionTimeInMin(),
                 initScript,
+                terminateScript,
                 azureCredentialsId,
                 null,
                 agentLaunchMethod,
@@ -350,7 +368,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         setCleanUpAction(action);
         setCleanUpReason(reason);
     }
-
+    //CHECKSTYLE:OFF
     public String getJvmOptions() {
         return jvmOptions;
     }
@@ -407,9 +425,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return retentionTimeInMin;
     }
 
-    public String getInitScript() {
-        return initScript;
-    }
+    public String getInitScript() { return initScript; }
+
+    public String getTerminateScript() { return terminateScript; }
 
     public String getAgentLaunchMethod() {
         return agentLaunchMethod;
@@ -454,7 +472,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     public long getCreationTime() {
         return creationTime;
     }
-
+    //CHECKSTYLE:ON
     @Override
     protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
@@ -526,6 +544,122 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 new Object[]{this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()});
 
         computer.setAcceptingTasks(false);
+
+        ComputerLauncher launcher = computer.getLauncher();
+
+        if ((launcher != null && launcher instanceof AzureVMAgentSSHLauncher)) {
+            AzureVMAgentSSHLauncher azureLauncher = (AzureVMAgentSSHLauncher) launcher;
+
+            OutputStream terminateResults = new OutputStream() {
+                private String terminateResultBuffer = "";
+
+                @Override
+                public void write(int b) throws IOException {
+                    terminateResultBuffer += (char) b;
+                }
+
+                @Override
+                public void flush() {
+                    if (!terminateResultBuffer.isEmpty()) {
+                        LOGGER.log(Level.FINER, "AzureVMAgent: deprovision: terminateScript, " + terminateResultBuffer);
+                        terminateResultBuffer = "";
+                    }
+                }
+            };
+
+            PrintStream terminateStream = new PrintStream(terminateResults);
+
+            final boolean isUnix = this.getOsType().equals(OperatingSystemTypes.LINUX);
+            // Check if VM is already stopped or stopping or getting deleted ,
+            // if yes then there is no point in trying to connect
+            // Added this check - since after restarting jenkins master,
+            // jenkins is trying to connect to all the agents although agents are suspended.
+            // This still means that a delete agent will eventually get cleaned up.
+            try {
+                if (!this.isVMAliveOrHealthy()) {
+                    LOGGER.log(Level.INFO,
+                            "AzureVMAgent: deprovision: Agent {0} is shut down, deleted, etc. "
+                                    + "Not attempting to connect",
+                            computer.getName());
+                }
+            } catch (Exception e1) {
+                // ignoring exception purposefully
+            }
+
+            Thread loggingThread = new Thread(new Runnable() {
+                private final int flushInterval = 30000;
+                public void run() {
+                    try {
+                        while (terminateResults != null) {
+                            terminateResults.flush();
+                            Thread.sleep(flushInterval);
+                        }
+                    } catch (IOException e) {
+                        // ignoring exception purposefully
+                    } catch (InterruptedException e) {
+                        // ignore, this is for exit
+                    }
+                }
+            });
+
+            LOGGER.info("AzureVMAgent: deprovision: Template terminate script, " + template.getTerminateScript());
+            try {
+                // Executing script only if script is not executed even once
+                String command;
+                if (isUnix) {
+                    command = "test -e ~/.azure-agent-terminate";
+                } else {
+                    command = "dir C:\\.azure-agent-terminate";
+                }
+                if (StringUtils.isNotBlank(terminateScript)
+                        && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
+                    LOGGER.info("AzureVMAgent: deprovision: Terminate script is not null, "
+                            + "preparing to execute script remotely");
+                    if (isUnix) {
+                        azureLauncher.copyFileToRemote(
+                                this,
+                                new ByteArrayInputStream(terminateScript.getBytes(StandardCharsets.UTF_8)),
+                                REMOTE_TERMINATE_FILE_NAME);
+                    } else {
+                        azureLauncher.copyFileToRemote(this,
+                                new ByteArrayInputStream(terminateScript.getBytes(StandardCharsets.UTF_8)),
+                                REMOTE_TERMINATE_FILE_NAME_WINDOWS);
+                    }
+                    // Execute termination script
+                    // Make sure to change file permission for execute if needed.
+
+                    // Grab the username/pass
+                    StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(vmCredentialsId);
+
+                    if (isUnix) {
+                        command = "sh " + REMOTE_TERMINATE_FILE_NAME;
+                    } else {
+                        command = "powershell " + REMOTE_TERMINATE_FILE_NAME_WINDOWS;
+                    }
+                    loggingThread.start();
+                    int exitStatus = azureLauncher.executeRemoteCommand(
+                            this,
+                            command,
+                            terminateStream,
+                            isUnix,
+                            executeInitScriptAsRoot,
+                            creds.getPassword().getPlainText());
+                    if (exitStatus != 0) {
+                        LOGGER.log(Level.SEVERE,
+                                "AzureVMAgent: deprovision: terminate script failed: exit code={0} ", exitStatus);
+                    } else {
+                        LOGGER.info("AzureVMAgent: deprovision: terminate script was executed successfully");
+                    }
+                    loggingThread.interrupt();
+                    terminateResults.flush();
+                } else {
+                    LOGGER.log(Level.FINER, "AzureVMAgent: deprovision: terminate script: {0}", terminateScript);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "AzureVMAgent: deprovision: got exception ", e);
+            }
+        }
+
         computer.disconnect(OfflineCause.create(reason));
 
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);

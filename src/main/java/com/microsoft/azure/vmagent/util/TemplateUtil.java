@@ -41,6 +41,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getAgentLaunchMethod(), b.getAgentLaunchMethod())
                 && a.getPreInstallSsh() == b.getPreInstallSsh()
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())
+                && StringUtils.equals(a.getTerminateScript(), b.getTerminateScript())
                 && a.getExecuteInitScriptAsRoot() == b.getExecuteInitScriptAsRoot()
                 && a.isEnableMSI() == b.isEnableMSI()
                 && a.isEnableUAMI() == b.isEnableUAMI()

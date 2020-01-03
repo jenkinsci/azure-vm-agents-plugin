@@ -336,6 +336,7 @@ public class IntegrationTest {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
         final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
+        final String terminateScript = "echo \"" + UUID.randomUUID().toString() + "\"";
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
         final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'");
@@ -361,6 +362,7 @@ public class IntegrationTest {
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);
+        when(templateMock.getTerminateScript()).thenReturn(terminateScript);
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.RawValue;
+
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
@@ -142,7 +142,6 @@ public final class AzureVMManagementServiceDelegate {
     private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "/scripts/ubuntuInstallMavenScript.sh";
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
-
 
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
@@ -1028,6 +1027,7 @@ public final class AzureVMManagementServiceDelegate {
                     deploymentName,
                     template.getRetentionStrategy(),
                     (String) properties.get("initScript"),
+                    (String) properties.get("terminateScript"),
                     azureCloud.getAzureCredentialsId(),
                     (String) properties.get("agentLaunchMethod"),
                     CleanUpAction.DEFAULT,

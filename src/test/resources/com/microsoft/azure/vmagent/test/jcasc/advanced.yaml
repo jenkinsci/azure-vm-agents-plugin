@@ -31,6 +31,7 @@ jenkins:
               gallerySubscriptionId: "e5587777-5750-4d2e-9e45-d6fbae67b8ea"
             imageTopLevelType: "advanced"
             initScript: "yum install -y java\nyum install -y nodejs\ncat /etc/hosts"
+            terminateScript: ""
             installDocker: false
             installGit: false
             installMaven: false

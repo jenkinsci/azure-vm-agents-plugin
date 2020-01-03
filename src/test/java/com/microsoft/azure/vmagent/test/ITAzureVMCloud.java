@@ -78,6 +78,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             final boolean isShutdownOnIdle = false;
             final int retentionTimeInMin = 30;
             final String initScript = "";
+            final String terminateScript = "";
             final String agentLaunchMethod = Constants.LAUNCH_METHOD_SSH;
             final boolean executeInitScriptAsRoot = true;
             final boolean doNotUseMachineIfInitFails = true;
@@ -101,6 +102,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.isShutdownOnIdle()).thenReturn(isShutdownOnIdle);
             when(templateMock.getRetentionTimeInMin()).thenReturn(retentionTimeInMin);
             when(templateMock.getInitScript()).thenReturn(initScript);
+            when(templateMock.getTerminateScript()).thenReturn(terminateScript);
             when(templateMock.getAgentLaunchMethod()).thenReturn(agentLaunchMethod);
             when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
             when(templateMock.getExecuteInitScriptAsRoot()).thenReturn(executeInitScriptAsRoot);
@@ -121,6 +123,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             Assert.assertEquals(jvmOptions, newAgent.getJvmOptions());
             Assert.assertEquals(retentionTimeInMin, newAgent.getRetentionTimeInMin());
             Assert.assertEquals(initScript, newAgent.getInitScript());
+            Assert.assertEquals(terminateScript, newAgent.getTerminateScript());
             Assert.assertEquals(agentLaunchMethod, newAgent.getAgentLaunchMethod());
             Assert.assertEquals(executeInitScriptAsRoot, newAgent.getExecuteInitScriptAsRoot());
             Assert.assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());

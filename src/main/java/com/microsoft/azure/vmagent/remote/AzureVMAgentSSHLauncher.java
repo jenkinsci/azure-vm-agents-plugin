@@ -317,6 +317,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             throw e;
         }
     }
+    
+    public void copyFileToRemote(AzureVMAgent agent, InputStream stream, String remotePath) throws Exception {
+    	copyFileToRemote(connectToSsh(agent), stream, remotePath);
+    }
 
     private void copyFileToRemote(Session jschSession, InputStream stream, String remotePath) throws Exception {
         LOGGER.log(Level.INFO,
@@ -356,6 +360,14 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
     }
 
+    public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix)  throws Exception {
+    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, false, null);
+    }
+    
+    public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix, boolean executeAsRoot, String passwordIfRoot)  throws Exception {
+    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, executeAsRoot, passwordIfRoot);
+    }
+    
     /* Helper method for most common call (without root). */
     private int executeRemoteCommand(Session jschSession, String command, PrintStream logger, boolean isUnix) {
         return executeRemoteCommand(jschSession, command, logger, isUnix, false, null);
