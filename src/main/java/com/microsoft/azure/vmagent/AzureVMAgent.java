@@ -58,6 +58,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -368,7 +370,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         setCleanUpAction(action);
         setCleanUpReason(reason);
     }
-    //CHECKSTYLE:OFF
+
     public String getJvmOptions() {
         return jvmOptions;
     }
@@ -425,9 +427,13 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         return retentionTimeInMin;
     }
 
-    public String getInitScript() { return initScript; }
+    public String getInitScript() {
+        return initScript;
+    }
 
-    public String getTerminateScript() { return terminateScript; }
+    public String getTerminateScript() {
+        return terminateScript;
+    }
 
     public String getAgentLaunchMethod() {
         return agentLaunchMethod;
@@ -472,7 +478,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     public long getCreationTime() {
         return creationTime;
     }
-    //CHECKSTYLE:ON
+
     @Override
     protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
@@ -547,7 +553,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         ComputerLauncher launcher = computer.getLauncher();
 
-        if ((launcher != null && launcher instanceof AzureVMAgentSSHLauncher)) {
+        if ((launcher instanceof AzureVMAgentSSHLauncher)) {
             AzureVMAgentSSHLauncher azureLauncher = (AzureVMAgentSSHLauncher) launcher;
 
             OutputStream terminateResults = new OutputStream() {
@@ -586,21 +592,17 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 // ignoring exception purposefully
             }
 
-            Thread loggingThread = new Thread(new Runnable() {
-                private static final int FLUSH_INTERVAL = 30000;
+            final int flushInterval = 30000;
+            Timer loggingTimer = new Timer();
+            loggingTimer.schedule(new TimerTask() {
                 public void run() {
                     try {
-                        while (terminateResults != null) {
-                            terminateResults.flush();
-                            Thread.sleep(FLUSH_INTERVAL);
-                        }
+                        terminateResults.flush();
                     } catch (IOException e) {
                         // ignoring exception purposefully
-                    } catch (InterruptedException e) {
-                        // ignore, this is for exit
                     }
                 }
-            });
+            }, flushInterval, flushInterval);
 
             LOGGER.info("AzureVMAgent: deprovision: Template terminate script, " + template.getTerminateScript());
             try {
@@ -636,7 +638,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     } else {
                         command = "powershell " + REMOTE_TERMINATE_FILE_NAME_WINDOWS;
                     }
-                    loggingThread.start();
+
                     int exitStatus = azureLauncher.executeRemoteCommand(
                             this,
                             command,
@@ -650,7 +652,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     } else {
                         LOGGER.info("AzureVMAgent: deprovision: terminate script was executed successfully");
                     }
-                    loggingThread.interrupt();
+                    loggingTimer.cancel();
                     terminateResults.flush();
                 } else {
                     LOGGER.log(Level.FINER, "AzureVMAgent: deprovision: terminate script: {0}", terminateScript);
