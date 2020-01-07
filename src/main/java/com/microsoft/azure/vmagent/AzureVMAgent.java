@@ -36,6 +36,7 @@ import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
+import hudson.util.LogTaskListener;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.lang.StringUtils;
@@ -51,15 +52,12 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.OutputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -555,27 +553,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         if ((launcher instanceof AzureVMAgentSSHLauncher)) {
             AzureVMAgentSSHLauncher azureLauncher = (AzureVMAgentSSHLauncher) launcher;
-
-            OutputStream terminateResults = new OutputStream() {
-                private String terminateResultBuffer = "";
-
-                @Override
-                public void write(int b) throws IOException {
-                    terminateResultBuffer += (char) b;
-                }
-
-                @Override
-                public void flush() {
-                    if (!terminateResultBuffer.isEmpty()) {
-                        LOGGER.log(Level.FINER, "AzureVMAgent: deprovision: terminateScript, " + terminateResultBuffer);
-                        terminateResultBuffer = "";
-                    }
-                }
-            };
-
-            PrintStream terminateStream = new PrintStream(terminateResults, true, "UTF-8");
+            PrintStream terminateStream = new LogTaskListener(LOGGER, Level.INFO).getLogger();
 
             final boolean isUnix = this.getOsType().equals(OperatingSystemTypes.LINUX);
+            boolean skipTerminateScript = StringUtils.isNotBlank(terminateScript);
             // Check if VM is already stopped or stopping or getting deleted ,
             // if yes then there is no point in trying to connect
             // Added this check - since after restarting jenkins master,
@@ -587,22 +568,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                             "AzureVMAgent: deprovision: Agent {0} is shut down, deleted, etc. "
                                     + "Not attempting to connect",
                             computer.getName());
+                    skipTerminateScript = true;
                 }
             } catch (Exception e1) {
                 // ignoring exception purposefully
             }
-
-            final int flushInterval = 30000;
-            Timer loggingTimer = new Timer();
-            loggingTimer.schedule(new TimerTask() {
-                public void run() {
-                    try {
-                        terminateResults.flush();
-                    } catch (IOException e) {
-                        // ignoring exception purposefully
-                    }
-                }
-            }, flushInterval, flushInterval);
 
             LOGGER.info("AzureVMAgent: deprovision: Template terminate script, " + template.getTerminateScript());
             try {
@@ -613,7 +583,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 } else {
                     command = "dir C:\\.azure-agent-terminate";
                 }
-                if (StringUtils.isNotBlank(terminateScript)
+                if (!skipTerminateScript
                         && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
                     LOGGER.info("AzureVMAgent: deprovision: Terminate script is not null, "
                             + "preparing to execute script remotely");
@@ -652,10 +622,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     } else {
                         LOGGER.info("AzureVMAgent: deprovision: terminate script was executed successfully");
                     }
-                    loggingTimer.cancel();
-                    terminateResults.flush();
                 } else {
-                    LOGGER.log(Level.FINER, "AzureVMAgent: deprovision: terminate script: {0}", terminateScript);
+                    LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: skipping terminate script execution.");
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "AzureVMAgent: deprovision: got exception ", e);
