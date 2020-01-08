@@ -556,7 +556,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             PrintStream terminateStream = new LogTaskListener(LOGGER, Level.INFO).getLogger();
 
             final boolean isUnix = this.getOsType().equals(OperatingSystemTypes.LINUX);
-            boolean skipTerminateScript = StringUtils.isNotBlank(terminateScript);
+            boolean skipTerminateScript = StringUtils.isBlank(terminateScript);
             // Check if VM is already stopped or stopping or getting deleted ,
             // if yes then there is no point in trying to connect
             // Added this check - since after restarting jenkins master,
