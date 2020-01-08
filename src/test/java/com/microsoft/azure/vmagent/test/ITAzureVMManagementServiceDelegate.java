@@ -89,6 +89,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(templateMock.getResourceGroupName()).thenReturn(testEnv.azureResourceGroup);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
         when(templateMock.getInitScript()).thenReturn(writtenData);
+        when(templateMock.getTerminateScript()).thenReturn(writtenData);
         when(templateMock.getStorageAccountType()).thenReturn(SkuName.STANDARD_LRS.toString());
         when(templateMock.getResourceGroupReferenceType()).thenReturn(testEnv.azureResourceGroupReferenceType);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);

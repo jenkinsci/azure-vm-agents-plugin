@@ -287,6 +287,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String initScript;
 
+    private final String terminateScript;
+
     private final String credentialsId;
 
     private final String agentWorkspace;
@@ -379,6 +381,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String agentLaunchMethod,
             boolean preInstallSsh,
             String initScript,
+            String terminateScript,
             String credentialsId,
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
@@ -428,6 +431,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.osType = osType;
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
+        this.terminateScript = terminateScript;
         this.agentLaunchMethod = agentLaunchMethod;
         this.preInstallSsh = preInstallSsh;
         this.credentialsId = credentialsId;
@@ -594,6 +598,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
         templateProperties.put("initScript",
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
+        templateProperties.put("terminateScript",
+                isBasic ? "" : template.getTerminateScript());
         templateProperties.put("virtualNetworkName",
                 isBasic ? "" : template.getVirtualNetworkName());
         templateProperties.put("virtualNetworkResourceGroupName",
@@ -923,6 +929,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getInitScript() {
         return initScript;
+    }
+
+    public String getTerminateScript() {
+        return terminateScript;
     }
 
     public String getCredentialsId() {

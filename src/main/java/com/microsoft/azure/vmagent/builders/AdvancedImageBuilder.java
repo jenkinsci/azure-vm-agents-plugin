@@ -28,6 +28,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withLaunchMethod(image.getAgentLaunchMethod());
         fluent.withPreInstallSsh(image.isPreInstallSsh());
         fluent.withInitScript(image.getInitScript());
+        fluent.withTerminateScript(image.getTerminateScript());
         fluent.withVirtualNetworkName(image.getVirtualNetworkName());
         fluent.withVirtualNetworkResourceGroupName(image.getVirtualNetworkResourceGroupName());
         fluent.withSubnetName(image.getSubnetName());
@@ -61,6 +62,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withLaunchMethod(image.getAgentLaunchMethod());
         fluent.withPreInstallSsh(image.isPreInstallSsh());
         fluent.withInitScript(image.getInitScript());
+        fluent.withTerminateScript(image.getTerminateScript());
         fluent.withVirtualNetworkName(image.getVirtualNetworkName());
         fluent.withVirtualNetworkResourceGroupName(image.getVirtualNetworkResourceGroupName());
         fluent.withSubnetName(image.getSubnetName());
@@ -89,6 +91,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getAgentLaunchMethod(),
                 fluent.isPreInstallSsh(),
                 fluent.getInitScript(),
+                fluent.getTerminateScript(),
                 fluent.isExecuteInitScriptAsRoot(),
                 fluent.isDoNotUseMachineIfInitFails(),
                 fluent.isEnableMSI(),

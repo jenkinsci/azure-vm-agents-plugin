@@ -38,6 +38,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String initScript;
 
+    private String terminateScript;
+
     private boolean executeInitScriptAsRoot;
 
     private boolean doNotUseMachineIfInitFails;
@@ -136,6 +138,11 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public T withInitScript(String initScript) {
         this.initScript = initScript;
+        return (T) this;
+    }
+
+    public T withTerminateScript(String terminateScript) {
+        this.terminateScript = terminateScript;
         return (T) this;
     }
 
@@ -266,6 +273,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public String getInitScript() {
         return initScript;
+    }
+
+    public String getTerminateScript() {
+        return terminateScript;
     }
 
     public boolean isExecuteInitScriptAsRoot() {

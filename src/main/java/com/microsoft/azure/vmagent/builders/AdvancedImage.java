@@ -35,6 +35,8 @@ public class AdvancedImage {
 
     private String initScript;
 
+    private String terminateScript;
+
     private boolean executeInitScriptAsRoot;
 
     private boolean doNotUseMachineIfInitFails;
@@ -77,6 +79,7 @@ public class AdvancedImage {
                          String agentLaunchMethod,
                          boolean preInstallSsh,
                          String initScript,
+                         String terminateScript,
                          boolean executeInitScriptAsRoot,
                          boolean doNotUseMachineIfInitFails,
                          boolean enableMSI,
@@ -106,6 +109,7 @@ public class AdvancedImage {
         this.agentLaunchMethod = agentLaunchMethod;
         this.preInstallSsh = preInstallSsh;
         this.initScript = initScript;
+        this.terminateScript = terminateScript;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.enableMSI = enableMSI;
@@ -136,6 +140,7 @@ public class AdvancedImage {
     public String getImageId() {
         return imageId;
     }
+
     public String getImagePublisher() {
         return imagePublisher;
     }
@@ -184,6 +189,10 @@ public class AdvancedImage {
         return initScript;
     }
 
+    public String getTerminateScript() {
+        return terminateScript;
+    }
+
     public boolean isExecuteInitScriptAsRoot() {
         return executeInitScriptAsRoot;
     }
@@ -191,7 +200,6 @@ public class AdvancedImage {
     public boolean isDoNotUseMachineIfInitFails() {
         return doNotUseMachineIfInitFails;
     }
-
 
     public boolean isEnableMSI() {
         return enableMSI;
