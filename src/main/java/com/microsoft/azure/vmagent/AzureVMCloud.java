@@ -90,6 +90,8 @@ import static hudson.init.InitMilestone.PLUGINS_STARTED;
 public class AzureVMCloud extends Cloud {
 
     public static final Logger LOGGER = Logger.getLogger(AzureVMCloud.class.getName());
+    private static final int DEFAULT_SSH_CONNECT_RETRY_COUNT = 3;
+    private static final int SHH_CONNECT_RETRY_INTERNAL_SECONDS = 20;
 
     private String cloudName;
 
@@ -690,7 +692,7 @@ public class AzureVMCloud extends Cloud {
                                                 Jenkins.getInstance().addNode(agentNode);
                                                 if (agentNode.getAgentLaunchMethod()
                                                         .equalsIgnoreCase("SSH")) {
-                                                    azureComputer.connect(false).get();
+                                                    retrySshConnect(azureComputer);
                                                 } else { // Wait until node is online
                                                     waitUntilJNLPNodeIsOnline(agentNode);
                                                 }
@@ -726,7 +728,6 @@ public class AzureVMCloud extends Cloud {
                 }
             }
         }
-
 
 
         // provision new nodes if required
@@ -923,6 +924,24 @@ public class AzureVMCloud extends Cloud {
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }
                     })));
+        }
+    }
+
+    private void retrySshConnect(final AzureVMComputer azureComputer) throws ExecutionException, InterruptedException {
+        int count = 0;
+        while (true) {
+            try {
+                azureComputer.connect(false).get();
+                return;
+            } catch (InterruptedException | ExecutionException e) {
+                if (count >= DEFAULT_SSH_CONNECT_RETRY_COUNT) {
+                    throw e;
+                }
+                LOGGER.warning(String.format("Fail to connect %s with SSH for %s", azureComputer.getName(),
+                        e.getMessage()));
+                count++;
+                TimeUnit.SECONDS.sleep(SHH_CONNECT_RETRY_INTERNAL_SECONDS);
+            }
         }
     }
 
