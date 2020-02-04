@@ -1,5 +1,10 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.4.0 2020-02-04
+* Add termination script support
+* Add retry logic for connecting agents with SSH
+* Use GitHub as a source of plugin documentation
+
 ## version 1.3.0 2019-11-22
 * Add descriptor visibility filter
 * Support OS ephemeral disk
