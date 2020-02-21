@@ -1950,6 +1950,7 @@ public final class AzureVMManagementServiceDelegate {
      * @param returnOnSingleError
      * @param resourceGroupName
      * @param usePrivateIP
+     * @param nsgName
      * @return
      */
     public List<String> verifyTemplate(
