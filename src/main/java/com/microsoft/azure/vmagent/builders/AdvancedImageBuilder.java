@@ -34,6 +34,9 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withSubnetName(image.getSubnetName());
         fluent.withUsePrivateIP(image.isUsePrivateIP());
         fluent.withNetworkSecurityGroupName(image.getNsgName());
+        fluent.withLoadBalancerName(image.getLoadBalancerName());
+        fluent.withLoadBalancerResourceGroupName(image.getLoadBalancerResourceGroupName());
+        fluent.withBackendPoolName(image.getBackendPoolName());
         fluent.withJvmOptions(image.getJvmOptions());
         fluent.withDisableTemplate(image.isTemplateDisabled());
         fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
@@ -68,6 +71,9 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withSubnetName(image.getSubnetName());
         fluent.withUsePrivateIP(image.isUsePrivateIP());
         fluent.withNetworkSecurityGroupName(image.getNsgName());
+        fluent.withLoadBalancerName(image.getLoadBalancerName());
+        fluent.withLoadBalancerResourceGroupName(image.getLoadBalancerResourceGroupName());
+        fluent.withBackendPoolName(image.getBackendPoolName());
         fluent.withJvmOptions(image.getJvmOptions());
         fluent.withDisableTemplate(image.isTemplateDisabled());
         fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
@@ -102,6 +108,9 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getSubnetName(),
                 fluent.isUsePrivateIP(),
                 fluent.getNsgName(),
+                fluent.getLoadBalancerName(),
+                fluent.getLoadBalancerResourceGroupName(),
+                fluent.getBackendPoolName(),
                 fluent.getJvmOptions(),
                 fluent.getNoOfParallelJobs(),
                 fluent.isTemplateDisabled());
