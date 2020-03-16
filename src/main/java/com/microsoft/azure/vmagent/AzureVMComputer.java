@@ -104,4 +104,12 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
     public ProvisioningActivity.Id getId() {
         return provisioningId;
     }
+
+    public AzureVMAgentTemplate getTemplate() {
+        AzureVMAgent agent = getNode();
+        if (agent != null) {
+            return agent.getTemplate();
+        }
+        return null;
+    }
 }

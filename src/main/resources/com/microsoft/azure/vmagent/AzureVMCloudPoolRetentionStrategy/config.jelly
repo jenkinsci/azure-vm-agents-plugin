@@ -9,4 +9,12 @@
         <f:textbox default="3" />
     </f:entry>
 
+    <f:entry title="${%Spare_Pool}" field="sparePool">
+        <f:checkbox/>
+    </f:entry>
+
+    <f:entry title="${%Single_Use}" field="singleUse">
+        <f:checkbox/>
+    </f:entry>
+
 </j:jelly>

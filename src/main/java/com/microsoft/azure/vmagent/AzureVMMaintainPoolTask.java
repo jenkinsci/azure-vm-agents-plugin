@@ -1,10 +1,8 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.PoolLock;
-import com.microsoft.azure.vmagent.util.TemplateUtil;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
-import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner;
@@ -20,7 +18,8 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMMaintainPoolTask.class.getName());
 
-    private static final int RECURRENCE_PERIOD_IN_MILLIS = 5 * 60 * 1000;
+    // 30 Seconds
+    private static final int RECURRENCE_PERIOD_IN_MILLIS = 30 * 1000;
 
     public AzureVMMaintainPoolTask() {
         super("Azure VM Maintainer Pool Size");
@@ -28,29 +27,52 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
     public void maintain(AzureVMCloud cloud, AzureVMAgentTemplate template) {
         LOGGER.log(getNormalLoggingLevel(), "Starting to maintain template: {0}", template.getTemplateName());
-        int currentSize = 0;
-        final int sizeLimit = ((AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy()).getPoolSize();
+        final int poolSize = ((AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy()).getPoolSize();
 
         if (PoolLock.checkProvisionLock(template)) {
             LOGGER.log(getNormalLoggingLevel(), "Agents of template {0} is creating, check later", template);
             return;
         }
 
-        for (Computer computer : Jenkins.getInstance().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureVMComputer = (AzureVMComputer) computer;
-                AzureVMAgent agent = azureVMComputer.getNode();
-                if (agent != null
-                        && agent.getTemplate().getTemplateName().equals(template.getTemplateName())
-                        && TemplateUtil.checkSame(agent.getTemplate(), template)) {
-                    currentSize++;
-                }
+        // safe cast because of check in execute function
+        final AzureVMCloudPoolRetentionStrategy retentionStrategy =
+            (AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy();
+        final boolean sparePool = retentionStrategy.getSparePool();
+        int agentsToProvision = 0;
+        if (!sparePool) {
+            // Ensure poolSize agents are connected
+            LOGGER.log(Level.FINE, "Maintaining absolute pool");
+            final int currentNumberOfAgentsForTemplate =
+                AzureVMCloudPoolRetentionStrategy.countCurrentNumberOfAgents(template);
+            if (currentNumberOfAgentsForTemplate < poolSize) {
+                agentsToProvision = poolSize - currentNumberOfAgentsForTemplate;
             }
+        } else {
+            // Ensure poolsize spare agents are available
+            LOGGER.log(Level.FINE, "Maintaining spare pool");
+            final int buildsWaitingForTemplate =
+                AzureVMCloudPoolRetentionStrategy.countQueueItemsForAgentTemplate(template);
+            final int currentNumberOfSpareAgentsForTemplate =
+                AzureVMCloudPoolRetentionStrategy.countCurrentNumberOfSpareAgents(template);
+            final int numberOfProvisioningAgentsForTemplate =
+                AzureVMCloudPoolRetentionStrategy.countCurrentNumberOfProvisioningAgents(template);
+            agentsToProvision = (poolSize + buildsWaitingForTemplate)
+                              - (currentNumberOfSpareAgentsForTemplate + numberOfProvisioningAgentsForTemplate);
+
+            LOGGER.log(Level.FINE, "Q: {0}, Spare: {1}, Provisioning: {2}, Needed: {3}",
+                new Object[]{
+                    buildsWaitingForTemplate,
+                    currentNumberOfSpareAgentsForTemplate,
+                    numberOfProvisioningAgentsForTemplate,
+                    agentsToProvision
+                }
+            );
         }
-        if (currentSize < sizeLimit) {
+
+        if (agentsToProvision > 0) {
             LOGGER.log(getNormalLoggingLevel(), "Prepare for provisioning {0} agents for template {1}",
-                    new Object[]{sizeLimit - currentSize, template.getTemplateName()});
-            provisionNodes(cloud, template, sizeLimit - currentSize);
+                    new Object[]{agentsToProvision, template.getTemplateName()});
+            provisionNodes(cloud, template, agentsToProvision);
         }
     }
 
