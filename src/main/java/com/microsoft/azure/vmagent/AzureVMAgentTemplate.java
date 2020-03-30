@@ -128,7 +128,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         private ImageReferenceTypeClass() {
-            // used for readResolve to maintain compatibility
+            this.type = determineType();
         }
 
         private ImageReferenceType determineType() {
@@ -403,6 +403,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.labels = labels;
         this.location = location;
         this.availabilityType = availabilityType;
+        if (availabilityType == null) {
+            this.availabilityType = new AvailabilityTypeClass();
+        }
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
         this.storageAccountName = getStorageAccountName(
@@ -428,6 +431,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.installGit = installGit;
         this.installMaven = installMaven;
         this.imageReference = imageReference;
+        if (imageReference == null) {
+            this.imageReference = new ImageReferenceTypeClass();
+        }
         this.osType = osType;
         this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
