@@ -25,9 +25,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.*;
-import com.microsoft.azure.management.network.Network;
-import com.microsoft.azure.management.network.NetworkSecurityGroup;
-import com.microsoft.azure.management.network.PublicIPAddress;
+import com.microsoft.azure.management.network.*;
 import com.microsoft.azure.management.resources.DeploymentMode;
 import com.microsoft.azure.management.resources.GenericResource;
 import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
@@ -540,11 +538,19 @@ public final class AzureVMManagementServiceDelegate {
                 addNSGNode(tmp, mapper, (String) properties.get("nsgName"));
             }
 
+            if (StringUtils.isNotBlank((String) properties.get("loadBalancerName")) && StringUtils.isNotBlank((String) properties.get("backendPoolName"))) {
+                if (StringUtils.isNotBlank((String) properties.get("loadBalancerResourceGroupName"))) {
+                    copyVariable(tmp, properties, "loadBalancerResourceGroupName");
+                } else {
+                    putVariable(tmp, "loadBalancerResourceGroupName", resourceGroupName);
+                }
+                addBackendPoolNode(tmp, mapper, (String) properties.get("loadBalancerName"), (String) properties.get("backendPoolName"));
+            }
+
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
-
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
                     .withTemplate(tmp.toString())
@@ -679,6 +685,47 @@ public final class AzureVMManagementServiceDelegate {
                 }
                 break;
             }
+        }
+    }
+
+    private static void addBackendPoolNode(
+            final JsonNode template,
+            final ObjectMapper mapper,
+            final String loadBalancerName,
+            final String backendPoolName) throws IOException {
+
+        ObjectNode.class.cast(template.get("variables")).put("loadBalancerName", loadBalancerName).put("backendPoolName", backendPoolName);
+       // ObjectNode.class.cast(template.get("variables")).put("loadBalancerResourceGroupName", resourceGroupName);
+
+        ArrayNode resourcesNodes = ArrayNode.class.cast(template.get("resources"));
+        Iterator<JsonNode> resourcesNodesIter = resourcesNodes.elements();
+        while (resourcesNodesIter.hasNext()) {
+            JsonNode resourcesNode = resourcesNodesIter.next();
+            JsonNode typeNode = resourcesNode.get("type");
+            if (typeNode == null || !typeNode.asText().equals("Microsoft.Network/networkInterfaces")) {
+                continue;
+            }
+
+            ArrayNode backendPoolsNode = mapper.createArrayNode();
+            ObjectNode backendPoolNode = mapper.createObjectNode();
+            backendPoolNode.put(
+                    "id",
+                    "[concat(resourceId(variables('loadBalancerResourceGroupName'),'Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/', variables('backendPoolName'))]"
+            );
+            backendPoolsNode.add(backendPoolNode);
+
+            // Find the properties node
+            ObjectNode propertiesNode = ObjectNode.class.cast(resourcesNode.get("properties"));
+
+            // Find ipConfigurations node
+            ArrayNode ipConfigurationsNode = ArrayNode.class.cast(propertiesNode.get("ipConfigurations"));
+
+            // Find ipconfig1 which is always first element in ipConfigurations array
+            ObjectNode ipconfig1PropertiesNode = ObjectNode.class.cast(ipConfigurationsNode.get(0).get("properties"));
+
+            // We will attach the provided load balancer backend pool and not check if it's valid because that's done in the verification step
+            ipconfig1PropertiesNode.set("loadBalancerBackendAddressPools", backendPoolsNode);
+            break;
         }
     }
 
@@ -1950,6 +1997,10 @@ public final class AzureVMManagementServiceDelegate {
      * @param returnOnSingleError
      * @param resourceGroupName
      * @param usePrivateIP
+     * @param nsgName
+     * @param loadBalancerName
+     * @param loadBalancerResourceGroupName
+     * @param backendPoolName
      * @return
      */
     public List<String> verifyTemplate(
@@ -1975,7 +2026,10 @@ public final class AzureVMManagementServiceDelegate {
             String resourceGroupName,
             boolean returnOnSingleError,
             boolean usePrivateIP,
-            String nsgName) {
+            String nsgName,
+            String loadBalancerName,
+            String loadBalancerResourceGroupName,
+            String backendPoolName) {
 
         List<String> errors = new ArrayList<String>();
 
@@ -2050,7 +2104,10 @@ public final class AzureVMManagementServiceDelegate {
                     resourceGroupName,
                     errors,
                     usePrivateIP,
-                    nsgName
+                    nsgName,
+                    loadBalancerName,
+                    loadBalancerResourceGroupName,
+                    backendPoolName
             );
 
         } catch (Exception e) {
@@ -2074,7 +2131,10 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName,
             List<String> errors,
             final boolean usePrivateIP,
-            final String nsgName) {
+            final String nsgName,
+            final String loadBalancerName,
+            final String loadBalancerResourceGroupName,
+            final String backendPoolName) {
 
         List<Callable<String>> verificationTaskList = new ArrayList<Callable<String>>();
 
@@ -2129,6 +2189,26 @@ public final class AzureVMManagementServiceDelegate {
             }
         };
         verificationTaskList.add(callVerifyNSG);
+
+        // Callable for Load Balancer.
+        Callable<String> callVerifyLoadBalancer = new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return verifyLoadBalancer(loadBalancerResourceGroupName, loadBalancerName, resourceGroupName);
+            }
+        };
+        verificationTaskList.add(callVerifyLoadBalancer);
+
+        // Callable for Backend Pool.
+        Callable<String> callVerifyBackendPool = new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return verifyBackendPool(loadBalancerResourceGroupName, loadBalancerName,  backendPoolName, resourceGroupName);
+            }
+        };
+        verificationTaskList.add(callVerifyBackendPool);
 
         try {
             for (Future<String> validationResult : AzureVMCloud.getThreadPool().invokeAll(verificationTaskList)) {
@@ -2473,6 +2553,41 @@ public final class AzureVMManagementServiceDelegate {
                 }
             } catch (Exception e) {
                 return Messages.Azure_GC_Template_NSG_NotFound(nsgName);
+            }
+        }
+        return Constants.OP_SUCCESS;
+    }
+
+    public String verifyLoadBalancer(
+    		final String loadBalancerResourceGroupName,
+            final String loadBalancerName,
+            final String resourceGroupName) {
+        if (StringUtils.isNotBlank(loadBalancerName)) {
+            String finalResourceGroupName = resourceGroupName;
+            if (StringUtils.isNotBlank(loadBalancerResourceGroupName)) {
+                finalResourceGroupName = loadBalancerResourceGroupName;
+            }        	
+            LoadBalancer lb = azureClient.loadBalancers().getByResourceGroup(finalResourceGroupName, loadBalancerName);
+            if (lb == null) {
+                return Messages.Azure_GC_Template_LoadBalancer_NotFound(loadBalancerName, finalResourceGroupName);
+            }
+        }
+        return Constants.OP_SUCCESS;
+    }
+
+    public String verifyBackendPool(
+            final String loadBalancerResourceGroupName,
+            final String loadBalancerName,
+            final String backendPoolName,
+            final String resourceGroupName) {
+        if (StringUtils.isNotBlank(loadBalancerName) && StringUtils.isNotBlank(backendPoolName)) {
+            String finalResourceGroupName = resourceGroupName;
+            if (StringUtils.isNotBlank(loadBalancerResourceGroupName)) {
+                finalResourceGroupName = loadBalancerResourceGroupName;
+            }        	
+            LoadBalancerBackend backend = azureClient.loadBalancers().getByResourceGroup(finalResourceGroupName, loadBalancerName).backends().get(backendPoolName);
+            if (backend == null) {
+                return Messages.Azure_GC_Template_BackendPool_NotFound(backendPoolName);
             }
         }
         return Constants.OP_SUCCESS;

@@ -305,6 +305,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String nsgName;
 
+    private String loadBalancerName;
+
+    private String loadBalancerResourceGroupName;
+
+    private String backendPoolName;
+
     private final String jvmOptions;
 
     // Indicates whether the template is disabled.
@@ -388,6 +394,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String subnetName,
             boolean usePrivateIP,
             String nsgName,
+            String loadBalancerName,
+            String loadBalancerResourceGroupName,
+            String backendPoolName,
             String agentWorkspace,
             String jvmOptions,
             RetentionStrategy retentionStrategy,
@@ -446,6 +455,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.subnetName = subnetName;
         this.usePrivateIP = usePrivateIP;
         this.nsgName = nsgName;
+        this.loadBalancerName = loadBalancerName;
+        this.loadBalancerResourceGroupName = loadBalancerResourceGroupName;
+        this.backendPoolName = backendPoolName;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
@@ -616,6 +628,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? false : template.getUsePrivateIP());
         templateProperties.put("nsgName",
                 isBasic ? "" : template.getNsgName());
+        templateProperties.put("loadBalancerName",
+                isBasic ? "" : template.getLoadBalancerName());
+        templateProperties.put("loadBalancerResourceGroupName",
+                isBasic ? "" : template.getLoadBalancerResourceGroupName());
+        templateProperties.put("backendPoolName",
+                isBasic ? "" : template.getBackendPoolName());
         templateProperties.put("jvmOptions",
                 isBasic ? "" : template.getJvmOptions());
         templateProperties.put("noOfParallelJobs",
@@ -977,6 +995,29 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return nsgName;
     }
 
+    public String getLoadBalancerName() {
+        return loadBalancerName;
+    }
+
+    public void setLoadBalancerName(String loadBalancerName) {
+        this.loadBalancerName = loadBalancerName;
+    }
+
+    public String getLoadBalancerResourceGroupName() {
+        return loadBalancerResourceGroupName;
+    }
+
+    public void setLoadBalancerResourceGroupName(String loadBalancerResourceGroupName) {
+        this.loadBalancerResourceGroupName = loadBalancerResourceGroupName;
+    }
+    public String getBackendPoolName() {
+        return backendPoolName;
+    }
+
+    public void setBackendPoolName(String backendPoolName) {
+        this.backendPoolName = backendPoolName;
+    }
+
     public String getAgentWorkspace() {
         return agentWorkspace;
     }
@@ -1224,7 +1265,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 getResourceGroupName(),
                 true,
                 usePrivateIP,
-                nsgName);
+                nsgName,
+                loadBalancerName,
+                loadBalancerResourceGroupName,
+                backendPoolName);
     }
 
     @Extension
@@ -1555,7 +1599,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String jvmOptions) {
+                @QueryParameter String jvmOptions,
+                @QueryParameter String loadBalancerName,
+                @QueryParameter String loadBalancerResourceGroupName,
+                @QueryParameter String backendPoolName) {
             Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
 
             ImageReferenceTypeClass image = new ImageReferenceTypeClass(
@@ -1612,7 +1659,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "galleryImageDefinition: {30}\n\t"
                             + "galleryImageVersion: {31}\n\t"
                             + "galleryResourceGroup: {32}\n\t"
-                            + "gallerySubscriptionId: {33}",
+                            + "gallerySubscriptionId: {33}\n\t"
+                            + "loadBalancerName: {34};\n\t"
+                            + "loadBalancerResourceGroupName: {35};\n\t"
+                            + "backendPoolName: {36};",
                     new Object[]{
                             "",
                             "",
@@ -1647,7 +1697,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryImageDefinition,
                             galleryImageVersion,
                             galleryResourceGroup,
-                            gallerySubscriptionId});
+                            gallerySubscriptionId,
+                            loadBalancerName,
+                            loadBalancerResourceGroupName,
+                            backendPoolName});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1680,7 +1733,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     resourceGroupName,
                     false,
                     usePrivateIP,
-                    nsgName);
+                    nsgName,
+                    loadBalancerName,
+                    loadBalancerResourceGroupName,
+                    backendPoolName);
 
             if (errors.size() > 0) {
                 StringBuilder errorString = new StringBuilder(Messages.Azure_GC_Template_Error_List()).append("\n");

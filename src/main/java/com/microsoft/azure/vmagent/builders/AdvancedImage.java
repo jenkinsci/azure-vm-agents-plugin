@@ -57,6 +57,12 @@ public class AdvancedImage {
 
     private String nsgName;
 
+    private String loadBalancerName;
+
+    private String loadBalancerResourceGroupName;
+
+    private String backendPoolName;
+
     private String jvmOptions;
 
     private String noOfParallelJobs;
@@ -90,6 +96,9 @@ public class AdvancedImage {
                          String subnetName,
                          boolean usePrivateIP,
                          String nsgName,
+                         String loadBalancerName,
+                         String loadBalancerResourceGroupName,
+                         String backendPoolName,
                          String jvmOptions,
                          String noOfParallelJobs,
                          boolean templateDisabled) {
@@ -120,6 +129,9 @@ public class AdvancedImage {
         this.subnetName = subnetName;
         this.usePrivateIP = usePrivateIP;
         this.nsgName = nsgName;
+        this.loadBalancerName = loadBalancerName;
+        this.loadBalancerResourceGroupName = loadBalancerResourceGroupName;
+        this.backendPoolName = backendPoolName;
         this.jvmOptions = jvmOptions;
         this.noOfParallelJobs = noOfParallelJobs;
         this.templateDisabled = templateDisabled;
@@ -231,6 +243,18 @@ public class AdvancedImage {
 
     public String getNsgName() {
         return nsgName;
+    }
+
+    public String getLoadBalancerName() {
+        return loadBalancerName;
+    }
+
+    public String getLoadBalancerResourceGroupName() {
+        return loadBalancerResourceGroupName;
+    }
+
+    public String getBackendPoolName() {
+        return backendPoolName;
     }
 
     public String getJvmOptions() {

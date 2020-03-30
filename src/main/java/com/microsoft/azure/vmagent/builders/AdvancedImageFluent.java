@@ -60,6 +60,12 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String nsgName;
 
+    private String loadBalancerName;
+
+    private String loadBalancerResourceGroupName;
+
+    private String backendPoolName;
+
     private String jvmOptions;
 
     private String noOfParallelJobs;
@@ -195,6 +201,21 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.nsgName = nsgName;
         return (T) this;
     }
+    
+    public T withLoadBalancerName(String loadBalancerName) {
+    	this.loadBalancerName = loadBalancerName;
+    	return (T) this;
+    }
+
+	public T withLoadBalancerResourceGroupName(String loadBalancerResourceGroupName) {
+		this.loadBalancerResourceGroupName= loadBalancerResourceGroupName;
+		return (T) this;
+	}
+
+    public T withBackendPoolName(String backendPoolName) {
+    	this.backendPoolName = backendPoolName;
+    	return (T) this;
+    }
 
     public T withJvmOptions(String jvmOptions) {
         this.jvmOptions = jvmOptions;
@@ -317,6 +338,18 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public String getNsgName() {
         return nsgName;
+    }
+
+    public String getLoadBalancerName() {
+    	return loadBalancerName;
+    }
+
+	public String getLoadBalancerResourceGroupName() {
+		return loadBalancerResourceGroupName;
+	}
+
+    public String getBackendPoolName() {
+    	return backendPoolName;
     }
 
     public String getJvmOptions() {
