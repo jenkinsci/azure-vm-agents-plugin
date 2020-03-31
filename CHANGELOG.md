@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.4.1 2020-03-31
+* Fix agents getting deleted on reboot when using JCasC 
+
 ## version 1.4.0 2020-02-04
 * Add termination script support
 * Add retry logic for connecting agents with SSH
