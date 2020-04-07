@@ -75,11 +75,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -129,6 +131,8 @@ public class AzureVMCloud extends Cloud {
     private transient Supplier<Azure> azureClient = createAzureClientSupplier();
 
     private List<AzureTagPair> cloudTags;
+
+    private transient ConcurrentHashMap<AzureVMAgent, AtomicInteger> agentLocks = new ConcurrentHashMap<>();
 
     private Supplier<Azure> createAzureClientSupplier() {
         return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
@@ -675,44 +679,49 @@ public class AzureVMCloud extends Cloud {
 
                             plannedNodes.add(new PlannedNode(agentNode.getNodeName(),
                                     Computer.threadPoolForRemoting.submit(() -> {
-                                        synchronized (agentNode) {
-                                            SlaveComputer computer = agentNode.getComputer();
+                                        final Object agentLock = getLockForAgent(agentNode);
+                                        try {
+                                            synchronized (agentLock) {
+                                                SlaveComputer computer = agentNode.getComputer();
 
-                                            if (computer != null && computer.isOnline()) {
+                                                if (computer != null && computer.isOnline()) {
+                                                    return agentNode;
+                                                }
+                                                LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
+                                                        agentNode.getNodeName());
+
+                                                try {
+                                                    getServiceDelegate().startVirtualMachine(agentNode);
+                                                    // set virtual machine details again
+                                                    getServiceDelegate().setVirtualMachineDetails(
+                                                            agentNode, template);
+                                                    Jenkins.getInstance().addNode(agentNode);
+                                                    if (agentNode.getAgentLaunchMethod()
+                                                            .equalsIgnoreCase("SSH")) {
+                                                        retrySshConnect(azureComputer);
+                                                    } else { // Wait until node is online
+                                                        waitUntilJNLPNodeIsOnline(agentNode);
+                                                    }
+                                                    LOGGER.info(String.format("Remove suspended status for node: %s",
+                                                            agentNode.getNodeName()));
+                                                    azureComputer.setAcceptingTasks(true);
+                                                    agentNode.clearCleanUpAction();
+                                                    agentNode.setEligibleForReuse(false);
+                                                } catch (Exception e) {
+                                                    properties.put("Message", e.getMessage());
+                                                    AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                            "ProvisionFailed",
+                                                            properties);
+                                                    throw AzureCloudException.create(e);
+                                                }
+                                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
+                                                        "Provision",
+                                                        properties);
+                                                template.getTemplateProvisionStrategy().success();
                                                 return agentNode;
                                             }
-                                            LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
-                                                    agentNode.getNodeName());
-
-                                            try {
-                                                getServiceDelegate().startVirtualMachine(agentNode);
-                                                // set virtual machine details again
-                                                getServiceDelegate().setVirtualMachineDetails(
-                                                        agentNode, template);
-                                                Jenkins.getInstance().addNode(agentNode);
-                                                if (agentNode.getAgentLaunchMethod()
-                                                        .equalsIgnoreCase("SSH")) {
-                                                    retrySshConnect(azureComputer);
-                                                } else { // Wait until node is online
-                                                    waitUntilJNLPNodeIsOnline(agentNode);
-                                                }
-                                                LOGGER.info(String.format("Remove suspended status for node: %s",
-                                                        agentNode.getNodeName()));
-                                                azureComputer.setAcceptingTasks(true);
-                                                agentNode.clearCleanUpAction();
-                                                agentNode.setEligibleForReuse(false);
-                                            } catch (Exception e) {
-                                                properties.put("Message", e.getMessage());
-                                                AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
-                                                        "ProvisionFailed",
-                                                        properties);
-                                                throw AzureCloudException.create(e);
-                                            }
-                                            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT,
-                                                    "Provision",
-                                                    properties);
-                                            template.getTemplateProvisionStrategy().success();
-                                            return agentNode;
+                                        } finally {
+                                            releaseLockForAgent(agentNode);
                                         }
                                     }), template.getNoOfParallelJobs()));
                         }
@@ -1002,6 +1011,21 @@ public class AzureVMCloud extends Cloud {
         }
 
         return false;
+    }
+
+    private Object getLockForAgent(AzureVMAgent agent) {
+        AtomicInteger lockCount = agentLocks.computeIfAbsent(agent, (a) -> new AtomicInteger(0));
+        lockCount.incrementAndGet();
+        return lockCount;
+    }
+
+    private void releaseLockForAgent(AzureVMAgent agent) {
+
+        AtomicInteger lockCount = agentLocks.get(agent);
+        if (lockCount != null) {
+           lockCount.decrementAndGet();
+        }
+        agentLocks.remove(agent, new AtomicInteger(0));
     }
 
     public Azure getAzureClient() {
