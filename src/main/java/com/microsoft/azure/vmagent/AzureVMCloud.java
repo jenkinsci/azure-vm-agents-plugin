@@ -132,7 +132,8 @@ public class AzureVMCloud extends Cloud {
 
     private List<AzureTagPair> cloudTags;
 
-    private transient ConcurrentHashMap<AzureVMAgent, AtomicInteger> agentLocks = new ConcurrentHashMap<>();
+    //The map should not be accessed without acquiring a lock of the map
+    private final transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
 
     private Supplier<Azure> createAzureClientSupplier() {
         return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
@@ -1014,18 +1015,23 @@ public class AzureVMCloud extends Cloud {
     }
 
     private Object getLockForAgent(AzureVMAgent agent) {
-        AtomicInteger lockCount = agentLocks.computeIfAbsent(agent, (a) -> new AtomicInteger(0));
-        lockCount.incrementAndGet();
-        return lockCount;
+        synchronized (agentLocks) {
+            AtomicInteger lockCount = agentLocks.computeIfAbsent(agent, (a) -> new AtomicInteger(0));
+            lockCount.incrementAndGet();
+            return lockCount;
+        }
     }
 
     private void releaseLockForAgent(AzureVMAgent agent) {
-
-        AtomicInteger lockCount = agentLocks.get(agent);
-        if (lockCount != null) {
-           lockCount.decrementAndGet();
+        synchronized (agentLocks) {
+            AtomicInteger lockCount = agentLocks.get(agent);
+            if (lockCount != null) {
+                int currentLockCount = lockCount.decrementAndGet();
+                if (currentLockCount == 0) {
+                    agentLocks.remove(agent);
+                }
+            }
         }
-        agentLocks.remove(agent, new AtomicInteger(0));
     }
 
     public Azure getAzureClient() {
