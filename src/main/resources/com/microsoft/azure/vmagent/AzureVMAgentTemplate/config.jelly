@@ -230,6 +230,9 @@
                         <f:textbox/>
                     </f:entry>
 
+                    <f:entry title="${%Java path}" field="javaPath" help="/plugin/azure-vm-agents/help-javaPath.html">
+                        <f:textbox default="java" />
+                    </f:entry>
 
                     <f:entry title="${%JVM_Options}" field="jvmOptions" help="/plugin/azure-vm-agents/help-jvmOptions.html">
                         <f:textbox/>

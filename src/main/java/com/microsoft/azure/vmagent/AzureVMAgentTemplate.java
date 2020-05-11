@@ -57,6 +57,7 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
@@ -331,6 +332,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String uamiID;
 
+    private String javaPath;
+
     private RetentionStrategy retentionStrategy;
 
 
@@ -558,6 +561,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Restricted(NoExternalUse.class)
     public String getAvailabilitySet() {
         return availabilityType != null ? availabilityType.getAvailabilitySet() : null;
+    }
+
+    public String getJavaPath() {
+        return javaPath;
+    }
+
+    @DataBoundSetter
+    public void setJavaPath(String javaPath) {
+        this.javaPath = javaPath;
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
