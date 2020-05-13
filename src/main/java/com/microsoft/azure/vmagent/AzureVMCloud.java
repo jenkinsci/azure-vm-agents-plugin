@@ -1027,11 +1027,6 @@ public class AzureVMCloud extends Cloud {
             if (lockCount != null && lockCount.decrementAndGet() == 0) {
                 agentLocks.remove(agent);
             }
-                int currentLockCount = lockCount.decrementAndGet();
-                if (currentLockCount == 0) {
-                    agentLocks.remove(agent);
-                }
-            }
         }
     }
 
