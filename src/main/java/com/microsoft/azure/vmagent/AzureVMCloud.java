@@ -1024,7 +1024,9 @@ public class AzureVMCloud extends Cloud {
     private void releaseLockForAgent(AzureVMAgent agent) {
         synchronized (agentLocks) {
             AtomicInteger lockCount = agentLocks.get(agent);
-            if (lockCount != null) {
+            if (lockCount != null && lockCount.decrementAndGet() == 0) {
+                agentLocks.remove(agent);
+            }
                 int currentLockCount = lockCount.decrementAndGet();
                 if (currentLockCount == 0) {
                     agentLocks.remove(agent);
