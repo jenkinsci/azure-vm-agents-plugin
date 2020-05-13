@@ -226,7 +226,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: checking for java runtime");
 
-            if (executeRemoteCommand(session, "java -fullversion", logger, isUnix) != 0) {
+            if (executeRemoteCommand(session, agent.getJavaPath() + " -fullversion", logger, isUnix) != 0) {
                 LOGGER.info("AzureVMAgentSSHLauncher: launch: Java not found. "
                         + "At a minimum init script should ensure that java runtime is installed");
                 handleLaunchFailure(agent, Constants.AGENT_POST_PROV_JAVA_NOT_FOUND);
@@ -239,7 +239,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             copyFileToRemote(session, inputStream, "remoting.jar");
 
             String jvmopts = agent.getJvmOptions();
-            String execCommand = "java " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar remoting.jar";
+            String execCommand = agent.getJavaPath() + " " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar remoting.jar";
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launching agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");

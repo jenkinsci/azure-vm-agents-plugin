@@ -130,6 +130,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final String uamiID;
 
+    private String javaPath;
+
     private boolean eligibleForReuse;
 
     private final AzureVMAgentTemplate template;
@@ -172,6 +174,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean enableUAMI,
             boolean ephemeralOSDisk,
             String uamiID,
+            String javaPath,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -192,6 +195,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.osType = osType;
         this.mode = mode;
         this.agentLaunchMethod = agentLaunchMethod;
+        if (javaPath == null) {
+            this.javaPath = "java";
+        } else {
+            this.javaPath = javaPath;
+        }
         this.setCleanUpAction(cleanUpAction);
         this.setCleanUpReason(cleanUpReason);
         this.resourceGroupName = resourceGroupName;
@@ -238,7 +246,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             String uamiID,
             AzureVMAgentTemplate template,
-            String fqdn) throws FormException, IOException {
+            String fqdn,
+            String javaPath) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -277,7 +286,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 enableUAMI,
                 ephemeralOSDisk,
                 uamiID,
-                template);
+                javaPath,
+                template
+        );
 
         this.provisioningId = id;
     }
@@ -289,6 +300,14 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     @Override
     public Mode getMode() {
         return mode;
+    }
+
+    public String getJavaPath() {
+        if (javaPath == null) {
+            return "java";
+        }
+
+        return javaPath;
     }
 
     public String getVMCredentialsId() {

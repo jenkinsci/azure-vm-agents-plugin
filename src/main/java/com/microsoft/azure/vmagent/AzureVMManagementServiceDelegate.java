@@ -1040,7 +1040,8 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("ephemeralOSDisk"),
                     (String) properties.get("uamiID"),
                     template,
-                    fqdn);
+                    fqdn,
+                    template.getJavaPath());
         } catch (FormException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occurred while creating agent object", e);
