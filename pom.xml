@@ -53,7 +53,7 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>1.6.1</azure-credentials.version>
         <azure-commons.version>1.0.3</azure-commons.version>
-        <guava.version>19.0</guava.version>
+        <guava.version>24.1.1-jre</guava.version>
         <configuration-as-code.version>1.35</configuration-as-code.version>
     </properties>
 
