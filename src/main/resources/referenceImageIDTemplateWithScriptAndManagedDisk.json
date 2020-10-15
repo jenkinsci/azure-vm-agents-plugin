@@ -38,6 +38,9 @@
             "tags": {
                 "JenkinsManagedTag": "[variables('jenkinsTag')]",
                 "JenkinsResourceTag": "[variables('resourceTag')]"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true
             }
         },
         {

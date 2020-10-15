@@ -30,6 +30,9 @@
             "tags": {
                 "JenkinsManagedTag": "[variables('jenkinsTag')]",
                 "JenkinsResourceTag": "[variables('resourceTag')]"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true
             }
         },
         {
@@ -92,7 +95,7 @@
                     "osDisk": {
                         "name": "osdisk",
                         "vhd": {
-                            "uri": "[concat('http://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
+                            "uri": "[concat('https://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
                         },
                         "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
                         "diffDiskSettings": "[if(bool(variables('ephemeralOSDisk')), json('{\"option\": \"Local\"}'), json('null'))]",
