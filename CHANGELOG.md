@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.5.1 2020-10-26
+* Update maintainer
+
 ## version 1.5.0 2020-05-13
 * Allow configuring path to java
 * Fix deadlock bug [JENKINS-54776](https://issues.jenkins-ci.org/browse/JENKINS-54776)
