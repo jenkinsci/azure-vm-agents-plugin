@@ -387,13 +387,23 @@ public final class AzureVMManagementServiceDelegate {
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
                     if (type.contains("virtualMachine")) {
-                        // If MSI is enabled, need to add identity node in virtualMachine resource
-                        if (msiEnabled) {
+                        // Determine if User assigned, System assigned or both
+                        // types of identity should be requested.
+                        // https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/createorupdate#resourceidentitytype
+                        if (msiEnabled && uamiEnabled) {
+                            String uamiID = template.getUamiID();
+                            ObjectNode identityNode = mapper.createObjectNode();
+                            identityNode.put("type", "SystemAssigned, UserAssigned");
+                            ObjectNode resourceId = mapper.createObjectNode();
+                            resourceId.replace(uamiID, mapper.createObjectNode());
+                            identityNode.replace("userAssignedIdentities", resourceId);
+
+                            ((ObjectNode) resource).replace("identity", identityNode);
+                        } else if (msiEnabled) {
                             ObjectNode identityNode = mapper.createObjectNode();
                             identityNode.put("type", "systemAssigned");
                             ((ObjectNode) resource).replace("identity", identityNode);
-                        }
-                        if (uamiEnabled) {
+                        } else if (uamiEnabled) {
                             String uamiID = template.getUamiID();
                             ObjectNode identityNode = mapper.createObjectNode();
                             identityNode.put("type", "UserAssigned");

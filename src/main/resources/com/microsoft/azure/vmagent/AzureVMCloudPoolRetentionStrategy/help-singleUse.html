@@ -1,0 +1,15 @@
+<div>
+    Destroy each instance after it has run a build.
+
+    This is similar to the Once retention strategy, except it is part of the
+    pool strategy so that the plugin can ensure there are instances ready
+    to accept incoming builds.
+
+    If you use the once strategy (not this option to the pool strategy),
+    each node will be provisioned on demand which adds provisioning time
+    to the build time.
+
+    Alternatively if you use the pool strategy with this option and Spare Pool
+    enabled, you can have single use instances that are provisioned in advance
+    and ready for instant use.
+</div>
