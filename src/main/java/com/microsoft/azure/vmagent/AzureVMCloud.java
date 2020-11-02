@@ -132,7 +132,7 @@ public class AzureVMCloud extends Cloud {
     private List<AzureTagPair> cloudTags;
 
     //The map should not be accessed without acquiring a lock of the map
-    private final transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
+    private transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
 
     private Supplier<Azure> createAzureClientSupplier() {
         return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
@@ -194,6 +194,7 @@ public class AzureVMCloud extends Cloud {
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         azureClient = createAzureClientSupplier();
+        agentLocks = new HashMap<>();
         configurationStatus = Constants.UNVERIFIED;
         synchronized (this) {
             // Ensure that renamed field is set
