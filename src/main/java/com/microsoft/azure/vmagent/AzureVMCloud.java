@@ -56,6 +56,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
@@ -558,8 +559,13 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
-                final Azure newAzureClient = AzureClientUtil.getClient(credentialsId);
-                final Deployment dep = newAzureClient.deployments().getByName(deploymentName);
+                Pair<Azure, Deployment> deploymentPair = getDeploymentWithName(deploymentName);
+                if (deploymentPair == null) {
+                    LOGGER.log(Level.WARNING, "AzureVMCloud: get deployment failed");
+                }
+                final Azure newAzureClient = deploymentPair.getLeft();
+                final Deployment dep = deploymentPair.getRight();
+                LOGGER.log(Level.INFO, "getDeploymentTimeout: " + getDeploymentTimeout());
                 // Might find no deployment.
                 if (dep == null) {
                     throw AzureCloudException.create(
@@ -1028,6 +1034,56 @@ public class AzureVMCloud extends Cloud {
                 agentLocks.remove(agent);
             }
         }
+    }
+
+    /**
+     * Get deployment with retry
+     * <p>
+     * try  get the deployment with deploy name. will try 10 times up to 5 minutes
+     * <p/>
+     *
+     * @param deploymentName
+     */
+    public Pair<Azure, Deployment> getDeploymentWithName(String deploymentName) {
+        Deployment dep = null;
+        Azure localAzureClient = null;
+        boolean reqFailed = false;
+        final int maxRetryTimes = 10;
+        int retryTimes = 0;
+        final long retryDelayMillis = 30000;
+
+        while (retryTimes < maxRetryTimes) {
+            LOGGER.log(Level.INFO, "Get Deployment with retry. RetryTimes: "
+                    + retryTimes + " , MaxRetry: " + maxRetryTimes);
+            try {
+                //recreate new client in case for connection timeout
+                localAzureClient = AzureClientUtil.getClient(credentialsId);
+                dep = localAzureClient.deployments().getByName(deploymentName);
+            } catch (Exception e) {
+                reqFailed = true;
+                LOGGER.log(Level.WARNING, "Get resource deployment failed. DeploymentName: "
+                        + deploymentName, e);
+            }
+
+            //get response success
+            if (!reqFailed) {
+                LOGGER.log(Level.INFO, "Get Deployment success. RetryTimes "
+                        + retryTimes + " , MaxRetry: " + maxRetryTimes);
+                return Pair.of(localAzureClient, dep);
+            }
+
+            //handle retry
+            reqFailed = false;
+            retryTimes++;
+            try {
+                Thread.sleep(retryDelayMillis);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Get Deployment retry failed with exceptions", e);
+            }
+        }
+        LOGGER.log(Level.SEVERE, "Get Deployment with retry failed. RetryTimes: "
+                + retryTimes + " , MaxRetry: " + maxRetryTimes);
+        return null;
     }
 
     public Azure getAzureClient() {
