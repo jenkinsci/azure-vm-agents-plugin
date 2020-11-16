@@ -1,7 +1,7 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:c="/lib/credentials"
          xmlns:f="/lib/form" xmlns:ui="/lib/azure">
-    <table width="100%">
+    <div>
         <f:section title="${%General_Configuration}">
             <f:entry title="${%Template_Name}" field="templateName"
                      help="/plugin/azure-vm-agents/help-templateName.html">
@@ -48,13 +48,13 @@
 
             <f:entry title="${%Storage_Account_Name}">
                 <ui:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new')}" inline="true">
-                    <f:entry field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
+                    <f:entry title="${%Name}" field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:textbox/>
                     </f:entry>
                 </ui:radioBlock>
 
                 <ui:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
-                    <f:entry field="existingStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
+                    <f:entry title="${%Name}" field="existingStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>
                 </ui:radioBlock>
@@ -270,5 +270,5 @@
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
                           with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
-    </table>
+    </div>
 </j:jelly>
