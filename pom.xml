@@ -52,7 +52,7 @@
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>1.6.1</azure-credentials.version>
-        <azure-commons.version>1.0.6-SNAPSHOT</azure-commons.version>
+        <azure-commons.version>1.0.6-rc220.c094849fd287</azure-commons.version>
         <guava.version>24.1.1-jre</guava.version>
         <configuration-as-code.version>1.35</configuration-as-code.version>
     </properties>
