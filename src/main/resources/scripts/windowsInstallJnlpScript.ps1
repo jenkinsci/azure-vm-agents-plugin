@@ -1,14 +1,14 @@
-# Install Slaves jar and connect via JNLP
+# Install Agent jar and connect via JNLP
 # Jenkins plugin will dynamically pass the server name and vm name.
-# If your jenkins server is configured for security , make sure to edit command for how slave executes
+# If your jenkins server is configured for security , make sure to edit command for how agent executes
 $jenkinsserverurl = $args[0]
 $vmname = $args[1]
 $secret = $args[2]
 
-# Downloading jenkins slaves jar
-Write-Output "Downloading jenkins slave jar "
-$slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
-$destSource = "C:\slave.jar"
+# Downloading jenkins agent jar
+Write-Output "Downloading jenkins agent jar "
+$slaveSource = $jenkinsserverurl + "jnlpJars/agent.jar"
+$destSource = "C:\agent.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
@@ -18,7 +18,7 @@ $java="java"
 $jar="-jar"
 $jnlpUrl="-jnlpUrl"
 $secretFlag="-secret"
-$serverURL=$jenkinsserverurl+"computer/" + $vmname + "/slave-agent.jnlp"
+$serverURL=$jenkinsserverurl+"computer/" + $vmname + '/jenkins-agent.jnlp'
 while ($true) {
   try {
     # Launch
