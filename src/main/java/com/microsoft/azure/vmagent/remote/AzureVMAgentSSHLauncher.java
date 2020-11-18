@@ -82,7 +82,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         final boolean isUnix = agent.getOsType().equals(OperatingSystemTypes.LINUX);
         // Check if VM is already stopped or stopping or getting deleted ,
         // if yes then there is no point in trying to connect
-        // Added this check - since after restarting jenkins master,
+        // Added this check - since after restarting jenkins controller,
         // jenkins is trying to connect to all the agents although agents are suspended.
         // This still means that a delete agent will eventually get cleaned up.
         try {

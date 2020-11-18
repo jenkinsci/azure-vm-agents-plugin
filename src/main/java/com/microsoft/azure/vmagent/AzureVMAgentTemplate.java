@@ -1316,7 +1316,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public String doFillAvailabilityTypeValueItems() {
+        public ListBoxModel doFillAvailabilityTypeValueItems() {
             return null;
         }
 
@@ -1451,7 +1451,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public String doFillImageReferenceTypeValueItems() {
+        public ListBoxModel doFillImageReferenceTypeValueItems() {
             return null;
         }
 

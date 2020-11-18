@@ -72,10 +72,10 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 ### Run Jenkins Jobs on Azure VM Agents
 After you configured an Azure VM agent template, when you run a new Jenkins job, Jenkins will automatically provision a new Azure VM only if there is no executor available.
 
-A more common scenario is you want to restrict some jobs to always be running on a particular VM agent instead of Jenkins master. To achieve that:
+A more common scenario is you want to restrict some jobs to always be running on a particular VM agent instead of Jenkins controller. To achieve that:
 1. Open your Jenkins project, under General, check "Restrict where this project can be run".
 2. In Label Expression, fill in the label you assigned to your VM template.
-3. Save and run the job, you'll see your job is running on the VM agent even if Jenkins master is free.
+3. Save and run the job, you'll see your job is running on the VM agent even if Jenkins controller is free.
 
 For how to select agent in pipeline, refer to this [doc](https://jenkins.io/doc/book/pipeline/syntax/#agent).
 
@@ -87,7 +87,7 @@ The built-in image only has a clean Windows or Ubuntu OS and some tools like Git
    * Using any marketplace image by specifying an image reference (provide image reference by publisher, offer, sku and version). You can get the publisher, offer and sku by looking at the ARM template of that image.
 3. For the launch method, select SSH or JNLP.
    * Linux agents can be launched only using SSH.
-   * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then check Pre-Install SSH in Windows Slave or image needs to be custom-prepared with an SSH server pre-installed.
+   * Windows agents can be launched using SSH or JNLP. For Windows agents, if the launch method is SSH then check Pre-Install SSH in Windows Agent or image needs to be custom-prepared with an SSH server pre-installed.
 
    We recommend to use SSH rather than JNLP, for you need less init codes and get much clearer logs.
    > When using the JNLP launch option, ensure the following:
@@ -96,7 +96,7 @@ The built-in image only has a clean Windows or Ubuntu OS and some tools like Git
    > * TCP port for JNLP agent agents (Manage Jenkins -> Configure Global Security -> Enable security -> TCP port for JNLP agents).
    > * The TCP port needs to be reachable from the Azure agent launched using JNLP. It is recommended to use a fixed port so that any necessary firewall exceptions can be made.
    > 
-   > If the Jenkins master is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and,
+   > If the Jenkins controller is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and,
    > in case of Windows, add the necessary firewall rules inside virtual machine (Run -> firewall.cpl).
 
 4. For the Initialization Script, you can provide a script that will be executed after the VM is provisioned. This allows to install any app/tool you need on the agent. Please be noted you need to at least install JRE if the image does not have Java pre-installed.
@@ -114,7 +114,7 @@ The built-in image only has a clean Windows or Ubuntu OS and some tools like Git
 If you choose Use Advanced Image Configurations, you can click on Advanced button where you can find more VM configurations:
 1. Virtual Network Name, Virtual Network Resource Group Name and Subnet name: by default the VM does not belong to any virtual network, you can provide one if you want the VM to be in a virtual network for network security. Please be noted the virtual network must exist.
 2. Make VM agent IP private: by default the plugin will create a public IP for the VM so it's public accessible on internet. Check this option if you don't want the public IP to be created.
-   > Make VM agent IP private can make the VM more secure, but if you configured to use SSH to launch agent, Jenkins master needs to be able to access the VM. So in this case you need to also specify virtual network and subnet name so the agent and Jenkins master are in the same subnet.
+   > Make VM agent IP private can make the VM more secure, but if you configured to use SSH to launch agent, Jenkins controller needs to be able to access the VM. So in this case you need to also specify virtual network and subnet name so the agent and Jenkins master are in the same subnet.
 
 3. Network Security Group Name: add the VM to a network security group.
 4. JVM Options: specify JVM options.

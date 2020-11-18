@@ -19,15 +19,15 @@ $jreInstallDir=$baseDir + '\jre\'
 C:\Jenkins\jdk.exe /s INSTALLDIR=$jdkInstallDir /INSTALLDIRPUBJRE=$jdkInstallDir
 
 $javaExe=$jdkInstallDir + '\bin\java.exe'
-$jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/slave.jar"
-$destinationSlaveJarPath = $baseDir + '\slave.jar'
+$jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/agent.jar"
+$destinationSlaveJarPath = $baseDir + '\agent.jar'
 
 # Download the jar file
 $client = new-object System.Net.WebClient
 $client.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)
 
 # Calculate the jnlpURL
-$jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/slave-agent.jnlp'
+$jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/jenkins-agent.jnlp'
 
 while ($true) {
     try {

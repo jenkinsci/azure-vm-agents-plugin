@@ -190,7 +190,7 @@ public final class Constants {
      */
     public static final String JNLP_POST_PROV_LAUNCH_FAIL
             = "Provisioning Failure: JNLP agent failed to connect. Make sure that "
-            + "agent node is able to reach master and necessary firewall rules are configured";
+            + "agent node is able to reach controller and necessary firewall rules are configured";
 
     public static final String AGENT_POST_PROV_JAVA_NOT_FOUND
             = "Post Provisioning Failure: Java runtime not found. At a minimum init script "
