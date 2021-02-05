@@ -93,6 +93,8 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.getUsePrivateIP(), is(true));
 
         assertThat(template.getVirtualMachineSize(), is("Standard_A2"));
+
+        assertThat(template.isSpotInstance(), is(false));
     }
 
     @Test

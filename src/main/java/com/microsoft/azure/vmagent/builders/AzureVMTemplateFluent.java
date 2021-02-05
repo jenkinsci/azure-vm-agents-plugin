@@ -49,6 +49,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String credentialsId;
 
+    private boolean spotInstance;
+
     public AzureVMTemplateFluent() {
         location = "Japan West";
         virtualMachineSize = "Standard_A0";
@@ -63,6 +65,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         availability = new AvailabilityBuilder().build();
         builtInImage = new BuiltInImageBuilder().build();
         advancedImage = new AdvancedImageBuilder().build();
+        spotInstance = false;
     }
 
     //CHECKSTYLE:OFF
@@ -179,6 +182,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
 
+    public T withSpotInstance(boolean isSpotInstance) {
+        this.spotInstance = isSpotInstance;
+        return (T) this;
+    }
+
     public AdvancedImageNested addNewAdvancedImage() {
         return new AdvancedImageNested();
     }
@@ -275,6 +283,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public boolean isSpotInstance() {
+        return spotInstance;
     }
 
     public class BuiltInImageNested extends BuiltInImageFluent<BuiltInImageNested> {

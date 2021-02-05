@@ -132,6 +132,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private String javaPath;
 
+    private final boolean spotInstance;
+
     private boolean eligibleForReuse;
 
     private final AzureVMAgentTemplate template;
@@ -175,6 +177,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             String uamiID,
             String javaPath,
+            boolean spotInstance,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -209,6 +212,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.enableUAMI = enableUAMI;
         this.ephemeralOSDisk = ephemeralOSDisk;
         this.uamiID = uamiID;
+        this.spotInstance = spotInstance;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
     }
@@ -247,7 +251,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String uamiID,
             AzureVMAgentTemplate template,
             String fqdn,
-            String javaPath) throws FormException, IOException {
+            String javaPath,
+            boolean spotInstance) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -287,6 +292,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 ephemeralOSDisk,
                 uamiID,
                 javaPath,
+                spotInstance,
                 template
         );
 
@@ -486,6 +492,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean isEphemeralOSDisk() {
         return ephemeralOSDisk;
+    }
+
+    public boolean isSpotInstance() {
+        return spotInstance;
     }
 
     public AzureVMAgentTemplate getTemplate() {

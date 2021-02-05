@@ -32,6 +32,7 @@
         azureVMCloudRetentionStrategy:
           idleTerminationMinutes: 60
       shutdownOnIdle: false
+      spotInstance: false
       storageAccountNameReferenceType: "new"
       storageAccountType: "Standard_LRS"
       templateDisabled: false

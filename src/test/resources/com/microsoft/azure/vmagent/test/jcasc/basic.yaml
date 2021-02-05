@@ -41,3 +41,4 @@ jenkins:
             usageMode: "Use this node as much as possible"
             usePrivateIP: false
             virtualMachineSize: "Standard_DS2_v2"
+            spotInstance: false 

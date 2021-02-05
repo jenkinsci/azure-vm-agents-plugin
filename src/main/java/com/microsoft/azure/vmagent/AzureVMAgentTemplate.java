@@ -334,6 +334,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String javaPath;
 
+    private final boolean spotInstance;
+
     private RetentionStrategy retentionStrategy;
 
 
@@ -400,7 +402,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
             boolean enableUAMI,
-            String uamiID) {
+            String uamiID,
+            boolean spotInstance) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -458,6 +461,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.uamiID = uamiID;
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
+        this.spotInstance = spotInstance;
 
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
@@ -646,6 +650,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? false : template.isEphemeralOSDisk());
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
+        templateProperties.put("spotInstance",
+                isBasic ? false : template.isSpotInstance());
 
         return templateProperties;
     }
@@ -857,6 +863,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public boolean isEphemeralOSDisk() {
         return ephemeralOSDisk;
+    }
+
+    public boolean isSpotInstance() {
+        return spotInstance;
     }
 
     public int getOsDiskSize() {

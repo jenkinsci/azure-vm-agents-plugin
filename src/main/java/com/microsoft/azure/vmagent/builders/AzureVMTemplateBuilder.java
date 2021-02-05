@@ -39,6 +39,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         } else {
             fluent.withAdvancedImage(template.getAdvancedImageInside());
         }
+        fluent.withSpotInstance(template.isSpotInstance());
     }
 
     public AzureVMTemplateBuilder(AzureVMTemplateFluent<?> fluent) {
@@ -127,6 +128,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
                 fluent.getAdvancedImage().isEnableMSI(),
                 fluent.getAdvancedImage().isEnableUAMI(),
-                fluent.getAdvancedImage().getUamiID());
+                fluent.getAdvancedImage().getUamiID(),
+                fluent.isSpotInstance());
     }
 }

@@ -85,6 +85,8 @@ public class BasicConfigAsCodeTest {
         assertThat(template.getUsePrivateIP(), is(false));
 
         assertThat(template.getVirtualMachineSize(), is("Standard_DS2_v2"));
+
+        assertThat(template.isSpotInstance(), is(false));
     }
 
     @Test

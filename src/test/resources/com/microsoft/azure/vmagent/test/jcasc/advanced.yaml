@@ -59,3 +59,4 @@ jenkins:
             virtualMachineSize: "Standard_A2"
             virtualNetworkName: "vm-agent"
             virtualNetworkResourceGroupName: "vm-agent"
+            spotInstance: false

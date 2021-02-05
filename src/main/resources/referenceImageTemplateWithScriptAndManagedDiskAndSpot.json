@@ -1,0 +1,156 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+    "contentVersion": "2.0.0.0",
+    "parameters": {
+        "storageAccountKey": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "virtualNetworkName": "",
+        "virtualNetworkResourceGroupName": "",
+        "subnetName": "",
+        "nsgName": "",
+        "storageAccountName": "[concat('jnk',uniqueString(resourceGroup().id))]",
+        "vnetID": "[resourceId(variables('virtualNetworkResourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+        "publicIPAddressType": "Dynamic",
+        "storageAccountContainerName": "vhds",
+        "storageAccountType": "Standard_LRS",
+        "startupScriptURI": "",
+        "startupScriptName": "",
+        "jenkinsServerURL": "",
+        "clientSecrets": [],
+        "jenkinsTag": "ManagedByAzureVMAgents",
+        "resourceTag": "AzureJenkins",
+        "cloudTag": "",
+        "blobEndpointSuffix": ".blob.core.windows.net/"
+    },
+    "resources": [
+        {
+            "apiVersion": "2016-01-01",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
+            }
+        },
+        {
+            "apiVersion": "2019-04-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('vmName'), copyIndex(), 'NIC')]",
+            "location": "[variables('location')]",
+            "copy": {
+                "name": "vmcopy",
+                "count": "[parameters('count')]"
+            },
+            "dependsOn": [],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]"
+            }
+        },
+        {
+            "apiVersion": "2019-03-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(variables('vmName'), copyIndex())]",
+            "location": "[variables('location')]",
+            "copy": {
+                "name": "vmcopy",
+                "count": "[parameters('count')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('vmName'), copyIndex(), 'NIC')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(variables('vmName'), copyIndex())]",
+                    "adminUsername": "[variables('adminUsername')]",
+                    "adminPassword": "[variables('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[variables('imageSku')]",
+                        "version": "[variables('imageVersion')]"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "caching": "[if(bool(variables('ephemeralOSDisk')), 'ReadOnly', json('null'))]",
+                        "diffDiskSettings": "[if(bool(variables('ephemeralOSDisk')), json('{\"option\": \"Local\"}'), json('null'))]",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('storageAccountType')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmName'), copyIndex(), 'NIC'))]"
+                        }
+                    ]
+                },
+                "priority": "Spot",
+                "evictionPolicy": "Delete",
+                "billingProfile": {
+                    "maxPrice": -1
+                }
+            },
+            "resources": [
+                {
+                    "type": "extensions",
+                    "name": "[concat('customScript', variables('vmName'), copyIndex())]",
+                    "apiVersion": "2019-03-01",
+                    "location": "[variables('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex())]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.7",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[variables('startupScriptURI')]"
+                            ],
+                            "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File ', variables('startupScriptName'),' ', variables('jenkinsServerURL'),' ', variables('vmName'),copyIndex(),' ', variables('clientSecrets')[copyIndex()])]"
+                        },
+                        "protectedSettings": {
+                            "storageAccountName": "[variables('storageAccountName')]",
+                            "storageAccountKey": "[parameters('storageAccountKey')]"
+                      }
+                    }
+                }
+            ],
+            "tags": {
+                "JenkinsManagedTag": "[variables('jenkinsTag')]",
+                "JenkinsResourceTag": "[variables('resourceTag')]",
+                "JenkinsCloudTag": "[variables('cloudTag')]"
+            }
+        }
+    ]
+}

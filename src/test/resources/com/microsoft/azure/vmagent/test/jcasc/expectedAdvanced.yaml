@@ -48,6 +48,7 @@
         azureVMCloudRetentionStrategy:
           idleTerminationMinutes: 40
       shutdownOnIdle: false
+      spotInstance: false
       storageAccountNameReferenceType: "new"
       storageAccountType: "Standard_LRS"
       subnetName: "jenkins"
