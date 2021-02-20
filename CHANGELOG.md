@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin Changelog
 
+## version 1.5.3 2021-02-20
+* Update document
+
 ## version 1.5.2 2021-01-05
 * Fix compatibility with Jenkins core > 2.266
 

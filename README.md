@@ -1,5 +1,8 @@
 # Azure VM Agents Plugin
 
+> ***Important***: This plugin is being retired and will be out of support as of February 29, 2024. Azure CLI is the currently recommended way to integrate Jenkins with Azure services. Refer to [Tutorial: Scale Jenkins deployments with Azure VM agents](https://docs.microsoft.com/en-us/azure/developer/jenkins/scale-deployments-using-vm-agents) for more details.
+
+
 A Jenkins Plugin to create Jenkins agents in Azure Virtual Machines (via Azure ARM template).
 
 Supported features:
@@ -55,8 +58,8 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 8. Select the retention strategy
    * Idle Retention Strategy. You can specify the retention time in minutes. This defines the number of minutes Jenkins can wait before automatically deleting an idle agent. Specify 0 if you do not want idle agents to be deleted automatically.
    * Pool Retention Strategy. This retention strategy help you to maintain amount of agents in a specific number. You can specify the retention time in hour and the pool size.
-   * Once Retention Strategy. This retention strategy make sure to use one agent only once. 
-   
+   * Once Retention Strategy. This retention strategy make sure to use one agent only once.
+
    Retention time define the time of hour before automatically deleting since the agent created. And the pool size define the agent pool size you want to maintain.
    If you change your cloud name, template name or most of parameters (e.g. Region, Image), we will delete the existing agents at once and provision the new one according to your new template.
    But if you only change your Retention Time or Pool Size, we will only scale in, scale out or do nothing for you.
@@ -95,7 +98,7 @@ The built-in image only has a clean Windows or Ubuntu OS and some tools like Git
    > * The URL needs to be reachable by the Azure agent, so make sure to configure any relevant firewall rules accordingly.
    > * TCP port for JNLP agent agents (Manage Jenkins -> Configure Global Security -> Enable security -> TCP port for JNLP agents).
    > * The TCP port needs to be reachable from the Azure agent launched using JNLP. It is recommended to use a fixed port so that any necessary firewall exceptions can be made.
-   > 
+   >
    > If the Jenkins controller is running on Azure, then open an endpoint for "TCP port for JNLP agent agents" and,
    > in case of Windows, add the necessary firewall rules inside virtual machine (Run -> firewall.cpl).
 
