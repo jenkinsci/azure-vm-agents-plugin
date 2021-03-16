@@ -29,6 +29,10 @@
             <name>Xu Zhang</name>
             <email>xuzhang3@microsoft.com</email>
         </developer>
+        <developer>
+            <id>timja</id>
+            <name>Tim Jacomb</name>
+        </developer>
     </developers>
 
     <scm>
