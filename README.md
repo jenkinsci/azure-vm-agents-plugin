@@ -1,6 +1,6 @@
 # Azure VM Agents Plugin
 
-> ***Important***: This plugin is being retired and will be out of support as of February 29, 2024. Azure CLI is the currently recommended way to integrate Jenkins with Azure services. Refer to [Tutorial: Scale Jenkins deployments with Azure VM agents](https://docs.microsoft.com/en-us/azure/developer/jenkins/scale-deployments-using-vm-agents) for more details.
+> ***Important***: This plug-in is maintained by the Jenkins community and won’t be supported by Microsoft as of February 29, 2024.
 
 
 A Jenkins Plugin to create Jenkins agents in Azure Virtual Machines (via Azure ARM template).
