@@ -5,11 +5,11 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.13</version>
+        <version>4.17</version>
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
-    <version>${revision}${changelist}</version>
+    <version>${changelist}</version>
     <packaging>hpi</packaging>
 
     <name>Azure VM Agents</name>
@@ -36,15 +36,15 @@
     </developers>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/jenkinsci/azure-vm-agents-plugin.git</developerConnection>
-        <url>https://github.com/jenkinsci/azure-vm-agents-plugin</url>
+        <connection>scm:git:ssh://git@github.com/${gitHubRepo}.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/${gitHubRepo}.git</developerConnection>
+        <url>https://github.com/${gitHubRepo}</url>
         <tag>${scmTag}</tag>
     </scm>
 
     <properties>
-        <revision>1.5.4</revision>
-        <changelist>-SNAPSHOT</changelist>
+        <changelist>9999-SNAPSHOT</changelist>
+        <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <azuresdk.version>1.19.0</azuresdk.version>
@@ -58,7 +58,6 @@
         <azure-credentials.version>1.6.1</azure-credentials.version>
         <azure-commons.version>1.1.0</azure-commons.version>
         <guava.version>24.1.1-jre</guava.version>
-        <configuration-as-code.version>1.35</configuration-as-code.version>
     </properties>
 
     <dependencyManagement>
@@ -66,7 +65,7 @@
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-2.263.x</artifactId>
-                <version>17</version>
+                <version>26</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -288,7 +287,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
+                <version>3.1.1</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>8.41</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>validate</id>

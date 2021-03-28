@@ -159,13 +159,13 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     public T withEnableMSI(boolean enableMSI) {
         this.enableMSI = enableMSI;
         return (T) this;
-    }    
-    
+    }
+
     public T withEnableUAMI(boolean enableUAMI) {
         this.enableUAMI = enableUAMI;
         return (T) this;
     }
-    
+
     public T withGetUamiID(String uamiID) {
         this.uamiID = uamiID;
         return (T) this;
