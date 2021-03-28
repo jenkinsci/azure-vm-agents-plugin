@@ -132,7 +132,7 @@ public class AzureVMCloud extends Cloud {
     private List<AzureTagPair> cloudTags;
 
     //The map should not be accessed without acquiring a lock of the map
-    private final transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
+    private transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
 
     private Supplier<Azure> createAzureClientSupplier() {
         return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
@@ -200,6 +200,10 @@ public class AzureVMCloud extends Cloud {
             if (instTemplates != null && vmTemplates == null) {
                 vmTemplates = instTemplates;
                 instTemplates = null;
+            }
+
+            if (agentLocks == null) {
+                agentLocks = new HashMap<>();
             }
 
             // Walk the list of templates and assign the parent cloud (which is transient).
