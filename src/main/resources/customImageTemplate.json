@@ -78,7 +78,7 @@
                         },
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat('http://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
+                            "uri": "[concat('https://',variables('storageAccountName'),variables('blobEndpointSuffix'),variables('storageAccountContainerName'),'/', variables('vmName'), copyIndex(), 'OSDisk.vhd')]"
                         }
                     }
                 },
