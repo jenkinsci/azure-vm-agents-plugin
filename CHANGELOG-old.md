@@ -1,5 +1,7 @@
 # Azure VM Agents Plugin Changelog
 
+See [GitHub releases](https://github.com/jenkinsci/azure-vm-agents-plugin/releases) for all newer versions.
+
 ## version 1.5.3 2021-02-20
 * Update document
 
