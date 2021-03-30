@@ -653,26 +653,28 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     public static String getBasicInitScript(AzureVMAgentTemplate template) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
+            String builtInImage = template.getBuiltInImage();
             stringBuilder.append(
                     AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
-                            .get(template.getBuiltInImage()).get(Constants.INSTALL_JAVA));
+                            .get(builtInImage).get(Constants.INSTALL_JAVA));
             if (template.isInstallMaven()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
-                                .get(template.getBuiltInImage()).get(Constants.INSTALL_MAVEN));
+                                .get(builtInImage).get(Constants.INSTALL_MAVEN));
             }
             if (template.isInstallGit()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
-                                .get(template.getBuiltInImage()).get(Constants.INSTALL_GIT));
+                                .get(builtInImage).get(Constants.INSTALL_GIT));
             }
-            if (template.getBuiltInImage().equals(Constants.UBUNTU_1604_LTS) && template.isInstallDocker()) {
+            if ((builtInImage.equals(Constants.UBUNTU_1604_LTS) || builtInImage.equals(Constants.UBUNTU_2004_LTS))
+                    && template.isInstallDocker()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
-                                .get(template.getBuiltInImage()).get(Constants.INSTALL_DOCKER)
+                                .get(builtInImage).get(Constants.INSTALL_DOCKER)
                                 .replace("${ADMIN}",
                                         template.getVMCredentials().getUsername()));
             }
@@ -1423,8 +1425,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public ListBoxModel doFillBuiltInImageItems() {
             ListBoxModel model = new ListBoxModel();
-            model.add(Constants.WINDOWS_SERVER_2016);
+            model.add(Constants.UBUNTU_2004_LTS);
             model.add(Constants.UBUNTU_1604_LTS);
+            model.add(Constants.WINDOWS_SERVER_2019);
+            model.add(Constants.WINDOWS_SERVER_2016);
             return model;
         }
 

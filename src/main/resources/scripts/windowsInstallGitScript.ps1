@@ -1,14 +1,9 @@
 # Install Git
 
-$git_url = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+choco install -y git
 
-$asset = Invoke-RestMethod -Method Get -Uri $git_url | % assets | where name -like "*64-bit.exe"
-$destination = "C:\$($asset.name)"
-Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $destination
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-$proc = Start-Process -FilePath $destination -ArgumentList "/VERYSILENT" -Wait -PassThru
-$proc.WaitForExit()
-$Env:Path += ";C:\Program Files\Git\cmd;C:\Program Files\Git\usr\bin"
 #Disable git credential manager, get more details in https://support.cloudbees.com/hc/en-us/articles/221046888-Build-Hang-or-Fail-with-Git-for-Windows
 git config --system --unset credential.helper
 

@@ -1,41 +1,31 @@
-Set-ExecutionPolicy Unrestricted
-$jenkinsServerUrl = $args[0]
-$vmName = $args[1]
+# Install Agent jar and connect via JNLP
+# Jenkins plugin will dynamically pass the server name and vm name.
+# If your jenkins server is configured for security , make sure to edit command for how agent executes
+$jenkinsserverurl = $args[0]
+$vmname = $args[1]
 $secret = $args[2]
 
-$baseDir = 'C:\Jenkins'
-mkdir $baseDir
-# Download the JDK
-$source = "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-windows-x64.exe"
-$destination = "$baseDir\jdk.exe"
-$client = new-object System.Net.WebClient 
-$cookie = "oraclelicense=accept-securebackup-cookie"
-$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie) 
-$client.downloadFile([string]$source, [string]$destination)
+# Downloading jenkins agent jar
+Write-Output "Downloading jenkins agent jar "
+$slaveSource = $jenkinsserverurl + "jnlpJars/agent.jar"
+$destSource = "C:\agent.jar"
+$wc = New-Object System.Net.WebClient
+$wc.DownloadFile($slaveSource, $destSource)
 
-# Execute the unattended install
-$jdkInstallDir=$baseDir + '\jdk\'
-$jreInstallDir=$baseDir + '\jre\'
-C:\Jenkins\jdk.exe /s INSTALLDIR=$jdkInstallDir /INSTALLDIRPUBJRE=$jdkInstallDir
-
-$javaExe=$jdkInstallDir + '\bin\java.exe'
-$jenkinsSlaveJarUrl = $jenkinsServerUrl + "jnlpJars/agent.jar"
-$destinationSlaveJarPath = $baseDir + '\agent.jar'
-
-# Download the jar file
-$client = new-object System.Net.WebClient
-$client.DownloadFile($jenkinsSlaveJarUrl, $destinationSlaveJarPath)
-
-# Calculate the jnlpURL
-$jnlpUrl = $jenkinsServerUrl + 'computer/' + $vmName + '/jenkins-agent.jnlp'
-
+# execute agent
+Write-Output "Executing agent process "
+$java="java"
+$jar="-jar"
+$jnlpUrl="-jnlpUrl"
+$secretFlag="-secret"
+$serverURL=$jenkinsserverurl+"computer/" + $vmname + '/jenkins-agent.jnlp'
 while ($true) {
-    try {
-        # Launch
-        & $javaExe -jar $destinationSlaveJarPath -secret $secret -jnlpUrl $jnlpUrl -noReconnect
-    }
-    catch [System.Exception] {
-        Write-Output $_.Exception.ToString()
-    }
-    sleep 10
+  try {
+    # Launch
+    & $java -jar $destSource $secretFlag  $secret $jnlpUrl $serverURL -noReconnect
+  }
+  catch [System.Exception] {
+    Write-Output $_.Exception.ToString()
+  }
+  Start-Sleep 10
 }

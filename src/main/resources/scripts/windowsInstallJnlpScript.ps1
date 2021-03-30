@@ -7,10 +7,10 @@ $secret = $args[2]
 
 # Downloading jenkins agent jar
 Write-Output "Downloading jenkins agent jar "
-$slaveSource = $jenkinsserverurl + "jnlpJars/agent.jar"
+$agentSource = $jenkinsserverurl + "jnlpJars/agent.jar"
 $destSource = "C:\agent.jar"
 $wc = New-Object System.Net.WebClient
-$wc.DownloadFile($slaveSource, $destSource)
+$wc.DownloadFile($agentSource, $destSource)
 
 # execute agent
 Write-Output "Executing agent process "
