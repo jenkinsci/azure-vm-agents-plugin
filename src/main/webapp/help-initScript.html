@@ -8,17 +8,22 @@
         <b>Ubuntu (Only support SSH)</b>
         <p>
           <pre><code># Install Java
-sudo add-apt-repository ppa:openjdk-r/ppa -y
 sudo apt-get -y update
-sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y
+sudo apt-get install -y default-jdk
+
+java -version
 
 # Install Git
 sudo apt-get install -y git
 
 # Install Maven
-sudo curl -O https://archive.apache.org/dist/maven/maven-3/3.5.2/binaries/apache-maven-3.5.2-bin.tar.gz
-sudo tar zxvf apache-maven-3.5.2-bin.tar.gz -C /opt/
-sudo ln -s /opt/apache-maven-3.5.2/bin/mvn /usr/bin/mvn
+MAVEN_VERSION=3.6.3
+
+sudo curl -O https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+sudo tar zxvf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt/
+sudo ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
+
+mvn --version
 
 # Install Docker
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -28,30 +33,33 @@ sudo apt-get -y update
 sudo apt-get install -y docker-ce
 # Replace ${ADMIN} with admin username.
 sudo gpasswd -a ${ADMIN} docker
-sudo chmod g+rw /var/run/docker.sock</code></pre>
-        </p>
+sudo chmod g+rw /var/run/docker.sock
+
+sudo docker --version
+        </code>
+        </pre>
+      </p>
       </li>
       <li>
         <b>Windows via SSH</b>
         <p>
-          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/Jenkins-Windows-Init-Script-SSH.ps1">sample</a>.<br>
+          You can use this <a target="_blank" href="https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/master/docs/init-scripts/windows-ssh.ps1">sample</a>.<br>
           Java is <b>required</b>, others are optional.<br>
-          We recommend to use SSH rather than JNLP. For you need less init codes and get much clearer logs.
+          We recommend to use SSH rather than inbound agent. You need less init code and get much clearer logs.
         </p>
       </li>
       <li>
-        <b>Windows w/JNLP</b>
+        <b>Windows as an inbound agent</b>
         <p>
-          For Windows agents with JNLP launch, this script is a powershell script.
-          You can use this <a target="_blank" href="https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/Jenkins-Windows-Init-Script-Jnlp.ps1">sample</a>.<br>
-          Java, slaves and connection are <b>required</b>, others are optional.<br>
+          You can use this <a target="_blank" href="https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/master/docs/init-scripts/windows-inbound-agent.ps1">sample</a>.<br>
+          Java, the agent jar and connecting to Jenkins are <b>required</b>, others are optional.
         </p>
         <p>
           Arguments automatically passed to this script are:
           <ul>
             <li>First argument - Jenkins server URL</li>
             <li>Second argument - VMName</li>
-            <li>Third argument - JNLP secret, required if the server has security enabled.</li>
+            <li>Third argument - shared secret for authenticating to Jenkins.</li>
           </ul>
         </p>
         <p>

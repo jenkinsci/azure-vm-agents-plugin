@@ -1346,67 +1346,47 @@ public final class AzureVMManagementServiceDelegate {
 
     private static Map<String, Map<String, String>> getDefaultImageProperties() {
         final Map<String, Map<String, String>> imageProperties = new HashMap<>();
-        imageProperties.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
-        imageProperties.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
+        imageProperties.put(Constants.WINDOWS_SERVER_2016, new HashMap<>());
+        imageProperties.put(Constants.WINDOWS_SERVER_2019, new HashMap<>());
+        imageProperties.put(Constants.UBUNTU_1604_LTS, new HashMap<>());
+        imageProperties.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
 
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(
-                Constants.DEFAULT_IMAGE_PUBLISHER, "MicrosoftWindowsServer");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_OFFER, "WindowsServer");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_SKU, "2016-Datacenter");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "2016-Datacenter-with-Containers");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_WINDOWS);
-        imageProperties.get(Constants.WINDOWS_SERVER_2016).put(
-                Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
-
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_PUBLISHER, "Canonical");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_OFFER, "UbuntuServer");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_SKU, "16.04-LTS");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, "16.04-LTS");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(Constants.DEFAULT_OS_TYPE, Constants.OS_TYPE_LINUX);
-        imageProperties.get(Constants.UBUNTU_1604_LTS).put(
-                Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
+        imageProperties(imageProperties, Constants.WINDOWS_SERVER_2016, "MicrosoftWindowsServer", "WindowsServer", "2016-Datacenter", "2016-Datacenter-with-Containers", Constants.OS_TYPE_WINDOWS);
+        imageProperties(imageProperties, Constants.WINDOWS_SERVER_2019, "MicrosoftWindowsServer", "WindowsServer", "2019-Datacenter", "2019-Datacenter-with-Containers", Constants.OS_TYPE_WINDOWS);
+        imageProperties(imageProperties, Constants.UBUNTU_1604_LTS, "Canonical", "UbuntuServer", "16.04-LTS", "16.04-LTS", Constants.OS_TYPE_LINUX);
+        imageProperties(imageProperties, Constants.UBUNTU_2004_LTS, "canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2", "20_04-lts-gen2", Constants.OS_TYPE_LINUX);
         return imageProperties;
+    }
+
+    private static void imageProperties(
+            Map<String, Map<String, String>> imageProperties,
+            String imageName,
+            String defaultImagePublisher,
+            String offer,
+            String sku,
+            String dockerImageSku,
+            String osType
+    ) {
+        imageProperties.get(imageName).put(Constants.DEFAULT_IMAGE_PUBLISHER, defaultImagePublisher);
+        imageProperties.get(imageName).put(Constants.DEFAULT_IMAGE_OFFER, offer);
+        imageProperties.get(imageName).put(Constants.DEFAULT_IMAGE_SKU, sku);
+        imageProperties.get(imageName).put(Constants.DEFAULT_DOCKER_IMAGE_SKU, dockerImageSku);
+        imageProperties.get(imageName).put(Constants.DEFAULT_IMAGE_VERSION, "latest");
+        imageProperties.get(imageName).put(Constants.DEFAULT_OS_TYPE, osType);
+        imageProperties.get(imageName).put(Constants.DEFAULT_LAUNCH_METHOD, Constants.LAUNCH_METHOD_SSH);
     }
 
     private static Map<String, Map<String, String>> getPreInstalledToolsScript() {
         final Map<String, Map<String, String>> tools = new HashMap<>();
-        tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<String, String>());
-        tools.put(Constants.UBUNTU_1604_LTS, new HashMap<String, String>());
+        tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<>());
+        tools.put(Constants.WINDOWS_SERVER_2019, new HashMap<>());
+        tools.put(Constants.UBUNTU_1604_LTS, new HashMap<>());
+        tools.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
         try {
-            tools.get(Constants.WINDOWS_SERVER_2016).put(
-                    Constants.INSTALL_JAVA,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_JAVA_WINDOWS_FILENAME), "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(
-                    Constants.INSTALL_MAVEN,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_MAVEN_WINDOWS_FILENAME), "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(
-                    Constants.INSTALL_GIT,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_GIT_WINDOWS_FILENAME), "UTF-8"));
-            tools.get(Constants.WINDOWS_SERVER_2016).put(
-                    Constants.INSTALL_JNLP,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_JNLP_WINDOWS_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(
-                    Constants.INSTALL_JAVA,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_JAVA_UBUNTU_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(
-                    Constants.INSTALL_MAVEN,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_MAVEN_UBUNTU_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(
-                    Constants.INSTALL_GIT,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_GIT_UBUNTU_FILENAME), "UTF-8"));
-            tools.get(Constants.UBUNTU_1604_LTS).put(
-                    Constants.INSTALL_DOCKER,
-                    IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                            INSTALL_DOCKER_UBUNTU_FILENAME), "UTF-8"));
+            windows(Constants.WINDOWS_SERVER_2016, tools);
+            windows(Constants.WINDOWS_SERVER_2019, tools);
+            ubuntu(Constants.UBUNTU_1604_LTS, tools);
+            ubuntu(Constants.UBUNTU_2004_LTS, tools);
 
             return tools;
         } catch (IOException e) {
@@ -1416,6 +1396,44 @@ public final class AzureVMManagementServiceDelegate {
                     e);
             return tools;
         }
+    }
+
+    private static void ubuntu(String imageName, Map<String, Map<String, String>> tools) throws IOException {
+        tools.get(imageName).put(
+                Constants.INSTALL_JAVA,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_JAVA_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_MAVEN,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_MAVEN_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_GIT,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_GIT_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_DOCKER,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_DOCKER_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+    }
+
+    private static void windows(String imageName, Map<String, Map<String, String>> tools) throws IOException {
+        tools.get(imageName).put(
+                Constants.INSTALL_JAVA,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_JAVA_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_MAVEN,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_MAVEN_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_GIT,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_GIT_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+        tools.get(imageName).put(
+                Constants.INSTALL_JNLP,
+                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
+                        INSTALL_JNLP_WINDOWS_FILENAME), StandardCharsets.UTF_8));
     }
 
     /**
