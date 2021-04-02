@@ -1115,7 +1115,7 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String resourceGroupReferenceType,
                 @QueryParameter String newResourceGroupName,
                 @QueryParameter String existingResourceGroupName) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             String resourceGroupName = getResourceGroupName(
                     resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -1166,9 +1166,8 @@ public class AzureVMCloud extends Cloud {
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Cannot list resource group name: ", e);
-            } finally {
-                return model;
             }
+            return model;
         }
     }
 }

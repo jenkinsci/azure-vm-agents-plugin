@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1309,7 +1310,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 Set<String> locations = AzureClientHolder.getDelegate(azureCredentialsId)
                         .getVirtualMachineLocations(managementEndpoint != null ? managementEndpoint : envName);
                 if (locations != null) {
-                    for (String location : locations) {
+                    Set<String> sortedLocations = new TreeSet<>(locations);
+                    for (String location : sortedLocations) {
                         model.add(location);
                     }
                 }
