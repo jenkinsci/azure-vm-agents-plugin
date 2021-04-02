@@ -24,11 +24,7 @@ import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.logging.Logger;
-
 public final class AzureClientUtil {
-
-    private static final Logger LOGGER = Logger.getLogger(AzureClientUtil.class.getName());
 
     public static TokenCredentialData getToken(String credentialId) {
         AzureBaseCredentials credential = AzureCredentialUtil.getCredential2(credentialId);
@@ -56,15 +52,10 @@ public final class AzureClientUtil {
     }
 
     public static Azure getClient(TokenCredentialData token) {
-        return AzureClientFactory.getClient(token, new AzureClientFactory.Configurer() {
-            @Override
-            public Azure.Configurable configure(Azure.Configurable configurable) {
-                return configurable
-                        .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
-                        .withUserAgent(AzureClientFactory.getUserAgent(Constants.PLUGIN_NAME,
-                                AzureClientUtil.class.getPackage().getImplementationVersion()));
-            }
-        });
+        return AzureClientFactory.getClient(token, configurable -> configurable
+                .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
+                .withUserAgent(AzureClientFactory.getUserAgent(Constants.PLUGIN_NAME,
+                        AzureClientUtil.class.getPackage().getImplementationVersion())));
     }
 
     private AzureClientUtil() {
