@@ -64,6 +64,10 @@
                 <f:select/>
             </f:entry>
 
+            <f:entry title="${%OS disk storage account type}" field="osDiskStorageAccountType">
+                <f:select/>
+            </f:entry>
+
             <f:entry title="${%Use_Ephemeral_OS_Disk}" field="ephemeralOSDisk">
                 <f:checkbox/>
             </f:entry>

@@ -22,6 +22,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.compute.AvailabilitySet;
+import com.microsoft.azure.management.compute.DiskSkuTypes;
 import com.microsoft.azure.management.storage.SkuName;
 import com.microsoft.azure.management.storage.StorageAccount;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
@@ -261,6 +262,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private String existingStorageAccountName;
 
     private String storageAccountType;
+
+    private String osDiskStorageAccountType;
 
     private final int noOfParallelJobs;
 
@@ -841,6 +844,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return StringUtils.isBlank(storageAccountType) ? SkuName.STANDARD_LRS.toString() : storageAccountType;
     }
 
+    public String getOsDiskStorageAccountType() {
+        if (StringUtils.isBlank(osDiskStorageAccountType)) {
+            return getStorageAccountType();
+        }
+        return osDiskStorageAccountType;
+    }
+
+    @DataBoundSetter
+    public void setOsDiskStorageAccountType(String osDiskStorageAccountType) {
+        this.osDiskStorageAccountType = osDiskStorageAccountType;
+    }
+
     public String getStorageAccountName() {
         return storageAccountName;
     }
@@ -1357,9 +1372,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillStorageAccountTypeItems(
-                @QueryParameter String virtualMachineSize)
-                throws IOException, ServletException {
+        public ListBoxModel doFillStorageAccountTypeItems(@QueryParameter String virtualMachineSize) {
 
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Storage Account Type ---", "");
@@ -1369,6 +1382,21 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
             if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[Mm]?[Ss]|[Ss][0-9]+).*")) {
                 model.add(SkuName.PREMIUM_LRS.toString());
+            }
+            return model;
+        }
+
+        public ListBoxModel doFillOsDiskStorageAccountTypeItems(@QueryParameter String virtualMachineSize) {
+
+            ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Storage Account Type ---", "");
+
+            model.add(DiskSkuTypes.STANDARD_LRS.toString());
+            model.add(DiskSkuTypes.STANDARD_SSD_LRS.toString());
+
+            /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
+            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[Mm]?[Ss]|[Ss][0-9]+).*")) {
+                model.add(DiskSkuTypes.PREMIUM_LRS.toString());
             }
             return model;
         }
