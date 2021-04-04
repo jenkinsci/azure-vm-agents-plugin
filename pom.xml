@@ -47,15 +47,14 @@
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <azuresdk.version>1.19.0</azuresdk.version>
+        <azuresdk.version>1.41.0</azuresdk.version>
         <azure-storage.version>6.1.0</azure-storage.version>
-        <jackson.version>2.10.2</jackson.version>
         <jenkins.version>2.266</jenkins.version>
         <java.level>8</java.level>
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>1.6.1</azure-credentials.version>
+        <azure-credentials.version>177.v816b81058012</azure-credentials.version>
         <azure-commons.version>1.1.2</azure-commons.version>
         <guava.version>24.1.1-jre</guava.version>
     </properties>
@@ -82,7 +81,7 @@
             <dependency>
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-annotations</artifactId>
-                <version>1.8.0</version>
+                <version>1.10.0</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -134,7 +133,7 @@
         <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-client-runtime</artifactId>
-            <version>1.5.4</version>
+            <version>1.7.12</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -175,9 +174,14 @@
             <version>${guava.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.jcraft</groupId>
+            <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>jsch</artifactId>
-            <version>0.1.54</version>
+            <version>0.1.55.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+            <version>7.4</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -206,7 +210,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>cloud-stats</artifactId>
-            <version>0.22</version>
+            <version>0.27</version>
         </dependency>
     </dependencies>
 

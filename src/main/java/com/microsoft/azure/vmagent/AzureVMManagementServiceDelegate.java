@@ -305,6 +305,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             putVariable(tmp, "resourceTag", deploymentRegistrar.getDeploymentTag().get());
             putVariable(tmp, "cloudTag", cloudName);
+            putVariable(tmp, "osDiskStorageAccountType", template.getOsDiskStorageAccountType());
 
             // add purchase plan for image if needed in reference configuration
             // Image Configuration has four choices, isBasic->Built-in Image, useCustomImage->Custom User Image
