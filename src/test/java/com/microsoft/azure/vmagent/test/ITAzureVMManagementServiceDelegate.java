@@ -340,7 +340,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                 .withExistingResourceGroup(testEnv.azureResourceGroup)
                 .withFaultDomainCount(2)
                 .withUpdateDomainCount(4)
-                .withSku(AvailabilitySetSkuTypes.MANAGED)
+                .withSku(AvailabilitySetSkuTypes.ALIGNED)
                 .create();
         Assert.assertNotNull("Failed to create availability set in resourceGroup " + testEnv.azureResourceGroup, availabilitySet);
         testEnv.availabilityType = AvailabilityType.AVAILABILITY_SET.getName();
