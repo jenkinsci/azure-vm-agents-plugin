@@ -308,6 +308,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean usePrivateIP;
 
+    private boolean spotInstance;
+
     private final String nsgName;
 
     private final String jvmOptions;
@@ -574,6 +576,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setJavaPath(String javaPath) {
         this.javaPath = javaPath;
+    }
+
+    public boolean isSpotInstance() {
+        return spotInstance;
+    }
+
+    @DataBoundSetter
+    public void setSpotInstance(boolean spotInstance) {
+        this.spotInstance = spotInstance;
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
