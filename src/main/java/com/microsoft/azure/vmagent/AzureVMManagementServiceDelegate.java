@@ -531,6 +531,10 @@ public final class AzureVMManagementServiceDelegate {
                 addDefaultVNetResourceNode(tmp, resourceGroupName, cloud);
             }
 
+            if (template.isSpotInstance()) {
+                addSpotInstance(tmp);
+            }
+
             if (!(Boolean) properties.get("usePrivateIP")) {
                 addPublicIPResourceNode(tmp, cloud);
             }
@@ -570,6 +574,18 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             if (embeddedTemplate != null) {
                 embeddedTemplate.close();
+            }
+        }
+    }
+
+    private void addSpotInstance(JsonNode template) {
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                properties.put("priority", "Spot");
+                properties.put("evictionPolicy", "Delete");
             }
         }
     }
