@@ -90,6 +90,16 @@
             <f:entry title="${%Spot instance}" field="spotInstance">
                 <f:checkbox/>
             </f:entry>
+
+            <f:entry title="${%Enable_MSI}" field="enableMSI">
+                <f:checkbox/>
+            </f:entry>
+
+            <f:optionalBlock title="${%Enable_UAMI}" field="enableUAMI" inline="true">
+                <f:entry title="${%UAMI_ID}" field="uamiID">
+                    <f:textbox/>
+                </f:entry>
+            </f:optionalBlock>
         </f:section>
 
         <f:section title="${%Image_Configuration}">
@@ -197,19 +207,6 @@
                     
                     <f:entry title="${%Terminate_Script}" field="terminateScript" help="/plugin/azure-vm-agents/help-terminateScript.html">
                         <f:textarea/>
-                    </f:entry>
-
-                    <f:entry title="${%Enable_MSI}" field="enableMSI"
-                        help="/plugin/azure-vm-agents/help-enableMSI.html">
-                        <f:checkbox/>
-                    </f:entry>
-
-                    <f:entry title="${%Enable_UAMI}" field="enableUAMI">
-                        <f:checkbox/>
-                    </f:entry>
-
-                    <f:entry title="${%UAMI_ID}" field="uamiID">
-                        <f:textbox/>
                     </f:entry>
 
                 </f:section>

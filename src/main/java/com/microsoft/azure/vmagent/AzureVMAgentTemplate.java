@@ -461,7 +461,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.enableMSI = enableMSI;
         this.enableUAMI = enableUAMI;
-        this.uamiID = uamiID;
+        if (enableUAMI) {
+            this.uamiID = uamiID;
+        } else {
+            this.uamiID = null;
+        }
         this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
