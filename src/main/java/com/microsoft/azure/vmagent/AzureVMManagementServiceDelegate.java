@@ -522,7 +522,6 @@ public final class AzureVMManagementServiceDelegate {
             StandardUsernamePasswordCredentials creds = template.getVMCredentials();
 
             putVariable(tmp, "adminUsername", creds.getUsername());
-            putVariable(tmp, "adminPassword", creds.getPassword().getPlainText());
             putVariableIfNotBlank(tmp, "storageAccountName", storageAccountName);
             putVariableIfNotBlank(tmp, "storageAccountType", storageAccountType);
             putVariableIfNotBlank(tmp, "blobEndpointSuffix", blobEndpointSuffix);
