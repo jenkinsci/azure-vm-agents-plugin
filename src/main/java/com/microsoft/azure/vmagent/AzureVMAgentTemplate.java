@@ -408,8 +408,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
             boolean enableUAMI,
-            String uamiID,
-            int maximumDeploymentSize) {
+            String uamiID) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -475,7 +474,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
         this.retentionStrategy = retentionStrategy;
-        this.maximumDeploymentSize = maximumDeploymentSize;
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -1215,6 +1213,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public int getMaximumDeploymentSize() {
         return maximumDeploymentSize;
+    }
+
+    @DataBoundSetter
+    public void setMaximumDeploymentSize(int maximumDeploymentSize) {
+        this.maximumDeploymentSize = maximumDeploymentSize;
     }
 
     /**

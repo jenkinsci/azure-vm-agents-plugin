@@ -33,7 +33,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
         fluent.withShutdownOnIdle(template.isShutdownOnIdle());
-        fluent.withMaximumDeploymentSize(template.getMaximumDeploymentSize());
 
         if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
             fluent.withBuiltInImage(template.getBuiltInImageInside());
@@ -67,7 +66,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
         fluent.withShutdownOnIdle(template.isShutdownOnIdle());
-        fluent.withMaximumDeploymentSize(template.getMaximumDeploymentSize());
 
         if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
             fluent.withBuiltInImage(template.getBuiltInImageInside());
@@ -129,7 +127,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
                 fluent.getAdvancedImage().isEnableMSI(),
                 fluent.getAdvancedImage().isEnableUAMI(),
-                fluent.getAdvancedImage().getUamiID(),
-                fluent.getMaximumDeploymentSize());
+                fluent.getAdvancedImage().getUamiID());
     }
 }
