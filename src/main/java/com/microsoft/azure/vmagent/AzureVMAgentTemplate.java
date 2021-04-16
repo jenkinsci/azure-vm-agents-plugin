@@ -342,6 +342,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private RetentionStrategy retentionStrategy;
 
+    private int maximumDeploymentSize;
+
 
     // deprecated fields
     private transient boolean isInstallDocker;
@@ -406,7 +408,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             boolean doNotUseMachineIfInitFails,
             boolean enableMSI,
             boolean enableUAMI,
-            String uamiID) {
+            String uamiID,
+            int maximumDeploymentSize) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -472,6 +475,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
         this.retentionStrategy = retentionStrategy;
+        this.maximumDeploymentSize = maximumDeploymentSize;
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
@@ -1207,6 +1211,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public RetentionStrategy getRetentionStrategy() {
         return retentionStrategy;
+    }
+
+    public int getMaximumDeploymentSize() {
+        return maximumDeploymentSize;
     }
 
     /**

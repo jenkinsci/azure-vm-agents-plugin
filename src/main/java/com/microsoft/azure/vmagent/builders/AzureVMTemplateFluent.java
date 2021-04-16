@@ -49,6 +49,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String credentialsId;
 
+    private int maximumDeploymentSize;
+
     public AzureVMTemplateFluent() {
         location = "Japan West";
         virtualMachineSize = "Standard_A0";
@@ -63,6 +65,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         availability = new AvailabilityBuilder().build();
         builtInImage = new BuiltInImageBuilder().build();
         advancedImage = new AdvancedImageBuilder().build();
+        maximumDeploymentSize = 0;
     }
 
     //CHECKSTYLE:OFF
@@ -191,6 +194,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         this.credentialsId = credentialsId;
         return (T) this;
     }
+
+    public T withMaximumDeploymentSize(int maximumDeploymentSize) {
+        this.maximumDeploymentSize = maximumDeploymentSize;
+        return (T) this;
+    }
     //CHECKSTYLE:ON
 
     public String getName() {
@@ -275,6 +283,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public int getMaximumDeploymentSize() {
+        return maximumDeploymentSize;
     }
 
     public class BuiltInImageNested extends BuiltInImageFluent<BuiltInImageNested> {

@@ -23,6 +23,7 @@
       installMaven: true
       labels: "ubuntu"
       location: "East US"
+      maximumDeploymentSize: 0
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
       osDiskSize: 0
