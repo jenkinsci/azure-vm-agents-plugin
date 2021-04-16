@@ -15,16 +15,18 @@
  */
 package com.microsoft.azure.vmagent;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.AvailabilitySet;
+import com.azure.resourcemanager.compute.models.DiskSkuTypes;
+import com.azure.resourcemanager.storage.models.SkuName;
+import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.AvailabilitySet;
-import com.microsoft.azure.management.compute.DiskSkuTypes;
-import com.microsoft.azure.management.storage.SkuName;
-import com.microsoft.azure.management.storage.StorageAccount;
+import com.microsoft.azure.util.AzureBaseCredentials;
+import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
 import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
 import com.microsoft.azure.vmagent.builders.Availability;
@@ -33,11 +35,9 @@ import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureClientHolder;
-import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
-import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
@@ -1198,7 +1198,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        return Jenkins.get().getDescriptor(getClass());
     }
 
     public Set<LabelAtom> getLabelDataSet() {
@@ -1333,11 +1333,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
-            final TokenCredentialData token = AzureClientUtil.getToken(azureCredentialsId);
-            if (token != null) {
-                String envName = token.getAzureEnvironmentName();
-                String managementEndpoint = token.getManagementEndpoint();
-                Set<String> locations = AzureClientHolder.getDelegate(azureCredentialsId)
+            AzureBaseCredentials credential = AzureCredentialUtil.getCredential(null, azureCredentialsId);
+            if (credential != null) {
+                String envName = credential.getAzureEnvironmentName();
+                String managementEndpoint = credential.getManagementEndpoint();
+                AzureVMManagementServiceDelegate delegate = AzureClientHolder.getDelegate(azureCredentialsId);
+                Set<String> locations = delegate
                         .getVirtualMachineLocations(managementEndpoint != null ? managementEndpoint : envName);
                 if (locations != null) {
                     Set<String> sortedLocations = new TreeSet<>(locations);
@@ -1370,10 +1371,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             resourceGroupReferenceType = null;
 
             try {
-                Azure azureClient = AzureClientHolder.get(azureCredentialsId);
+                AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-                PagedList<AvailabilitySet> availabilitySets = azureClient.availabilitySets()
+                PagedIterable<AvailabilitySet> availabilitySets = azureClient.availabilitySets()
                         .listByResourceGroup(resourceGroupName);
                 for (AvailabilitySet set : availabilitySets) {
                     String label = set.region().label();
@@ -1447,14 +1448,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             resourceGroupReferenceType = null;
 
             try {
-                Azure azureClient = AzureClientHolder.get(azureCredentialsId);
+                AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
 
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-                List<StorageAccount> storageAccountList =
+                PagedIterable<StorageAccount> storageAccountList =
                         azureClient.storageAccounts().listByResourceGroup(resourceGroupName);
                 for (StorageAccount storageAccount : storageAccountList) {
-                    if (storageAccount.sku().name().toString().equalsIgnoreCase(storageAccountType)) {
+                    if (storageAccount.skuType().name().toString().equalsIgnoreCase(storageAccountType)) {
                         model.add(storageAccount.name());
                     }
                 }
@@ -1463,9 +1464,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 // Do nothing
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Cannot list storage account: ", e);
-            } finally {
-                return model;
             }
+            return model;
         }
 
         public ListBoxModel doFillBuiltInImageItems() {

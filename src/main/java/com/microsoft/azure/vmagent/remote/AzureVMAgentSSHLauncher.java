@@ -15,11 +15,10 @@
  */
 package com.microsoft.azure.vmagent.remote;
 
+import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.*;
-import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.vmagent.AzureVMAgent;
-import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMComputer;
@@ -43,8 +42,6 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -268,17 +265,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             agent.clearCleanUpAction();
             successful = true;
 
-            // send AI event
-            final Map<String, String> properties = new HashMap<>();
-            properties.put("OSType", agent.getOsType().toString());
-            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunch", properties);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "AzureVMAgentSSHLauncher: launch: got exception ", e);
-
-            final Map<String, String> properties = new HashMap<>();
-            properties.put("OSType", agent.getOsType().toString());
-            properties.put("Message", e.getMessage());
-            AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "SSHLaunchFailed", properties);
         } finally {
             if (!successful) {
                 session.disconnect();

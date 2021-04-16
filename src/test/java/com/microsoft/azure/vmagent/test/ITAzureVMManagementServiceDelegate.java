@@ -15,17 +15,19 @@
  */
 package com.microsoft.azure.vmagent.test;
 
-import com.microsoft.azure.AzureEnvironment;
-import com.microsoft.azure.management.compute.AvailabilitySet;
-import com.microsoft.azure.management.compute.AvailabilitySetSkuTypes;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.network.Network;
-import com.microsoft.azure.management.network.NetworkInterface;
-import com.microsoft.azure.management.network.NetworkSecurityGroup;
-import com.microsoft.azure.management.network.PublicIPAddress;
-import com.microsoft.azure.management.storage.SkuName;
-import com.microsoft.azure.management.storage.StorageAccount;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.resourcemanager.compute.models.AvailabilitySet;
+import com.azure.resourcemanager.compute.models.AvailabilitySetSkuTypes;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.network.models.Network;
+import com.azure.resourcemanager.network.models.NetworkInterface;
+import com.azure.resourcemanager.network.models.NetworkSecurityGroup;
+import com.azure.resourcemanager.network.models.PublicIpAddress;
+import com.azure.resourcemanager.storage.models.SkuName;
+import com.azure.resourcemanager.storage.models.StorageAccount;
+import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
@@ -36,10 +38,10 @@ import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
+import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
-import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,7 +50,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -140,7 +141,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
             VirtualMachine actualVM = null;
             NetworkInterface actualNetIface = null;
-            PublicIPAddress actualIP = null;
+            PublicIpAddress actualIP = null;
             try {
                 actualVM = azureClient
                         .virtualMachines()
@@ -151,7 +152,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                         .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
                 actualIP = azureClient
-                        .publicIPAddresses()
+                        .publicIpAddresses()
                         .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
             } catch (Exception e) {
@@ -203,7 +204,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         final String baseName = deploymentInfo.getVmBaseName() + "0";
         VirtualMachine actualVM = null;
         NetworkInterface actualNetIface = null;
-        PublicIPAddress actualIP = null;
+        PublicIpAddress actualIP = null;
         String privateIP = "";
         try {
             actualVM = azureClient
@@ -217,7 +218,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             privateIP = actualNetIface.primaryPrivateIP();
 
             actualIP = azureClient
-                    .publicIPAddresses()
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
@@ -261,7 +262,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
         VirtualMachine actualVM = null;
         NetworkInterface actualNetIface = null;
-        PublicIPAddress actualIP = null;
+        PublicIpAddress actualIP = null;
         try {
             actualVM = azureClient
                     .virtualMachines()
@@ -272,7 +273,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
             actualIP = azureClient
-                    .publicIPAddresses()
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
@@ -306,7 +307,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
         VirtualMachine actualVM = null;
         NetworkInterface actualNetIface = null;
-        PublicIPAddress actualIP = null;
+        PublicIpAddress actualIP = null;
         try {
             actualVM = azureClient
                     .virtualMachines()
@@ -317,7 +318,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
             actualIP = azureClient
-                    .publicIPAddresses()
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
@@ -367,7 +368,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
         VirtualMachine actualVM = null;
         NetworkInterface actualNetIface = null;
-        PublicIPAddress actualIP = null;
+        PublicIpAddress actualIP = null;
         try {
             actualVM = azureClient
                     .virtualMachines()
@@ -378,7 +379,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
             actualIP = azureClient
-                    .publicIPAddresses()
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
@@ -415,7 +416,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
         VirtualMachine actualVM = null;
         NetworkInterface actualNetIface = null;
-        PublicIPAddress actualIP = null;
+        PublicIpAddress actualIP = null;
         try {
             actualVM = azureClient
                     .virtualMachines()
@@ -426,7 +427,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
             actualIP = azureClient
-                    .publicIPAddresses()
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
         } catch (Exception e) {
@@ -466,7 +467,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                 final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
                 VirtualMachine actualVM = null;
                 NetworkInterface actualNetIface = null;
-                PublicIPAddress actualIP = null;
+                PublicIpAddress actualIP = null;
                 try {
                     actualVM = azureClient
                             .virtualMachines()
@@ -477,7 +478,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                             .getByResourceGroup(testEnv.azureResourceGroup, baseName + "NIC");
 
                     actualIP = azureClient
-                            .publicIPAddresses()
+                            .publicIpAddresses()
                             .getByResourceGroup(testEnv.azureResourceGroup, baseName + "IPName");
 
                 } catch (Exception e) {
@@ -516,8 +517,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
-            final PublicIPAddress publicIP = azureClient
-                    .publicIPAddresses()
+            final PublicIpAddress publicIP = azureClient
+                    .publicIpAddresses()
                     .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName");
             final String privateIP = azureClient
                     .virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, nodeName)
@@ -564,7 +565,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.attachPublicIP(agentMock, templateMock);
 
-            final PublicIPAddress publicIP = azureClient
+            final PublicIpAddress publicIP = azureClient
                     .virtualMachines()
                     .getByResourceGroup(testEnv.azureResourceGroup, nodeName)
                     .getPrimaryPublicIPAddress();
@@ -575,7 +576,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             verify(agentMock).setPrivateIP(privateIP);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -600,7 +601,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             delegate.attachPublicIP(agentMock, templateMock);
 
-            final PublicIPAddress publicIP = azureClient
+            final PublicIpAddress publicIP = azureClient
                     .virtualMachines()
                     .getByResourceGroup(testEnv.azureResourceGroup, nodeName)
                     .getPrimaryPublicIPAddress();
@@ -685,30 +686,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void verifyConfigurationTest() {
-        Assert.assertEquals(
-                Constants.OP_SUCCESS,
-                delegate.verifyConfiguration(testEnv.azureResourceGroup)
-        );
-
-        //the method is successful even if the resource group doesn't exists
-        Assert.assertEquals(
-                Constants.OP_SUCCESS,
-                delegate.verifyConfiguration(testEnv.azureResourceGroup + "abcd")
-        );
-
-        //should fail if service principal is wrong
-        String azureCredentialsId = "testacId";
-        addAzureCredentials(azureCredentialsId, "test", "bar", "foo", "bar");
-        AzureVMManagementServiceDelegate wrongDelegate = AzureVMManagementServiceDelegate.getInstance(
-                AzureClientFactory.getClient("foo", "bar", "foo", "bar", AzureEnvironment.AZURE), azureCredentialsId);
-        Assert.assertNotEquals(
-                Constants.OP_SUCCESS,
-                wrongDelegate.verifyConfiguration(testEnv.azureResourceGroup)
-        );
-    }
-
-    @Test
     public void terminateVirtualMachineTest() {
         try {
             final String vmName = "vmterminate";
@@ -722,7 +699,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -752,7 +729,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             //should fail because the VM is still using them
             Assert.assertNotNull(
                     azureClient
-                            .publicIPAddresses()
+                            .publicIpAddresses()
                             .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
             );
             Assert.assertNotNull(
@@ -766,7 +743,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
             Assert.assertNull(
                     azureClient
-                            .publicIPAddresses()
+                            .publicIpAddresses()
                             .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
             );
             Assert.assertNull(
@@ -1106,7 +1083,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     .define(testEnv.azureStorageAccountName)
                     .withRegion(testEnv.azureLocation)
                     .withNewResourceGroup(testEnv.azureResourceGroup)
-                    .withSku(SkuName.fromString(testEnv.azureStorageAccountType))
+                    .withSku(StorageAccountSkuType.fromSkuName(SkuName.fromString(testEnv.azureStorageAccountType)))
                     .create();
 
             Assert.assertEquals(Constants.OP_SUCCESS, delegate
@@ -1117,7 +1094,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             AzureVMManagementServiceDelegate wrongDelegate =
                     AzureVMManagementServiceDelegate.getInstance(
-                            AzureClientFactory.getClient("", "", "", "", null), null);
+                            null, null);
             Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(),
                     wrongDelegate.verifyStorageAccountName(testEnv.azureResourceGroup + "fake",
                             testEnv.azureStorageAccountName,
@@ -1153,11 +1130,11 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String data = "5gadfgbsdafsdg";
             final String containerName_from_jenkins = "jnkshouldgetdeleted"; // we deploy the init script in containers starting with jnk
             final String containerName_from_user = "notstartingwithjnk"; // we shouldn't delete containers not deployed by us
-            final URI deletedContainerBlobURI = uploadFile(fileName, data, containerName_from_jenkins);
-            final URI existingContainerBlobURI = uploadFile(fileName, data, containerName_from_user);
+            final String deletedContainerBlobURI = uploadFile(fileName, data, containerName_from_jenkins);
+            final String existingContainerBlobURI = uploadFile(fileName, data, containerName_from_user);
 
-            delegate.removeStorageBlob(deletedContainerBlobURI, testEnv.azureResourceGroup);
-            delegate.removeStorageBlob(existingContainerBlobURI, testEnv.azureResourceGroup);
+            delegate.removeStorageBlob(new URI(deletedContainerBlobURI), testEnv.azureResourceGroup);
+            delegate.removeStorageBlob(new URI(existingContainerBlobURI), testEnv.azureResourceGroup);
 
             Assert.assertFalse(containerExists(deletedContainerBlobURI)); // both container and blob are missing
             Assert.assertTrue(containerExists(existingContainerBlobURI)); // the container is there, but the blob is missing
@@ -1193,10 +1170,10 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String fileName2 = "abc2.txt";
             final String data = "5gadfgbsdafsdg";
             final String containerName = "jnkshouldgetdeleted";
-            final URI blobToBeDeleted = uploadFile(fileName1, data, containerName);
-            final URI notDeletedBlob = uploadFile(fileName2, data, containerName);
+            final String blobToBeDeleted = uploadFile(fileName1, data, containerName);
+            final String notDeletedBlob = uploadFile(fileName2, data, containerName);
 
-            delegate.removeStorageBlob(blobToBeDeleted, testEnv.azureResourceGroup);
+            delegate.removeStorageBlob(new URI(blobToBeDeleted), testEnv.azureResourceGroup);
 
             Assert.assertTrue(containerExists(blobToBeDeleted));
             Assert.assertFalse(blobExists(blobToBeDeleted));
@@ -1247,7 +1224,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(nsg.id(), actualNSGId);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 }

@@ -15,11 +15,7 @@
  */
 package com.microsoft.azure.vmagent.util;
 
-import com.microsoft.rest.LogLevel;
-
 public final class Constants {
-
-    public static final String CI_SYSTEM = "jenkinsagents";
 
     public static final String PLUGIN_NAME = "AzureJenkinsVMAgent";
 
@@ -229,8 +225,6 @@ public final class Constants {
     public static final String DEFAULT_SUBNET_NAME = "jenkinsarm-snet";
 
     public static final String DEFAULT_RESOURCE_GROUP_PATTERN = "^[a-zA-Z0-9][a-zA-Z\\-_0-9]{0,62}[a-zA-Z0-9]$";
-
-    public static final LogLevel DEFAULT_AZURE_SDK_LOGGING_LEVEL = LogLevel.NONE;
 
     public static final String AZURE_JENKINS_TAG_NAME = "JenkinsManagedTag";
 

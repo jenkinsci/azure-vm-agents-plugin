@@ -15,31 +15,30 @@
  */
 package com.microsoft.azure.vmagent.test;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.KnownLinuxVirtualMachineImage;
+import com.azure.resourcemanager.compute.models.StorageAccountTypes;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.resources.models.Deployment;
+import com.azure.resourcemanager.resources.models.DeploymentOperation;
+import com.azure.resourcemanager.resources.models.ResourceGroups;
+import com.azure.resourcemanager.storage.models.SkuName;
+import com.azure.resourcemanager.storage.models.StorageAccountKey;
+import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.BlobUrlParts;
+import com.azure.storage.common.StorageSharedKeyCredential;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.microsoft.azure.AzureEnvironment;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.KnownLinuxVirtualMachineImage;
-import com.microsoft.azure.management.compute.StorageAccountTypes;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.resources.Deployment;
-import com.microsoft.azure.management.resources.DeploymentOperation;
-import com.microsoft.azure.management.resources.ResourceGroups;
-import com.microsoft.azure.management.storage.SkuName;
-import com.microsoft.azure.management.storage.StorageAccountKey;
-import com.microsoft.azure.storage.AccessCondition;
-import com.microsoft.azure.storage.CloudStorageAccount;
-import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
-import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureTagPair;
@@ -49,9 +48,9 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
-import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsGlobalConfig;
 import hudson.util.Secret;
 import org.junit.After;
 import org.junit.Before;
@@ -60,9 +59,12 @@ import org.junit.Rule;
 import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,9 +172,6 @@ public class IntegrationTest {
             blobEndpointSuffixForCloudStorageAccount.put(AZURECHINA, "core.chinacloudapi.cn/");
             blobEndpointSuffixForCloudStorageAccount.put(AZUREUSGOVERMENT, "core.usgovcloudapi.net/");
             blobEndpointSuffixForCloudStorageAccount.put(AZUREGERMAN, "core.cloudapi.de/");
-
-            // disable AI
-            AppInsightsGlobalConfig.get().setAppInsightsEnabled(false);
         }
 
         private static String loadFromEnv(String name) {
@@ -194,7 +193,7 @@ public class IntegrationTest {
         }
     }
 
-    protected Azure azureClient;
+    protected AzureResourceManager azureClient;
     protected AzureVMManagementServiceDelegate delegate;
     protected TestEnvironment testEnv = null;
 
@@ -210,19 +209,13 @@ public class IntegrationTest {
         testEnv = new TestEnvironment();
         LOGGER.log(Level.INFO, "=========================== {0}", testEnv.azureResourceGroup);
 
-        azureClient = AzureClientFactory.getClient(
-                testEnv.clientId,
-                testEnv.clientSecret,
-                testEnv.tenantId,
-                testEnv.subscriptionId,
-                AzureEnvironment.AZURE
-        );
         String azureCredentialsId = "testId";
         addAzureCredentials(azureCredentialsId, "test", testEnv.subscriptionId, testEnv.clientId, testEnv.clientSecret);
+
+        azureClient = AzureClientUtil.getClient(azureCredentialsId);
+
         delegate = AzureVMManagementServiceDelegate.getInstance(azureClient, azureCredentialsId);
         clearAzureResources();
-
-        AppInsightsGlobalConfig.get().setAppInsightsEnabled(false);
     }
 
     @After
@@ -234,11 +227,11 @@ public class IntegrationTest {
         try {
 
             ResourceGroups rgs = azureClient.resourceGroups();
-            if (rgs.checkExistence(testEnv.azureResourceGroup)) {
+            if (rgs.getByName(testEnv.azureResourceGroup) != null) {
                 rgs.deleteByName(testEnv.azureResourceGroup);
             }
-        } catch (CloudException e) {
-            if (e.response().code() != 404) {
+        } catch (ManagementException e) {
+            if (e.getResponse().getStatusCode() != 404) {
                 LOGGER.log(Level.SEVERE, null, e);
             }
         }
@@ -246,21 +239,27 @@ public class IntegrationTest {
     }
 
     protected String downloadFromAzure(String resourceGroup, String storageAccountName, String containerName, String fileName)
-            throws URISyntaxException, StorageException, IOException, AzureCloudException {
+            throws IOException {
         List<StorageAccountKey> storageKeys = azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName).getKeys();
         String storageAccountKey = storageKeys.get(0).value();
-        CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
-        CloudBlobClient blobClient = account.createCloudBlobClient();
-        CloudBlobContainer container = blobClient.getContainerReference(containerName);
-        CloudBlockBlob blob = container.getBlockBlobReference(fileName);
-        return blob.downloadText();
+        BlobServiceClient account = new BlobServiceClientBuilder()
+                .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                .buildClient();
+        BlobContainerClient blobClient = account.createBlobContainer(containerName);
+        BlobClient blob = blobClient.getBlobClient(fileName);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        blob.download(byteArrayOutputStream);
+
+        return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
     }
 
-    protected boolean blobExists(URI storageURI) {
+    protected boolean blobExists(String storageURI) {
         try {
-            final String storageAccountName = storageURI.getHost().split("\\.")[0];
-            final String containerName = PathUtility.getContainerNameFromUri(storageURI, false);
-            final String blobName = PathUtility.getBlobNameFromURI(storageURI, false);
+            BlobUrlParts blobUrlParts = BlobUrlParts.parse(storageURI);
+            String storageAccountName = blobUrlParts.getAccountName();
+            final String containerName = blobUrlParts.getBlobContainerName();
+            final String blobName = blobUrlParts.getBlobName();
 
             List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
                     .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName)
@@ -270,19 +269,22 @@ public class IntegrationTest {
                 return false;
             } else {
                 String storageAccountKey = storageKeys.get(0).value();
-                CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
-                CloudBlobClient blobClient = account.createCloudBlobClient();
-                return blobClient.getContainerReference(containerName).getBlockBlobReference(blobName).exists();
+                BlobServiceClient account = new BlobServiceClientBuilder()
+                        .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                        .buildClient();
+                BlobContainerClient blobClient = account.getBlobContainerClient(containerName);
+                return blobClient.getBlobClient(blobName).exists();
             }
         } catch (Exception e) {
             return false;
         }
     }
 
-    protected boolean containerExists(URI storageURI) {
+    protected boolean containerExists(String storageURI) {
         try {
-            final String storageAccountName = storageURI.getHost().split("\\.")[0];
-            final String containerName = PathUtility.getContainerNameFromUri(storageURI, false);
+            BlobUrlParts blobUrlParts = BlobUrlParts.parse(storageURI);
+            String storageAccountName = blobUrlParts.getAccountName();
+            final String containerName = blobUrlParts.getBlobContainerName();
 
             List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
                     .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName)
@@ -292,9 +294,11 @@ public class IntegrationTest {
                 return false;
             } else {
                 String storageAccountKey = storageKeys.get(0).value();
-                CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(storageAccountName, storageAccountKey));
-                CloudBlobClient blobClient = account.createCloudBlobClient();
-                return blobClient.getContainerReference(containerName).exists();
+                BlobServiceClient account = new BlobServiceClientBuilder()
+                        .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                        .buildClient();
+                BlobContainerClient blobClient = account.getBlobContainerClient(containerName);
+                return blobClient.exists();
             }
         } catch (Exception e) {
             return false;
@@ -418,9 +422,9 @@ public class IntegrationTest {
 
     protected boolean areAllVMsDeployed(final List<String> vmNames) throws AzureCloudException {
         int deployedVMs = 0;
-        PagedList<Deployment> deployments = azureClient.deployments().listByResourceGroup(testEnv.azureResourceGroup);
+        PagedIterable<Deployment> deployments = azureClient.deployments().listByResourceGroup(testEnv.azureResourceGroup);
         for (Deployment dep : deployments) {
-            PagedList<DeploymentOperation> ops = dep.deploymentOperations().list();
+            PagedIterable<DeploymentOperation> ops = dep.deploymentOperations().list();
             for (DeploymentOperation op : ops) {
                 if (op.targetResource() == null) {
                     continue;
@@ -450,13 +454,11 @@ public class IntegrationTest {
         return deployedVMs == vmNames.size();
     }
 
-    protected VirtualMachine createAzureVM(String vmName)
-            throws CloudException, IOException, AzureCloudException {
+    protected VirtualMachine createAzureVM(String vmName) throws IOException, AzureCloudException {
         return createAzureVM(vmName, "JenkinsTag", "testing");
     }
 
-    protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue)
-            throws CloudException, IOException, AzureCloudException {
+    protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue) {
         return azureClient.virtualMachines()
                 .define(vmName)
                 .withRegion(testEnv.azureLocation)
@@ -473,7 +475,7 @@ public class IntegrationTest {
                 .create();
     }
 
-    protected URI uploadFile(String uploadFileName, String writtenData, String containerName) throws Exception {
+    protected String uploadFile(String uploadFileName, String writtenData, String containerName) throws Exception {
         azureClient.resourceGroups()
                 .define(testEnv.azureResourceGroup)
                 .withRegion(testEnv.azureLocation)
@@ -481,7 +483,7 @@ public class IntegrationTest {
         azureClient.storageAccounts().define(testEnv.azureStorageAccountName)
                 .withRegion(testEnv.azureLocation)
                 .withExistingResourceGroup(testEnv.azureResourceGroup)
-                .withSku(SkuName.STANDARD_LRS)
+                .withSku(StorageAccountSkuType.STANDARD_LRS)
                 .create();
         List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
                 .getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName)
@@ -492,13 +494,17 @@ public class IntegrationTest {
 
         String storageAccountKey = storageKeys.get(0).value();
 
-        CloudStorageAccount account = new CloudStorageAccount(new StorageCredentialsAccountAndKey(testEnv.azureStorageAccountName, storageAccountKey));
-        CloudBlobClient blobClient = account.createCloudBlobClient();
-        CloudBlobContainer container = blobClient.getContainerReference(containerName);
-        container.createIfNotExists();
-        CloudBlockBlob blob = container.getBlockBlobReference(uploadFileName);
-        blob.uploadText(writtenData, "UTF-8", AccessCondition.generateEmptyCondition(), null, null);
+        BlobServiceClient account = new BlobServiceClientBuilder()
+                .credential(new StorageSharedKeyCredential(testEnv.azureStorageAccountName, storageAccountKey))
+                .buildClient();
+        BlobContainerClient container = account.getBlobContainerClient(containerName);
+        if (!container.exists()) {
+            container.create();
+        }
+        BlobClient blob = container.getBlobClient(uploadFileName);
+        ByteArrayInputStream stream = new ByteArrayInputStream(writtenData.getBytes(StandardCharsets.UTF_8));
+        blob.upload(stream, writtenData.length());
 
-        return blob.getUri();
+        return blob.getBlobUrl();
     }
 }

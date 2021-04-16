@@ -15,7 +15,7 @@
  */
 package com.microsoft.azure.vmagent.exceptions;
 
-import com.microsoft.azure.CloudException;
+import com.azure.core.management.exception.ManagementException;
 
 public final class AzureCloudException extends Exception {
 
@@ -38,7 +38,7 @@ public final class AzureCloudException extends Exception {
     }
 
     public static AzureCloudException create(String msg, Exception ex) {
-        if (ex instanceof CloudException) {
+        if (ex instanceof ManagementException) {
             // Drop stacktrace of CloudException and throw its message only
             //
             // Fields in CloudException contain details of HTTP requests and responses. Their types are in okhttp

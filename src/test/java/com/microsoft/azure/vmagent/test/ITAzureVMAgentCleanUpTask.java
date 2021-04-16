@@ -16,9 +16,9 @@
 
 package com.microsoft.azure.vmagent.test;
 
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.management.storage.StorageAccount;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.resources.models.GenericResource;
+import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask.DeploymentRegistrar;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -132,7 +132,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
 
         Thread.sleep(20 * 1000); // give time for azure to realize that some resources are missing
         StorageAccount jenkinsStorage = null;
-        PagedList<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
+        PagedIterable<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
         for (GenericResource resource : resources) {
             if (StringUtils.containsIgnoreCase(resource.type(), "storageAccounts") ||
                     StringUtils.containsIgnoreCase(resource.type(), "virtualNetworks")) {

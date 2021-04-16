@@ -15,8 +15,8 @@
  */
 package com.microsoft.azure.vmagent;
 
+import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.microsoft.azure.management.compute.OperatingSystemTypes;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -55,9 +55,7 @@ import java.io.PrintStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -547,9 +545,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // reuse.
         setEligibleForReuse(true);
 
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
-        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "ShutDown", properties);
     }
 
     /**
@@ -661,11 +656,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             parentCloud.adjustVirtualMachineCount(-1);
         }
 
-        Jenkins.getInstance().removeNode(this);
-
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("Reason", reason == null ? "Unknown reason" : reason.toString());
-        AzureVMAgentPlugin.sendEvent(Constants.AI_VM_AGENT, "Deprovision", properties);
+        Jenkins.get().removeNode(this);
     }
 
     @CheckForNull
