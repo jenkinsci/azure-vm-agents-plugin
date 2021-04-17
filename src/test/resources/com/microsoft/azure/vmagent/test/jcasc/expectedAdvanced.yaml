@@ -38,7 +38,6 @@
       jvmOptions: "-xmx"
       labels: "linux"
       location: "UK South"
-      maximumDeploymentSize: 40
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
       nsgName: "an-nsg"
