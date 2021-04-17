@@ -15,7 +15,7 @@
  */
 package com.microsoft.azure.vmagent.test;
 
-import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.exception.ManagementException;
 import com.azure.resourcemanager.compute.models.AvailabilitySet;
 import com.azure.resourcemanager.compute.models.AvailabilitySetSkuTypes;
 import com.azure.resourcemanager.compute.models.PowerState;
@@ -27,7 +27,6 @@ import com.azure.resourcemanager.network.models.PublicIpAddress;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
-import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.AvailabilityType;
 import com.microsoft.azure.vmagent.AzureVMAgent;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
@@ -38,7 +37,6 @@ import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
-import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
@@ -57,9 +55,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -696,7 +696,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
-            Assert.assertNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+            ManagementException managementException = assertThrows(ManagementException.class, () -> azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.fail(e.getMessage());
@@ -715,7 +716,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -741,16 +742,19 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             // destroy the vm first
             azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
             delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
-            Assert.assertNull(
+            ManagementException managementException = assertThrows(ManagementException.class, () ->
                     azureClient
                             .publicIpAddresses()
                             .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
             );
-            Assert.assertNull(
+
+            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
+            managementException = assertThrows(ManagementException.class, () ->
                     azureClient
                             .networkInterfaces()
                             .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
             );
+            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.assertTrue(e.getMessage(), false);
@@ -1072,40 +1076,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void verifyStorageAccountNameTest() {
-        try {
-            Assert.assertEquals(Constants.OP_SUCCESS, delegate
-                    .verifyStorageAccountName(testEnv.azureResourceGroup,
-                            testEnv.azureStorageAccountName,
-                            testEnv.azureStorageAccountType));
-
-            azureClient.storageAccounts()
-                    .define(testEnv.azureStorageAccountName)
-                    .withRegion(testEnv.azureLocation)
-                    .withNewResourceGroup(testEnv.azureResourceGroup)
-                    .withSku(StorageAccountSkuType.fromSkuName(SkuName.fromString(testEnv.azureStorageAccountType)))
-                    .create();
-
-            Assert.assertEquals(Constants.OP_SUCCESS, delegate
-                    .verifyStorageAccountName(testEnv.azureResourceGroup,
-                            testEnv.azureStorageAccountName,
-                            testEnv.azureStorageAccountType));
-
-
-            AzureVMManagementServiceDelegate wrongDelegate =
-                    AzureVMManagementServiceDelegate.getInstance(
-                            null, null);
-            Assert.assertEquals(Messages.Azure_GC_Template_SA_Already_Exists(),
-                    wrongDelegate.verifyStorageAccountName(testEnv.azureResourceGroup + "fake",
-                            testEnv.azureStorageAccountName,
-                            testEnv.azureStorageAccountType));
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
-        }
-    }
-
-    @Test
     public void deploymentWorksIfStorageAccountIsCreatedBefore() {
         /*
         uploadCustomScript creates the storage account if it's not available.
@@ -1119,7 +1089,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             createDefaultDeployment(1, null);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1130,8 +1100,19 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String data = "5gadfgbsdafsdg";
             final String containerName_from_jenkins = "jnkshouldgetdeleted"; // we deploy the init script in containers starting with jnk
             final String containerName_from_user = "notstartingwithjnk"; // we shouldn't delete containers not deployed by us
-            final String deletedContainerBlobURI = uploadFile(fileName, data, containerName_from_jenkins);
-            final String existingContainerBlobURI = uploadFile(fileName, data, containerName_from_user);
+
+            azureClient.resourceGroups()
+                    .define(testEnv.azureResourceGroup)
+                    .withRegion(testEnv.azureLocation)
+                    .create();
+            StorageAccount storageAccount = azureClient.storageAccounts().define(testEnv.azureStorageAccountName)
+                    .withRegion(testEnv.azureLocation)
+                    .withExistingResourceGroup(testEnv.azureResourceGroup)
+                    .withSku(StorageAccountSkuType.STANDARD_LRS)
+                    .create();
+
+            final String deletedContainerBlobURI = uploadFile(storageAccount, fileName, data, containerName_from_jenkins);
+            final String existingContainerBlobURI = uploadFile(storageAccount, fileName, data, containerName_from_user);
 
             delegate.removeStorageBlob(new URI(deletedContainerBlobURI), testEnv.azureResourceGroup);
             delegate.removeStorageBlob(new URI(existingContainerBlobURI), testEnv.azureResourceGroup);
@@ -1170,8 +1151,19 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String fileName2 = "abc2.txt";
             final String data = "5gadfgbsdafsdg";
             final String containerName = "jnkshouldgetdeleted";
-            final String blobToBeDeleted = uploadFile(fileName1, data, containerName);
-            final String notDeletedBlob = uploadFile(fileName2, data, containerName);
+
+            azureClient.resourceGroups()
+                    .define(testEnv.azureResourceGroup)
+                    .withRegion(testEnv.azureLocation)
+                    .create();
+            StorageAccount storageAccount = azureClient.storageAccounts().define(testEnv.azureStorageAccountName)
+                    .withRegion(testEnv.azureLocation)
+                    .withExistingResourceGroup(testEnv.azureResourceGroup)
+                    .withSku(StorageAccountSkuType.STANDARD_LRS)
+                    .create();
+
+            final String blobToBeDeleted = uploadFile(storageAccount, fileName1, data, containerName);
+            final String notDeletedBlob = uploadFile(storageAccount, fileName2, data, containerName);
 
             delegate.removeStorageBlob(new URI(blobToBeDeleted), testEnv.azureResourceGroup);
 

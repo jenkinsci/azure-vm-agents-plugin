@@ -17,6 +17,7 @@ package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementException;
+import com.azure.core.util.BinaryData;
 import com.azure.core.util.ExpandableStringEnum;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.models.GalleryImageVersion;
@@ -861,9 +862,7 @@ public final class AzureVMManagementServiceDelegate {
                     azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
             BlobClient blob = container.getBlobClient(targetScriptName);
             scriptLength = initScript.getBytes(StandardCharsets.UTF_8).length;
-            ByteArrayInputStream stream = new ByteArrayInputStream(initScript.getBytes(StandardCharsets.UTF_8));
-            blob.upload(stream, initScript.length(), true);
-            stream.close();
+            blob.upload(BinaryData.fromString(initScript).toStream(), scriptLength, true);
             return blob.getBlobUrl();
         } catch (Exception e) {
             throw AzureCloudException.create(
@@ -963,22 +962,22 @@ public final class AzureVMManagementServiceDelegate {
             String resourceGroupName) throws AzureCloudException {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: check for {0}", vmName);
 
-        VirtualMachine vm;
         try {
-            vm = azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
+            azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
+        } catch (ManagementException e) {
+            if (e.getResponse().getStatusCode() == 404) {
+                LOGGER.log(Level.INFO,
+                        "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
+                        vmName);
+                return false;
+            }
+            throw e;
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
 
-        if (vm != null) {
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
-            return true;
-        } else {
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
-                    vmName);
-            return false;
-        }
+        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
+        return true;
     }
 
     /**
@@ -2509,7 +2508,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Get the blob endpoint substring with prefix and suffix.
+     * Get the blob endpoint
      *
      * @param startKey       uses to get the start position of sub string,
      *                       if it's null or empty then whole input string will be used
@@ -2569,7 +2568,7 @@ public final class AzureVMManagementServiceDelegate {
         }
 
         String storageAccountKey = storageKeys.get(0).value();
-        String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
+        String blobSuffix = storageAccount.endPoints().primary().blob().toLowerCase();
         LOGGER.log(Level.INFO,
                 "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
                         + "the suffix for construct CloudStorageCloud is {0}",
@@ -2599,11 +2598,15 @@ public final class AzureVMManagementServiceDelegate {
     public static BlobContainerClient getCloudBlobContainer(
             BlobServiceClient account, String containerName) throws AzureCloudException {
         try {
-            return account.createBlobContainer(containerName);
+            BlobContainerClient blobContainerClient = account.getBlobContainerClient(containerName);
+            if (!blobContainerClient.exists()) {
+                blobContainerClient.create();
+            }
+            return blobContainerClient;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: getCloudBlobContainer: "
-                            + "unable to get CloudStorageAccount with container name {1}",
+                            + "unable to get CloudStorageAccount with container name {0}",
                     new Object[]{containerName});
             throw AzureCloudException.create(e);
         }

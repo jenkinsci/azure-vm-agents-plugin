@@ -16,7 +16,6 @@
 package com.microsoft.azure.vmagent.test;
 
 import com.azure.core.http.rest.PagedIterable;
-import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.exception.ManagementException;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.models.KnownLinuxVirtualMachineImage;
@@ -26,6 +25,7 @@ import com.azure.resourcemanager.resources.models.Deployment;
 import com.azure.resourcemanager.resources.models.DeploymentOperation;
 import com.azure.resourcemanager.resources.models.ResourceGroups;
 import com.azure.resourcemanager.storage.models.SkuName;
+import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.azure.resourcemanager.storage.models.StorageAccountKey;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
 import com.azure.storage.blob.BlobClient;
@@ -50,7 +50,6 @@ import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.Constants;
-import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
 import hudson.util.Secret;
 import org.junit.After;
 import org.junit.Before;
@@ -62,8 +61,6 @@ import org.jvnet.hudson.test.JenkinsRule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +74,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /*
-To execute the integration tests you need to set the credentials env variables (the ones that don't have a default) and run mvn failsafe:integration-test
+To execute the integration tests you need to set the credentials env variables (the ones that don't have a default)
+and run mvn failsafe:integration-test.
+You will also need to run 'az vm image terms accept --offer kali-linux --plan kali --publish kali-linux' one time.
 */
 public class IntegrationTest {
     protected static final String OS_TYPE = Constants.OS_TYPE_LINUX;
@@ -102,7 +101,6 @@ public class IntegrationTest {
         public final String serviceManagementURL;
         public final String authenticationEndpoint;
         public final String resourceManagerEndpoint;
-        public final String graphEndpoint;
         public final String azureLocation;
         public String availabilityType;
         public String availabilitySet;
@@ -139,7 +137,6 @@ public class IntegrationTest {
             serviceManagementURL = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_URL", "https://management.core.windows.net/");
             authenticationEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_AUTH_URL", "https://login.microsoftonline.com/");
             resourceManagerEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_RESOURCE_URL", "https://management.azure.com/");
-            graphEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_GRAPH_URL", "https://graph.windows.net/");
 
             azureLocation = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_LOCATION", "East US");
             azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
@@ -156,7 +153,7 @@ public class IntegrationTest {
             galleryImageVersion = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_IMAGE_VERSION", "");
             gallerySubscriptionId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_SUBSCRIPTION_ID", "");
             galleryResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_GALLERY_RESOURCE_GROUP", "");
-            azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Basic_A0");
+            azureImageSize = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_SIZE", "Standard_A1_v2");
             osDiskSize = 0;
             availabilityType = AvailabilityType.UNKNOWN.getName();
             availabilitySet = "";
@@ -200,7 +197,9 @@ public class IntegrationTest {
     protected void addAzureCredentials(String id, String description, String subscriptionId, String clientId, String clientSecret) {
         Map<Domain, List<Credentials>> domainCredentialsMap = SystemCredentialsProvider.getInstance().getDomainCredentialsMap();
         List<Credentials> credentials = domainCredentialsMap.get(Domain.global());
-        credentials.add(new AzureCredentials(CredentialsScope.GLOBAL, id, description, subscriptionId, clientId, clientSecret));
+        AzureCredentials cred = new AzureCredentials(CredentialsScope.GLOBAL, id, description, subscriptionId, clientId, Secret.fromString(clientSecret));
+        cred.setTenant(testEnv.tenantId);
+        credentials.add(cred);
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(domainCredentialsMap);
     }
 
@@ -211,6 +210,7 @@ public class IntegrationTest {
 
         String azureCredentialsId = "testId";
         addAzureCredentials(azureCredentialsId, "test", testEnv.subscriptionId, testEnv.clientId, testEnv.clientSecret);
+
 
         azureClient = AzureClientUtil.getClient(azureCredentialsId);
 
@@ -240,12 +240,17 @@ public class IntegrationTest {
 
     protected String downloadFromAzure(String resourceGroup, String storageAccountName, String containerName, String fileName)
             throws IOException {
-        List<StorageAccountKey> storageKeys = azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName).getKeys();
+        StorageAccount storageAccount = azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName);
+        List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         String storageAccountKey = storageKeys.get(0).value();
         BlobServiceClient account = new BlobServiceClientBuilder()
                 .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                .endpoint(storageAccount.endPoints().primary().blob())
                 .buildClient();
-        BlobContainerClient blobClient = account.createBlobContainer(containerName);
+        BlobContainerClient blobClient = account.getBlobContainerClient(containerName);
+        if (!blobClient.exists()) {
+            blobClient.create();
+        }
         BlobClient blob = blobClient.getBlobClient(fileName);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -261,8 +266,9 @@ public class IntegrationTest {
             final String containerName = blobUrlParts.getBlobContainerName();
             final String blobName = blobUrlParts.getBlobName();
 
-            List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName)
+            StorageAccount storageAccount = azureClient.storageAccounts()
+                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
+            List<StorageAccountKey> storageKeys = storageAccount
                     .getKeys();
 
             if (storageKeys.isEmpty()) {
@@ -271,11 +277,13 @@ public class IntegrationTest {
                 String storageAccountKey = storageKeys.get(0).value();
                 BlobServiceClient account = new BlobServiceClientBuilder()
                         .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                        .endpoint(storageAccount.endPoints().primary().blob())
                         .buildClient();
                 BlobContainerClient blobClient = account.getBlobContainerClient(containerName);
                 return blobClient.getBlobClient(blobName).exists();
             }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             return false;
         }
     }
@@ -286,8 +294,9 @@ public class IntegrationTest {
             String storageAccountName = blobUrlParts.getAccountName();
             final String containerName = blobUrlParts.getBlobContainerName();
 
-            List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName)
+            StorageAccount storageAccount = azureClient.storageAccounts()
+                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
+            List<StorageAccountKey> storageKeys = storageAccount
                     .getKeys();
 
             if (storageKeys.isEmpty()) {
@@ -296,11 +305,13 @@ public class IntegrationTest {
                 String storageAccountKey = storageKeys.get(0).value();
                 BlobServiceClient account = new BlobServiceClientBuilder()
                         .credential(new StorageSharedKeyCredential(storageAccountName, storageAccountKey))
+                        .endpoint(storageAccount.endPoints().primary().blob())
                         .buildClient();
                 BlobContainerClient blobClient = account.getBlobContainerClient(containerName);
                 return blobClient.exists();
             }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             return false;
         }
     }
@@ -336,7 +347,7 @@ public class IntegrationTest {
             boolean ephemeralOSDisk,
             String nsgName,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
         final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
@@ -391,6 +402,7 @@ public class IntegrationTest {
         when(templateMock.getUsePrivateIP()).thenReturn(!usePrivateIP);
         when(templateMock.getNsgName()).thenReturn(nsgName);
         when(templateMock.getStorageAccountType()).thenReturn(storageType);
+        when(templateMock.getOsDiskStorageAccountType()).thenReturn(storageType);
         when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
         when(templateMock.getOsDiskSize()).thenReturn(testEnv.osDiskSize);
         when(templateMock.getPreInstallSsh()).thenReturn(true);
@@ -470,24 +482,14 @@ public class IntegrationTest {
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
                 .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'") //don't try this at home
                 .withOSDiskStorageAccountType(StorageAccountTypes.STANDARD_LRS)
+                .withSize(testEnv.azureImageSize)
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
                 .withTag(tagName, tagValue)
                 .create();
     }
 
-    protected String uploadFile(String uploadFileName, String writtenData, String containerName) throws Exception {
-        azureClient.resourceGroups()
-                .define(testEnv.azureResourceGroup)
-                .withRegion(testEnv.azureLocation)
-                .create();
-        azureClient.storageAccounts().define(testEnv.azureStorageAccountName)
-                .withRegion(testEnv.azureLocation)
-                .withExistingResourceGroup(testEnv.azureResourceGroup)
-                .withSku(StorageAccountSkuType.STANDARD_LRS)
-                .create();
-        List<StorageAccountKey> storageKeys = azureClient.storageAccounts()
-                .getByResourceGroup(testEnv.azureResourceGroup, testEnv.azureStorageAccountName)
-                .getKeys();
+    protected String uploadFile(StorageAccount storageAccount, String uploadFileName, String writtenData, String containerName) throws Exception {
+        List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
             throw new Exception("Can't find key");
         }
@@ -496,6 +498,7 @@ public class IntegrationTest {
 
         BlobServiceClient account = new BlobServiceClientBuilder()
                 .credential(new StorageSharedKeyCredential(testEnv.azureStorageAccountName, storageAccountKey))
+                .endpoint(storageAccount.endPoints().primary().blob())
                 .buildClient();
         BlobContainerClient container = account.getBlobContainerClient(containerName);
         if (!container.exists()) {
