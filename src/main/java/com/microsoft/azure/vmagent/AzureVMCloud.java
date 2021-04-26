@@ -745,6 +745,16 @@ public class AzureVMCloud extends Cloud {
 
         // provision new nodes if required
         if (numberOfAgents > 0) {
+            // limit the number of agents in a single deployment if specified on the template
+            if (template.getMaximumDeploymentSize() > 0 && numberOfAgents > template.getMaximumDeploymentSize()) {
+                LOGGER.log(
+                    Level.INFO,
+                    "Lowering size of deployment from {0} to {1} nodes, according to template's maximum deployment size",
+                    new Object[]{numberOfAgents, template.getMaximumDeploymentSize()}
+                );
+                numberOfAgents = template.getMaximumDeploymentSize();
+            }
+
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
