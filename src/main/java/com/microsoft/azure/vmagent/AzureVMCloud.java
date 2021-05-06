@@ -633,13 +633,11 @@ public class AzureVMCloud extends Cloud {
     public Collection<PlannedNode> provision(Label label, int workLoad) {
         LOGGER.log(Level.INFO,
                 "AzureVMCloud: provision: start for label {0} workLoad {1}", new Object[]{label, workLoad});
-
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
 
         // round up the number of required machine
         int numberOfAgents = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
         final List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>(numberOfAgents);
-
 
         if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
@@ -714,8 +712,7 @@ public class AzureVMCloud extends Cloud {
                                     }), template.getNoOfParallelJobs()));
                         }
                     } catch (Exception e) {
-                        // Couldn't bring the node back online.  Mark it
-                        // as needing deletion
+                        // Couldn't bring the node back online.  Mark it as needing deletion
                         LOGGER.log(Level.WARNING, String.format("Failed to reuse agent computer %s",
                                 agentComputer.getName()), e);
                         azureComputer.setAcceptingTasks(false);
@@ -726,9 +723,15 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-
         // provision new nodes if required
         if (numberOfAgents > 0) {
+            if (template.getMaximumDeploymentSize() > 0 && numberOfAgents > template.getMaximumDeploymentSize()) {
+                LOGGER.log(Level.FINE,
+                    "Setting size of deployment from {0} to {1} nodes, according to template's maximum deployment size",
+                    new Object[]{numberOfAgents, template.getMaximumDeploymentSize()});
+                numberOfAgents = template.getMaximumDeploymentSize();
+            }
+
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)

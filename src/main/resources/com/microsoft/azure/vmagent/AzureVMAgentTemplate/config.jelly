@@ -87,6 +87,10 @@
                 <f:select/>
             </f:entry>
 
+            <f:entry title="${%Maximum_Deployment_Size}" field="maximumDeploymentSize">
+                <f:number default="10"/>
+            </f:entry>
+
             <f:entry title="${%Spot instance}" field="spotInstance">
                 <f:checkbox/>
             </f:entry>

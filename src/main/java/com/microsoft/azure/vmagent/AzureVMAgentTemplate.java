@@ -342,6 +342,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private RetentionStrategy retentionStrategy;
 
+    private int maximumDeploymentSize;
+
 
     // deprecated fields
     private transient boolean isInstallDocker;
@@ -1207,6 +1209,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public RetentionStrategy getRetentionStrategy() {
         return retentionStrategy;
+    }
+
+    public int getMaximumDeploymentSize() {
+        return maximumDeploymentSize;
+    }
+
+    @DataBoundSetter
+    public void setMaximumDeploymentSize(int maximumDeploymentSize) {
+        this.maximumDeploymentSize = maximumDeploymentSize;
     }
 
     /**
