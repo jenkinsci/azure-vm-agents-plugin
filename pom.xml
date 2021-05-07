@@ -81,17 +81,6 @@
             <version>${azure-credentials.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-storage-blob</artifactId>
-            <version>12.10.2</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-commons-core</artifactId>
             <version>${azure-commons.version}</version>
