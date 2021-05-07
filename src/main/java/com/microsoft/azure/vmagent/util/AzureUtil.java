@@ -15,13 +15,13 @@
  */
 package com.microsoft.azure.vmagent.util;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
@@ -459,8 +459,8 @@ public final class AzureUtil {
         if (StringUtils.isEmpty(subscriptionId)) {
             return true;
         }
-        Azure defaultClient = AzureClientUtil.getClient(credentialId);
-        PagedList<Subscription> subscriptions = defaultClient.subscriptions().list();
+        AzureResourceManager defaultClient = AzureClientUtil.getClient(credentialId);
+        PagedIterable<Subscription> subscriptions = defaultClient.subscriptions().list();
         boolean isSubscriptionIdValid = false;
         for (Subscription subscription : subscriptions) {
             if (subscription.subscriptionId().equals(subscriptionId)) {

@@ -15,47 +15,46 @@
  */
 package com.microsoft.azure.vmagent.util;
 
-import com.microsoft.azure.management.Azure;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.resourcemanager.AzureResourceManager;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
-import com.microsoft.azure.vmagent.AzureVMAgentPlugin;
+import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.jenkins.azurecommons.core.AzureClientFactory;
-import com.microsoft.jenkins.azurecommons.core.credentials.TokenCredentialData;
-import org.apache.commons.lang.StringUtils;
+import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 
 public final class AzureClientUtil {
 
-    public static TokenCredentialData getToken(String credentialId) {
-        AzureBaseCredentials credential = AzureCredentialUtil.getCredential2(credentialId);
-        if (credential == null) {
-            throw new NullPointerException("Can't find credential with id: " + credentialId);
-        }
-        return TokenCredentialData.deserialize(credential.serializeToTokenData());
+    public static AzureResourceManager getClient(String credentialId) {
+        AzureBaseCredentials credential = AzureCredentialUtil.getCredential(null, credentialId);
+
+        return getAzureResourceManager(credential, credential.getSubscriptionId());
     }
 
-    public static Azure getClient(String credentialId) {
-        TokenCredentialData token = getToken(credentialId);
-        return getClient(token);
-    }
-
-    public static Azure getClient(String credentialId, String subscriptionId) throws AzureCloudException {
+    /**
+     * Allows using a different subscription to the one configured on the credential.
+     */
+    public static AzureResourceManager getClient(String credentialId, String subscriptionId)
+            throws AzureCloudException {
         boolean validSubscriptionId = AzureUtil.isValidSubscriptionId(credentialId, subscriptionId);
         if (!validSubscriptionId) {
             throw AzureCloudException.create("The subscription id for gallery image is not valid");
         }
-        TokenCredentialData token = getToken(credentialId);
-        if (StringUtils.isNotEmpty(subscriptionId)) {
-            token.setSubscriptionId(subscriptionId);
-        }
-        return getClient(token);
+        AzureBaseCredentials credential = AzureCredentialUtil.getCredential(null, credentialId);
+        return getAzureResourceManager(credential, subscriptionId);
     }
 
-    public static Azure getClient(TokenCredentialData token) {
-        return AzureClientFactory.getClient(token, configurable -> configurable
-                .withInterceptor(new AzureVMAgentPlugin.AzureTelemetryInterceptor())
-                .withUserAgent(AzureClientFactory.getUserAgent(Constants.PLUGIN_NAME,
-                        AzureClientUtil.class.getPackage().getImplementationVersion())));
+    private static AzureResourceManager getAzureResourceManager(
+            AzureBaseCredentials azureCredentials, String subscriptionId) {
+        AzureProfile profile = new AzureProfile(azureCredentials.getAzureEnvironment());
+        TokenCredential tokenCredential = AzureCredentials.getTokenCredential(azureCredentials);
+
+        return AzureResourceManager
+                .configure()
+                .withHttpClient(HttpClientRetriever.get())
+                .authenticate(tokenCredential, profile)
+                .withSubscription(subscriptionId);
     }
 
     private AzureClientUtil() {

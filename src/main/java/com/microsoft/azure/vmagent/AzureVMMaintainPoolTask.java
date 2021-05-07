@@ -7,11 +7,9 @@ import hudson.model.AsyncPeriodicWork;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.slaves.Cloud;
-import hudson.slaves.NodeProvisioner;
 import jenkins.model.Jenkins;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,10 +63,10 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
         }
         if (template.getTemplateProvisionStrategy().isVerifiedPass()) {
             cloud.doProvision(newAgents,
-                    new ArrayList<NodeProvisioner.PlannedNode>(),
+                    new ArrayList<>(),
                     template,
-                    true,
-                    new HashMap<String, String>());
+                    true
+                    );
         } else {
             LOGGER.log(Level.WARNING, "Template {0} failed to verify, cannot be provisioned",
                     template.getTemplateName());

@@ -16,9 +16,10 @@
 
 package com.microsoft.azure.vmagent.test;
 
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.management.storage.StorageAccount;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.resourcemanager.resources.models.GenericResource;
+import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
 import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask.DeploymentRegistrar;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -31,11 +32,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -43,8 +45,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
-
-    private static final Logger LOGGER = Logger.getLogger(ITAzureVMAgentCleanUpTask.class.getName());
 
     @Test
     public void cleanDeploymentsTest() throws Exception {
@@ -72,7 +72,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
     }
 
     @Test
-    public void cleanLeakedResourcesRemovesVM() throws IOException, AzureCloudException {
+    public void cleanLeakedResourcesRemovesVM() {
         final String vmName = "tstleak";
         final String tagName = Constants.AZURE_RESOURCES_TAG_NAME;
         final AzureUtil.DeploymentTag tagValue = new AzureUtil.DeploymentTag("some_value/123");
@@ -104,7 +104,10 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         Assert.assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
 
         cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_matching);
-        Assert.assertNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+
+        ManagementException managementException = assertThrows(ManagementException.class,
+                () -> azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+        assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
     }
 
     @Test
@@ -131,8 +134,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_matching); //should remove second deployment
 
         Thread.sleep(20 * 1000); // give time for azure to realize that some resources are missing
-        StorageAccount jenkinsStorage = null;
-        PagedList<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
+        PagedIterable<GenericResource> resources = azureClient.genericResources().listByResourceGroup(testEnv.azureResourceGroup);
         for (GenericResource resource : resources) {
             if (StringUtils.containsIgnoreCase(resource.type(), "storageAccounts") ||
                     StringUtils.containsIgnoreCase(resource.type(), "virtualNetworks")) {

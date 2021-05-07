@@ -15,10 +15,10 @@
  */
 package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.resources.Deployment;
-import com.microsoft.azure.management.resources.GenericResource;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.resources.models.Deployment;
+import com.azure.resourcemanager.resources.models.GenericResource;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.DefaultRetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -38,7 +38,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedItem;
-import org.joda.time.DateTime;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -49,8 +48,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -231,7 +231,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             }
 
             try {
-                final Azure azureClient = cloud.getAzureClient();
+                final AzureResourceManager azureClient = cloud.getAzureClient();
                 final AzureVMManagementServiceDelegate delegate = cloud.getServiceDelegate();
 
                 // This will throw if the deployment can't be found.  This could happen in a couple instances
@@ -255,19 +255,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     continue;
                 }
 
-                DateTime deploymentTime = deployment.timestamp();
+                OffsetDateTime deploymentTime = deployment.timestamp();
 
                 LOGGER.log(getNormalLoggingLevel(),
                         "AzureVMAgentCleanUpTask: cleanDeployments: Deployment created on {0}",
-                        deploymentTime.toDate());
-                long deploymentTimeInMillis = deploymentTime.getMillis();
-
-                // Compare to now
-                Calendar nowTime = Calendar.getInstance(deploymentTime.getZone().toTimeZone());
-                long nowTimeInMillis = nowTime.getTimeInMillis();
-
-                long diffTime = nowTimeInMillis - deploymentTimeInMillis;
-                long diffTimeInMinutes = diffTime / MILLIS_IN_MINUTE;
+                        deploymentTime.toString());
+                long diffTimeInMinutes = ChronoUnit.MINUTES
+                        .between(deploymentTime, OffsetDateTime.now());
 
                 String state = deployment.provisioningState();
 
@@ -363,18 +357,18 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             DeploymentRegistrar deploymentRegistrar) {
         try {
             final List<String> validVMs = getValidVMs();
-            final Azure azureClient = cloud.getAzureClient();
+            final AzureResourceManager azureClient = cloud.getAzureClient();
             final AzureVMManagementServiceDelegate serviceDelegate = cloud.getServiceDelegate();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
-            final PagedList<GenericResource> resources = azureClient.genericResources()
+            final PagedIterable<GenericResource> resources = azureClient.genericResources()
                     .listByResourceGroup(resourceGroup);
 
-            if (resources == null || resources.isEmpty()) {
+            if (resources == null || !resources.iterator().hasNext()) {
                 return;
             }
 
-            final PriorityQueue<GenericResource> resourcesMarkedForDeletion = new PriorityQueue<>(resources.size(),
+            final PriorityQueue<GenericResource> resourcesMarkedForDeletion = new PriorityQueue<>(10,
                     new Comparator<GenericResource>() {
                         @Override
                         public int compare(GenericResource o1, GenericResource o2) {

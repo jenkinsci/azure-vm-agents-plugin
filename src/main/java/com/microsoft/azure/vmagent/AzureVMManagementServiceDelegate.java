@@ -15,6 +15,40 @@
  */
 package com.microsoft.azure.vmagent;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.core.util.BinaryData;
+import com.azure.core.util.ExpandableStringEnum;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.GalleryImageVersion;
+import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.PurchasePlan;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.compute.models.VirtualMachineCustomImage;
+import com.azure.resourcemanager.compute.models.VirtualMachineImage;
+import com.azure.resourcemanager.compute.models.VirtualMachineOffer;
+import com.azure.resourcemanager.compute.models.VirtualMachinePublisher;
+import com.azure.resourcemanager.compute.models.VirtualMachineSize;
+import com.azure.resourcemanager.compute.models.VirtualMachineSku;
+import com.azure.resourcemanager.network.models.Network;
+import com.azure.resourcemanager.network.models.NetworkSecurityGroup;
+import com.azure.resourcemanager.network.models.PublicIpAddress;
+import com.azure.resourcemanager.resources.models.DeploymentMode;
+import com.azure.resourcemanager.resources.models.GenericResource;
+import com.azure.resourcemanager.storage.models.CheckNameAvailabilityResult;
+import com.azure.resourcemanager.storage.models.Reason;
+import com.azure.resourcemanager.storage.models.SkuName;
+import com.azure.resourcemanager.storage.models.StorageAccount;
+import com.azure.resourcemanager.storage.models.StorageAccountKey;
+import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.BlobUrlParts;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.common.StorageSharedKeyCredential;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,23 +56,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.compute.*;
-import com.microsoft.azure.management.network.Network;
-import com.microsoft.azure.management.network.NetworkSecurityGroup;
-import com.microsoft.azure.management.network.PublicIPAddress;
-import com.microsoft.azure.management.resources.DeploymentMode;
-import com.microsoft.azure.management.resources.GenericResource;
-import com.microsoft.azure.management.resources.fluentcore.arm.ExpandableStringEnum;
-import com.microsoft.azure.management.storage.*;
-import com.microsoft.azure.storage.AccessCondition;
-import com.microsoft.azure.storage.CloudStorageAccount;
-import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.CloudPageBlob;
-import com.microsoft.azure.storage.blob.ListBlobItem;
-import com.microsoft.azure.storage.core.PathUtility;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
@@ -49,13 +66,13 @@ import jenkins.slaves.JnlpAgentReceiver;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
-import org.joda.time.DateTime;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -144,7 +161,7 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
 
-    private final Azure azureClient;
+    private final AzureResourceManager azureClient;
 
     private final String azureCredentialsId;
 
@@ -154,7 +171,7 @@ public final class AzureVMManagementServiceDelegate {
         return cloud.getServiceDelegate();
     }
 
-    public static AzureVMManagementServiceDelegate getInstance(Azure azureClient, String azureCredentialsId) {
+    public static AzureVMManagementServiceDelegate getInstance(AzureResourceManager azureClient, String azureCredentialsId) {
         if (azureClient == null) {
             throw new NullPointerException("the azure client is null!");
         }
@@ -462,7 +479,7 @@ public final class AzureVMManagementServiceDelegate {
                     galleryImageVersion = getGalleryImageLatestVersion(galleryResourceGroup,
                             galleryName, galleryImageDefinition, gallerySubscriptionId);
                 } else {
-                    Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
+                    AzureResourceManager client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
                     galleryImageVersion = client.galleryImageVersions()
                             .getByGalleryImage(galleryResourceGroup, galleryName,
                                     galleryImageDefinition, galleryImageVersionStr);
@@ -621,16 +638,19 @@ public final class AzureVMManagementServiceDelegate {
 
     private GalleryImageVersion getGalleryImageLatestVersion(String galleryResourceGroup, String galleryName,
                                                              String galleryImageDefinition, String gallerySubscriptionId) throws AzureCloudException {
-        Azure client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
-        PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
-        if (galleryImageVersions.isEmpty()) {
-            return null;
-        }
-        GalleryImageVersion latestVersion = galleryImageVersions.get(0);
-        for (int i = 1; i < galleryImageVersions.size(); i++) {
-            DateTime currentPublishedDate = latestVersion.publishingProfile().publishedDate();
-            if (galleryImageVersions.get(i).publishingProfile().publishedDate().compareTo(currentPublishedDate) > 0) {
-                latestVersion = galleryImageVersions.get(i);
+
+        AzureResourceManager client = AzureClientUtil.getClient(azureCredentialsId, gallerySubscriptionId);
+        PagedIterable<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions().listByGalleryImage(galleryResourceGroup, galleryName, galleryImageDefinition);
+        GalleryImageVersion latestVersion = null;
+        for (GalleryImageVersion galleryImageVersion : galleryImageVersions) {
+            if (latestVersion == null) {
+                latestVersion = galleryImageVersion;
+                continue;
+            }
+
+            OffsetDateTime currentPublishedDate = latestVersion.publishingProfile().publishedDate();
+            if (galleryImageVersion.publishingProfile().publishedDate().compareTo(currentPublishedDate) > 0) {
+                latestVersion = galleryImageVersion;
             }
         }
         return latestVersion;
@@ -803,21 +823,6 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private static String paddedScriptForPageBlob(String sourceString) {
-        /*Page blob must align to 512-byte page boundaries*/
-        final int pageSize = 512;
-        int currentStringLength = sourceString.getBytes(StandardCharsets.UTF_8).length;
-        int paddedStringLength = (currentStringLength + pageSize - 1) / pageSize * pageSize;
-
-        StringBuilder fillString = new StringBuilder();
-        while (currentStringLength < paddedStringLength) {
-            fillString.append(' ');
-            currentStringLength++;
-        }
-
-        return sourceString.concat(fillString.toString());
-    }
-
 
     /**
      * Uploads the custom script for a template to blob storage.
@@ -853,16 +858,12 @@ public final class AzureVMManagementServiceDelegate {
 
         int scriptLength = 0;
         try {
-            CloudBlobContainer container = getCloudBlobContainer(
+            BlobContainerClient container = getCloudBlobContainer(
                     azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
-            container.createIfNotExists();
-            CloudPageBlob blob = container.getPageBlobReference(targetScriptName);
-            String scriptText = paddedScriptForPageBlob(initScript);
-            scriptLength = scriptText.getBytes(StandardCharsets.UTF_8).length;
-            blob.create(scriptLength);
-            ByteArrayInputStream stream = new ByteArrayInputStream(scriptText.getBytes(StandardCharsets.UTF_8));
-            blob.upload(stream, scriptText.length(), AccessCondition.generateEmptyCondition(), null, null);
-            return blob.getUri().toString();
+            BlobClient blob = container.getBlobClient(targetScriptName);
+            scriptLength = initScript.getBytes(StandardCharsets.UTF_8).length;
+            blob.upload(BinaryData.fromString(initScript).toStream(), scriptLength, true);
+            return blob.getBlobUrl();
         } catch (Exception e) {
             throw AzureCloudException.create(
                     String.format("Failed to create Page Blob with script's length: %d", scriptLength), e);
@@ -886,7 +887,7 @@ public final class AzureVMManagementServiceDelegate {
                 azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), azureAgent.getNodeName());
 
         // Getting the first virtual IP
-        final PublicIPAddress publicIP = vm.getPrimaryPublicIPAddress();
+        final PublicIpAddress publicIP = vm.getPrimaryPublicIPAddress();
         String publicIPStr = "";
         String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIP();
         String fqdn;
@@ -930,7 +931,7 @@ public final class AzureVMManagementServiceDelegate {
                     vm.getPrimaryNetworkInterface()
                             .update()
                             .withNewPrimaryPublicIPAddress(
-                                    azureClient.publicIPAddresses()
+                                    azureClient.publicIpAddresses()
                                             .define(azureAgent.getNodeName() + "IPName")
                                             .withRegion(template.getLocation())
                                             .withExistingResourceGroup(template.getResourceGroupName())
@@ -961,22 +962,22 @@ public final class AzureVMManagementServiceDelegate {
             String resourceGroupName) throws AzureCloudException {
         LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: check for {0}", vmName);
 
-        VirtualMachine vm;
         try {
-            vm = azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
+            azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
+        } catch (ManagementException e) {
+            if (e.getResponse().getStatusCode() == 404) {
+                LOGGER.log(Level.INFO,
+                        "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
+                        vmName);
+                return false;
+            }
+            throw e;
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
 
-        if (vm != null) {
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
-            return true;
-        } else {
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
-                    vmName);
-            return false;
-        }
+        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
+        return true;
     }
 
     /**
@@ -1028,7 +1029,7 @@ public final class AzureVMManagementServiceDelegate {
             VirtualMachine vm =
                     azureClient.virtualMachines().getByResourceGroup(template.getResourceGroupName(), vmname);
 
-            final PublicIPAddress publicIP = vm.getPrimaryPublicIPAddress();
+            final PublicIpAddress publicIP = vm.getPrimaryPublicIPAddress();
             String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIP();
             String fqdn;
             if (publicIP == null) {
@@ -1501,8 +1502,7 @@ public final class AzureVMManagementServiceDelegate {
         }
         try {
             List<String> ret = new ArrayList<>();
-            PagedList<VirtualMachineSize> vmSizes = azureClient.virtualMachines().sizes().listByRegion(location);
-            for (VirtualMachineSize vmSize : vmSizes) {
+            for (VirtualMachineSize vmSize : azureClient.virtualMachines().sizes().listByRegion(location)) {
                 ret.add(vmSize.name());
             }
             return ret;
@@ -1541,40 +1541,15 @@ public final class AzureVMManagementServiceDelegate {
                 return "Invalid Limit, Should be a positive number, e.g. " + Constants.DEFAULT_MAX_VM_LIMIT;
             }
 
-            if (AzureUtil.isValidTimeOut(timeOut) && AzureUtil.isValidMAxVMLimit(maxVMLimit)
-                    && AzureUtil.isValidResourceGroupName(resourceGroupName)) {
-
-                String result = verifyConfiguration(resourceGroupName);
-                if (!result.matches(Constants.OP_SUCCESS)) {
+            if (!(AzureUtil.isValidTimeOut(timeOut) && AzureUtil.isValidMAxVMLimit(maxVMLimit)
+                    && AzureUtil.isValidResourceGroupName(resourceGroupName))) {
                     return Messages.Azure_GC_Template_Val_Profile_Err();
-                }
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error validating profile", e);
             return Messages.Azure_GC_Template_Val_Profile_Err();
         }
         return Constants.OP_SUCCESS;
-    }
-
-    public String verifyConfiguration(final String resourceGroupName) {
-
-        Callable<String> task = () -> {
-            azureClient.storageAccounts().getByResourceGroup(resourceGroupName, "CI_SYSTEM");
-            return Constants.OP_SUCCESS;
-        };
-
-        try {
-            final int maxRetries = 3;
-            final int maxWaitIntervalInSeconds = 2;
-            return ExecutionEngine.executeWithRetry(task,
-                    new ExponentialRetryStrategy(
-                            maxRetries,
-                            maxWaitIntervalInSeconds
-                    ));
-        } catch (AzureCloudException e) {
-            LOGGER.log(Level.SEVERE, "Error validating configuration", e);
-            return "Failure: Exception occurred while validating subscription configuration " + e;
-        }
     }
 
     public static class VMStatus extends ExpandableStringEnum<VMStatus> {
@@ -1673,7 +1648,7 @@ public final class AzureVMManagementServiceDelegate {
      */
     public int getVirtualMachineCount(String cloudName, String resourceGroupName) {
         try {
-            final PagedList<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
+            final PagedIterable<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
             int count = 0;
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
             for (VirtualMachine vm : vms) {
@@ -1808,8 +1783,8 @@ public final class AzureVMManagementServiceDelegate {
 
     }
 
-    public void removeImage(Azure azureClient, String vmName, String resourceGroupName) {
-        List<VirtualMachineCustomImage> customImages =
+    public void removeImage(AzureResourceManager azureClient, String vmName, String resourceGroupName) {
+        PagedIterable<VirtualMachineCustomImage> customImages =
                 azureClient.virtualMachineCustomImages().listByResourceGroup(resourceGroupName);
         for (VirtualMachineCustomImage image : customImages) {
             String prefix = StringUtils.substringBefore(image.name(), "Image");
@@ -1825,18 +1800,19 @@ public final class AzureVMManagementServiceDelegate {
 
     public void removeStorageBlob(URI blobURI, String resourceGroupName) throws Exception {
         // Obtain container, storage account, and blob name
-        String storageAccountName = blobURI.getHost().split("\\.")[0];
-        String containerName = PathUtility.getContainerNameFromUri(blobURI, false);
-        String blobName = PathUtility.getBlobNameFromURI(blobURI, false);
+        BlobUrlParts blobUrlParts = BlobUrlParts.parse(blobURI.toURL());
+        String storageAccountName = blobUrlParts.getAccountName();
+        String containerName = blobUrlParts.getBlobContainerName();
+        String blobName = blobUrlParts.getBlobName();
 
         LOGGER.log(Level.INFO,
                 "removeStorageBlob: Removing blob {0}, in container {1} of storage account {2}",
                 new Object[]{blobName, containerName, storageAccountName});
-        CloudBlobContainer container =
+        BlobContainerClient container =
                 getCloudBlobContainer(azureClient, resourceGroupName, storageAccountName, containerName);
-        container.getBlockBlobReference(blobName).deleteIfExists();
+        container.getBlobClient(blobName).delete();
         if (containerName.startsWith("jnk")) {
-            Iterable<ListBlobItem> blobs = container.listBlobs();
+            PagedIterable<BlobItem> blobs = container.listBlobs();
             if (blobs.iterator().hasNext()) { // the container is not empty
                 return;
             }
@@ -1863,7 +1839,7 @@ public final class AzureVMManagementServiceDelegate {
         final String ip = vmName + "IPName";
         try {
             LOGGER.log(Level.INFO, "Remove IP {0}", ip);
-            azureClient.publicIPAddresses().deleteByResourceGroup(resourceGroupName, ip);
+            azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: removeIPName: while deleting IPName", e);
         }
@@ -2239,11 +2215,11 @@ public final class AzureVMManagementServiceDelegate {
             }
         } else if (imageReference.getType() == ImageReferenceType.GALLERY) {
             try {
-                Azure client = AzureClientUtil.getClient(azureCredentialsId, imageReference.getGallerySubscriptionId());
+                AzureResourceManager client = AzureClientUtil.getClient(azureCredentialsId, imageReference.getGallerySubscriptionId());
                 if (Constants.VERSION_LATEST.equals(imageReference.getGalleryImageVersion())) {
-                    PagedList<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions()
+                    PagedIterable<GalleryImageVersion> galleryImageVersions = client.galleryImageVersions()
                             .listByGalleryImage(imageReference.getGalleryResourceGroup(), imageReference.getGalleryName(), imageReference.getGalleryImageDefinition());
-                    if (galleryImageVersions.isEmpty()) {
+                    if (!galleryImageVersions.iterator().hasNext()) {
                         return Messages.Azure_GC_Template_Gallery_Image_Not_Found();
                     }
                 } else {
@@ -2267,7 +2243,7 @@ public final class AzureVMManagementServiceDelegate {
         } else {
             try {
                 final String locationName = AzureUtil.getLocationNameByLabel(locationLabel);
-                List<VirtualMachinePublisher> publishers =
+                PagedIterable<VirtualMachinePublisher> publishers =
                         azureClient.virtualMachineImages().publishers().listByRegion(locationName);
                 for (VirtualMachinePublisher publisher : publishers) {
                     if (!publisher.name().equalsIgnoreCase(imageReference.getPublisher())) {
@@ -2281,9 +2257,9 @@ public final class AzureVMManagementServiceDelegate {
                             if (!sku.name().equalsIgnoreCase(imageReference.getSku())) {
                                 continue;
                             }
-                            PagedList<VirtualMachineImage> images = sku.images().list();
+                            PagedIterable<VirtualMachineImage> images = sku.images().list();
                             if ((imageReference.getVersion().equalsIgnoreCase("latest")
-                                    || StringUtils.isEmpty(imageReference.getVersion())) && images.size() > 0) {
+                                    || StringUtils.isEmpty(imageReference.getVersion())) && images.stream().iterator().hasNext()) {
                                 //the empty check is here to maintain backward compatibility
                                 return Constants.OP_SUCCESS;
                             }
@@ -2329,11 +2305,11 @@ public final class AzureVMManagementServiceDelegate {
                     return Messages.Azure_GC_Template_SA_Already_Exists();
                 } else {
                     /*if the storage account is already in out resource group, check whether they are the same type*/
-                    if (checkAccount.inner().sku().name().toString().equalsIgnoreCase(storageAccountType)) {
+                    if (checkAccount.skuType().name().toString().equalsIgnoreCase(storageAccountType)) {
                         return Constants.OP_SUCCESS;
                     } else {
                         return Messages.Azure_GC_Template_SA_Type_Not_Match(
-                                storageAccountType, checkAccount.inner().sku().name().toString());
+                                storageAccountType, checkAccount.skuType().name().toString());
                     }
                 }
             } else {
@@ -2437,7 +2413,7 @@ public final class AzureVMManagementServiceDelegate {
      *
      */
     private void createAzureResourceGroup(
-            Azure azureClient, String locationName, String resourceGroupName,
+            AzureResourceManager azureClient, String locationName, String resourceGroupName,
             String cloudName) throws AzureCloudException {
         try {
             azureClient.resourceGroups()
@@ -2460,7 +2436,7 @@ public final class AzureVMManagementServiceDelegate {
      *
      */
     private void createStorageAccount(
-            Azure azureClient,
+            AzureResourceManager azureClient,
             String targetStorageAccountType,
             String targetStorageAccount,
             String location,
@@ -2470,17 +2446,24 @@ public final class AzureVMManagementServiceDelegate {
             // Get storage account before creating.
             // Reuse existing to prevent failure.
 
-            if (azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount) == null) {
-                SkuName skuName = SkuName.fromString(targetStorageAccountType);
-                azureClient.storageAccounts().define(targetStorageAccount)
-                        .withRegion(location)
-                        .withExistingResourceGroup(resourceGroupName)
-                        .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
-                        .withTag(Constants.AZURE_TEMPLATE_TAG_NAME, templateName)
-                        .withSku(StorageAccountSkuType.fromSkuName(skuName))
-                        .create();
+            try {
+                azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount);
+            } catch (ManagementException e) {
+                if (e.getResponse().getStatusCode() == 404) {
+                    SkuName skuName = SkuName.fromString(targetStorageAccountType);
+                    azureClient.storageAccounts().define(targetStorageAccount)
+                            .withRegion(location)
+                            .withExistingResourceGroup(resourceGroupName)
+                            .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
+                            .withTag(Constants.AZURE_TEMPLATE_TAG_NAME, templateName)
+                            .withSku(StorageAccountSkuType.fromSkuName(skuName))
+                            .create();
+                } else {
+                    throw e;
+                }
             }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             throw AzureCloudException.create(
                     String.format(
                             "Failed to create storage account with account name %s, location %s, "
@@ -2496,7 +2479,7 @@ public final class AzureVMManagementServiceDelegate {
      * @return StorageAccount object
      */
     private StorageAccount getStorageAccount(
-            Azure azureClient, String targetStorageAccount, String resourceGroupName)
+            AzureResourceManager azureClient, String targetStorageAccount, String resourceGroupName)
             throws AzureCloudException {
         try {
             return azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount);
@@ -2525,7 +2508,7 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     /**
-     * Get the blob endpoint substring with prefix and suffix.
+     * Get the blob endpoint
      *
      * @param startKey       uses to get the start position of sub string,
      *                       if it's null or empty then whole input string will be used
@@ -2577,7 +2560,7 @@ public final class AzureVMManagementServiceDelegate {
      *
      * @return CloudStorageAccount object
      */
-    public static CloudStorageAccount getCloudStorageAccount(StorageAccount storageAccount) throws AzureCloudException {
+    public static BlobServiceClient getCloudStorageAccount(StorageAccount storageAccount) throws AzureCloudException {
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: uploadCustomScript: "
@@ -2585,7 +2568,7 @@ public final class AzureVMManagementServiceDelegate {
         }
 
         String storageAccountKey = storageKeys.get(0).value();
-        String blobSuffix = getBlobEndpointSuffixForCloudStorageAccount(storageAccount);
+        String blobSuffix = storageAccount.endPoints().primary().blob().toLowerCase();
         LOGGER.log(Level.INFO,
                 "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
                         + "the suffix for construct CloudStorageCloud is {0}",
@@ -2595,10 +2578,10 @@ public final class AzureVMManagementServiceDelegate {
                     + "Exception occurred while getting blobSuffix, it's empty'");
         }
         try {
-            return new CloudStorageAccount(
-                    new StorageCredentialsAccountAndKey(storageAccount.name(), storageAccountKey),
-                    true,
-                    blobSuffix);
+            return new BlobServiceClientBuilder()
+                    .credential(new StorageSharedKeyCredential(storageAccount.name(), storageAccountKey))
+                    .endpoint(blobSuffix)
+                    .buildClient();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: GetCloudStorageAccount: "
@@ -2612,21 +2595,25 @@ public final class AzureVMManagementServiceDelegate {
      * Get CloudBlobContainer.
      *
      */
-    public static CloudBlobContainer getCloudBlobContainer(
-            CloudStorageAccount account, String containerName) throws AzureCloudException {
+    public static BlobContainerClient getCloudBlobContainer(
+            BlobServiceClient account, String containerName) throws AzureCloudException {
         try {
-            return account.createCloudBlobClient().getContainerReference(containerName);
+            BlobContainerClient blobContainerClient = account.getBlobContainerClient(containerName);
+            if (!blobContainerClient.exists()) {
+                blobContainerClient.create();
+            }
+            return blobContainerClient;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: getCloudBlobContainer: "
-                            + "unable to get CloudStorageAccount with container name {1}",
+                            + "unable to get CloudStorageAccount with container name {0}",
                     new Object[]{containerName});
             throw AzureCloudException.create(e);
         }
     }
 
-    public CloudBlobContainer getCloudBlobContainer(
-            Azure azureClient, String resourceGroupName, String targetStorageAccount, String blobContainerName)
+    public BlobContainerClient getCloudBlobContainer(
+            AzureResourceManager azureClient, String resourceGroupName, String targetStorageAccount, String blobContainerName)
             throws AzureCloudException {
 
         StorageAccount storageAccount;
@@ -2637,11 +2624,11 @@ public final class AzureVMManagementServiceDelegate {
             throw AzureCloudException.create(e);
         }
 
-        CloudStorageAccount account = getCloudStorageAccount(storageAccount);
+        BlobServiceClient account = getCloudStorageAccount(storageAccount);
         return getCloudBlobContainer(account, blobContainerName);
     }
 
-    private AzureVMManagementServiceDelegate(Azure azureClient, String azureCredentialsId) {
+    private AzureVMManagementServiceDelegate(AzureResourceManager azureClient, String azureCredentialsId) {
         this.azureClient = azureClient;
         this.azureCredentialsId = azureCredentialsId;
     }
