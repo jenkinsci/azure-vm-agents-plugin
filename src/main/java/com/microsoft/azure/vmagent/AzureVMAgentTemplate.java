@@ -1362,10 +1362,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillAvailabilityTypeValueItems() {
-            return null;
-        }
-
         public ListBoxModel doFillAvailabilitySetItems(
                 @RelativePath("../..") @QueryParameter String azureCredentialsId,
                 @RelativePath("../..") @QueryParameter String resourceGroupReferenceType,
@@ -1509,10 +1505,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             model.add("Managed Disk", Constants.DISK_MANAGED);
             model.add("Unmanaged Disk", Constants.DISK_UNMANAGED);
             return model;
-        }
-
-        public ListBoxModel doFillImageReferenceTypeValueItems() {
-            return null;
         }
 
         public FormValidation doAgentLaunchMethod(@QueryParameter String value) {

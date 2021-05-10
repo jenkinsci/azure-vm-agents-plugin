@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:c="/lib/credentials"
-         xmlns:f="/lib/form" xmlns:ui="/lib/azure">
+         xmlns:f="/lib/form">
     <div>
         <f:section title="${%General_Configuration}">
             <f:entry title="${%Template_Name}" field="templateName"
@@ -26,7 +26,7 @@
                 <f:select/>
             </f:entry>
 
-            <ui:dropdownList title="${%Availability_Options}" selectedName="availabilityTypeValue" name="availabilityType" help="/plugin/azure-vm-agents/help-availability.html">
+            <f:dropdownList title="${%Availability_Options}" name="availabilityType" help="/plugin/azure-vm-agents/help-availability.html">
                 <f:dropdownListBlock title="${%No_Availability}" value="unknown" selected="${instance == null || instance.getAvailabilityType() == 'unknown'}">
                 </f:dropdownListBlock>
                 <f:dropdownListBlock title="${%Availability_Set}" value="availabilitySet" selected="${instance.getAvailabilitySet() != null}">
@@ -34,7 +34,7 @@
                         <f:select/>
                     </f:entry>
                 </f:dropdownListBlock>
-            </ui:dropdownList>
+            </f:dropdownList>
 
             <f:entry title="${%Virtual_Machine_Size}" field="virtualMachineSize"
                      help="/plugin/azure-vm-agents/help-virtualMachineSize.html">
@@ -47,17 +47,17 @@
             </f:entry>
 
             <f:entry title="${%Storage_Account_Name}">
-                <ui:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="new" title="${%Storage_Account_Create_New}" checked="${instance == null || instance.isStorageAccountNameReferenceTypeEquals('new')}" inline="true">
                     <f:entry title="${%Name}" field="newStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:textbox/>
                     </f:entry>
-                </ui:radioBlock>
+                </f:radioBlock>
 
-                <ui:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
+                <f:radioBlock name="storageAccountNameReferenceType" value="existing" title="${%Storage_Account_Use_Exist}" checked="${instance.isStorageAccountNameReferenceTypeEquals('existing')}" inline="true">
                     <f:entry title="${%Name}" field="existingStorageAccountName" help="/plugin/azure-vm-agents/help-storageAccountName.html">
                         <f:select/>
                     </f:entry>
-                </ui:radioBlock>
+                </f:radioBlock>
             </f:entry>
 
             <f:entry title="${%Disk_Type}" field="diskType" help="/plugin/azure-vm-agents/help-diskType.html">
@@ -107,7 +107,7 @@
         </f:section>
 
         <f:section title="${%Image_Configuration}">
-            <ui:radioBlock name="imageTopLevelType" value="basic" title="${%Built_In_Image}" checked="${instance == null || instance.isTopLevelType('basic')}"
+            <f:radioBlock name="imageTopLevelType" value="basic" title="${%Built_In_Image}" checked="${instance == null || instance.isTopLevelType('basic')}"
                            inline="true">
                 <f:entry field="builtInImage">
                     <f:select/>
@@ -126,10 +126,10 @@
                         <f:checkbox/>
                     </f:entry>
                 </f:section>
-            </ui:radioBlock>
+            </f:radioBlock>
 
-            <ui:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
-                <ui:dropdownList selectedName="imageReferenceTypeValue" name="imageReference">
+            <f:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}" checked="${instance.isTopLevelType('advanced')}" inline="true">
+                <f:dropdownList name="imageReference">
                     <f:dropdownListBlock title="${%Custom_Image}" value="custom" selected="${instance == null || instance.isType('custom')}">
                         <f:entry title="${%Image}" field="uri" help="/plugin/azure-vm-agents/help-image.html">
                             <f:textbox/>
@@ -178,7 +178,7 @@
                             <f:textbox/>
                         </f:entry>
                     </f:dropdownListBlock>
-                </ui:dropdownList>
+                </f:dropdownList>
 
                 <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
                     <f:select/>
@@ -262,7 +262,7 @@
                         <f:textarea/>
                     </f:entry>
                 </f:advanced>
-            </ui:radioBlock>
+            </f:radioBlock>
         </f:section>
 
         <f:section title="${%Admin_Credentials}">

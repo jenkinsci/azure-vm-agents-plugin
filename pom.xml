@@ -54,7 +54,6 @@
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <azure-credentials.version>181.v00b0d97d2686</azure-credentials.version>
-        <azure-commons.version>1.1.3</azure-commons.version>
     </properties>
 
     <dependencyManagement>
@@ -79,17 +78,6 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-credentials</artifactId>
             <version>${azure-credentials.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jenkins-ci.plugins</groupId>
-            <artifactId>azure-commons-core</artifactId>
-            <version>${azure-commons.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
