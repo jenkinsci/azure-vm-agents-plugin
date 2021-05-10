@@ -1495,13 +1495,13 @@ public final class AzureVMManagementServiceDelegate {
      * @param location Location to obtain VM sizes for
      * @return List of VM sizes
      */
-    public List<String> getVMSizes(String location) {
+    public Set<String> getVMSizes(String location) {
         if (location == null || location.isEmpty()) {
             //if the location is not available we'll just return a default list with some of the most common VM sizes
-            return DEFAULT_VM_SIZES;
+            return new TreeSet<>(DEFAULT_VM_SIZES);
         }
         try {
-            List<String> ret = new ArrayList<>();
+            Set<String> ret = new TreeSet<>();
             for (VirtualMachineSize vmSize : azureClient.virtualMachines().sizes().listByRegion(location)) {
                 ret.add(vmSize.name());
             }
@@ -1511,7 +1511,7 @@ public final class AzureVMManagementServiceDelegate {
                     "AzureVMManagementServiceDelegate: getVMSizes: "
                             + "error while fetching the VM sizes {0}. Will return default list ",
                     e);
-            return AVAILABLE_ROLE_SIZES.get(location);
+            return new TreeSet<>(AVAILABLE_ROLE_SIZES.get(location));
         }
     }
 

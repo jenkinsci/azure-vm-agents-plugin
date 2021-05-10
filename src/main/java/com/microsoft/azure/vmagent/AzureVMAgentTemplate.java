@@ -1309,12 +1309,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
-            List<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
-
-            if (vmSizes != null) {
-                for (String vmSize : vmSizes) {
-                    model.add(vmSize);
-                }
+            Set<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
+            for (String vmSize : vmSizes) {
+                model.add(vmSize);
             }
             return model;
         }
