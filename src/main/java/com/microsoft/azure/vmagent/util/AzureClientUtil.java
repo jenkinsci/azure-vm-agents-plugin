@@ -22,6 +22,7 @@ import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import hudson.Util;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 
 public final class AzureClientUtil {
@@ -50,10 +51,16 @@ public final class AzureClientUtil {
         AzureProfile profile = new AzureProfile(azureCredentials.getAzureEnvironment());
         TokenCredential tokenCredential = AzureCredentials.getTokenCredential(azureCredentials);
 
-        return AzureResourceManager
+        AzureResourceManager.Authenticated builder = AzureResourceManager
                 .configure()
                 .withHttpClient(HttpClientRetriever.get())
-                .authenticate(tokenCredential, profile)
+                .authenticate(tokenCredential, profile);
+
+        if (Util.fixEmpty(subscriptionId) == null) {
+            return builder.withDefaultSubscription();
+        }
+
+        return builder
                 .withSubscription(subscriptionId);
     }
 
