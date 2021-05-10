@@ -59,7 +59,7 @@ public final class Constants {
 
     public static final String DEFAULT_GRAPH_ENDPOINT = "https://graph.windows.net/";
 
-    public static final String AZURE_CLOUD_DISPLAY_NAME = "Microsoft Azure VM Agents";
+    public static final String AZURE_CLOUD_DISPLAY_NAME = "Azure VM Agents";
 
     public static final String AZURE_VM_AGENT_CLOUD_DISPLAY_NAME = "Azure VM Agent";
 
