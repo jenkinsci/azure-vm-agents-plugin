@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
-         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials"  xmlns:ui="/lib/azure">
+         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
     <f:block>
         <a href="${rootURL}/log/${descriptor.logRecorderName}/" target="_blank">${%Azure_VM_Agent_Log_Link}</a>
     </f:block>
@@ -34,17 +34,17 @@
         </f:entry>
 
         <f:entry title="${%Resource_Group_Name}">
-            <ui:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isResourceGroupReferenceTypeEquals('new')}" inline="true">
+            <f:radioBlock name="resourceGroupReferenceType" value="new" title="${%Resource_Group_Create_New}" checked="${instance == null || instance.isResourceGroupReferenceTypeEquals('new')}" inline="true">
                 <f:entry title="${%Name}" field="newResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:textbox/>
                 </f:entry>
-            </ui:radioBlock>
+            </f:radioBlock>
 
-            <ui:radioBlock name="resourceGroupReferenceType" value="existing" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('existing')}" inline="true">
+            <f:radioBlock name="resourceGroupReferenceType" value="existing" title="${%Resource_Group_Use_Exist}" checked="${instance.isResourceGroupReferenceTypeEquals('existing')}" inline="true">
                 <f:entry title="${%Name}" field="existingResourceGroupName" help="/plugin/azure-vm-agents/help-resourceGroupName.html">
                     <f:select/>
                 </f:entry>
-            </ui:radioBlock>
+            </f:radioBlock>
         </f:entry>
 
         <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
