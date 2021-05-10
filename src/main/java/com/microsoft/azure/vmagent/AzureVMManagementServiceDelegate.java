@@ -61,6 +61,7 @@ import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.*;
 import hudson.model.Descriptor.FormException;
+import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpAgentReceiver;
 import org.apache.commons.io.IOUtils;
@@ -2581,6 +2582,7 @@ public final class AzureVMManagementServiceDelegate {
             return new BlobServiceClientBuilder()
                     .credential(new StorageSharedKeyCredential(storageAccount.name(), storageAccountKey))
                     .endpoint(blobSuffix)
+                    .httpClient(HttpClientRetriever.get())
                     .buildClient();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
