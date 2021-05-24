@@ -57,7 +57,6 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.azure.vmagent.retry.ExponentialRetryStrategy;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.*;
 import hudson.model.Descriptor.FormException;
@@ -68,7 +67,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -78,6 +76,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Business delegate class which handles calls to Azure management service SDK.
@@ -243,7 +242,7 @@ public final class AzureVMManagementServiceDelegate {
 
             //For blob endpoint url in arm template, it's different based on different environments
             //So create StorageAccount and get suffix
-            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName());
+            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName(), template.retrieveAzureCloudReference().getCloudTags());
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
@@ -852,7 +851,9 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             createStorageAccount(
-                    azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName, template.getTemplateName());
+                    azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName,
+                    template.getTemplateName(), template.retrieveAzureCloudReference().getCloudTags()
+            );
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Got exception when checking the storage account for custom scripts", e);
         }
@@ -2442,11 +2443,11 @@ public final class AzureVMManagementServiceDelegate {
             String targetStorageAccount,
             String location,
             String resourceGroupName,
-            String templateName) throws AzureCloudException {
+            String templateName, List<AzureTagPair> cloudTags
+    ) throws AzureCloudException {
         try {
             // Get storage account before creating.
             // Reuse existing to prevent failure.
-
             try {
                 azureClient.storageAccounts().getByResourceGroup(resourceGroupName, targetStorageAccount);
             } catch (ManagementException e) {
@@ -2455,8 +2456,7 @@ public final class AzureVMManagementServiceDelegate {
                     azureClient.storageAccounts().define(targetStorageAccount)
                             .withRegion(location)
                             .withExistingResourceGroup(resourceGroupName)
-                            .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
-                            .withTag(Constants.AZURE_TEMPLATE_TAG_NAME, templateName)
+                            .withTags(getTags(templateName, cloudTags))
                             .withSku(StorageAccountSkuType.fromSkuName(skuName))
                             .create();
                 } else {
@@ -2472,6 +2472,21 @@ public final class AzureVMManagementServiceDelegate {
                             targetStorageAccount, location, resourceGroupName),
                     e);
         }
+    }
+
+    private Map<String, String> getTags(String templateName, List<AzureTagPair> cloudTags) {
+        List<AzureTagPair> tmpTags = cloudTags;
+        if (tmpTags == null) {
+            tmpTags = new ArrayList<>();
+        }
+
+        Map<String, String> tags = tmpTags
+                .stream()
+                .collect(Collectors.toMap(AzureTagPair::getName, AzureTagPair::getValue));
+
+        tags.put(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE);
+        tags.put(Constants.AZURE_TEMPLATE_TAG_NAME, templateName);
+        return tags;
     }
 
     /**
