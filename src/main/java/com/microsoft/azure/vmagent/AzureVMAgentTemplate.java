@@ -1481,6 +1481,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        public FormValidation doCheckStorageAccountType(
+                @QueryParameter String value,
+                @QueryParameter String diskType) {
+            if (Constants.DISK_MANAGED.equals(diskType) && SkuName.PREMIUM_LRS.toString().equals(value)) {
+                return FormValidation.warning(Messages.Azure_GC_Template_StorageAccountType());
+            }
+            return FormValidation.ok();
+        }
+
         public FormValidation doCheckInitScript(
                 @QueryParameter String value,
                 @QueryParameter String agentLaunchMethod) {
