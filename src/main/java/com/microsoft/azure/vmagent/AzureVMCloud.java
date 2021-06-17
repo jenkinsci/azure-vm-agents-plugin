@@ -893,10 +893,10 @@ public class AzureVMCloud extends Cloud {
                         }
 
                         private void handleFailure(
-                            AzureVMAgentTemplate template,
-                            String vmName,
-                            Exception e,
-                            FailureStage stage) {
+                                AzureVMAgentTemplate template,
+                                String vmName,
+                                Exception e,
+                                FailureStage stage) {
                             // Attempt to terminate whatever was created if any
                             if (vmName != null) {
                                 try {
