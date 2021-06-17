@@ -43,15 +43,13 @@ $wc.DownloadFile($slaveSource, $destSource)
 Write-Output "Executing agent process "
 $java="java"
 $jar="-jar"
-$jnlpUrl="-jnlpUrl"
-$secretFlag="-secret"
-$serverURL=$jenkinsserverurl+"computer/" + $vmname + '/jenkins-agent.jnlp'
+$serverURL=$jenkinsserverurl + "computer/" + $vmname + '/jenkins-agent.jnlp'
 
 # TODO look at porting the run as service part of the old script from https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/Jenkins-Windows-Init-Script-Jnlp.ps1
 while ($true) {
   try {
     # Launch
-    & $java -jar $destSource $secretFlag  $secret $jnlpUrl $serverURL -noReconnect
+    & $java -jar $destSource -secret $secret -jnlpUrl $serverURL
   }
   catch [System.Exception] {
     Write-Output $_.Exception.ToString()
