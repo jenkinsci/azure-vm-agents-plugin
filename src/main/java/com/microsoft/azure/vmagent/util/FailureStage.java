@@ -18,7 +18,7 @@ package com.microsoft.azure.vmagent.util;
 public enum FailureStage {
 
     VALIDATION,
-    PREPROVISIONING,
+    DEPLOYMENT,
     PROVISIONING,
     POSTPROVISIONING
 

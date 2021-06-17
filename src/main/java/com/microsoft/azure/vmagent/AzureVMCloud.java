@@ -542,8 +542,8 @@ public class AzureVMCloud extends Cloud {
             String deploymentName) throws AzureCloudException {
 
         LOGGER.log(Level.INFO,
-                "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} to be completed",
-                deploymentName);
+                "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} with VM {1} to be completed",
+                new Object[]{deploymentName, vmName});
 
         final int sleepTimeInSeconds = 30;
         final int timeoutInSeconds = getDeploymentTimeout();
@@ -689,8 +689,7 @@ public class AzureVMCloud extends Cloud {
                                                     getServiceDelegate().setVirtualMachineDetails(
                                                             agentNode, template);
                                                     Jenkins.getInstance().addNode(agentNode);
-                                                    if (agentNode.getAgentLaunchMethod()
-                                                            .equalsIgnoreCase("SSH")) {
+                                                    if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
                                                         retrySshConnect(azureComputer);
                                                     } else { // Wait until node is online
                                                         waitUntilJNLPNodeIsOnline(agentNode);
@@ -738,8 +737,9 @@ public class AzureVMCloud extends Cloud {
                 int adjustedNumberOfAgents = adjustVirtualMachineCount(numberOfAgents);
                 if (adjustedNumberOfAgents == 0) {
                     LOGGER.log(Level.INFO,
-                            "Not able to create any new nodes, at or above maximum VM count of {0}",
-                            getMaxVirtualMachinesLimit());
+                            "Not able to create {0} nodes, at or above maximum VM count of {1} and already {2} VM(s)",
+                            new Object[]{numberOfAgents, getMaxVirtualMachinesLimit(),
+                                getApproximateVirtualMachineCount()});
                     return plannedNodes;
                 } else if (adjustedNumberOfAgents < numberOfAgents) {
                     LOGGER.log(Level.INFO,
@@ -747,7 +747,7 @@ public class AzureVMCloud extends Cloud {
                             new Object[]{adjustedNumberOfAgents, numberOfAgents});
                 }
                 doProvision(adjustedNumberOfAgents, plannedNodes, template);
-                // wait for deployment completion ant than check for created nodes
+                // wait for deployment completion and then check for created nodes
             } catch (Exception e) {
                 LOGGER.log(
                         Level.SEVERE,
@@ -810,6 +810,7 @@ public class AzureVMCloud extends Cloud {
                                 try {
                                     info = deploymentFuture.get();
                                 } catch (InterruptedException | ExecutionException e) {
+                                    handleFailure(template, null, e, FailureStage.DEPLOYMENT);
                                     throw AzureCloudException.create(e);
                                 }
 
@@ -896,17 +897,19 @@ public class AzureVMCloud extends Cloud {
                                 String vmName,
                                 Exception e,
                                 FailureStage stage) {
-                            // Attempt to terminate whatever was created
-                            try {
-                                getServiceDelegate().terminateVirtualMachine(
-                                        vmName,
-                                        template.getResourceGroupName());
-                            } catch (AzureCloudException terminateEx) {
-                                LOGGER.log(
-                                        Level.SEVERE,
-                                        String.format("Failure terminating previous failed agent '%s'", vmName),
-                                        terminateEx);
-                                // Do not throw to avoid it being recorded
+                            // Attempt to terminate whatever was created if any
+                            if (vmName != null) {
+                                try {
+                                    getServiceDelegate().terminateVirtualMachine(
+                                            vmName,
+                                            template.getResourceGroupName());
+                                } catch (AzureCloudException terminateEx) {
+                                    LOGGER.log(
+                                            Level.SEVERE,
+                                            String.format("Failure terminating previous failed agent '%s'", vmName),
+                                            terminateEx);
+                                    // Do not throw to avoid it being recorded
+                                }
                             }
                             template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1);
                             // Update the template status given this new issue.
@@ -964,9 +967,11 @@ public class AzureVMCloud extends Cloud {
             // 30 minutes is decent time for the node to be alive
             final int timeoutInMinutes = 30;
             String result = future.get(timeoutInMinutes, TimeUnit.MINUTES);
-            LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node is alive , result {0}", result);
+            LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node {0} is alive, result {1}",
+            new Object[]{agent.getDisplayName(), result});
         } catch (Exception ex) {
-            throw AzureCloudException.create("Azure Cloud: waitUntilOnline: Failure waiting till online", ex);
+            throw AzureCloudException.create(String.format("Azure Cloud: waitUntilOnline: "
+                + "Failure waiting {0} till online", agent.getDisplayName()), ex);
         } finally {
             future.cancel(true);
         }

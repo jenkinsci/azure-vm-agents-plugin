@@ -203,8 +203,8 @@ public final class AzureVMManagementServiceDelegate {
         String scriptUri = null;
         try {
             LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for agentTemplate {0}",
-                    template.getTemplateName());
+                    "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for {0} agentTemplate(s) {1}",
+                    new Object[]{numberOfAgents, template.getTemplateName()});
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
 
@@ -230,8 +230,8 @@ public final class AzureVMManagementServiceDelegate {
             }
             LOGGER.log(Level.INFO,
                     "AzureVMManagementServiceDelegate: createDeployment:"
-                            + " Creating a new deployment {0} with VM base name {1}",
-                    new Object[]{deploymentName, vmBaseName});
+                            + " Creating a new deployment {0} with VM base name {1} for {2} VM(s)",
+                    new Object[]{deploymentName, vmBaseName, numberOfAgents});
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
@@ -587,7 +587,11 @@ public final class AzureVMManagementServiceDelegate {
                     .beginCreate();
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: deployment: Unable to deploy", e);
+            LOGGER.log(Level.SEVERE,
+            String.format(
+                "AzureVMManagementServiceDelegate: deployment: Unable to deploy %d %s",
+                numberOfAgents, template.getTemplateName()),
+            e);
             // Pass the info off to the template so that it can be queued for update.
             template.handleTemplateProvisioningFailure(e.getMessage(), FailureStage.PROVISIONING);
             try {
@@ -906,7 +910,7 @@ public final class AzureVMManagementServiceDelegate {
         azureAgent.setPrivateIP(privateIP);
 
         LOGGER.log(Level.INFO, "Azure agent details:\n"
-                        + "nodeName{0}\n"
+                        + "nodeName={0}\n"
                         + "adminUserName={1}\n"
                         + "shutdownOnIdle={2}\n"
                         + "retentionTimeInMin={3}\n"
@@ -2427,7 +2431,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             throw AzureCloudException.create(
                     String.format(
-                            " Failed to create resource group with group name %s, location %s",
+                            "Failed to create resource group with group name %s, location %s",
                             resourceGroupName, locationName),
                     e);
         }

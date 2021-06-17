@@ -39,8 +39,7 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
 ## Configure the Plugin
 
 ### Add a New Azure VM Agents Cloud
-1. Within the Jenkins dashboard, click Manage Jenkins -> Configure System -> Scroll to the bottom of the page
-   and find the section with the dropdown "Add a new cloud" -> click on it and select "Azure VM Agents"
+1. Click Manage Jenkins -> Manage Nodes and Clouds -> in the left pane, click "Configure Clouds".
 2. Provide a name for the cloud (plugin will generate one for you if you leave it empty, but it's recommended to give it a meaningful name).
 3. Select an existing account from the Azure Credentials dropdown or add new "Microsoft Azure Service Principal" credentials in the Credentials Management page by filling out the Subscription ID, Client ID, Client Secret and the OAuth 2.0 Token Endpoint.
 4. Click on “Verify configuration” to make sure that the profile configuration is done correctly.
