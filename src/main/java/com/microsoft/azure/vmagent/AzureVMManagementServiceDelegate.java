@@ -2605,9 +2605,11 @@ public final class AzureVMManagementServiceDelegate {
                     .buildClient();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
-                    "AzureVMManagementServiceDelegate: GetCloudStorageAccount: "
-                            + "unable to get CloudStorageAccount with storage account {0} and blob Suffix {1}",
-                    new Object[]{storageAccount.name(), blobSuffix});
+                    String.format(
+                            "AzureVMManagementServiceDelegate: GetCloudStorageAccount: unable to get"
+                            + "CloudStorageAccount with storage account %s and blob Suffix %s",
+                            storageAccount.name(), blobSuffix),
+                    e);
             throw AzureCloudException.create(e);
         }
     }
@@ -2627,8 +2629,8 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     "AzureVMManagementServiceDelegate: getCloudBlobContainer: "
-                            + "unable to get CloudStorageAccount with container name {0}",
-                    new Object[]{containerName});
+                            + "unable to get CloudStorageAccount with container name " + containerName,
+                    e);
             throw AzureCloudException.create(e);
         }
     }
