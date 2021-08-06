@@ -252,8 +252,7 @@ public final class AzureVMManagementServiceDelegate {
 
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
-                    && (isBasic || referenceType == ImageReferenceType.REFERENCE
-                    || template.getPreInstallSsh());
+                    && (isBasic || template.getPreInstallSsh());
 
             final boolean useCustomScriptExtension
                     = preInstallSshInWindows
@@ -1677,7 +1676,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.WARNING,
                     "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
-                            + "services info, assuming that there are no hosted services {0}", e);
+                            + "services info, assuming that there are no hosted services", e);
             return 0;
         }
     }
