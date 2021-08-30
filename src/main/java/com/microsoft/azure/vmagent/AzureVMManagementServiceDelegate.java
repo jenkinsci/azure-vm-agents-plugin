@@ -565,6 +565,10 @@ public final class AzureVMManagementServiceDelegate {
                 addPublicIPResourceNode(tmp, cloud);
             }
 
+            if (template.isAcceleratedNetworking()) {
+              addAcceleratedNetworking(tmp);
+            }
+
             if (StringUtils.isNotBlank((String) properties.get("nsgName"))) {
                 addNSGNode(tmp, (String) properties.get("nsgName"));
             }
@@ -616,6 +620,17 @@ public final class AzureVMManagementServiceDelegate {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 properties.put("priority", "Spot");
                 properties.put("evictionPolicy", "Delete");
+            }
+        }
+    }
+
+    private void addAcceleratedNetworking(JsonNode template) {
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("networkInterfaces")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                properties.put("enableAcceleratedNetworking", "true");
             }
         }
     }
