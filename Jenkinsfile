@@ -2,4 +2,4 @@
 
 
 /* `buildPlugin` step provided by: https://github.com/jenkins-infra/pipeline-library */
-buildPlugin(aci: true, platforms: ['linux'])
+buildPlugin(useContainerAgent: true, platforms: ['linux'])
