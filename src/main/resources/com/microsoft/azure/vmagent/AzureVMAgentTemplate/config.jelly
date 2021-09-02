@@ -104,6 +104,11 @@
                     <f:textbox/>
                 </f:entry>
             </f:optionalBlock>
+
+            <f:entry title="${%Enable_Accelerated_Networking}" field="acceleratedNetworking">
+                <f:checkbox/>
+            </f:entry>
+
         </f:section>
 
         <f:section title="${%Image_Configuration}">

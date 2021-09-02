@@ -310,6 +310,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean spotInstance;
 
+    private boolean acceleratedNetworking;
+
     private final String nsgName;
 
     private final String jvmOptions;
@@ -591,6 +593,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setSpotInstance(boolean spotInstance) {
         this.spotInstance = spotInstance;
+    }
+
+    public boolean isAcceleratedNetworking() {
+        return acceleratedNetworking;
+    }
+
+    @DataBoundSetter
+    public void setAcceleratedNetworking(boolean acceleratedNetworking) {
+        this.acceleratedNetworking = acceleratedNetworking;
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
