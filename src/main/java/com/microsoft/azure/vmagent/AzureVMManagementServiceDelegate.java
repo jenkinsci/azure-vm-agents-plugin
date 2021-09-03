@@ -1662,8 +1662,7 @@ public final class AzureVMManagementServiceDelegate {
 
     /**
      * Retrieves count of virtual machine in a azure subscription. This count is
-     * based off of the VMs that the current credential set has access to. It
-     * also does not deal with the classic, model. So keep this in mind.
+     * based off of the VMs that the current credential set has access to.
      *
      * @return Total VM count
      */
@@ -1675,8 +1674,8 @@ public final class AzureVMManagementServiceDelegate {
             for (VirtualMachine vm : vms) {
                 final Map<String, String> tags = vm.tags();
                 if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME)
-                        && deployTag.isFromSameInstance(
-                        new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
+                    && deployTag.isFromSameInstance(
+                    new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
                     if (tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME)) {
                         if (tags.get(Constants.AZURE_CLOUD_TAG_NAME).equals(cloudName)) {
                             count++;
@@ -1689,10 +1688,13 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
             return count;
+        } catch (ManagementException e) {
+            if (e.getResponse().getStatusCode() != 404) {
+                throw e;
+            }
+            return 0;
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: getVirtualMachineCount: Got exception while getting hosted "
-                            + "services info, assuming that there are no hosted services {0}", e);
+            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines", e);
             return 0;
         }
     }

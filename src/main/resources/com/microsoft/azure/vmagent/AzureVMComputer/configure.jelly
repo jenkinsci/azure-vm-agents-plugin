@@ -1,0 +1,23 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form">
+  <l:layout permission="${app.ADMINISTER}" title="${it.name} Configuration">
+    <st:include page="sidepanel.jelly"/>
+    <l:main-panel>
+      <f:entry title="${%Name}">
+        <f:readOnlyTextbox value="${it.name}"/>
+      </f:entry>
+      <f:entry title="${%FQDN}">
+        <f:readOnlyTextbox value="${it.publicDNSName}"/>
+      </f:entry>
+      <j:if test="${!empty(it.publicIP)}">
+        <f:entry title="${%Public_IP}">
+          <f:readOnlyTextbox value="${it.publicIP}"/>
+        </f:entry>
+      </j:if>
+      <f:entry title="${%Private_IP}">
+        <f:readOnlyTextbox value="${it.privateIP}"/>
+      </f:entry>
+      <a href="${it.azurePortalLink}">View on Azure Portal</a>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>
