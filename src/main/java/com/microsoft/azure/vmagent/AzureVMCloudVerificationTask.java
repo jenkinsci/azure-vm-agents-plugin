@@ -212,7 +212,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     @Override
     public void execute(TaskListener arg0) {
-        for (Cloud cloud : Jenkins.getInstance().clouds) {
+        for (Cloud cloud : Jenkins.get().clouds) {
             if (cloud instanceof AzureVMCloud) {
                 AzureVMCloud azureVMCloud = (AzureVMCloud) cloud;
                 synchronized (azureVMCloud) {

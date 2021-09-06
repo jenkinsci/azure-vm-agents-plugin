@@ -73,6 +73,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,7 +93,7 @@ public class AzureVMCloud extends Cloud {
     private static final int DEFAULT_SSH_CONNECT_RETRY_COUNT = 3;
     private static final int SHH_CONNECT_RETRY_INTERNAL_SECONDS = 20;
 
-    private String cloudName;
+    private final String cloudName;
 
     private final String credentialsId;
 
@@ -178,10 +179,11 @@ public class AzureVMCloud extends Cloud {
 
         // Set the templates
         setVmTemplates(vmTemplates == null
-                ? Collections.<AzureVMAgentTemplate>emptyList()
+                ? Collections.emptyList()
                 : vmTemplates);
     }
 
+    @SuppressWarnings("unused") // read resolve is called by xstream
     private Object readResolve() {
         if (StringUtils.isBlank(newResourceGroupName) && StringUtils.isBlank(existingResourceGroupName)
                 && StringUtils.isNotBlank(resourceGroupName)) {
@@ -215,8 +217,8 @@ public class AzureVMCloud extends Cloud {
     }
 
     @Override
-    public boolean canProvision(Label label) {
-        final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
+    public boolean canProvision(CloudState cloudState) {
+        final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(cloudState.getLabel());
         // return false if there is no template for this label.
         if (template == null) {
             // Avoid logging this, it happens a lot and is just noisy in logs.
@@ -240,6 +242,7 @@ public class AzureVMCloud extends Cloud {
         return AzureVMCloud.threadPool;
     }
 
+    @SuppressWarnings("unused") // called by jelly
     public Boolean isResourceGroupReferenceTypeEquals(String type) {
         if (this.resourceGroupReferenceType == null && type.equalsIgnoreCase("new")) {
             return true;
@@ -296,34 +299,10 @@ public class AzureVMCloud extends Cloud {
 
     /**
      * Ensures there is a valid template list available.
-     * Must be called under the vmTemplatesListLock
      */
     private void ensureVmTemplateList() {
         if (vmTemplates == null) {
-            vmTemplates = new ArrayList<AzureVMAgentTemplate>();
-        }
-    }
-
-    /**
-     * Remove all templates in the template set.
-     */
-    public final void clearVmTemplates() {
-        // Obtain lock while we copy the list.
-        synchronized (this) {
-            ensureVmTemplateList();
-            vmTemplates.clear();
-        }
-    }
-
-    /**
-     * Adds a new VM template to the store.
-     */
-    public final void addVmTemplate(AzureVMAgentTemplate newTemplate) {
-        // Obtain lock while we copy the list.
-        synchronized (this) {
-            ensureVmTemplateList();
-            vmTemplates.add(newTemplate);
-            newTemplate.addAzureCloudReference(this);
+            vmTemplates = new CopyOnWriteArrayList<>();
         }
     }
 
@@ -335,14 +314,10 @@ public class AzureVMCloud extends Cloud {
      * @param newTemplates Template set to use
      */
     public final void setVmTemplates(List<AzureVMAgentTemplate> newTemplates) {
-        synchronized (this) {
-            ensureVmTemplateList();
-            vmTemplates.clear();
-            for (AzureVMAgentTemplate newTemplate : newTemplates) {
-                vmTemplates.add(newTemplate);
-                newTemplate.addAzureCloudReference(this);
-            }
+        for (AzureVMAgentTemplate newTemplate : newTemplates) {
+            newTemplate.addAzureCloudReference(this);
         }
+        this.vmTemplates = new CopyOnWriteArrayList<>(newTemplates);
     }
 
     public List<AzureTagPair> getCloudTags() {
@@ -355,40 +330,13 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Removes a template from the template store by name.
-     * Removes all templates with the template name.
-     *
-     * @param templateName Template name to remove
-     */
-    public final void removeVmTemplate(String templateName) {
-        // Obtain lock while we copy the list.
-        synchronized (this) {
-            ensureVmTemplateList();
-            // in 1.8 we can use lambdas here, but in order to maintain
-            // 1.7 compatibility we don't.
-            ArrayList<AzureVMAgentTemplate> removeTemplates = new ArrayList<AzureVMAgentTemplate>();
-            for (AzureVMAgentTemplate template : vmTemplates) {
-                if (template.getTemplateName().equals(templateName)) {
-                    removeTemplates.add(template);
-                }
-            }
-            vmTemplates.removeAll(removeTemplates);
-        }
-    }
-
-    /**
-     * Returns the current set of templates. Required for config.jelly
+     * Current set of templates.
      *
      * @return List of available template
      */
     public List<AzureVMAgentTemplate> getVmTemplates() {
-        // Obtain lock while we copy the list.
-        synchronized (this) {
-            ensureVmTemplateList();
-            // Copy the list.  Objects underneath can be left as-is.
-            List<AzureVMAgentTemplate> listCopy = new ArrayList<AzureVMAgentTemplate>(vmTemplates);
-            return Collections.unmodifiableList(listCopy);
-        }
+        ensureVmTemplateList();
+        return Collections.unmodifiableList(vmTemplates);
     }
 
     /**
@@ -478,26 +426,23 @@ public class AzureVMCloud extends Cloud {
         LOGGER.log(Level.FINE,
                 "AzureVMCloud: getAzureAgentTemplate: Retrieving agent template with label {0}",
                 label);
-        // Lock the templates list rather than using getVMTemplates to avoid unnecessary copies.
-        synchronized (this) {
-            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
-                LOGGER.log(Level.FINE,
-                        "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}",
-                        agentTemplate.getTemplateName());
-                if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.NORMAL) {
-                    if (label == null || label.matches(agentTemplate.getLabelDataSet())) {
-                        LOGGER.log(Level.FINE,
-                                "AzureVMCloud: getAzureAgentTemplate: {0} matches!",
-                                agentTemplate.getTemplateName());
-                        return agentTemplate;
-                    }
-                } else if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
-                    if (label != null && label.matches(agentTemplate.getLabelDataSet())) {
-                        LOGGER.log(Level.FINE,
-                                "AzureVMCloud: getAzureAgentTemplate: {0} matches!",
-                                agentTemplate.getTemplateName());
-                        return agentTemplate;
-                    }
+        for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
+            LOGGER.log(Level.FINE,
+                    "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}",
+                    agentTemplate.getTemplateName());
+            if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.NORMAL) {
+                if (label == null || label.matches(agentTemplate.getLabelDataSet())) {
+                    LOGGER.log(Level.FINE,
+                            "AzureVMCloud: getAzureAgentTemplate: {0} matches!",
+                            agentTemplate.getTemplateName());
+                    return agentTemplate;
+                }
+            } else if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
+                if (label != null && label.matches(agentTemplate.getLabelDataSet())) {
+                    LOGGER.log(Level.FINE,
+                            "AzureVMCloud: getAzureAgentTemplate: {0} matches!",
+                            agentTemplate.getTemplateName());
+                    return agentTemplate;
                 }
             }
         }
@@ -515,11 +460,9 @@ public class AzureVMCloud extends Cloud {
             return null;
         }
 
-        synchronized (this) {
-            for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
-                if (name.equals(agentTemplate.getTemplateName())) {
-                    return agentTemplate;
-                }
+        for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
+            if (name.equals(agentTemplate.getTemplateName())) {
+                return agentTemplate;
             }
         }
         return null;
@@ -589,7 +532,7 @@ public class AzureVMCloud extends Cloud {
                                 final Object statusMessage = op.statusMessage();
                                 String finalStatusMessage = statusCode;
                                 if (statusMessage != null) {
-                                    finalStatusMessage += " - " + statusMessage.toString();
+                                    finalStatusMessage += " - " + statusMessage;
                                 }
                                 throw AzureCloudException.create(
                                         String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s",
@@ -630,14 +573,16 @@ public class AzureVMCloud extends Cloud {
     }
 
     @Override
-    public Collection<PlannedNode> provision(Label label, int workLoad) {
+    public Collection<PlannedNode> provision(CloudState cloudState, int workLoad) {
         LOGGER.log(Level.INFO,
-                "AzureVMCloud: provision: start for label {0} workLoad {1}", new Object[]{label, workLoad});
-        final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(label);
+                "AzureVMCloud: provision: start for label {0} workLoad {1}",
+                new Object[]{cloudState.getLabel(), workLoad}
+        );
+        final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(cloudState.getLabel());
 
         // round up the number of required machine
         int numberOfAgents = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
-        final List<PlannedNode> plannedNodes = new ArrayList<PlannedNode>(numberOfAgents);
+        final List<PlannedNode> plannedNodes = new ArrayList<>(numberOfAgents);
 
         if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
@@ -648,7 +593,7 @@ public class AzureVMCloud extends Cloud {
             if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
                 LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
             }
-            return new ArrayList<PlannedNode>();
+            return new ArrayList<>();
         }
 
         // reuse existing nodes if available
@@ -688,7 +633,7 @@ public class AzureVMCloud extends Cloud {
                                                     // set virtual machine details again
                                                     getServiceDelegate().setVirtualMachineDetails(
                                                             agentNode, template);
-                                                    Jenkins.getInstance().addNode(agentNode);
+                                                    Jenkins.get().addNode(agentNode);
                                                     if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
                                                         retrySshConnect(azureComputer);
                                                     } else { // Wait until node is online
@@ -842,7 +787,7 @@ public class AzureVMCloud extends Cloud {
                                     // Place the node in blocked state while it starts.
                                     try {
                                         agent.blockCleanUpAction();
-                                        Jenkins.getInstance().addNode(agent);
+                                        Jenkins.get().addNode(agent);
                                         Computer computer = agent.toComputer();
                                         if (agent.getAgentLaunchMethod().equalsIgnoreCase("SSH")
                                                 && computer != null) {
@@ -1053,7 +998,7 @@ public class AzureVMCloud extends Cloud {
         @Initializer(before = PLUGINS_STARTED)
         public static void addLogRecorder(Jenkins h) throws IOException {
             // avoid the failure in dynamic loading.
-            if (!h.hasPermission(h.ADMINISTER)) {
+            if (!h.hasPermission(Jenkins.ADMINISTER)) {
                 return;
             }
             LogRecorderManager manager = h.getLog();
@@ -1116,7 +1061,7 @@ public class AzureVMCloud extends Cloud {
         public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
             StandardListBoxModel result = new StandardListBoxModel();
             if (owner == null) {
-                if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return result;
                 }
             } else {
