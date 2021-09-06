@@ -482,7 +482,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
-                if (azureComputer.isSetOfflineByUser() && agentNode != null) {
+                if (azureComputer.isSetOfflineByUser()) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "AzureVMAgentCleanUpTask: cleanVMs: node {0} was set offline by user, skipping",
                             agentNode.getDisplayName());
@@ -490,7 +490,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
 
                 // If the machine is in "keep" state, skip
-                if (agentNode != null && agentNode.isCleanUpBlocked()) {
+                if (agentNode.isCleanUpBlocked()) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "AzureVMAgentCleanUpTask: cleanVMs: node {0} blocked to cleanup",
                             agentNode.getDisplayName());
