@@ -318,12 +318,16 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     */
     public void cleanLeakedResources() {
         Jenkins instance = Jenkins.getInstanceOrNull();
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: beginning");
         if (instance == null) {
+            LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: skipped as no"
+                    + " Jenkins instance");
             return;
         }
         for (AzureVMCloud cloud : instance.clouds.getAll(AzureVMCloud.class)) {
             cleanLeakedResources(cloud, cloud.getResourceGroupName(), DeploymentRegistrar.getInstance());
         }
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: completed");
     }
 
     public List<String> getValidVMs() {
@@ -458,6 +462,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     private void cleanVMs(ExecutionEngine executionEngine) {
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanVMs: beginning");
         for (Computer computer : Jenkins.get().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
@@ -477,7 +482,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
-                if (azureComputer.isSetOfflineByUser()) {
+                if (azureComputer.isSetOfflineByUser() && agentNode != null) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "AzureVMAgentCleanUpTask: cleanVMs: node {0} was set offline by user, skipping",
                             agentNode.getDisplayName());
@@ -485,7 +490,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
 
                 // If the machine is in "keep" state, skip
-                if (agentNode.isCleanUpBlocked()) {
+                if (agentNode != null && agentNode.isCleanUpBlocked()) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "AzureVMAgentCleanUpTask: cleanVMs: node {0} blocked to cleanup",
                             agentNode.getDisplayName());
@@ -552,10 +557,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
         }
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanVMs: completed");
     }
 
     public void cleanCloudStatistics() {
         Jenkins jenkins = Jenkins.get();
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanCloudStatistics: beginning");
 
         Set<ProvisioningActivity.Id> plannedNodesSet = new HashSet<>();
         for (NodeProvisioner.PlannedNode node : jenkins.unlabeledNodeProvisioner.getPendingLaunches()) {
@@ -582,10 +589,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             if (activity.getCurrentPhase().equals(ProvisioningActivity.Phase.PROVISIONING)
                     && !plannedNodesSet.contains(activity.getId())) {
                 Exception e = new Exception(String.format("Node %s has lost. Mark as failure",
-                        activity.getId().toString()));
+                        activity.getId()));
                 CloudStatistics.ProvisioningListener.get().onFailure(activity.getId(), e);
             }
         }
+        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanCloudStatistics: completed");
     }
 
     public AzureVMCloud getCloud(String cloudName) {
@@ -614,8 +622,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         Future<Void> result = AzureVMCloud.getThreadPool().submit(callClean);
 
         try {
-            LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: execute: Running clean with 5 minute "
-                    + "timeout");
+            LOGGER.log(getNormalLoggingLevel(), String.format("AzureVMAgentCleanUpTask: execute: Running clean with %s"
+                    + " minute timeout", CLEAN_TIMEOUT_IN_MINUTES));
             // Get will block until time expires or until task completes
             result.get(CLEAN_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
         } catch (ExecutionException executionException) {
