@@ -13,3 +13,4 @@ nb-configuration.xml
 nbactions.xml
 deployment.out
 .env
+logging.properties

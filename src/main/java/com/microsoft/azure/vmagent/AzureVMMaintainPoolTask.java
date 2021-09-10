@@ -34,7 +34,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
             return;
         }
 
-        for (Computer computer : Jenkins.getInstance().getComputers()) {
+        for (Computer computer : Jenkins.get().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureVMComputer = (AzureVMComputer) computer;
                 AzureVMAgent agent = azureVMComputer.getNode();
@@ -75,7 +75,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
     @Override
     public void execute(TaskListener arg0) {
-        for (Cloud cloud : Jenkins.getInstance().clouds) {
+        for (Cloud cloud : Jenkins.get().clouds) {
             if (cloud instanceof AzureVMCloud) {
                 AzureVMCloud azureVMCloud = (AzureVMCloud) cloud;
                 for (AzureVMAgentTemplate template : azureVMCloud.getVmTemplates()) {
