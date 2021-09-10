@@ -1093,7 +1093,8 @@ public final class AzureVMManagementServiceDelegate {
                     (String) properties.get("uamiID"),
                     template,
                     fqdn,
-                    template.getJavaPath());
+                    template.getJavaPath(),
+                    template.getRemotingOptions());
         } catch (FormException | IOException e) {
             throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
                     + "Exception occurred while creating agent object", e);
