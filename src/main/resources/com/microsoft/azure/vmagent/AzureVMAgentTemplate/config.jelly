@@ -248,6 +248,10 @@
                         <f:textbox default="java" />
                     </f:entry>
 
+                    <f:entry title="${%Remoting options}">
+                        <f:textbox field="remotingOptions" />
+                    </f:entry>
+
                     <f:entry title="${%JVM_Options}" field="jvmOptions" help="/plugin/azure-vm-agents/help-jvmOptions.html">
                         <f:textbox/>
                     </f:entry>

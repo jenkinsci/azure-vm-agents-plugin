@@ -316,6 +316,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String jvmOptions;
 
+    private String remotingOptions;
+
     // Indicates whether the template is disabled.
     // If disabled, will not attempt to verify or use
     private final boolean templateDisabled;
@@ -584,6 +586,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setJavaPath(String javaPath) {
         this.javaPath = javaPath;
+    }
+
+    public String getRemotingOptions() {
+        return remotingOptions;
+    }
+
+    @DataBoundSetter
+    public void setRemotingOptions(String remotingOptions) {
+        this.remotingOptions = remotingOptions;
     }
 
     public boolean isSpotInstance() {

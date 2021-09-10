@@ -130,6 +130,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private String javaPath;
 
+    private String remotingOptions;
+
     private boolean eligibleForReuse;
 
     private final AzureVMAgentTemplate template;
@@ -173,6 +175,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             String uamiID,
             String javaPath,
+            String remotingOptions,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
@@ -198,6 +201,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         } else {
             this.javaPath = javaPath;
         }
+        this.remotingOptions = remotingOptions;
         this.setCleanUpAction(cleanUpAction);
         this.setCleanUpReason(cleanUpReason);
         this.resourceGroupName = resourceGroupName;
@@ -245,7 +249,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String uamiID,
             AzureVMAgentTemplate template,
             String fqdn,
-            String javaPath) throws FormException, IOException {
+            String javaPath,
+            String remotingOptions
+    ) throws FormException, IOException {
 
         this(name,
                 templateName,
@@ -285,6 +291,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 ephemeralOSDisk,
                 uamiID,
                 javaPath,
+                remotingOptions,
                 template
         );
 
@@ -306,6 +313,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         }
 
         return javaPath;
+    }
+
+    public String getRemotingOptions() {
+        return remotingOptions;
     }
 
     public String getVMCredentialsId() {

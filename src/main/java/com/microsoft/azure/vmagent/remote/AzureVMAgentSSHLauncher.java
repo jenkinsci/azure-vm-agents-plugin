@@ -27,6 +27,7 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
@@ -231,12 +232,20 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             }
 
             LOGGER.info("AzureVMAgentSSHLauncher: launch: java runtime present, copying remoting.jar to remote");
-            InputStream inputStream = new ByteArrayInputStream(Jenkins.getInstance().getJnlpJars("remoting.jar").
+            InputStream inputStream = new ByteArrayInputStream(Jenkins.get().getJnlpJars("remoting.jar").
                     readFully());
             copyFileToRemote(session, inputStream, "remoting.jar");
 
+            String remotingWorkingDirectory = getRemotingWorkingDirectory(isUnix);
+            String remotingDefaultOptions = "-workDir " + remotingWorkingDirectory;
+
+            String remotingOptions = Util.fixEmpty(agent.getRemotingOptions()) != null ? agent.getRemotingOptions() :
+                    remotingDefaultOptions;
+
             String jvmopts = agent.getJvmOptions();
-            String execCommand = agent.getJavaPath() + " " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "") + " -jar remoting.jar";
+            String execCommand = agent.getJavaPath() + " " + (StringUtils.isNotBlank(jvmopts) ? jvmopts : "")
+                    + " -jar remoting.jar "
+                    + remotingOptions;
             LOGGER.log(Level.INFO, "AzureVMAgentSSHLauncher: launch: launching agent: {0}", execCommand);
 
             final ChannelExec jschChannel = (ChannelExec) session.openChannel("exec");
@@ -245,16 +254,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             LOGGER.info("AzureVMAgentSSHLauncher: launch: Connected successfully");
 
             computer.setChannel(jschChannel.getInputStream(), jschChannel.getOutputStream(), logger, new Listener() {
-
                 @Override
                 public void onClosed(Channel channel, IOException cause) {
-                    if (jschChannel != null) {
-                        jschChannel.disconnect();
-                    }
-
-                    if (cleanupSession != null) {
-                        cleanupSession.disconnect();
-                    }
+                    jschChannel.disconnect();
+                    cleanupSession.disconnect();
                 }
             });
 
@@ -278,6 +281,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 agent.setCleanUpAction(CleanUpAction.DELETE, cleanUpReason);
             }
         }
+    }
+
+    private String getRemotingWorkingDirectory(boolean isUnix) {
+        if (isUnix) {
+            return "~/remoting";
+        }
+        return "C:\\remoting";
     }
 
     private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws JSchException {
