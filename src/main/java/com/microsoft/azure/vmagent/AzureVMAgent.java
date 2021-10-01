@@ -22,6 +22,9 @@ import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.Descriptor.FormException;
@@ -48,8 +51,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.ByteArrayInputStream;
@@ -744,7 +745,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     @Extension
     public static final class AzureVMAgentDescriptor extends SlaveDescriptor {
 
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return Constants.AZURE_VM_AGENT_CLOUD_DISPLAY_NAME;
         }

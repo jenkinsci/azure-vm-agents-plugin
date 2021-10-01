@@ -101,7 +101,7 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
     public static final DescriptorImpl DESCRIPTOR = new AzureVMCloudOnceRetentionStrategy.DescriptorImpl();
 
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return "Azure VM Once Retention Strategy";
         }

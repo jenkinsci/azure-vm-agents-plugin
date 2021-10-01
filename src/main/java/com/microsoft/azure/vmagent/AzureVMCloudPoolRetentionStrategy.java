@@ -181,7 +181,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
 
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return "Azure VM Pool Retention Strategy";
         }
