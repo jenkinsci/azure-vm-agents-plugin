@@ -145,11 +145,11 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             } catch (FileNotFoundException e) {
                 LOGGER.log(Level.WARNING,
                         "AzureVMAgentCleanUpTask: readResolve: Cannot open deployment output file");
-                deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
+                deploymentsToClean = new ConcurrentLinkedQueue<>();
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
                         "AzureVMAgentCleanUpTask: readResolve: Cannot deserialize deploymentsToClean", e);
-                deploymentsToClean = new ConcurrentLinkedQueue<DeploymentInfo>();
+                deploymentsToClean = new ConcurrentLinkedQueue<>();
             }
         }
 

@@ -299,17 +299,21 @@ public final class AzureUtil {
         // to split up the name
 
         int maxLength;
-        if (usageType.equals(Constants.OS_TYPE_LINUX)) {
-            // Linux, length <= 63 characters, 10 characters for the date
-            maxLength = TEMPLATE_NAME_MAX_LENGTH_LINUX;
-        } else if (usageType.equals(Constants.OS_TYPE_WINDOWS)) {
-            // Windows, length is 15 characters.  10 characters for the date
-            maxLength = TEMPLATE_NAME_MAX_LENGTH_WIN;
-        } else if (usageType.equals(Constants.USAGE_TYPE_DEPLOYMENT)) {
-            // Maximum is 64 characters
-            maxLength = TEMPLATE_NAME_MAX_LENGTH_DEPLOYMENT;
-        } else {
-            throw new IllegalArgumentException("Unknown OS/Usage type");
+        switch (usageType) {
+            case Constants.OS_TYPE_LINUX:
+                // Linux, length <= 63 characters, 10 characters for the date
+                maxLength = TEMPLATE_NAME_MAX_LENGTH_LINUX;
+                break;
+            case Constants.OS_TYPE_WINDOWS:
+                // Windows, length is 15 characters.  10 characters for the date
+                maxLength = TEMPLATE_NAME_MAX_LENGTH_WIN;
+                break;
+            case Constants.USAGE_TYPE_DEPLOYMENT:
+                // Maximum is 64 characters
+                maxLength = TEMPLATE_NAME_MAX_LENGTH_DEPLOYMENT;
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown OS/Usage type");
         }
 
         // Chop of what we need for date digits
@@ -525,7 +529,7 @@ public final class AzureUtil {
         protected DeploymentTag(long timestamp) {
             String id = "";
             try {
-                id = Jenkins.getInstance().getLegacyInstanceId();
+                id = Jenkins.get().getLegacyInstanceId();
             } catch (Exception e) {
                 id = "AzureJenkins000";
             }

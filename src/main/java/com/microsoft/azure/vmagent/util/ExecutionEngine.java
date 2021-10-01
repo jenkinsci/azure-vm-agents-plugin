@@ -34,7 +34,7 @@ public class ExecutionEngine {
 
     public static <T> T executeWithRetry(Callable<T> task, RetryStrategy retryStrategy)
             throws AzureCloudException {
-        Future<T> result = AzureVMCloud.getThreadPool().submit(new RetryTask<T>(task, retryStrategy));
+        Future<T> result = AzureVMCloud.getThreadPool().submit(new RetryTask<>(task, retryStrategy));
 
         try {
             if (retryStrategy.getMaxTimeoutInSeconds() == 0) {
@@ -51,6 +51,6 @@ public class ExecutionEngine {
 
     public <T> Future<T> executeAsync(Callable<T> task, RetryStrategy retryStrategy)
             throws AzureCloudException {
-        return AzureVMCloud.getThreadPool().submit(new RetryTask<T>(task, retryStrategy));
+        return AzureVMCloud.getThreadPool().submit(new RetryTask<>(task, retryStrategy));
     }
 }

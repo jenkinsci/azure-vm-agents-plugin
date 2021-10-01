@@ -45,7 +45,7 @@ public class AzureTagPair implements Describable<AzureTagPair> {
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<AzureTagPair> getDescriptor() {
-        Jenkins instance = Jenkins.getInstance();
+        Jenkins instance = Jenkins.get();
         return instance.getDescriptor(getClass());
     }
 

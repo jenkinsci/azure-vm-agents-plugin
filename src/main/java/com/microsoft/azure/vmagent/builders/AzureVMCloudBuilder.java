@@ -43,9 +43,7 @@ public class AzureVMCloudBuilder {
         existingResourceGroupName = cloud.getExistingResourceGroupName();
         // getVmTemplates returns unmodifiableList
         vmTemplates = new ArrayList<>();
-        for (AzureVMAgentTemplate template : cloud.getVmTemplates()) {
-            vmTemplates.add(template);
-        }
+        vmTemplates.addAll(cloud.getVmTemplates());
     }
 
     //CHECKSTYLE:OFF

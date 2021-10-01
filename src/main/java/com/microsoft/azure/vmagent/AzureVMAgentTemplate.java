@@ -1648,7 +1648,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
                 @QueryParameter String jvmOptions) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             ImageReferenceTypeClass image = new ImageReferenceTypeClass(
                     imageUri,
