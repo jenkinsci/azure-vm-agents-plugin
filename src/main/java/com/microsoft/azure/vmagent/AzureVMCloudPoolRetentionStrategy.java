@@ -32,9 +32,9 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
-        retentionInHours = retentionInHours >= 0 ? retentionInHours : 0;
+        retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
-        this.poolSize = poolSize >= 0 ? poolSize : 0;
+        this.poolSize = Math.max(poolSize, 0);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     private static synchronized void checkPoolSizeAndDelete(AzureVMComputer agentComputer, int poolSize) {
         int count = 0;
-        List<Computer> computers = Arrays.asList(Jenkins.getInstance().getComputers());
+        List<Computer> computers = Arrays.asList(Jenkins.get().getComputers());
         for (Computer computer : computers) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMAgent patternAgentNode = ((AzureVMComputer) computer).getNode();

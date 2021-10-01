@@ -55,7 +55,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -265,7 +265,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
-                Arrays.asList(new EnvironmentVariablesNodeProperty(
+                Collections.singletonList(new EnvironmentVariablesNodeProperty(
                         new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn)
                 )),
                 cloudName,
@@ -525,7 +525,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @CheckForNull
     public AzureVMCloud getCloud() {
-        return (AzureVMCloud) Jenkins.getInstance().getCloud(cloudName);
+        return (AzureVMCloud) Jenkins.get().getCloud(cloudName);
     }
 
     public synchronized void shutdown(Localizable reason) {
@@ -566,7 +566,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
      */
     public synchronized void deprovision(Localizable reason) throws Exception {
         SlaveComputer computer = this.getComputer();
-        if (Jenkins.getInstance().getNode(this.name) == null || computer == null) {
+        if (Jenkins.get().getNode(this.name) == null || computer == null) {
             return;
         }
 
@@ -758,8 +758,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         //abusing a bit of f:validateButton because it has nice progress
         @RequirePOST
         public FormValidation doAttachPublicIP(@QueryParameter String vmAgentName) {
-            Jenkins.getInstance().checkPermission(Computer.CONFIGURE);
-            AzureVMAgent vmAgent = (AzureVMAgent) Jenkins.getInstance().getNode(vmAgentName);
+            Jenkins.get().checkPermission(Computer.CONFIGURE);
+            AzureVMAgent vmAgent = (AzureVMAgent) Jenkins.get().getNode(vmAgentName);
             String publicIP = "";
             if (vmAgent != null) {
                 publicIP = vmAgent.attachPublicIP();

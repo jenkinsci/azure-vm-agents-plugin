@@ -813,7 +813,7 @@ public class AzureVMCloud extends Cloud {
 
                                     // Remove the node from jenkins
                                     try {
-                                        Jenkins.getInstance().removeNode(agent);
+                                        Jenkins.get().removeNode(agent);
                                     } catch (IOException nodeRemoveEx) {
                                         LOGGER.log(
                                                 Level.SEVERE,

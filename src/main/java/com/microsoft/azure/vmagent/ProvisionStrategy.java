@@ -32,7 +32,7 @@ public class ProvisionStrategy {
     // Whatever verify failed or deploy failed, extend retry interval
     public synchronized void failure() {
         configurationStatus = Constants.VERIFIED_FAILED;
-        interval = interval * 2 > MAX_INTERVAL ? MAX_INTERVAL : interval * 2;
+        interval = Math.min(interval * 2, MAX_INTERVAL);
         lastFailureTime = System.currentTimeMillis();
     }
 
