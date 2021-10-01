@@ -20,6 +20,7 @@ import com.microsoft.azure.vmagent.util.CleanUpAction;
 import java.io.IOException;
 import java.util.logging.Logger;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
@@ -119,7 +120,7 @@ public class AzureVMAgentPostBuildAction extends Recorder {
             return model;
         }
 
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return Messages.Azure_Agent_Post_Build_Action();
         }

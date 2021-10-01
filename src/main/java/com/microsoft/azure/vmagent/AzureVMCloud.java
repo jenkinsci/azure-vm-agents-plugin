@@ -36,6 +36,7 @@ import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
@@ -1012,7 +1013,7 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return Constants.AZURE_CLOUD_DISPLAY_NAME;
         }

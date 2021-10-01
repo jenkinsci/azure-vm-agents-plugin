@@ -38,6 +38,7 @@ import com.microsoft.azure.vmagent.util.AzureClientHolder;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
@@ -1308,7 +1309,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Extension
     public static final class DescriptorImpl extends Descriptor<AzureVMAgentTemplate> {
 
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return "";
         }

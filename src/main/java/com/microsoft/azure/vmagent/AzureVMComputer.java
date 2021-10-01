@@ -19,6 +19,7 @@ import com.azure.resourcemanager.AzureResourceManager;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.ExecutionEngine;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.OfflineCause;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
@@ -28,7 +29,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 
-import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;

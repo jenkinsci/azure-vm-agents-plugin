@@ -56,7 +56,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
      * @return Number of minutes before node will be checked again.
      */
     @Override
-    public long check(AzureVMComputer agentNode) {
+    public long check(@NonNull AzureVMComputer agentNode) {
         return check(agentNode, new ExecutionEngine());
     }
 
@@ -163,7 +163,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
 
     @Symbol("azureVMCloudRetentionStrategy") //  TODO evaluate impact of renaming class to fix the default symbol name
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override
+        @Override @NonNull
         public String getDisplayName() {
             return "Azure VM Idle Retention Strategy";
         }
