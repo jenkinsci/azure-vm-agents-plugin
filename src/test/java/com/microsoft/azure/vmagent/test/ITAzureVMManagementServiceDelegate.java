@@ -76,7 +76,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         run twice
         first the resources are missing, the second time the resources should be there
         */
-        final String uploadFileName = UUID.randomUUID().toString() + ".txt";
+        final String uploadFileName = UUID.randomUUID() + ".txt";
         clearAzureResources(); //make sure the azure resources are missing
 
         uploadCustomScript(uploadFileName, UUID.randomUUID().toString());
@@ -110,7 +110,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(StringUtils.strip(writtenData), StringUtils.strip(downloadedData));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -491,7 +491,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -527,7 +527,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             setVirtualMachineDetailsCommonVerification(nodeName, publicIP.fqdn(), privateIP, publicIP.ipAddress());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -543,7 +543,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             setVirtualMachineDetailsCommonVerification(nodeName, ip, ip, "");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -615,7 +615,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             verify(agentMock, never()).setPrivateIP(any(String.class));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -658,13 +658,13 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, vmName);
             try {
                 delegate.isVMAliveOrHealthy(agentMock);
-                Assert.assertTrue("isVMAliveOrHealthy should have thrown an exception", false);
+                Assert.fail("isVMAliveOrHealthy should have thrown an exception");
             } catch (Exception e) {
                 Assert.assertTrue(true);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -681,7 +681,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(0, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing"));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -757,7 +757,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -811,7 +811,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(state.equals(PowerState.RUNNING) || state.equals(PowerState.STARTING));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -835,7 +835,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                     is(PowerState.DEALLOCATED)));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -851,7 +851,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertNull(missing_vnet);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -894,7 +894,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                             .verifyVirtualNetwork(vnetName, vnetResourceGroup, "", false, testEnv.azureResourceGroup));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1071,7 +1071,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1122,7 +1122,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertFalse(blobExists(existingContainerBlobURI));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1140,7 +1140,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForTemplate.get(TestEnvironment.AZUREPUBLIC));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1172,7 +1172,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertTrue(blobExists(notDeletedBlob));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -1190,7 +1190,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(endSuffix, testEnv.blobEndpointSuffixForCloudStorageAccount.get(TestEnvironment.AZUREPUBLIC));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 

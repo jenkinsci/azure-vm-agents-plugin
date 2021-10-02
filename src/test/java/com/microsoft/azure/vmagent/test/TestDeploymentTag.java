@@ -17,9 +17,10 @@
 package com.microsoft.azure.vmagent.test;
 
 import com.microsoft.azure.vmagent.util.AzureUtil;
+import org.junit.Assert;
 import org.jvnet.hudson.test.JenkinsRule;
 import jenkins.model.Jenkins;
-import junit.framework.Assert;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -32,19 +33,19 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
 
     @Before
     public void setUp() {
-        jenkinsId = Jenkins.getInstance().getLegacyInstanceId();
+        jenkinsId = Jenkins.get().getLegacyInstanceId();
     }
 
     @Test
     public void constructAndGet() {
         final long ts = 1234;
-        Assert.assertEquals(jenkinsId + "/" + Long.toString(ts), tag(ts).get());
+        Assert.assertEquals(jenkinsId + "/" + ts, tag(ts).get());
     }
 
     @Test
     public void constructFromString() {
         final long ts = 1234;
-        final String tagStr = jenkinsId + "/" + Long.toString(ts);
+        final String tagStr = jenkinsId + "/" + ts;
         final AzureUtil.DeploymentTag tag = new AzureUtil.DeploymentTag(tagStr);
         Assert.assertEquals(tagStr, tag.get());
     }
