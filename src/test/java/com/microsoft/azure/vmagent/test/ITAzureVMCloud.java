@@ -47,15 +47,10 @@ public class ITAzureVMCloud extends IntegrationTest {
 
             when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
 
-            try {
-                cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
-                Assert.assertTrue(false);
-            } catch (AzureCloudException ex) {
-                Assert.assertTrue(true);
-            }
+            Assert.assertThrows(AzureCloudException.class, () -> cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -132,7 +127,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             Assert.assertEquals(ephemeralOSDisk, newAgent.isEphemeralOSDisk());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.assertTrue(e.getMessage(), false);
+            Assert.fail(e.getMessage());
         }
     }
 
