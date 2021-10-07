@@ -583,10 +583,14 @@ public final class AzureVMManagementServiceDelegate {
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
 
+            String templateJson = tmp.toString();
+            String params = parameters.toString();
+            LOGGER.log(Level.INFO, templateJson);
+            LOGGER.log(Level.INFO, params);
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
-                    .withTemplate(tmp.toString())
-                    .withParameters(parameters.toString())
+                    .withTemplate(templateJson)
+                    .withParameters(params)
                     .withMode(DeploymentMode.INCREMENTAL)
                     .beginCreate();
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
