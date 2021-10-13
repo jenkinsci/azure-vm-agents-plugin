@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.17</version>
+        <version>4.29</version>
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
@@ -53,15 +53,15 @@
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>181.v00b0d97d2686</azure-credentials.version>
+        <azure-credentials.version>197.v2f5ab5b82264</azure-credentials.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.263.x</artifactId>
-                <version>807.v6d348e44c987</version>
+                <artifactId>bom-2.277.x</artifactId>
+                <version>966.v3857b7c82032</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -72,7 +72,7 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>azure-sdk</artifactId>
-            <version>7.va79ea0a60157</version>
+            <version>48.veb7555463c4b</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>

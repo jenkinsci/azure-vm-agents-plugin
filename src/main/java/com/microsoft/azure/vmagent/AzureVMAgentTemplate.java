@@ -38,6 +38,7 @@ import com.microsoft.azure.vmagent.util.AzureClientHolder;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
+import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.RelativePath;
@@ -1398,7 +1399,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             resourceGroupReferenceType = null;
 
             try {
-                AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
+                AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
                 PagedIterable<AvailabilitySet> availabilitySets = azureClient.availabilitySets()
@@ -1475,7 +1476,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             resourceGroupReferenceType = null;
 
             try {
-                AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
+                AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
 
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);

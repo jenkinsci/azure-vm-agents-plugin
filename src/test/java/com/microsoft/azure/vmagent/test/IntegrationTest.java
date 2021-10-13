@@ -47,7 +47,6 @@ import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
-import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.util.Secret;
 import org.junit.After;
