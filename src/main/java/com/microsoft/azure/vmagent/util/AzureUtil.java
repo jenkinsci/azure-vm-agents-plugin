@@ -23,6 +23,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -463,7 +464,7 @@ public final class AzureUtil {
         if (StringUtils.isEmpty(subscriptionId)) {
             return true;
         }
-        AzureResourceManager defaultClient = AzureClientUtil.getClient(credentialId);
+        AzureResourceManager defaultClient = AzureResourceManagerCache.get(credentialId);
         PagedIterable<Subscription> subscriptions = defaultClient.subscriptions().list();
         boolean isSubscriptionIdValid = false;
         for (Subscription subscription : subscriptions) {

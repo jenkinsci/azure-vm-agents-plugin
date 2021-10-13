@@ -24,18 +24,16 @@ import com.azure.resourcemanager.resources.models.DeploymentOperation;
 import com.azure.resourcemanager.resources.models.ResourceGroup;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.google.common.base.Suppliers;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureImdsCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.vmagent.util.AzureClientHolder;
-import com.microsoft.azure.vmagent.util.AzureClientUtil;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
+import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.init.Initializer;
@@ -81,7 +79,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -127,16 +124,12 @@ public class AzureVMCloud extends Cloud {
     // Approximate virtual machine count.  Updated periodically.
     private int approximateVirtualMachineCount;
 
-    private transient Supplier<AzureResourceManager> azureClient = createAzureClientSupplier();
+    private transient AzureResourceManager azureClient;
 
     private List<AzureTagPair> cloudTags;
 
     //The map should not be accessed without acquiring a lock of the map
     private transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
-
-    private Supplier<AzureResourceManager> createAzureClientSupplier() {
-        return Suppliers.memoize(() -> AzureClientUtil.getClient(credentialsId))::get;
-    }
 
     @DataBoundConstructor
     public AzureVMCloud(
@@ -194,7 +187,6 @@ public class AzureVMCloud extends Cloud {
         //resourceGroupName is transient so we need to restore it for future using
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-        azureClient = createAzureClientSupplier();
         configurationStatus = Constants.UNVERIFIED;
         synchronized (this) {
             // Ensure that renamed field is set
@@ -504,7 +496,7 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Create a new RM client each time because the config may expire while
                 // in this long running operation
-                final AzureResourceManager newAzureClient = AzureClientUtil.getClient(credentialsId);
+                final AzureResourceManager newAzureClient = template.retrieveAzureCloudReference().getAzureClient();
 
                 final Deployment dep = newAzureClient.deployments()
                         .getByResourceGroup(template.getResourceGroupName(), deploymentName);
@@ -962,7 +954,11 @@ public class AzureVMCloud extends Cloud {
     }
 
     public AzureResourceManager getAzureClient() {
-        return azureClient.get();
+        if (azureClient == null) {
+            this.azureClient = AzureResourceManagerCache.get(credentialsId);
+        }
+
+        return azureClient;
     }
 
     public AzureVMManagementServiceDelegate getServiceDelegate() {
@@ -1049,7 +1045,7 @@ public class AzureVMCloud extends Cloud {
             if (StringUtils.isBlank(resourceGroupName)) {
                 resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
             }
-            AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
+            AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
             final String validationResult = AzureVMManagementServiceDelegate
                     .getInstance(azureClient, azureCredentialsId)
                     .verifyConfiguration(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
@@ -1086,7 +1082,7 @@ public class AzureVMCloud extends Cloud {
             }
 
             try {
-                final AzureResourceManager azureClient = AzureClientHolder.get(azureCredentialsId);
+                final AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
                 for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
                     model.add(resourceGroup.name());
                 }
