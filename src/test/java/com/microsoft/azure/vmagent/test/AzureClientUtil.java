@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-package com.microsoft.azure.vmagent.util;
+package com.microsoft.azure.vmagent.test;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.management.profile.AzureProfile;
@@ -22,6 +22,7 @@ import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.util.AzureUtil;
 import hudson.Util;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 

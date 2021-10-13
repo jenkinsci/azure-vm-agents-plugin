@@ -43,6 +43,7 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -295,25 +296,17 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 "AzureVMAgentSSHLauncher: getRemoteSession: getting remote session for user {0} to host {1}:{2}",
                 new Object[]{userName, dnsName, sshPort});
         JSch remoteClient = new JSch();
-        try {
-            final Session session = remoteClient.getSession(userName, dnsName, sshPort);
-            session.setConfig("StrictHostKeyChecking", "no");
-            session.setPassword(password);
-            // pinging server for every 1 minutes to keep the connection alive
-            final int serverAliveIntervalInMillis = 60 * 1000;
-            session.setServerAliveInterval(serverAliveIntervalInMillis);
-            session.connect();
-            LOGGER.log(Level.INFO,
-                    "AzureVMAgentSSHLauncher: getRemoteSession: Got remote session for user {0} to host {1}:{2}",
-                    new Object[]{userName, dnsName, sshPort});
-            return session;
-        } catch (JSchException e) {
-            LOGGER.log(Level.SEVERE,
-                    String.format("AzureVMAgentSSHLauncher: getRemoteSession: "
-                                    + "Got exception while connecting to remote host %s:%s",
-                            dnsName, sshPort), e);
-            throw e;
-        }
+        final Session session = remoteClient.getSession(userName, dnsName, sshPort);
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.setPassword(password);
+        // pinging server for every 1 minutes to keep the connection alive
+        final int serverAliveIntervalInMillis = 60 * 1000;
+        session.setServerAliveInterval(serverAliveIntervalInMillis);
+        session.connect();
+        LOGGER.log(Level.INFO,
+                "AzureVMAgentSSHLauncher: getRemoteSession: Got remote session for user {0} to host {1}:{2}",
+                new Object[]{userName, dnsName, sshPort});
+        return session;
     }
     
     public void copyFileToRemote(AzureVMAgent agent, InputStream stream, String remotePath) throws Exception {
@@ -450,8 +443,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
 
     private Session connectToSsh(AzureVMAgent agent) throws Exception {
         LOGGER.info("AzureVMAgentSSHLauncher: connectToSsh: start");
-        Session session = null;
-        final int maxRetryCount = 6;
+        Session session;
+        final int maxRetryCount = 36;
         int currRetryCount = 0;
 
         while (true) {
@@ -472,10 +465,10 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                     throw e;
                 }
                 // keep retrying till time out
-                LOGGER.log(Level.SEVERE,
-                        "AzureVMAgentSSHLauncher: connectToSsh: Got exception while connecting to remote host. "
-                                + "Will be trying again after 1 minute ", e);
-                final int sleepInMills = 60 * 1000;
+                int backoffTime = 10;
+                LOGGER.log(Level.INFO, String.format("Failed connecting to host %s:%s. Will be trying again after %s seconds, error was: %s ", agent.getPublicDNSName(), agent.getSshPort(), backoffTime, e.getMessage()));
+                LOGGER.log(Level.FINE, String.format("Failed connecting to host %s:%s.", agent.getPublicDNSName(), agent.getSshPort()), e);
+                final long sleepInMills = TimeUnit.SECONDS.toMillis(backoffTime);
                 Thread.sleep(sleepInMills);
                 // continue again
                 continue;
