@@ -79,6 +79,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static hudson.Util.fixEmpty;
+import static java.util.Objects.requireNonNull;
+
 /**
  * Business delegate class which handles calls to Azure management service SDK.
  *
@@ -497,7 +500,11 @@ public final class AzureVMManagementServiceDelegate {
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
             if (useCustomScriptExtension) {
-                putVariable(tmp, "jenkinsServerURL", Jenkins.get().getRootUrl());
+                String rootUrl = fixEmpty(Jenkins.get().getRootUrl());
+                if (rootUrl == null) {
+                    throw AzureCloudException.create("Jenkins URL must be set");
+                }
+                putVariable(tmp, "jenkinsServerURL", rootUrl);
                 // Calculate the client secrets.  The secrets are based off the machine name,
                 ArrayNode clientSecretsNode = ((ObjectNode) tmp.get("variables")).putArray("clientSecrets");
                 for (int i = 0; i < numberOfAgents; i++) {
@@ -584,9 +591,11 @@ public final class AzureVMManagementServiceDelegate {
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
             // Create the deployment
 
+            String templateJson = tmp.toString();
+            LOGGER.log(Level.FINE, templateJson);
             azureClient.deployments().define(deploymentName)
                     .withExistingResourceGroup(template.getResourceGroupName())
-                    .withTemplate(tmp.toString())
+                    .withTemplate(templateJson)
                     .withParameters(parameters.toString())
                     .withMode(DeploymentMode.INCREMENTAL)
                     .beginCreate();

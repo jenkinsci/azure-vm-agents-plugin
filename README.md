@@ -228,3 +228,14 @@ def myCloud = new AzureVMCloudBuilder()
 Jenkins.getInstance().clouds.add(myCloud)
 ```
 This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).
+
+## Troubleshooting
+
+### Deployment validation failure
+
+If you can't tell from validation why a deployment does not work you can enable additional logging.
+
+The plugin creates a Jenkins logger called `Azure VM Agent (Auto)`, update that to `FINE` level and re-run the agent provisioning.
+The ARM template which is used to deploy resources will now show up.
+
+More information on Jenkins logs can be found in the Jenkins documentation for [Viewing logs](https://www.jenkins.io/doc/book/system-administration/viewing-logs/).
