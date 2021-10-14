@@ -75,7 +75,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     }
 
     public AzureVMAgentTemplate build() {
-        return new AzureVMAgentTemplate(
+        AzureVMAgentTemplate azureVMAgentTemplate = new AzureVMAgentTemplate(
                 fluent.getName(),
                 fluent.getDescription(),
                 fluent.getLabels(),
@@ -87,14 +87,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getNewStorageAccountName(),
                 fluent.getExistingStorageAccountName(),
                 fluent.getDiskType(),
-                fluent.isEphemeralOSDisk(),
-                fluent.getOsDiskSize(),
                 fluent.getAdvancedImage().getNoOfParallelJobs(),
                 fluent.getUsageMode(),
-                fluent.getBuiltInImage().getBuiltInImage(),
-                fluent.getBuiltInImage().isInstallGit(),
-                fluent.getBuiltInImage().isInstallMaven(),
-                fluent.getBuiltInImage().isInstallDocker(),
                 fluent.getAdvancedImage().getOsType(),
                 fluent.getImageTopLevelType(),
                 new AzureVMAgentTemplate.ImageReferenceTypeClass(fluent.getAdvancedImage().getImage(),
@@ -109,24 +103,32 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                         fluent.getAdvancedImage().getGallerySubscriptionId(),
                         fluent.getAdvancedImage().getGalleryResourceGroup()),
                 fluent.getAdvancedImage().getAgentLaunchMethod(),
-                fluent.getAdvancedImage().isPreInstallSsh(),
                 fluent.getAdvancedImage().getInitScript(),
                 fluent.getAdvancedImage().getTerminateScript(),
                 fluent.getCredentialsId(),
                 fluent.getAdvancedImage().getVirtualNetworkName(),
                 fluent.getAdvancedImage().getVirtualNetworkResourceGroupName(),
                 fluent.getAdvancedImage().getSubnetName(),
-                fluent.getAdvancedImage().isUsePrivateIP(),
                 fluent.getAdvancedImage().getNsgName(),
                 fluent.getWorkspace(),
                 fluent.getAdvancedImage().getJvmOptions(),
                 fluent.getRetentionStrategy(),
-                fluent.isShutdownOnIdle(),
-                fluent.getAdvancedImage().isTemplateDisabled(),
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
-                fluent.getAdvancedImage().isEnableMSI(),
-                fluent.getAdvancedImage().isEnableUAMI(),
-                fluent.getAdvancedImage().getUamiID());
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
+                );
+        azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
+        azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
+        azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());
+        azureVMAgentTemplate.setTemplateDisabled(fluent.getAdvancedImage().isTemplateDisabled());
+        azureVMAgentTemplate.setBuiltInImage(fluent.getBuiltInImage().getBuiltInImage());
+        azureVMAgentTemplate.setInstallGit(fluent.getBuiltInImage().isInstallGit());
+        azureVMAgentTemplate.setInstallMaven(fluent.getBuiltInImage().isInstallMaven());
+        azureVMAgentTemplate.setInstallDocker(fluent.getBuiltInImage().isInstallDocker());
+        azureVMAgentTemplate.setUsePrivateIP(fluent.getAdvancedImage().isUsePrivateIP());
+        azureVMAgentTemplate.setEnableMSI(fluent.getAdvancedImage().isEnableMSI());
+        azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
+        azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
+        azureVMAgentTemplate.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
+        return azureVMAgentTemplate;
     }
 }

@@ -11,9 +11,6 @@
       credentialsId: "admin-cred"
       diskType: "managed"
       doNotUseMachineIfInitFails: true
-      enableMSI: false
-      enableUAMI: false
-      ephemeralOSDisk: false
       executeInitScriptAsRoot: true
       imageReference:
         version: "latest"
@@ -25,17 +22,13 @@
       location: "East US"
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
-      osDiskSize: 0
       osType: "Linux"
       preInstallSsh: true
       retentionStrategy:
         azureVMCloudRetentionStrategy:
           idleTerminationMinutes: 60
-      shutdownOnIdle: false
       storageAccountNameReferenceType: "new"
       storageAccountType: "Standard_LRS"
-      templateDisabled: false
       templateName: "ubuntu"
-      usageMode: "Use this node as much as possible"
-      usePrivateIP: false
+      usageMode: NORMAL
       virtualMachineSize: "Standard_DS2_v2"

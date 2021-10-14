@@ -4,6 +4,7 @@ import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
+import hudson.model.Node;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
@@ -76,7 +77,7 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.getOsDiskSize(), is(40));
         assertThat(template.getOsType(), is("Linux"));
 
-        assertThat(template.getPreInstallSsh(), is(false));
+        assertThat(template.isPreInstallSsh(), is(false));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(40L));
@@ -89,7 +90,7 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.isTemplateDisabled(), is(false));
         assertThat(template.getTemplateName(), is("azure"));
 
-        assertThat(template.getUsageMode(), is("Use this node as much as possible"));
+        assertThat(template.getUsageMode(), is(Node.Mode.NORMAL));
         assertThat(template.getUsePrivateIP(), is(true));
 
         assertThat(template.getVirtualMachineSize(), is("Standard_A2"));

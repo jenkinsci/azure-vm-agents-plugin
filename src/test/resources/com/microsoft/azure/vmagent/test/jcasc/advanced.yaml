@@ -54,7 +54,7 @@ jenkins:
             templateDesc: "desc"
             templateDisabled: false
             templateName: "azure"
-            usageMode: "Use this node as much as possible"
+            usageMode: "NORMAL"
             usePrivateIP: true
             virtualMachineSize: "Standard_A2"
             virtualNetworkName: "vm-agent"

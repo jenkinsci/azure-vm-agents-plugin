@@ -90,7 +90,7 @@ public class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.getTemplateDesc()).thenReturn(templateDesc);
             when(templateMock.getAgentWorkspace()).thenReturn(agentWorkspace);
             when(templateMock.getNoOfParallelJobs()).thenReturn(noOfParallelJobs);
-            when(templateMock.getUseAgentAlwaysIfAvail()).thenReturn(useAgentAlwaysIfAvail);
+            when(templateMock.getUsageMode()).thenReturn(useAgentAlwaysIfAvail);
             when(templateMock.getLabels()).thenReturn(templateLabels);
             when(templateMock.getCredentialsId()).thenReturn(credentialsId);
             when(templateMock.getJvmOptions()).thenReturn(jvmOptions);

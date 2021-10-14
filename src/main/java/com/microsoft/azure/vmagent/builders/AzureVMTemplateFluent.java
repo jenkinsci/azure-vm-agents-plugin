@@ -4,6 +4,7 @@ import com.microsoft.azure.vmagent.AzureVMCloudBaseRetentionStrategy;
 import com.microsoft.azure.vmagent.AzureVMCloudPoolRetentionStrategy;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
 import com.microsoft.azure.vmagent.util.Constants;
+import hudson.model.Node;
 
 public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
@@ -39,7 +40,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private boolean shutdownOnIdle;
 
-    private String usageMode;
+    private Node.Mode usageMode;
 
     private String imageTopLevelType;
 
@@ -58,7 +59,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         osDiskSize = 0;
         retentionStrategy = new AzureVMCloudRetensionStrategy(Constants.DEFAULT_IDLE_RETENTION_TIME);
         shutdownOnIdle = false;
-        usageMode = "Use this node as much as possible";
+        usageMode = Node.Mode.NORMAL;
         imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
         availability = new AvailabilityBuilder().build();
         builtInImage = new BuiltInImageBuilder().build();
@@ -154,7 +155,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
 
-    public T withUsageMode(String usageMode) {
+    public T withUsageMode(Node.Mode usageMode) {
         this.usageMode = usageMode;
         return (T) this;
     }
@@ -257,7 +258,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return shutdownOnIdle;
     }
 
-    public String getUsageMode() {
+    public Node.Mode getUsageMode() {
         return usageMode;
     }
 
