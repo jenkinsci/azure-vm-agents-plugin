@@ -17,9 +17,6 @@
       credentialsId: "admin-cred"
       diskType: "managed"
       doNotUseMachineIfInitFails: true
-      enableMSI: false
-      enableUAMI: false
-      ephemeralOSDisk: false
       executeInitScriptAsRoot: true
       imageReference:
         galleryImageDefinition: "Linux"
@@ -32,9 +29,6 @@
         yum install -y java
         yum install -y nodejs
         cat /etc/hosts
-      installDocker: false
-      installGit: false
-      installMaven: false
       jvmOptions: "-xmx"
       labels: "linux"
       location: "UK South"
@@ -43,18 +37,15 @@
       nsgName: "an-nsg"
       osDiskSize: 40
       osType: "Linux"
-      preInstallSsh: false
       retentionStrategy:
         azureVMCloudRetentionStrategy:
           idleTerminationMinutes: 40
-      shutdownOnIdle: false
       storageAccountNameReferenceType: "new"
       storageAccountType: "Standard_LRS"
       subnetName: "jenkins"
       templateDesc: "desc"
-      templateDisabled: false
       templateName: "azure"
-      usageMode: "Use this node as much as possible"
+      usageMode: NORMAL
       usePrivateIP: true
       virtualMachineSize: "Standard_A2"
       virtualNetworkName: "vm-agent"

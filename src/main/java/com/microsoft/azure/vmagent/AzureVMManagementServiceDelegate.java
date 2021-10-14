@@ -257,7 +257,7 @@ public final class AzureVMManagementServiceDelegate {
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
                     && (isBasic || referenceType == ImageReferenceType.REFERENCE
-                    || template.getPreInstallSsh());
+                    || template.isPreInstallSsh());
 
             final boolean useCustomScriptExtension
                     = preInstallSshInWindows
@@ -1076,7 +1076,7 @@ public final class AzureVMManagementServiceDelegate {
                     osType,
                     template.getAgentWorkspace(),
                     (int) properties.get("noOfParallelJobs"),
-                    template.getUseAgentAlwaysIfAvail(),
+                    template.getUsageMode(),
                     template.getLabels(),
                     template.retrieveAzureCloudReference().getDisplayName(),
                     template.getCredentialsId(),

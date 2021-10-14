@@ -39,7 +39,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getImageReference().getVersion(),
                 b.getImageReference().getVersion())
                 && StringUtils.equals(a.getAgentLaunchMethod(), b.getAgentLaunchMethod())
-                && a.getPreInstallSsh() == b.getPreInstallSsh()
+                && a.isPreInstallSsh() == b.isPreInstallSsh()
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())
                 && StringUtils.equals(a.getTerminateScript(), b.getTerminateScript())
                 && a.getExecuteInitScriptAsRoot() == b.getExecuteInitScriptAsRoot()

@@ -423,14 +423,14 @@ public class AzureVMCloud extends Cloud {
             LOGGER.log(Level.FINE,
                     "AzureVMCloud: getAzureAgentTemplate: Found agent template {0}",
                     agentTemplate.getTemplateName());
-            if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.NORMAL) {
+            if (agentTemplate.getUsageMode() == Node.Mode.NORMAL) {
                 if (label == null || label.matches(agentTemplate.getLabelDataSet())) {
                     LOGGER.log(Level.FINE,
                             "AzureVMCloud: getAzureAgentTemplate: {0} matches!",
                             agentTemplate.getTemplateName());
                     return agentTemplate;
                 }
-            } else if (agentTemplate.getUseAgentAlwaysIfAvail() == Node.Mode.EXCLUSIVE) {
+            } else if (agentTemplate.getUsageMode() == Node.Mode.EXCLUSIVE) {
                 if (label != null && label.matches(agentTemplate.getLabelDataSet())) {
                     LOGGER.log(Level.FINE,
                             "AzureVMCloud: getAzureAgentTemplate: {0} matches!",

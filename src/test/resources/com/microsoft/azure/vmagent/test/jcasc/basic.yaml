@@ -38,6 +38,6 @@ jenkins:
             storageAccountType: "Standard_LRS"
             templateDisabled: false
             templateName: "ubuntu"
-            usageMode: "Use this node as much as possible"
+            usageMode: "NORMAL"
             usePrivateIP: false
             virtualMachineSize: "Standard_DS2_v2"

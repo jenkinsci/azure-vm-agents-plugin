@@ -403,7 +403,7 @@ public class IntegrationTest {
         when(templateMock.getOsDiskStorageAccountType()).thenReturn(storageType);
         when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
         when(templateMock.getOsDiskSize()).thenReturn(testEnv.osDiskSize);
-        when(templateMock.getPreInstallSsh()).thenReturn(true);
+        when(templateMock.isPreInstallSsh()).thenReturn(true);
         when(templateMock.isEnableMSI()).thenReturn(enableMSI);
         when(templateMock.isEnableUAMI()).thenReturn(enableUAMI);
         when(templateMock.isEphemeralOSDisk()).thenReturn(ephemeralOSDisk);

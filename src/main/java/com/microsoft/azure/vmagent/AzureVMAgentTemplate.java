@@ -255,7 +255,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String diskType;
 
-    private final boolean ephemeralOSDisk;
+    private boolean ephemeralOSDisk;
 
     private int osDiskSize;
 
@@ -271,7 +271,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private Node.Mode usageMode;
 
-    private final boolean shutdownOnIdle;
+    private boolean shutdownOnIdle;
 
     // Image Configuration
     private String imageTopLevelType;
@@ -322,7 +322,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     // Indicates whether the template is disabled.
     // If disabled, will not attempt to verify or use
-    private final boolean templateDisabled;
+    private boolean templateDisabled;
 
     private String templateStatusDetails;
 
@@ -338,11 +338,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean doNotUseMachineIfInitFails;
 
-    private final boolean enableMSI;
+    private boolean enableMSI;
 
-    private final boolean enableUAMI;
+    private boolean enableUAMI;
 
-    private final String uamiID;
+    private String uamiID;
 
     private String javaPath;
 
@@ -384,37 +384,25 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String newStorageAccountName,
             String existingStorageAccountName,
             String diskType,
-            boolean ephemeralOSDisk,
-            int osDiskSize,
             String noOfParallelJobs,
-            String usageMode,
-            String builtInImage,
-            boolean installGit,
-            boolean installMaven,
-            boolean installDocker,
+            Node.Mode usageMode,
             String osType,
             String imageTopLevelType,
             ImageReferenceTypeClass imageReference,
             String agentLaunchMethod,
-            boolean preInstallSsh,
             String initScript,
             String terminateScript,
             String credentialsId,
             String virtualNetworkName,
             String virtualNetworkResourceGroupName,
             String subnetName,
-            boolean usePrivateIP,
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
             RetentionStrategy retentionStrategy,
-            boolean shutdownOnIdle,
-            boolean templateDisabled,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails,
-            boolean enableMSI,
-            boolean enableUAMI,
-            String uamiID) {
+            boolean doNotUseMachineIfInitFails
+    ) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
         this.labels = labels;
@@ -431,8 +419,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.existingStorageAccountName = existingStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
         this.diskType = diskType;
-        this.ephemeralOSDisk = ephemeralOSDisk;
-        this.osDiskSize = osDiskSize;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
@@ -443,38 +429,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
         setUsageMode(usageMode);
         this.imageTopLevelType = imageTopLevelType;
-        this.builtInImage = builtInImage;
-        this.installDocker = installDocker;
-        this.installGit = installGit;
-        this.installMaven = installMaven;
         this.imageReference = imageReference;
         if (imageReference == null) {
             this.imageReference = new ImageReferenceTypeClass();
         }
         this.osType = osType;
-        this.shutdownOnIdle = shutdownOnIdle;
         this.initScript = initScript;
         this.terminateScript = terminateScript;
         this.agentLaunchMethod = agentLaunchMethod;
-        this.preInstallSsh = preInstallSsh;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
         this.subnetName = subnetName;
-        this.usePrivateIP = usePrivateIP;
         this.nsgName = nsgName;
         this.agentWorkspace = agentWorkspace;
         this.jvmOptions = jvmOptions;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
-        this.enableMSI = enableMSI;
-        this.enableUAMI = enableUAMI;
-        if (enableUAMI) {
-            this.uamiID = uamiID;
-        } else {
-            this.uamiID = null;
-        }
-        this.templateDisabled = templateDisabled;
         this.templateStatusDetails = "";
 
         // Reset the template verification status.
@@ -483,6 +454,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
+    }
+
+    @DataBoundSetter
+    public void setBuiltInImage(String builtInImage) {
+        this.builtInImage = builtInImage;
     }
 
     /**
@@ -918,6 +894,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return ephemeralOSDisk;
     }
 
+    @DataBoundSetter
+    public void setEphemeralOSDisk(boolean ephemeralOSDisk) {
+        this.ephemeralOSDisk = ephemeralOSDisk;
+    }
+
+    @DataBoundSetter
+    public void setOsDiskSize(int osDiskSize) {
+        this.osDiskSize = osDiskSize;
+    }
+
     public int getOsDiskSize() {
         return osDiskSize;
     }
@@ -938,8 +924,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return existingStorageAccountName;
     }
 
-    public Node.Mode getUseAgentAlwaysIfAvail() {
-        return (usageMode == null) ? Node.Mode.NORMAL : usageMode;
+    public Node.Mode getUsageMode() {
+        return usageMode == null ? Node.Mode.NORMAL : usageMode;
     }
 
     public boolean isStorageAccountNameReferenceTypeEquals(String type) {
@@ -949,19 +935,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return type != null && type.equalsIgnoreCase(this.storageAccountNameReferenceType);
     }
 
-    public String getUsageMode() {
-        return getUseAgentAlwaysIfAvail().getDescription();
+    @DataBoundSetter
+    public void setUsageMode(Node.Mode usageMode) {
+        this.usageMode = usageMode;
     }
 
-    public void setUsageMode(String mode) {
-        Node.Mode val = Node.Mode.NORMAL;
-        for (Node.Mode m : hudson.Functions.getNodeModes()) {
-            if (mode.equalsIgnoreCase(m.getDescription())) {
-                val = m;
-                break;
-            }
-        }
-        this.usageMode = val;
+    @DataBoundSetter
+    public void setShutdownOnIdle(boolean shutdownOnIdle) {
+        this.shutdownOnIdle = shutdownOnIdle;
     }
 
     public boolean isShutdownOnIdle() {
@@ -984,6 +965,21 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return builtInImage;
     }
 
+    @DataBoundSetter
+    public void setInstallGit(boolean installGit) {
+        this.installGit = installGit;
+    }
+
+    @DataBoundSetter
+    public void setInstallMaven(boolean installMaven) {
+        this.installMaven = installMaven;
+    }
+
+    @DataBoundSetter
+    public void setInstallDocker(boolean installDocker) {
+        this.installDocker = installDocker;
+    }
+
     public boolean isInstallGit() {
         return installGit;
     }
@@ -1000,7 +996,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return osType;
     }
 
-    public boolean getPreInstallSsh() {
+    @DataBoundSetter
+    public void setPreInstallSsh(boolean preInstallSsh) {
+        this.preInstallSsh = preInstallSsh;
+    }
+
+    public boolean isPreInstallSsh() {
         return preInstallSsh;
     }
 
@@ -1038,6 +1039,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public void setSubnetName(String subnetName) {
         this.subnetName = subnetName;
+    }
+
+    @DataBoundSetter
+    public void setUsePrivateIP(boolean usePrivateIP) {
+        this.usePrivateIP = usePrivateIP;
     }
 
     public boolean getUsePrivateIP() {
@@ -1105,6 +1111,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return this.templateDisabled;
     }
 
+    @DataBoundSetter
+    public void setTemplateDisabled(boolean templateDisabled) {
+        this.templateDisabled = templateDisabled;
+    }
+
     /**
      * Is the template set up and verified?
      *
@@ -1156,18 +1167,34 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return doNotUseMachineIfInitFails;
     }
 
+    @DataBoundSetter
+    public void setEnableMSI(boolean enableMSI) {
+        this.enableMSI = enableMSI;
+    }
+
     public boolean isEnableMSI() {
         return enableMSI;
+    }
+
+    @DataBoundSetter
+    public void setEnableUAMI(boolean enableUAMI) {
+        this.enableUAMI = enableUAMI;
     }
 
     public boolean isEnableUAMI() {
         return enableUAMI;
     }
 
+    @DataBoundSetter
+    public void setUamiID(String uamiID) {
+        this.uamiID = uamiID;
+    }
+
     public String getUamiID() {
         return uamiID;
     }
 
+    @DataBoundSetter
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
@@ -1192,7 +1219,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
                 .withOsType(getOsType())
                 .withLaunchMethod(getAgentLaunchMethod())
-                .withPreInstallSsh(getPreInstallSsh())
+                .withPreInstallSsh(isPreInstallSsh())
                 .withInitScript(getInitScript())
                 .withVirtualNetworkName(getVirtualNetworkName())
                 .withVirtualNetworkResourceGroupName(getVirtualNetworkResourceGroupName())
