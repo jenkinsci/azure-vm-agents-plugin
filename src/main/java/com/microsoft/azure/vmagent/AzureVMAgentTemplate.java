@@ -1476,7 +1476,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             for (Node.Mode m : hudson.Functions.getNodeModes()) {
-                model.add(m.getDescription());
+                model.add(m.getDescription(), m.getName());
             }
             return model;
         }

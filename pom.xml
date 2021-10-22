@@ -47,13 +47,12 @@
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <azuresdk.version>1.41.0</azuresdk.version>
         <jenkins.version>2.277.2</jenkins.version>
         <java.level>8</java.level>
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>197.v2f5ab5b82264</azure-credentials.version>
+        <azure-credentials.version>198.vf9c2fdfde55c</azure-credentials.version>
     </properties>
 
     <dependencyManagement>
@@ -72,7 +71,7 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>azure-sdk</artifactId>
-            <version>48.veb7555463c4b</version>
+            <version>55.v31806ceca163</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
