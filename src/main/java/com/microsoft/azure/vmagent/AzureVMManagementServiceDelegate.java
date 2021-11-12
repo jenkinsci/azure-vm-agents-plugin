@@ -248,9 +248,8 @@ public final class AzureVMManagementServiceDelegate {
             //So create StorageAccount and get suffix
             List<AzureTagPair> cloudTags = template.retrieveAzureCloudReference().getCloudTags();
             List<AzureTagPair> templateTags = template.getTags();
-            LOGGER.log(Level.INFO, "cloud tags {0}", cloudTags);
-            LOGGER.log(Level.INFO, "tags {0}", templateTags);
             final List<AzureTagPair> tags = concat(cloudTags, templateTags);
+
             createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName(), tags);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);

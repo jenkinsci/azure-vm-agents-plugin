@@ -190,6 +190,11 @@ public class AzureVMCloud extends Cloud {
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         configurationStatus = Constants.UNVERIFIED;
+
+        if (cloudTags ==  null) {
+            cloudTags = new ArrayList<>();
+        }
+
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {
@@ -199,10 +204,6 @@ public class AzureVMCloud extends Cloud {
 
             if (agentLocks == null) {
                 agentLocks = new HashMap<>();
-            }
-
-            if (cloudTags ==  null) {
-                cloudTags = new ArrayList<>();
             }
 
             // Walk the list of templates and assign the parent cloud (which is transient).
