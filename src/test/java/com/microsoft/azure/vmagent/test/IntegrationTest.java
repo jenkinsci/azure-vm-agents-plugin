@@ -117,6 +117,7 @@ public class IntegrationTest {
         public String gallerySubscriptionId;
         public String galleryResourceGroup;
         public List<AzureTagPair> customTags;
+        public List<AzureTagPair> templateTags;
         public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
@@ -157,6 +158,8 @@ public class IntegrationTest {
             availabilitySet = "";
             customTags = new ArrayList<>();
             customTags.add(new AzureTagPair("author", "gavin"));
+            templateTags = new ArrayList<>();
+            templateTags.add(new AzureTagPair("env", "test"));
             blobEndpointSuffixForTemplate = new HashMap<>();
             blobEndpointSuffixForTemplate.put(AZUREPUBLIC, ".blob.core.windows.net/");
             blobEndpointSuffixForTemplate.put(AZURECHINA, ".blob.core.chinacloudapi.cn/");
@@ -379,6 +382,7 @@ public class IntegrationTest {
         when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
+        when(templateMock.getTags()).thenReturn(testEnv.templateTags);
 
         when(templateMock.getImageReference()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
                 null,

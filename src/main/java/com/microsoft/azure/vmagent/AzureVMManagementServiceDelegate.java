@@ -78,9 +78,9 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static hudson.Util.fixEmpty;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Business delegate class which handles calls to Azure management service SDK.
@@ -246,7 +246,12 @@ public final class AzureVMManagementServiceDelegate {
 
             //For blob endpoint url in arm template, it's different based on different environments
             //So create StorageAccount and get suffix
-            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName(), template.retrieveAzureCloudReference().getCloudTags());
+            List<AzureTagPair> cloudTags = template.retrieveAzureCloudReference().getCloudTags();
+            List<AzureTagPair> templateTags = template.getTags();
+            LOGGER.log(Level.INFO, "cloud tags {0}", cloudTags);
+            LOGGER.log(Level.INFO, "tags {0}", templateTags);
+            final List<AzureTagPair> tags = concat(cloudTags, templateTags);
+            createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName(), tags);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
 
@@ -372,11 +377,11 @@ public final class AzureVMManagementServiceDelegate {
                     String id = template.getId();
                     VirtualMachineCustomImage customImage = azureClient.virtualMachineCustomImages().getById(id);
                     if (customImage != null) {
-                        Map<String, String> tags = customImage.tags();
-                        if (tags != null) {
-                            String planInfo = tags.get("PlanInfo");
-                            String planProduct = tags.get("PlanProduct");
-                            String planPublisher = tags.get("PlanPublisher");
+                        Map<String, String> imageTags = customImage.tags();
+                        if (imageTags != null) {
+                            String planInfo = imageTags.get("PlanInfo");
+                            String planProduct = imageTags.get("PlanProduct");
+                            String planPublisher = imageTags.get("PlanPublisher");
 
                             if (StringUtils.isNotBlank(planInfo) && StringUtils.isNotBlank(planProduct)
                                     && StringUtils.isNotBlank(planPublisher)) {
@@ -450,10 +455,10 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
-            AzureVMCloud cloud = template.retrieveAzureCloudReference();
             ArrayNode resources = (ArrayNode) tmp.get("resources");
+
             for (JsonNode resource : resources) {
-                injectCustomTag(resource, cloud);
+                injectCustomTag(resource, tags);
             }
 
             copyVariableIfNotBlank(tmp, properties, "imageId");
@@ -562,7 +567,7 @@ public final class AzureVMManagementServiceDelegate {
                     putVariable(tmp, "virtualNetworkResourceGroupName", resourceGroupName);
                 }
             } else {
-                addDefaultVNetResourceNode(tmp, resourceGroupName, cloud);
+                addDefaultVNetResourceNode(tmp, resourceGroupName, tags);
             }
 
             if (template.isSpotInstance()) {
@@ -570,7 +575,7 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
-                addPublicIPResourceNode(tmp, cloud);
+                addPublicIPResourceNode(tmp, tags);
             }
 
             if (template.isAcceleratedNetworking()) {
@@ -645,12 +650,11 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private void injectCustomTag(JsonNode resource, AzureVMCloud cloud) {
+    private void injectCustomTag(JsonNode resource, List<AzureTagPair> tags) {
         ObjectNode tagsNode = (ObjectNode) resource.get("tags");
-        List<AzureTagPair> cloudTags = cloud.getCloudTags();
-        if (cloudTags != null) {
-            for (AzureTagPair cloudTag : cloudTags) {
-                tagsNode.put(cloudTag.getName(), cloudTag.getValue());
+        if (tags != null) {
+            for (AzureTagPair tag : tags) {
+                tagsNode.put(tag.getName(), tag.getValue());
             }
         }
     }
@@ -719,14 +723,14 @@ public final class AzureVMManagementServiceDelegate {
 
     private void addPublicIPResourceNode(
             JsonNode template,
-            AzureVMCloud cloud) throws IOException {
+            List<AzureTagPair> tags) throws IOException {
 
         final String ipName = "variables('vmName'), copyIndex(), 'IPName'";
         try (InputStream fragmentStream =
                      AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
 
             final JsonNode publicIPFragment = MAPPER.readTree(fragmentStream);
-            injectCustomTag(publicIPFragment, cloud);
+            injectCustomTag(publicIPFragment, tags);
             // Add the virtual network fragment
             ((ArrayNode) template.get("resources")).add(publicIPFragment);
 
@@ -806,7 +810,7 @@ public final class AzureVMManagementServiceDelegate {
     private void addDefaultVNetResourceNode(
             JsonNode template,
             String resourceGroupName,
-            AzureVMCloud cloud) throws IOException {
+            List<AzureTagPair> tags) throws IOException {
         InputStream fragmentStream = null;
         try {
             // Add the definition of the vnet and subnet into the template
@@ -822,7 +826,7 @@ public final class AzureVMManagementServiceDelegate {
                     VIRTUAL_NETWORK_TEMPLATE_FRAGMENT_FILENAME);
 
             final JsonNode virtualNetworkFragment = MAPPER.readTree(fragmentStream);
-            injectCustomTag(virtualNetworkFragment, cloud);
+            injectCustomTag(virtualNetworkFragment, tags);
             // Add the virtual network fragment
             ((ArrayNode) template.get("resources")).add(virtualNetworkFragment);
 
@@ -870,6 +874,7 @@ public final class AzureVMManagementServiceDelegate {
         String resourceGroupName = template.getResourceGroupName();
         String resourceGroupReferenceType = template.getResourceGroupReferenceType();
         String location = template.getLocation();
+        List<AzureTagPair> tags = concat(template.retrieveAzureCloudReference().getCloudTags(), template.getTags());
 
         //make sure the resource group and storage account exist
         try {
@@ -880,7 +885,7 @@ public final class AzureVMManagementServiceDelegate {
 
             createStorageAccount(
                     azureClient, targetStorageAccountType, targetStorageAccount, location, resourceGroupName,
-                    template.getTemplateName(), template.retrieveAzureCloudReference().getCloudTags()
+                    template.getTemplateName(), tags
             );
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Got exception when checking the storage account for custom scripts", e);
@@ -2474,7 +2479,7 @@ public final class AzureVMManagementServiceDelegate {
             String targetStorageAccount,
             String location,
             String resourceGroupName,
-            String templateName, List<AzureTagPair> cloudTags
+            String templateName, List<AzureTagPair> tags
     ) throws AzureCloudException {
         try {
             // Get storage account before creating.
@@ -2487,7 +2492,7 @@ public final class AzureVMManagementServiceDelegate {
                     azureClient.storageAccounts().define(targetStorageAccount)
                             .withRegion(location)
                             .withExistingResourceGroup(resourceGroupName)
-                            .withTags(getTags(templateName, cloudTags))
+                            .withTags(getTags(templateName, tags))
                             .withSku(StorageAccountSkuType.fromSkuName(skuName))
                             .create();
                 } else {
@@ -2505,19 +2510,19 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private Map<String, String> getTags(String templateName, List<AzureTagPair> cloudTags) {
-        List<AzureTagPair> tmpTags = cloudTags;
+    private Map<String, String> getTags(String templateName, List<AzureTagPair> tags) {
+        List<AzureTagPair> tmpTags = tags;
         if (tmpTags == null) {
             tmpTags = new ArrayList<>();
         }
 
-        Map<String, String> tags = tmpTags
+        Map<String, String> rawTags = tmpTags
                 .stream()
                 .collect(Collectors.toMap(AzureTagPair::getName, AzureTagPair::getValue));
 
-        tags.put(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE);
-        tags.put(Constants.AZURE_TEMPLATE_TAG_NAME, templateName);
-        return tags;
+        rawTags.put(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE);
+        rawTags.put(Constants.AZURE_TEMPLATE_TAG_NAME, templateName);
+        return rawTags;
     }
 
     /**
@@ -2681,5 +2686,9 @@ public final class AzureVMManagementServiceDelegate {
     private AzureVMManagementServiceDelegate(AzureResourceManager azureClient, String azureCredentialsId) {
         this.azureClient = azureClient;
         this.azureCredentialsId = azureCredentialsId;
+    }
+
+    private static List<AzureTagPair> concat(List<AzureTagPair> cloudTags, List<AzureTagPair> templateTags) {
+        return Stream.concat(cloudTags.stream(), templateTags.stream()).collect(Collectors.toList());
     }
 }

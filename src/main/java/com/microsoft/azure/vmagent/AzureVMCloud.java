@@ -175,6 +175,8 @@ public class AzureVMCloud extends Cloud {
         setVmTemplates(vmTemplates == null
                 ? Collections.emptyList()
                 : vmTemplates);
+
+        this.cloudTags = new ArrayList<>();
     }
 
     @SuppressWarnings("unused") // read resolve is called by xstream
@@ -197,6 +199,10 @@ public class AzureVMCloud extends Cloud {
 
             if (agentLocks == null) {
                 agentLocks = new HashMap<>();
+            }
+
+            if (cloudTags ==  null) {
+                cloudTags = new ArrayList<>();
             }
 
             // Walk the list of templates and assign the parent cloud (which is transient).

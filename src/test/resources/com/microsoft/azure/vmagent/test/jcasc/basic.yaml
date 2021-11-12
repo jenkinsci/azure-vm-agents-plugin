@@ -36,6 +36,9 @@ jenkins:
             shutdownOnIdle: false
             storageAccountNameReferenceType: "new"
             storageAccountType: "Standard_LRS"
+            tags:
+            - name: "env"
+              value: "test"
             templateDisabled: false
             templateName: "ubuntu"
             usageMode: "NORMAL"

@@ -29,6 +29,9 @@
           idleTerminationMinutes: 60
       storageAccountNameReferenceType: "new"
       storageAccountType: "Standard_LRS"
+      tags:
+      - name: "env"
+        value: "test"
       templateName: "ubuntu"
       usageMode: NORMAL
       virtualMachineSize: "Standard_DS2_v2"

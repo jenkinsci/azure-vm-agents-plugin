@@ -39,6 +39,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         } else {
             fluent.withAdvancedImage(template.getAdvancedImageInside());
         }
+        fluent.withTags(template.getTags());
     }
 
     public AzureVMTemplateBuilder(AzureVMTemplateFluent<?> fluent) {
@@ -72,6 +73,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         } else {
             fluent.withAdvancedImage(template.getAdvancedImageInside());
         }
+        fluent.withTags(template.getTags());
     }
 
     public AzureVMAgentTemplate build() {
@@ -129,6 +131,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
         azureVMAgentTemplate.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
+        azureVMAgentTemplate.setTags(fluent.getCloudTags());
         return azureVMAgentTemplate;
     }
 }

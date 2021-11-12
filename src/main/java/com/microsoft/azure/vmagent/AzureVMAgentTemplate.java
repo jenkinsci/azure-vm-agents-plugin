@@ -346,10 +346,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String javaPath;
 
-    private RetentionStrategy retentionStrategy;
+    private RetentionStrategy<?> retentionStrategy;
 
     private int maximumDeploymentSize;
 
+    private List<AzureTagPair> tags;
 
     // deprecated fields
     private transient boolean isInstallDocker;
@@ -399,7 +400,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String nsgName,
             String agentWorkspace,
             String jvmOptions,
-            RetentionStrategy retentionStrategy,
+            RetentionStrategy<?> retentionStrategy,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails
     ) {
@@ -454,6 +455,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         // Forms data which is not persisted
         labelDataSet = Label.parse(labels);
+
+        this.tags = new ArrayList<>();
     }
 
     @DataBoundSetter
@@ -591,6 +594,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setAcceleratedNetworking(boolean acceleratedNetworking) {
         this.acceleratedNetworking = acceleratedNetworking;
+    }
+
+    public List<AzureTagPair> getTags() {
+        return tags;
+    }
+
+    @DataBoundSetter
+    public void setTags(List<AzureTagPair> tags) {
+        this.tags = tags;
     }
 
     public static Map<String, Object> getTemplateProperties(AzureVMAgentTemplate template) {
@@ -827,6 +839,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (StringUtils.isNotBlank(availabilitySet)) {
             availabilityType.availabilitySet = availabilitySet;
+        }
+
+        if (tags == null) {
+            this.tags = new ArrayList<>();
         }
 
         if (StringUtils.isBlank(imageTopLevelType)) {
@@ -1337,7 +1353,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Extension
     public static final class DescriptorImpl extends Descriptor<AzureVMAgentTemplate> {
 
-        @Override @NonNull
+        @Override
+        @NonNull
         public String getDisplayName() {
             return "";
         }
