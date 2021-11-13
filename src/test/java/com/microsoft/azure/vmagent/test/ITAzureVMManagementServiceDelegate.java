@@ -137,7 +137,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         Assert.assertNotNull("The deployed Storage Account doesn't exist: " + testEnv.azureResourceGroup, actualStorageAcc);
 
         for (int i = 0; i < numberOfAgents; i++) {
-            final String baseName = deploymentInfo.getVmBaseName() + String.valueOf(i);
+            final String baseName = deploymentInfo.getVmBaseName() + i;
             final String commonAssertMsg = testEnv.azureResourceGroup + ":" + baseName;
             VirtualMachine actualVM = null;
             NetworkInterface actualNetIface = null;
@@ -165,10 +165,19 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             Assert.assertEquals(getDefaultOsDiskSize(OS_TYPE), actualVM.osDiskSize());
 
             Assert.assertEquals("gavin", actualVM.tags().get("author"));
+            Assert.assertEquals("test", actualVM.tags().get("env"));
+
             Assert.assertEquals("gavin", actualIP.tags().get("author"));
+            Assert.assertEquals("test", actualIP.tags().get("env"));
+
             Assert.assertEquals("gavin", actualNetIface.tags().get("author"));
+            Assert.assertEquals("test", actualNetIface.tags().get("env"));
+
             Assert.assertEquals("gavin", actualStorageAcc.tags().get("author"));
+            Assert.assertEquals("test", actualStorageAcc.tags().get("env"));
+
             Assert.assertEquals("gavin", actualVNet.tags().get("author"));
+            Assert.assertEquals("test", actualVNet.tags().get("env"));
         }
     }
 

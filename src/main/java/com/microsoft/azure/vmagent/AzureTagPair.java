@@ -21,9 +21,10 @@ import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class AzureTagPair implements Describable<AzureTagPair> {
+public class AzureTagPair implements Describable<AzureTagPair>, Serializable {
 
     private final String name;
     private final String value;
@@ -70,5 +71,10 @@ public class AzureTagPair implements Describable<AzureTagPair> {
     @Override
     public int hashCode() {
         return Objects.hash(name, value);
+    }
+
+    @Override
+    public String toString() {
+        return "AzureTagPair{name='" + name + "', value='" + value + "'}'";
     }
 }

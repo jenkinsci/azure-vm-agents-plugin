@@ -1,10 +1,14 @@
 package com.microsoft.azure.vmagent.builders;
 
+import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMCloudBaseRetentionStrategy;
 import com.microsoft.azure.vmagent.AzureVMCloudPoolRetentionStrategy;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.Node;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
@@ -50,6 +54,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String credentialsId;
 
+    private List<AzureTagPair> cloudTags;
+
     public AzureVMTemplateFluent() {
         location = "Japan West";
         virtualMachineSize = "Standard_A0";
@@ -64,11 +70,17 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         availability = new AvailabilityBuilder().build();
         builtInImage = new BuiltInImageBuilder().build();
         advancedImage = new AdvancedImageBuilder().build();
+        cloudTags = new ArrayList<>();
     }
 
     //CHECKSTYLE:OFF
     public T withName(String name) {
         this.name = name;
+        return (T) this;
+    }
+
+    public T withTags(List<AzureTagPair> tags) {
+        this.cloudTags = new ArrayList<>(tags);
         return (T) this;
     }
 
@@ -276,6 +288,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    List<AzureTagPair> getCloudTags() {
+        return new ArrayList<>(cloudTags);
     }
 
     public class BuiltInImageNested extends BuiltInImageFluent<BuiltInImageNested> {

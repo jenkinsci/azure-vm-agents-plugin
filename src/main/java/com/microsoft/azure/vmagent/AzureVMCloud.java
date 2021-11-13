@@ -175,6 +175,8 @@ public class AzureVMCloud extends Cloud {
         setVmTemplates(vmTemplates == null
                 ? Collections.emptyList()
                 : vmTemplates);
+
+        this.cloudTags = new ArrayList<>();
     }
 
     @SuppressWarnings("unused") // read resolve is called by xstream
@@ -188,6 +190,11 @@ public class AzureVMCloud extends Cloud {
         resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         configurationStatus = Constants.UNVERIFIED;
+
+        if (cloudTags ==  null) {
+            cloudTags = new ArrayList<>();
+        }
+
         synchronized (this) {
             // Ensure that renamed field is set
             if (instTemplates != null && vmTemplates == null) {

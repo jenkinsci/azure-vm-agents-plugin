@@ -13,6 +13,16 @@
                 <f:textbox/>
             </f:entry>
 
+            <f:entry title="${%Custom_Tag}" field="tags">
+                <f:repeatableProperty field="tags">
+                    <f:entry>
+                        <div align="right">
+                            <f:repeatableDeleteButton/>
+                        </div>
+                    </f:entry>
+                </f:repeatableProperty>
+            </f:entry>
+
             <f:entry title="${%Agent_Workspace}" field="agentWorkspace"
                      help="/plugin/azure-vm-agents/help-agentWorkspace.html">
                 <f:textbox/>

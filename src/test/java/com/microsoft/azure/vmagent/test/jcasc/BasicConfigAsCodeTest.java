@@ -1,5 +1,6 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
+import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
@@ -18,6 +19,7 @@ import java.nio.file.Paths;
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.core.Is.is;
 
 public class BasicConfigAsCodeTest {
@@ -51,6 +53,7 @@ public class BasicConfigAsCodeTest {
         assertThat(template.isEnableUAMI(), is(false));
         assertThat(template.isEphemeralOSDisk(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));
+        assertThat(template.getTags(), contains(new AzureTagPair("env", "test")));
 
         AzureVMAgentTemplate.ImageReferenceTypeClass imageReference = template.getImageReference();
         assertThat(imageReference.getVersion(), is("latest"));
