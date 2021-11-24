@@ -47,7 +47,7 @@
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <jenkins.version>2.277.2</jenkins.version>
+        <jenkins.version>2.323-rc31756.82cf54ab0e2f</jenkins.version>
         <java.level>8</java.level>
         <findbugs.failOnError>true</findbugs.failOnError>
         <findbugs.excludeFilterFile>findbugs-exclude.xml</findbugs.excludeFilterFile>
