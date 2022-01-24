@@ -1544,6 +1544,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             ListBoxModel model = new ListBoxModel();
             model.add(Constants.UBUNTU_2004_LTS);
             model.add(Constants.UBUNTU_1604_LTS);
+            model.add(Constants.WINDOWS_SERVER_2022);
             model.add(Constants.WINDOWS_SERVER_2019);
             model.add(Constants.WINDOWS_SERVER_2016);
             return model;
