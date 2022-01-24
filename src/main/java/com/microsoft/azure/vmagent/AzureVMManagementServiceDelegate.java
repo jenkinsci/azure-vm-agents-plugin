@@ -72,6 +72,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -2686,6 +2689,23 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private static String loadScript(String scriptName) throws IOException {
+
+        String scriptFolder = System.getProperty(
+                "com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate.scriptFolder");
+
+        if (scriptFolder == null) {
+            return loadScriptFromClassPath(scriptName);
+        }
+
+        Path script = Paths.get(scriptFolder, scriptName);
+        if (Files.exists(script)) {
+            return IOUtils.toString(script.toUri(), StandardCharsets.UTF_8);
+        }
+
+        return loadScriptFromClassPath(scriptName);
+    }
+
+    private static String loadScriptFromClassPath(String scriptName) throws IOException {
 
         String classPathResource = "/scripts/" + scriptName;
 
