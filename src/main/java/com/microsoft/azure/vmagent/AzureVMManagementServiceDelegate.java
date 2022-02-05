@@ -72,6 +72,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -147,23 +150,23 @@ public final class AzureVMManagementServiceDelegate {
 
     public static final Map<String, Map<String, String>> PRE_INSTALLED_TOOLS_SCRIPT = getPreInstalledToolsScript();
 
-    private static final String INSTALL_JNLP_WINDOWS_FILENAME = "/scripts/windowsInstallJnlpScript.ps1";
+    private static final String INSTALL_JNLP_WINDOWS_FILENAME = "windowsInstallJnlpScript.ps1";
 
-    private static final String INSTALL_GIT_WINDOWS_FILENAME = "/scripts/windowsInstallGitScript.ps1";
+    private static final String INSTALL_GIT_WINDOWS_FILENAME = "windowsInstallGitScript.ps1";
 
-    private static final String INSTALL_JAVA_WINDOWS_FILENAME = "/scripts/windowsInstallJavaScript.ps1";
+    private static final String INSTALL_JAVA_WINDOWS_FILENAME = "windowsInstallJavaScript.ps1";
 
-    private static final String INSTALL_MAVEN_WINDOWS_FILENAME = "/scripts/windowsInstallMavenScript.ps1";
+    private static final String INSTALL_MAVEN_WINDOWS_FILENAME = "windowsInstallMavenScript.ps1";
 
-    private static final String INSTALL_GIT_UBUNTU_FILENAME = "/scripts/ubuntuInstallGitScript.sh";
+    private static final String INSTALL_GIT_UBUNTU_FILENAME = "ubuntuInstallGitScript.sh";
 
-    private static final String INSTALL_JAVA_UBUNTU_FILENAME = "/scripts/ubuntuInstallJavaScript.sh";
+    private static final String INSTALL_JAVA_UBUNTU_FILENAME = "ubuntuInstallJavaScript.sh";
 
-    private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "/scripts/ubuntuInstallMavenScript.sh";
+    private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "ubuntuInstallMavenScript.sh";
 
-    private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "/scripts/ubuntuInstallDockerScript.sh";
+    private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "ubuntuInstallDockerScript.sh";
 
-    private static final String PRE_INSTALL_SSH_FILENAME = "/scripts/sshInit.ps1";
+    private static final String PRE_INSTALL_SSH_FILENAME = "sshInit.ps1";
 
     private final AzureResourceManager azureClient;
 
@@ -508,9 +511,7 @@ public final class AzureVMManagementServiceDelegate {
                 String scriptName = String.format("%s%s", deploymentName, "init.ps1");
                 String initScript;
                 if (preInstallSshInWindows) {
-                    initScript = IOUtils.toString(
-                            AzureVMManagementServiceDelegate.class.getResourceAsStream(PRE_INSTALL_SSH_FILENAME),
-                            StandardCharsets.UTF_8);
+                    initScript = loadScript(PRE_INSTALL_SSH_FILENAME);
                 } else {
                     initScript = (String) properties.get("initScript");
                 }
@@ -1445,39 +1446,31 @@ public final class AzureVMManagementServiceDelegate {
     private static void ubuntu(String imageName, Map<String, Map<String, String>> tools) throws IOException {
         tools.get(imageName).put(
                 Constants.INSTALL_JAVA,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_JAVA_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_JAVA_UBUNTU_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_MAVEN,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_MAVEN_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_MAVEN_UBUNTU_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_GIT,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_GIT_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_GIT_UBUNTU_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_DOCKER,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_DOCKER_UBUNTU_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_DOCKER_UBUNTU_FILENAME));
     }
 
     private static void windows(String imageName, Map<String, Map<String, String>> tools) throws IOException {
         tools.get(imageName).put(
                 Constants.INSTALL_JAVA,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_JAVA_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_JAVA_WINDOWS_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_MAVEN,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_MAVEN_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_MAVEN_WINDOWS_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_GIT,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_GIT_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_GIT_WINDOWS_FILENAME));
         tools.get(imageName).put(
                 Constants.INSTALL_JNLP,
-                IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(
-                        INSTALL_JNLP_WINDOWS_FILENAME), StandardCharsets.UTF_8));
+                loadScript(INSTALL_JNLP_WINDOWS_FILENAME));
     }
 
     /**
@@ -2641,5 +2634,30 @@ public final class AzureVMManagementServiceDelegate {
 
     private static List<AzureTagPair> concat(List<AzureTagPair> cloudTags, List<AzureTagPair> templateTags) {
         return Stream.concat(cloudTags.stream(), templateTags.stream()).collect(Collectors.toList());
+    }
+
+    private static String loadScript(String scriptName) throws IOException {
+
+        String scriptFolder = System.getProperty(
+                "com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate.scriptFolder");
+
+        if (scriptFolder == null) {
+            return loadScriptFromClassPath(scriptName);
+        }
+
+        Path script = Paths.get(scriptFolder, scriptName);
+        if (Files.exists(script)) {
+            return IOUtils.toString(script.toUri(), StandardCharsets.UTF_8);
+        }
+
+        return loadScriptFromClassPath(scriptName);
+    }
+
+    private static String loadScriptFromClassPath(String scriptName) throws IOException {
+
+        String classPathResource = "/scripts/" + scriptName;
+
+        return IOUtils.toString(AzureVMManagementServiceDelegate.class.getResourceAsStream(classPathResource),
+                StandardCharsets.UTF_8);
     }
 }
