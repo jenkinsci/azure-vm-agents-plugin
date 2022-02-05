@@ -509,7 +509,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     @Override
     protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
         //TODO: Check when this method is getting called and code accordingly
-        LOGGER.log(Level.INFO, "AzureVMAgent: _terminate: called for agent {0}", getNodeName());
+        LOGGER.log(Level.INFO, "Terminate called for agent {0}", getNodeName());
 
         ProvisioningActivity activity = CloudStatistics.get().getActivityFor(this);
         if (activity != null) {
@@ -519,7 +519,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @Override
     public AbstractCloudComputer<AzureVMAgent> createComputer() {
-        LOGGER.log(Level.INFO, "AzureVMAgent: createComputer: start for agent {0}", this.getDisplayName());
+        LOGGER.log(Level.FINE, "Starting agent {0}", this.getDisplayName());
         return new AzureVMComputer(this);
     }
 
@@ -530,23 +530,21 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public synchronized void shutdown(Localizable reason) {
         if (isEligibleForReuse()) {
-            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: agent {0} is always shut down", this.
+            LOGGER.log(Level.INFO, "Agent {0} is always shut down", this.
                     getDisplayName());
             return;
         }
 
 
-        LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: Add suspended status for node {0}", this.getNodeName());
+        LOGGER.log(Level.INFO, "Add suspended status for node {0}", this.getNodeName());
         SlaveComputer computer = this.getComputer();
         if (computer == null) {
-            LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: could not retrieve computer for agent {0}",
-                    this.getDisplayName());
+            LOGGER.log(Level.INFO, "Could not retrieve computer for agent {0}", this.getDisplayName());
             return;
         }
         computer.setAcceptingTasks(false);
         computer.disconnect(OfflineCause.create(reason));
-        LOGGER.log(Level.INFO, "AzureVMAgent: shutdown: shutting down agent {0}", this.
-                getDisplayName());
+        LOGGER.log(Level.INFO, "Shutting down agent {0}", this.getDisplayName());
 
         AzureVMManagementServiceDelegate serviceDelegate = getServiceDelegate();
         if (serviceDelegate != null) {
@@ -570,7 +568,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             return;
         }
 
-        LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: Deprovision called for agent {0}, for reason: {1}",
+        LOGGER.log(Level.INFO, "Deprovision called for agent {0}, for reason: {1}",
                 new Object[]{this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()});
 
         computer.setAcceptingTasks(false);
@@ -591,7 +589,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             try {
                 if (!this.isVMAliveOrHealthy()) {
                     LOGGER.log(Level.INFO,
-                            "AzureVMAgent: deprovision: Agent {0} is shut down, deleted, etc. "
+                            "Agent {0} is shut down, deleted, etc. "
                                     + "Not attempting to connect",
                             computer.getName());
                     skipTerminateScript = true;
@@ -600,7 +598,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 // ignoring exception purposefully
             }
 
-            LOGGER.info("AzureVMAgent: deprovision: Template terminate script, " + template.getTerminateScript());
+            LOGGER.fine("Template terminate script, " + template.getTerminateScript());
             try {
                 // Executing script only if script is not executed even once
                 String command;
@@ -611,8 +609,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 }
                 if (!skipTerminateScript
                         && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
-                    LOGGER.info("AzureVMAgent: deprovision: Terminate script is not null, "
-                            + "preparing to execute script remotely");
+                    LOGGER.info("Terminate script is not null, " + "preparing to execute script remotely");
                     if (isUnix) {
                         azureLauncher.copyFileToRemote(
                                 this,
@@ -644,15 +641,15 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                             creds.getPassword().getPlainText());
                     if (exitStatus != 0) {
                         LOGGER.log(Level.SEVERE,
-                                "AzureVMAgent: deprovision: terminate script failed: exit code={0} ", exitStatus);
+                                "Terminate script failed: exit code={0} ", exitStatus);
                     } else {
-                        LOGGER.info("AzureVMAgent: deprovision: terminate script was executed successfully");
+                        LOGGER.fine("Terminate script was executed successfully");
                     }
                 } else {
-                    LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: skipping terminate script execution.");
+                    LOGGER.log(Level.FINE, "Skipping terminate script execution.");
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "AzureVMAgent: deprovision: got exception ", e);
+                LOGGER.log(Level.SEVERE, "Got exception while deprovisioning", e);
             }
         }
 
@@ -660,8 +657,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         AzureVMManagementServiceDelegate.terminateVirtualMachine(this);
 
-        LOGGER.log(Level.INFO, "AzureVMAgent: deprovision: {0} has been deprovisioned. Remove node ...",
-                this.getDisplayName());
+        LOGGER.log(Level.INFO, "{0} has been deprovisioned. Remove node ...", this.getDisplayName());
         // Adjust estimated virtual machine count.
         AzureVMCloud parentCloud = getCloud();
         if (parentCloud != null) {
@@ -707,10 +703,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     serviceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
                 }
             } catch (Exception e) {
-                LOGGER.log(
-                        Level.SEVERE,
-                        String.format("AzureVMAgent: error while trying to attach a public IP to %s", getNodeName()),
-                        e);
+                LOGGER.log(Level.SEVERE,
+                        String.format("Error while trying to attach a public IP to %s", getNodeName()), e);
             }
             return publicIP;
         }

@@ -484,8 +484,7 @@ public class AzureVMCloud extends Cloud {
             String vmName,
             String deploymentName) throws AzureCloudException {
 
-        LOGGER.log(Level.INFO,
-                "AzureVMCloud: createProvisionedAgent: Waiting for deployment {0} with VM {1} to be completed",
+        LOGGER.log(Level.INFO, "Waiting for deployment {0} with VM {1} to be completed",
                 new Object[]{deploymentName, vmName});
 
         final int sleepTimeInSeconds = 30;
@@ -510,8 +509,7 @@ public class AzureVMCloud extends Cloud {
                 // Might find no deployment.
                 if (dep == null) {
                     throw AzureCloudException.create(
-                            String.format("AzureVMCloud: createProvisionedAgent: Could not find deployment %s",
-                                    deploymentName));
+                            String.format("Could not find deployment %s", deploymentName));
                 }
 
                 PagedIterable<DeploymentOperation> ops = dep.deploymentOperations().list();
@@ -535,12 +533,10 @@ public class AzureVMCloud extends Cloud {
                                     finalStatusMessage += " - " + statusMessage;
                                 }
                                 throw AzureCloudException.create(
-                                        String.format("AzureVMCloud: createProvisionedAgent: Deployment %s: %s:%s - %s",
+                                        String.format("Deployment %s: %s:%s - %s",
                                                 state, type, resource, finalStatusMessage));
                             } else if (state.equalsIgnoreCase("succeeded")) {
-                                LOGGER.log(Level.INFO,
-                                        "AzureVMCloud: createProvisionedAgent: VM available: {0}",
-                                        resource);
+                                LOGGER.log(Level.FINE, "VM available: {0}", resource);
 
                                 final VirtualMachine vm = newAzureClient.virtualMachines()
                                         .getByResourceGroup(resourceGroupName, resource);
@@ -552,8 +548,7 @@ public class AzureVMCloud extends Cloud {
                                 return newAgent;
                             } else {
                                 LOGGER.log(Level.INFO,
-                                        "AzureVMCloud: createProvisionedAgent: "
-                                                + "Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
+                                        "Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
                                         new Object[]{deploymentName, state, type, resource,
                                                 (maxTries - triesLeft) * sleepTimeInSeconds});
                             }
@@ -568,14 +563,13 @@ public class AzureVMCloud extends Cloud {
         } while (triesLeft > 0);
 
         throw AzureCloudException.create(String.format(
-                "AzureVMCloud: createProvisionedAgent: Deployment %s failed, max timeout reached (%d seconds)",
+                "Deployment %s failed, max timeout reached (%d seconds)",
                 deploymentName, timeoutInSeconds));
     }
 
     @Override
     public Collection<PlannedNode> provision(CloudState cloudState, int workLoad) {
-        LOGGER.log(Level.INFO,
-                "AzureVMCloud: provision: start for label {0} workLoad {1}",
+        LOGGER.log(Level.FINE, "Starting for label {0} workLoad {1}",
                 new Object[]{cloudState.getLabel(), workLoad}
         );
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(cloudState.getLabel());
@@ -588,8 +582,7 @@ public class AzureVMCloud extends Cloud {
             AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
         }
         if (template.getTemplateProvisionStrategy().isVerifiedFailed()) {
-            LOGGER.log(Level.INFO,
-                    "AzureVMCloud: provision: template {0} has just verified failed", template.getTemplateName());
+            LOGGER.log(Level.INFO, "Template {0} has just verified failed", template.getTemplateName());
             if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
                 LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
             }
@@ -597,7 +590,7 @@ public class AzureVMCloud extends Cloud {
         }
 
         // reuse existing nodes if available
-        LOGGER.log(Level.INFO, "AzureVMCloud: provision: checking for node reuse options");
+        LOGGER.log(Level.FINE, "Checking for node reuse options");
         for (Computer agentComputer : Jenkins.get().getComputers()) {
             if (numberOfAgents == 0) {
                 break;
@@ -607,9 +600,7 @@ public class AzureVMCloud extends Cloud {
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
                 if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
-                    LOGGER.log(Level.INFO,
-                            "AzureVMCloud: provision: agent computer eligible for reuse {0}",
-                            agentComputer.getName());
+                    LOGGER.log(Level.FINE, "Agent computer eligible for reuse {0}", agentComputer.getName());
 
                     try {
                         if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
@@ -701,9 +692,7 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-        LOGGER.log(Level.INFO,
-                "AzureVMCloud: provision: asynchronous provision finished, returning {0} planned node(s)",
-                plannedNodes.size());
+        LOGGER.log(Level.INFO, "{0} planned node(s)", plannedNodes.size());
         return plannedNodes;
     }
 
@@ -781,8 +770,7 @@ public class AzureVMCloud extends Cloud {
                                 }
 
                                 try {
-                                    LOGGER.log(Level.INFO,
-                                            "Azure Cloud: provision: Adding agent {0} to Jenkins nodes",
+                                    LOGGER.log(Level.INFO, "Adding agent {0} to Jenkins nodes",
                                             agent.getNodeName());
                                     // Place the node in blocked state while it starts.
                                     try {

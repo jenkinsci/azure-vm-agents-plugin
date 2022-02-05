@@ -206,8 +206,7 @@ public final class AzureVMManagementServiceDelegate {
         InputStream embeddedTemplate = null;
         String scriptUri = null;
         try {
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: createDeployment: Initializing deployment for {0} agentTemplate(s) {1}",
+            LOGGER.log(Level.INFO, "Initializing deployment for {0} agentTemplate(s) {1}",
                     new Object[]{numberOfAgents, template.getTemplateName()});
 
             Map<String, Object> properties = AzureVMAgentTemplate.getTemplateProperties(template);
@@ -226,15 +225,11 @@ public final class AzureVMManagementServiceDelegate {
             final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
-                LOGGER.log(Level.SEVERE,
-                        "AzureVMManagementServiceDelegate: createDeployment: "
-                                + "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
+                LOGGER.log(Level.SEVERE, "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
                         new Object[]{template.getResourceGroupName()});
                 throw new Exception("ResourceGroup Name is invalid");
             }
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: createDeployment:"
-                            + " Creating a new deployment {0} with VM base name {1} for {2} VM(s)",
+            LOGGER.log(Level.INFO, "Creating a new deployment {0} with VM base name {1} for {2} VM(s)",
                     new Object[]{deploymentName, vmBaseName, numberOfAgents});
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
@@ -276,8 +271,7 @@ public final class AzureVMManagementServiceDelegate {
             boolean useCustomImage = !isBasic && referenceType == ImageReferenceType.CUSTOM;
             if (useCustomScriptExtension) {
                 if (useManagedDisk) {
-                    msg = "AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Use embedded deployment template (with script and managed) {0}";
+                    msg = "Use embedded deployment template (with script and managed) {0}";
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_MANAGED_FILENAME;
                     } else {
@@ -287,16 +281,14 @@ public final class AzureVMManagementServiceDelegate {
                                 : EMBEDDED_TEMPLATE_WITH_SCRIPT_MANAGED_FILENAME;
                     }
                 } else {
-                    msg = "AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Use embedded deployment template (with script) {0}";
+                    msg = "Use embedded deployment template (with script) {0}";
                     templateLocation = useCustomImage
                             ? EMBEDDED_TEMPLATE_IMAGE_WITH_SCRIPT_FILENAME
                             : EMBEDDED_TEMPLATE_WITH_SCRIPT_FILENAME;
                 }
             } else {
                 if (useManagedDisk) {
-                    msg = "AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Use embedded deployment template (with managed) {0}";
+                    msg = "Use embedded deployment template (with managed) {0}";
                     if (useCustomImage) {
                         templateLocation = EMBEDDED_TEMPLATE_IMAGE_WITH_MANAGED_FILENAME;
                     } else {
@@ -306,8 +298,7 @@ public final class AzureVMManagementServiceDelegate {
                                 : EMBEDDED_TEMPLATE_WITH_MANAGED_FILENAME;
                     }
                 } else {
-                    msg = "AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Use embedded deployment template {0}";
+                    msg = "Use embedded deployment template {0}";
                     templateLocation = useCustomImage
                             ? EMBEDDED_TEMPLATE_IMAGE_FILENAME
                             : EMBEDDED_TEMPLATE_FILENAME;
@@ -479,8 +470,7 @@ public final class AzureVMManagementServiceDelegate {
                 String galleryName = template.getImageReference().getGalleryName();
                 if (StringUtils.isBlank(galleryImageVersionStr) || StringUtils.isBlank(galleryImageDefinition) ||
                         StringUtils.isBlank(galleryResourceGroup) || StringUtils.isBlank(galleryName)) {
-                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
-                            + "one of gallery name, gallery image version, image definition and image resource group "
+                    throw AzureCloudException.create("One of gallery name, gallery image version, image definition and image resource group "
                             + "is blank.");
                 }
                 AzureResourceManager client = AzureResourceManagerCache.get(azureCredentialsId, gallerySubscriptionId);
@@ -493,8 +483,7 @@ public final class AzureVMManagementServiceDelegate {
                                     galleryImageDefinition, galleryImageVersionStr);
                 }
                 if (galleryImageVersion == null) {
-                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Can not find the right version for the gallery image.");
+                    throw AzureCloudException.create("Can not find the right version for the gallery image.");
                 }
                 String galleryImageId = galleryImageVersion.id();
                 LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{galleryImageId});
@@ -533,8 +522,7 @@ public final class AzureVMManagementServiceDelegate {
                         .getByResourceGroup(template.getResourceGroupName(), storageAccountName)
                         .getKeys();
                 if (storageKeys.isEmpty()) {
-                    throw AzureCloudException.create("AzureVMManagementServiceDelegate: createDeployment: "
-                            + "Exception occurred while fetching the storage account key");
+                    throw AzureCloudException.create("Exception occurred while fetching the storage account key");
                 }
                 String storageAccountKey = storageKeys.get(0).value();
 
@@ -606,8 +594,7 @@ public final class AzureVMManagementServiceDelegate {
             return new AzureVMDeploymentInfo(deploymentName, vmBaseName, numberOfAgents);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
-            String.format(
-                "AzureVMManagementServiceDelegate: deployment: Unable to deploy %d %s",
+            String.format("Unable to deploy %d %s",
                 numberOfAgents, template.getTemplateName()),
             e);
             // Pass the info off to the template so that it can be queued for update.
@@ -615,8 +602,7 @@ public final class AzureVMManagementServiceDelegate {
             try {
                 removeStorageBlob(new URI(scriptUri), template.getResourceGroupName());
             } catch (Exception ex) {
-                LOGGER.log(Level.WARNING,
-                        "AzureVMManagementServiceDelegate: deployment: Delete initScript failed: {0}", scriptUri);
+                LOGGER.log(Level.WARNING, "Delete initScript failed: {0}", scriptUri);
             }
             throw AzureCloudException.create(e);
         } finally {
@@ -994,15 +980,13 @@ public final class AzureVMManagementServiceDelegate {
     private boolean virtualMachineExists(
             String vmName,
             String resourceGroupName) throws AzureCloudException {
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: check for {0}", vmName);
+        LOGGER.log(Level.INFO, "Checking VM exists for {0}", vmName);
 
         try {
             azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() == 404) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: virtualMachineExists: {0} doesn't exist",
-                        vmName);
+                LOGGER.log(Level.INFO, "{0} doesn't exist", vmName);
                 return false;
             }
             throw e;
@@ -1010,7 +994,7 @@ public final class AzureVMManagementServiceDelegate {
             throw AzureCloudException.create(e);
         }
 
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: virtualMachineExists: {0} exists", vmName);
+        LOGGER.log(Level.FINE, "{0} exists", vmName);
         return true;
     }
 
@@ -1029,10 +1013,7 @@ public final class AzureVMManagementServiceDelegate {
                 return false;
             }
         } catch (AzureCloudException e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: virtualMachineExists: "
-                            + "error while determining whether vm exists",
-                    e);
+            LOGGER.log(Level.WARNING, "Error while determining whether vm exists", e);
             return false;
         }
     }
@@ -1049,8 +1030,7 @@ public final class AzureVMManagementServiceDelegate {
             OperatingSystemTypes osType) throws AzureCloudException {
 
         try {
-
-            LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: parseDeploymentResponse: \n"
+            LOGGER.log(Level.INFO, "Deployment response: \n"
                             + "\tfound agent {0}\n"
                             + "\tOS type {1}\n"
                             + "\tnumber of executors {2}",
@@ -1109,8 +1089,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.getJavaPath(),
                     template.getRemotingOptions());
         } catch (FormException | IOException e) {
-            throw AzureCloudException.create("AzureVMManagementServiceDelegate: parseResponse: "
-                    + "Exception occurred while creating agent object", e);
+            throw AzureCloudException.create("Exception occurred while creating agent object", e);
         }
     }
 
@@ -1457,8 +1436,7 @@ public final class AzureVMManagementServiceDelegate {
             return tools;
         } catch (IOException e) {
             LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: getPreInstalledToolsScript: "
-                            + "Get pre-installed tools script {0} failed.",
+                    "Get pre-installed tools script {0} failed.",
                     e);
             return tools;
         }
@@ -1517,10 +1495,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             return LocationCache.getLocation(azureClient, envNameOrUrl);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: getVirtualMachineLocations: "
-                            + "error while fetching the regions {0}. Will return default list ",
-                    e);
+            LOGGER.log(Level.WARNING, "Error while fetching the regions {0}. Will return default list ", e);
             if (envNameOrUrl.contains("china")) {
                 return AVAILABLE_LOCATIONS_CHINA;
             }
@@ -1546,10 +1521,7 @@ public final class AzureVMManagementServiceDelegate {
             }
             return ret;
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: getVMSizes: "
-                            + "error while fetching the VM sizes {0}. Will return default list ",
-                    e);
+            LOGGER.log(Level.WARNING, "Error while fetching the VM sizes {0}. Will return default list", e);
             return new TreeSet<>(AVAILABLE_ROLE_SIZES.get(location));
         }
     }
@@ -1657,9 +1629,7 @@ public final class AzureVMManagementServiceDelegate {
         //Thus status will be "Updating".
         while (status.equals(VMStatus.UPDATING) && currentRetryCount < maxRetryCount) {
             status = getVirtualMachineStatus(agent.getNodeName(), agent.getResourceGroupName());
-            LOGGER.log(Level.INFO,
-                    "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: "
-                            + "Status is Updating, wait for another 30 seconds");
+            LOGGER.log(Level.INFO, "Status is Updating, wait for another 30 seconds");
             final int sleepInMills = 30 * 1000;
             try {
                 Thread.sleep(sleepInMills);
@@ -1668,9 +1638,7 @@ public final class AzureVMManagementServiceDelegate {
             }
             currentRetryCount++;
         }
-        LOGGER.log(Level.INFO,
-                "AzureVMManagementServiceDelegate: isVMAliveOrHealthy: status {0}",
-                status.toString());
+        LOGGER.log(Level.INFO, "Status {0}", status.toString());
         return !(VMStatus.PROVISIONING_OR_DEPROVISIONING.equals(status)
                 || VMStatus.UPDATING.equals(status)
                 || VMStatus.DEALLOCATING.equals(status)
@@ -1722,16 +1690,14 @@ public final class AzureVMManagementServiceDelegate {
      *
      */
     public void shutdownVirtualMachine(AzureVMAgent agent) {
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: shutdownVirtualMachine: called for {0}",
+        LOGGER.log(Level.INFO, "shutdown called for {0}",
                 agent.getNodeName());
 
         try {
             azureClient.virtualMachines()
                     .getByResourceGroup(agent.getResourceGroupName(), agent.getNodeName()).deallocate();
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: provision: could not terminate or shutdown {0}, {1}",
-                    new Object[]{agent.getNodeName(), e});
+            LOGGER.log(Level.WARNING, "Could not terminate or shutdown " + agent.getNodeName(), e);
         }
     }
 
@@ -1784,10 +1750,7 @@ public final class AzureVMManagementServiceDelegate {
                 // TODO: Remove data disks or add option to do so?
 
                 // Remove the VM
-                LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
-                                + "Removing virtual machine {0}",
-                        vmName);
+                LOGGER.log(Level.INFO, "Removing virtual machine {0}", vmName);
                 azureClient.virtualMachines().deleteByResourceGroup(resourceGroupName, vmName);
 
                 // Now remove the disks
@@ -1795,10 +1758,7 @@ public final class AzureVMManagementServiceDelegate {
                     this.removeStorageBlob(diskUri, resourceGroupName);
                 }
                 for (String id : diskIdToRemove) {
-                    LOGGER.log(Level.INFO,
-                            "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
-                                    + "Removing managed disk with id: {0}",
-                            id);
+                    LOGGER.log(Level.INFO, "Removing managed disk with id: {0}", id);
                     azureClient.disks().deleteById(id);
                 }
 
@@ -1808,8 +1768,7 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING,
-                    "AzureVMManagementServiceDelegate: terminateVirtualMachine: while deleting VM", e);
+            LOGGER.log(Level.WARNING, "Exception while deleting VM", e);
             // Check if VM is already deleted: if VM is already deleted then just ignore exception.
             if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
                 throw AzureCloudException.create(e);
@@ -1830,10 +1789,7 @@ public final class AzureVMManagementServiceDelegate {
         for (VirtualMachineCustomImage image : customImages) {
             String prefix = StringUtils.substringBefore(image.name(), "Image");
             if (StringUtils.contains(vmName, prefix)) {
-                LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: terminateVirtualMachine: "
-                                + "Removing image with name: {0}",
-                        image.name());
+                LOGGER.log(Level.INFO, "Removing image with name: {0}", image.name());
                 azureClient.virtualMachineCustomImages().deleteById(image.id());
             }
         }
@@ -1874,7 +1830,7 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
             azureClient.networkInterfaces().deleteByResourceGroup(resourceGroupName, nic);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: removeIPName: while deleting NIC", e);
+            LOGGER.log(Level.WARNING, "Exception while deleting NIC", e);
         }
 
         final String ip = vmName + "IPName";
@@ -1882,7 +1838,7 @@ public final class AzureVMManagementServiceDelegate {
             LOGGER.log(Level.INFO, "Remove IP {0}", ip);
             azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "AzureVMManagementServiceDelegate: removeIPName: while deleting IPName", e);
+            LOGGER.log(Level.WARNING, "Exception while deleting IPName", e);
         }
     }
 
@@ -1904,7 +1860,7 @@ public final class AzureVMManagementServiceDelegate {
      *
      */
     public void startVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
-        LOGGER.log(Level.INFO, "AzureVMManagementServiceDelegate: startVirtualMachine: {0}", agent.getNodeName());
+        LOGGER.log(Level.INFO, "Starting: {0}", agent.getNodeName());
         int retryCount = 0;
         boolean successful = false;
 
@@ -1914,7 +1870,7 @@ public final class AzureVMManagementServiceDelegate {
                 successful = true; // may be we can just return
             } catch (Exception e) {
                 LOGGER.log(Level.INFO,
-                        "AzureVMManagementServiceDelegate: startVirtualMachine: got exception while "
+                        "Got exception while "
                                 + "starting VM {0}. Will retry again after 30 seconds. Current retry count {1} / {2}\n",
                         new Object[]{agent.getNodeName(), retryCount, Constants.MAX_PROV_RETRIES});
                 if (retryCount > Constants.MAX_PROV_RETRIES) {
@@ -1941,8 +1897,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             return azureClient.networks().getByResourceGroup(resourceGroupName, virtualNetworkName);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "AzureVMManagementServiceDelegate: getVirtualNetworkInfo: "
-                    + "Got exception while getting virtual network info: ", e);
+            LOGGER.log(Level.SEVERE, "Got exception while getting virtual network info: ", e);
         }
         return null;
     }
@@ -2618,19 +2573,16 @@ public final class AzureVMManagementServiceDelegate {
     public static BlobServiceClient getCloudStorageAccount(StorageAccount storageAccount) throws AzureCloudException {
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
-            throw AzureCloudException.create("AzureVMManagementServiceDelegate: uploadCustomScript: "
-                    + "Exception occurred while fetching the storage account key");
+            throw AzureCloudException.create("Exception occurred while fetching the storage account key");
         }
 
         String storageAccountKey = storageKeys.get(0).value();
         String blobSuffix = storageAccount.endPoints().primary().blob().toLowerCase();
-        LOGGER.log(Level.INFO,
-                "AzureVMManagementServiceDelegate: getCloudStorageAccount: "
-                        + "the suffix for construct CloudStorageCloud is {0}",
+        LOGGER.log(Level.FINE,
+                "The suffix for construct CloudStorageCloud is {0}",
                 blobSuffix);
         if (StringUtils.isEmpty(blobSuffix)) {
-            throw AzureCloudException.create("AzureVMManagementServiceDelegate: getCloudStorageAccount:"
-                    + "Exception occurred while getting blobSuffix, it's empty'");
+            throw AzureCloudException.create("Exception occurred while getting blobSuffix, it's empty'");
         }
         try {
             return new BlobServiceClientBuilder()
@@ -2641,8 +2593,7 @@ public final class AzureVMManagementServiceDelegate {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,
                     String.format(
-                            "AzureVMManagementServiceDelegate: GetCloudStorageAccount: unable to get"
-                            + "CloudStorageAccount with storage account %s and blob Suffix %s",
+                            "Unable to get storage account %s and blob Suffix %s",
                             storageAccount.name(), blobSuffix),
                     e);
             throw AzureCloudException.create(e);
@@ -2662,10 +2613,7 @@ public final class AzureVMManagementServiceDelegate {
             }
             return blobContainerClient;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE,
-                    "AzureVMManagementServiceDelegate: getCloudBlobContainer: "
-                            + "unable to get CloudStorageAccount with container name " + containerName,
-                    e);
+            LOGGER.log(Level.SEVERE, "Unable to get container " + containerName, e);
             throw AzureCloudException.create(e);
         }
     }

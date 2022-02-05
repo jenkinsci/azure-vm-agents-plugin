@@ -43,7 +43,7 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
 
     @Override
     public void start(AzureVMComputer azureComputer) {
-        LOGGER.log(Level.INFO, "AzureVMCloudOnceRetentionStrategy: start: azureComputer name {0}",
+        LOGGER.log(Level.FINE, "Starting azureComputer name {0}",
                 azureComputer.getDisplayName());
         azureComputer.connect(false);
         resetShutdownVMStatus(azureComputer.getNode());
@@ -78,16 +78,13 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
             return;
         }
 
-        AzureVMComputer azureComputer = (AzureVMComputer) computer;
-
-        azureComputer.setAcceptingTasks(false);
+        computer.setAcceptingTasks(false);
         if (agent.isShutdownOnIdle()) {
-            LOGGER.log(Level.INFO, "AzureVMCloudOnceRetentionStrategy: Tagging VM to shutdown when idle: {0}",
-                    azureComputer.getName());
+            LOGGER.log(Level.FINE, "Tagging VM to shutdown when idle: {0}",
+                    computer.getName());
             agent.setCleanUpAction(CleanUpAction.SHUTDOWN, Messages._Build_Action_Shutdown_Agent());
         } else {
-            LOGGER.log(Level.INFO, "AzureVMCloudOnceRetentionStrategy: Tagging VM to delete when idle: {0}",
-                    azureComputer.getName());
+            LOGGER.log(Level.FINE, "Tagging VM to delete when idle: {0}", computer.getName());
             agent.setCleanUpAction(CleanUpAction.DELETE, Messages._Build_Action_Delete_Agent());
         }
     }

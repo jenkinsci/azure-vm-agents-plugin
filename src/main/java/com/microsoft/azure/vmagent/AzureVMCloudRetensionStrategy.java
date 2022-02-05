@@ -25,6 +25,7 @@ import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.model.DescriptorVisibilityFilter;
 import hudson.slaves.RetentionStrategy;
+import java.util.concurrent.Callable;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -84,25 +85,20 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
         final AzureVMAgent agent = agentNode.getNode();
 
         if (canRecycle) {
-            LOGGER.log(Level.INFO,
-                    "AzureVMCloudRetensionStrategy: check: Idle timeout reached for agent: {0}, action: {1}",
+            LOGGER.log(Level.INFO, "Idle timeout reached for agent: {0}, action: {1}",
                     new Object[]{agentNode.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"});
 
-            java.util.concurrent.Callable<Void> task = new java.util.concurrent.Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    // Block cleanup while we execute so the cleanup task doesn't try to take it
-                    // away (node will go offline).  Also blocks cleanup in case of shutdown.
-                    agent.blockCleanUpAction();
-                    if (agent.isShutdownOnIdle()) {
-                        LOGGER.log(Level.INFO, "AzureVMCloudRetensionStrategy: going to idleTimeout agent: {0}",
-                                agentNode.getName());
-                        agent.shutdown(Messages._Idle_Timeout_Shutdown());
-                    } else {
-                        agent.deprovision(Messages._Idle_Timeout_Delete());
-                    }
-                    return null;
+            Callable<Void> task = () -> {
+                // Block cleanup while we execute so the cleanup task doesn't try to take it
+                // away (node will go offline).  Also blocks cleanup in case of shutdown.
+                agent.blockCleanUpAction();
+                if (agent.isShutdownOnIdle()) {
+                    LOGGER.log(Level.INFO, "Going to idleTimeout agent: {0}", agentNode.getName());
+                    agent.shutdown(Messages._Idle_Timeout_Shutdown());
+                } else {
+                    agent.deprovision(Messages._Idle_Timeout_Delete());
                 }
+                return null;
             };
 
             try {
@@ -116,9 +112,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                                 defaultTimeoutInSeconds
                         ));
             } catch (AzureCloudException ae) {
-                LOGGER.log(Level.WARNING,
-                        String.format("AzureVMCloudRetensionStrategy: check: could not terminate or shutdown %s",
-                                agentNode.getName()), ae);
+                LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s", agentNode.getName()), ae);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
@@ -127,8 +121,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
-                        String.format("AzureVMCloudRetensionStrategy: check: "
-                                + "Exception occurred while calling timeout on node %s", agentNode.getName()), e);
+                        String.format("Exception occurred while calling timeout on node %s", agentNode.getName()), e);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
@@ -147,7 +140,7 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
     @Override
     public void start(AzureVMComputer azureComputer) {
         //TODO: check when this method is getting called and add code accordingly
-        LOGGER.log(Level.INFO, "AzureVMCloudRetensionStrategy: start: azureComputer name {0}",
+        LOGGER.log(Level.INFO, "Starting azureComputer {0}",
                 azureComputer.getDisplayName());
         azureComputer.connect(false);
         resetShutdownVMStatus(azureComputer.getNode());
