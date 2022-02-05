@@ -143,12 +143,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(OUTPUT_FILE));) {
                 deploymentsToClean = (ConcurrentLinkedQueue<DeploymentInfo>) ois.readObject();
             } catch (FileNotFoundException e) {
-                LOGGER.log(Level.WARNING,
-                        "AzureVMAgentCleanUpTask: readResolve: Cannot open deployment output file");
+                LOGGER.log(Level.WARNING, "Cannot open deployment output file");
                 deploymentsToClean = new ConcurrentLinkedQueue<>();
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING,
-                        "AzureVMAgentCleanUpTask: readResolve: Cannot deserialize deploymentsToClean", e);
+                LOGGER.log(Level.WARNING, "Cannot deserialize deploymentsToClean", e);
                 deploymentsToClean = new ConcurrentLinkedQueue<>();
             }
         }
@@ -168,8 +166,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                                        String resourceGroupName,
                                        String deploymentName,
                                        String scriptUri) {
-            LOGGER.log(Level.INFO,
-                    "AzureVMAgentCleanUpTask: registerDeployment: Registering deployment {0} in {1}",
+            LOGGER.log(Level.FINE, "Registering deployment {0} in {1}",
                     new Object[]{deploymentName, resourceGroupName});
             DeploymentInfo newDeploymentToClean =
                     new DeploymentInfo(cloudName, resourceGroupName, deploymentName, scriptUri, MAX_DELETE_ATTEMPTS);
@@ -182,11 +179,9 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(OUTPUT_FILE));) {
                 oos.writeObject(deploymentsToClean);
             } catch (FileNotFoundException e) {
-                LOGGER.log(Level.WARNING,
-                        "AzureVMAgentCleanUpTask: registerDeployment: Cannot open deployment output file"
-                                + OUTPUT_FILE);
+                LOGGER.log(Level.WARNING, "Cannot open deployment output file" + OUTPUT_FILE);
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "AzureVMAgentCleanUpTask: registerDeployment: Serialize failed", e);
+                LOGGER.log(Level.WARNING, "Serialize failed", e);
             }
         }
 
@@ -200,7 +195,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     public void cleanDeployments(long successTimeoutInMinutes, long failTimeoutInMinutes) {
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanDeployments: Cleaning deployments");
+        LOGGER.log(getNormalLoggingLevel(), "Cleaning deployments");
         // Walk the queue, popping and pushing until we reach an item that we've already
         // dealt with or the queue is empty.
         DeploymentInfo firstBackInQueue = null;
@@ -209,9 +204,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         while (!deploymentsToClean.isEmpty() && firstBackInQueue != deploymentsToClean.peek()) {
             DeploymentInfo info = deploymentsToClean.remove();
 
-            LOGGER.log(getNormalLoggingLevel(),
-                    "AzureVMAgentCleanUpTask: cleanDeployments: Checking deployment {0}",
-                    info.getDeploymentName());
+            LOGGER.log(getNormalLoggingLevel(), "Checking deployment {0}", info.getDeploymentName());
 
             AzureVMCloud cloud = getCloud(info.getCloudName());
 
@@ -235,30 +228,26 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     deployment = azureClient.deployments().
                             getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                 } catch (NullPointerException e) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
+                    LOGGER.log(getNormalLoggingLevel(), "Deployment " + info.getDeploymentName()
+                           + " not found, skipping");
                     continue;
                 }
                 if (deployment == null) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanDeployments: Deployment not found, skipping");
+                    LOGGER.log(getNormalLoggingLevel(), "Deployment " + info.getDeploymentName()
+                           + " not found, skipping");
                     continue;
                 }
 
                 OffsetDateTime deploymentTime = deployment.timestamp();
 
-                LOGGER.log(getNormalLoggingLevel(),
-                        "AzureVMAgentCleanUpTask: cleanDeployments: Deployment created on {0}",
-                        deploymentTime.toString());
+                LOGGER.log(getNormalLoggingLevel(), "Deployment created on {0}", deploymentTime.toString());
                 long diffTimeInMinutes = ChronoUnit.MINUTES
                         .between(deploymentTime, OffsetDateTime.now());
 
                 String state = deployment.provisioningState();
 
                 if (!state.equalsIgnoreCase("succeeded") && diffTimeInMinutes > failTimeoutInMinutes) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanDeployments: "
-                                    + "Failed deployment older than {0} minutes, deleting",
+                    LOGGER.log(getNormalLoggingLevel(), "Failed deployment older than {0} minutes, deleting",
                             failTimeoutInMinutes);
                     // Delete the deployment
                     azureClient.deployments()
@@ -268,9 +257,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     }
                 } else if (state.equalsIgnoreCase("succeeded")
                         && diffTimeInMinutes > successTimeoutInMinutes) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanDeployments: "
-                                    + "Successful deployment older than {0} minutes, deleting",
+                    LOGGER.log(getNormalLoggingLevel(), "Successful deployment older than {0} minutes, deleting",
                             successTimeoutInMinutes);
                     // Delete the deployment
                     azureClient.deployments()
@@ -279,8 +266,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName());
                     }
                 } else {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanDeployments: Deployment newer than timeout, keeping");
+                    LOGGER.log(getNormalLoggingLevel(), "Deployment newer than timeout, keeping");
 
                     if (firstBackInQueue == null) {
                         firstBackInQueue = info;
@@ -289,9 +275,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     deploymentsToClean.add(info);
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING,
-                        "AzureVMAgentCleanUpTask: cleanDeployments: Failed to get/delete deployment: {0}",
-                        e);
+                LOGGER.log(Level.WARNING, "Failed to get/delete deployment: {0}", e);
                 // Check the number of attempts remaining. If greater than 0, decrement
                 // and add back into the queue.
                 if (info.hasAttemptsRemaining()) {
@@ -308,10 +292,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         }
         DeploymentRegistrar.getInstance().syncDeploymentsToClean();
 
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanDeployments: Done cleaning deployments");
+        LOGGER.log(getNormalLoggingLevel(), "Done cleaning deployments");
     }
 
-    /* There are some edge-cases where we might loose track of the provisioned resources:
+    /* There are some edge-cases where we might lose track of the provisioned resources:
         1. the process stops right after we start provisioning
         2. some Azure error blocks us from deleting the resource
        This method will look into the resource group and remove all resources that have our tag
@@ -319,16 +303,15 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     */
     public void cleanLeakedResources() {
         Jenkins instance = Jenkins.getInstanceOrNull();
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: beginning");
+        LOGGER.log(getNormalLoggingLevel(), "Beginning");
         if (instance == null) {
-            LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: skipped as no"
-                    + " Jenkins instance");
+            LOGGER.log(getNormalLoggingLevel(), "Skipped as no Jenkins instance");
             return;
         }
         for (AzureVMCloud cloud : instance.clouds.getAll(AzureVMCloud.class)) {
             cleanLeakedResources(cloud, cloud.getResourceGroupName(), DeploymentRegistrar.getInstance());
         }
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanLeakedResources: completed");
+        LOGGER.log(getNormalLoggingLevel(), "Completed");
     }
 
     public List<String> getValidVMs() {
@@ -466,16 +449,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         "cleanLeakedResources: deleted {0} from resource group {1}",
                         new Object[]{resource.name(), resourceGroup});
                 } catch (Exception e) {
-                    LOGGER.log(Level.WARNING,
-                            "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean resource ",
-                            e);
+                    LOGGER.log(Level.WARNING, "Failed to clean resource ", e);
                 }
             }
         } catch (Exception e) {
             // No need to throw exception back, just log and move on.
-            LOGGER.log(Level.WARNING,
-                    "AzureVMAgentCleanUpTask: cleanLeakedResources: failed to clean leaked resources ",
-                    e);
+            LOGGER.log(Level.WARNING, "Failed to clean leaked resources ", e);
         }
     }
 
@@ -484,7 +463,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     }
 
     private void cleanVMs(ExecutionEngine executionEngine) {
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanVMs: beginning");
+        LOGGER.log(getNormalLoggingLevel(), "Beginning");
         for (Computer computer : Jenkins.get().getComputers()) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
@@ -505,17 +484,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
                 if (azureComputer.isSetOfflineByUser()) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanVMs: node {0} was set offline by user, skipping",
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} was set offline by user, skipping",
                             agentNode.getDisplayName());
                     continue;
                 }
 
                 // If the machine is in "keep" state, skip
                 if (agentNode.isCleanUpBlocked()) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanVMs: node {0} blocked to cleanup",
-                            agentNode.getDisplayName());
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} blocked to cleanup", agentNode.getDisplayName());
                     continue;
                 }
 
@@ -523,13 +499,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 // deleted in the background.  Remove from Jenkins if that is the case.
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                     LOGGER.log(getNormalLoggingLevel(),
-                            "AzureVMAgentCleanUpTask: cleanVMs: node {0} doesn't exist, removing",
+                            "Node {0} doesn't exist, removing",
                             agentNode.getDisplayName());
                     try {
                         Jenkins.get().removeNode(agentNode);
                     } catch (IOException e) {
                         LOGGER.log(Level.WARNING,
-                                "AzureVMAgentCleanUpTask: cleanVMs: node {0} could not be removed: {1}",
+                                "Node {0} could not be removed: {1}",
                                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }
                     continue;
@@ -540,14 +516,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 Callable<Void> task = () -> {
                     // Depending on the cleanup action, run the appropriate
                     if (agentNode.getCleanUpAction() == CleanUpAction.DELETE) {
-                        LOGGER.log(getNormalLoggingLevel(),
-                                "AzureVMAgentCleanUpTask: cleanVMs: deleting {0}",
-                                agentNode.getDisplayName());
+                        LOGGER.log(getNormalLoggingLevel(), "Deleting {0}", agentNode.getDisplayName());
                         agentNode.deprovision(agentNode.getCleanUpReason());
                     } else if (agentNode.getCleanUpAction() == CleanUpAction.SHUTDOWN) {
-                        LOGGER.log(getNormalLoggingLevel(),
-                                "AzureVMAgentCleanUpTask: cleanVMs: shutting down {0}",
-                                agentNode.getDisplayName());
+                        LOGGER.log(getNormalLoggingLevel(), "Shutting down {0}", agentNode.getDisplayName());
                         agentNode.shutdown(agentNode.getCleanUpReason());
                         // We shut down the agent properly.  Mark the agent
                         // as "KEEP" so that it doesn't get deleted.
@@ -569,9 +541,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     ));
                 } catch (AzureCloudException exception) {
                     // No need to throw exception back, just log and move on.
-                    LOGGER.log(Level.WARNING,
-                            "AzureVMAgentCleanUpTask: cleanVMs: failed to shutdown/delete "
-                                    + agentNode.getDisplayName(),
+                    LOGGER.log(Level.WARNING, "Failed to shutdown/delete " + agentNode.getDisplayName(),
                             exception);
                     // In case the node had a non-delete cleanup action before,
                     // set the cleanup action to delete
@@ -579,12 +549,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 }
             }
         }
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanVMs: completed");
+        LOGGER.log(getNormalLoggingLevel(), "Completed");
     }
 
     public void cleanCloudStatistics() {
         Jenkins jenkins = Jenkins.get();
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanCloudStatistics: beginning");
+        LOGGER.log(getNormalLoggingLevel(), "Beginning");
 
         Set<ProvisioningActivity.Id> plannedNodesSet = new HashSet<>();
         for (NodeProvisioner.PlannedNode node : jenkins.unlabeledNodeProvisioner.getPendingLaunches()) {
@@ -615,7 +585,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 CloudStatistics.ProvisioningListener.get().onFailure(activity.getId(), e);
             }
         }
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: cleanCloudStatistics: completed");
+        LOGGER.log(getNormalLoggingLevel(), "Completed");
     }
 
     public AzureVMCloud getCloud(String cloudName) {
@@ -634,7 +604,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
     @Override
     public void execute(TaskListener arg0) throws InterruptedException {
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: execute: start");
+        LOGGER.log(getNormalLoggingLevel(), "Start");
 
         Callable<Void> callClean = () -> {
             clean();
@@ -644,25 +614,23 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         Future<Void> result = AzureVMCloud.getThreadPool().submit(callClean);
 
         try {
-            LOGGER.log(getNormalLoggingLevel(), String.format("AzureVMAgentCleanUpTask: execute: Running clean with %s"
+            LOGGER.log(getNormalLoggingLevel(), String.format("Running clean with %s"
                     + " minute timeout", CLEAN_TIMEOUT_IN_MINUTES));
             // Get will block until time expires or until task completes
             result.get(CLEAN_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES);
         } catch (ExecutionException executionException) {
             LOGGER.log(Level.SEVERE,
-                    "AzureVMAgentCleanUpTask: execute: Got execution exception while cleaning",
+                    "Got execution exception while cleaning",
                     executionException);
         } catch (TimeoutException timeoutException) {
             LOGGER.log(Level.SEVERE,
-                    "AzureVMAgentCleanUpTask: execute: Hit timeout while cleaning",
+                    "Hit timeout while cleaning",
                     timeoutException);
         } catch (Exception others) {
-            LOGGER.log(Level.SEVERE,
-                    "AzureVMAgentCleanUpTask: execute: Hit other exception while cleaning",
-                    others);
+            LOGGER.log(Level.SEVERE, "Hit other exception while cleaning", others);
         }
 
-        LOGGER.log(getNormalLoggingLevel(), "AzureVMAgentCleanUpTask: execute: end");
+        LOGGER.log(getNormalLoggingLevel(), "End");
     }
 
     @Override
