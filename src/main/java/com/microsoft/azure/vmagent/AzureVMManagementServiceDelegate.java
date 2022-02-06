@@ -463,6 +463,8 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
+            String imageId = getImageId(properties);
+
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
             if (referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion galleryImageVersion;
@@ -488,10 +490,16 @@ public final class AzureVMManagementServiceDelegate {
                 if (galleryImageVersion == null) {
                     throw AzureCloudException.create("Can not find the right version for the gallery image.");
                 }
-                String galleryImageId = galleryImageVersion.id();
-                LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{galleryImageId});
-                putVariableIfNotBlank(tmp, "imageId", galleryImageId);
+                imageId = galleryImageVersion.id();
+                LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{imageId});
+                putVariableIfNotBlank(tmp, "imageId", imageId);
             }
+
+            if (imageId != null) {
+                addTagToVm(tmp, "JenkinsImageId", imageId);
+            }
+
+
 
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
@@ -609,6 +617,35 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             if (embeddedTemplate != null) {
                 embeddedTemplate.close();
+            }
+        }
+    }
+
+    private String getImageId(Map<String, Object> properties) {
+        Object imageId = properties.get("imageId");
+        Object imagePublisherObj = properties.get("imagePublisher");
+        if (imageId == null && imagePublisherObj == null) {
+            return null;
+        }
+
+        if (imagePublisherObj != null) {
+            Object imageOfferObj = properties.get("imageOffer");
+            Object imageSkuObj = properties.get("imageSku");
+            Object imageVersionObj = properties.get("imageVersion");
+
+            imageId = imagePublisherObj + "::" + imageOfferObj + "::" + imageSkuObj  + "::" + imageVersionObj;
+        }
+        return (String) imageId;
+    }
+
+    private void addTagToVm(JsonNode template, String key, String value) {
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode tags = (ObjectNode) resource.get("tags");
+                tags.put(key, StringUtils.left(value, 255));
+                return;
             }
         }
     }
