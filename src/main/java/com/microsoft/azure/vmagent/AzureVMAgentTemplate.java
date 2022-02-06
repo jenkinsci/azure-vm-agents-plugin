@@ -352,6 +352,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private List<AzureTagPair> tags;
 
+    private int maxVirtualMachinesLimit;
+
     // deprecated fields
     private transient boolean isInstallDocker;
     private transient boolean isInstallMaven;
@@ -558,6 +560,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Restricted(NoExternalUse.class)
     public String getAvailabilitySet() {
         return availabilityType != null ? availabilityType.getAvailabilitySet() : null;
+    }
+
+    public int getMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit;
+    }
+
+    @DataBoundSetter
+    public void setMaxVirtualMachinesLimit(int maxVirtualMachinesLimit) {
+        this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
     }
 
     public String getJavaPath() {

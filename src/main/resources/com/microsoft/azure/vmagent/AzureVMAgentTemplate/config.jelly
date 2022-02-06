@@ -13,6 +13,11 @@
                 <f:textbox/>
             </f:entry>
 
+            <f:entry title="${%Max_Virtual_Machines_Limit}" field="maxVirtualMachinesLimit"
+                     help="/plugin/azure-vm-agents/help-maxVirtualMachinesLimit.html">
+                <f:number />
+            </f:entry>
+
             <f:entry title="${%Custom_Tag}" field="tags">
                 <f:repeatableProperty field="tags">
                     <f:entry>

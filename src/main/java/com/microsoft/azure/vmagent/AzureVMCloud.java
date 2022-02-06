@@ -375,9 +375,10 @@ public class AzureVMCloud extends Cloud {
      * of virtual machines we currently have available.
      *
      * @param delta Number that are desired, or if less than 0, the number we are 'returning' to the pool
+     * @param templateLimit max agents for the template in use
      * @return Number that can be allocated, up to the number desired.  0 if the number desired was < 0
      */
-    public int adjustVirtualMachineCount(int delta) {
+    public int adjustVirtualMachineCount(int delta, int templateLimit) {
         synchronized (this) {
             if (delta < 0) {
                 LOGGER.log(Level.FINE, "Current estimated VM count: {0}, reducing by {1}",
@@ -387,7 +388,8 @@ public class AzureVMCloud extends Cloud {
             } else {
                 LOGGER.log(Level.FINE, "Current estimated VM count: {0}, quantity desired {1}",
                         new Object[]{approximateVirtualMachineCount, delta});
-                if (approximateVirtualMachineCount + delta <= getMaxVirtualMachinesLimit()) {
+                int limit = determineLimit(templateLimit);
+                if (approximateVirtualMachineCount + delta <= limit) {
                     // Enough available, return the desired quantity, and update the number we think we
                     // have laying around.
                     approximateVirtualMachineCount += delta;
@@ -396,12 +398,23 @@ public class AzureVMCloud extends Cloud {
                     // Not enough available, return what we have. Remember we could
                     // go negative (if for instance another Jenkins instance had
                     // a higher limit.
-                    int quantityAvailable = Math.max(0, getMaxVirtualMachinesLimit() - approximateVirtualMachineCount);
+                    int quantityAvailable = Math.max(0, limit - approximateVirtualMachineCount);
                     approximateVirtualMachineCount += quantityAvailable;
                     return quantityAvailable;
                 }
             }
         }
+    }
+
+    private int determineLimit(int templateLimit) {
+        int cloudLimit = getMaxVirtualMachinesLimit();
+        if (templateLimit > cloudLimit) {
+            return cloudLimit;
+        }
+        if (templateLimit == 0) {
+            return cloudLimit;
+        }
+        return templateLimit;
     }
 
     /**
@@ -670,11 +683,12 @@ public class AzureVMCloud extends Cloud {
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
-                int adjustedNumberOfAgents = adjustVirtualMachineCount(numberOfAgents);
+                int adjustedNumberOfAgents = adjustVirtualMachineCount(numberOfAgents,
+                        template.getMaxVirtualMachinesLimit());
                 if (adjustedNumberOfAgents == 0) {
                     LOGGER.log(Level.INFO,
                             "Not able to create {0} nodes, at or above maximum VM count of {1} and already {2} VM(s)",
-                            new Object[]{numberOfAgents, getMaxVirtualMachinesLimit(),
+                            new Object[]{numberOfAgents, determineLimit(template.getMaxVirtualMachinesLimit()),
                                 getApproximateVirtualMachineCount()});
                     return plannedNodes;
                 } else if (adjustedNumberOfAgents < numberOfAgents) {
@@ -844,7 +858,8 @@ public class AzureVMCloud extends Cloud {
                                     // Do not throw to avoid it being recorded
                                 }
                             }
-                            template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1);
+                            template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1,
+                                    template.getMaxVirtualMachinesLimit());
                             // Update the template status given this new issue.
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }
