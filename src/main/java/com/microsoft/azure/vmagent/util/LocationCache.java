@@ -1,8 +1,6 @@
 package com.microsoft.azure.vmagent.util;
 
-import com.azure.core.http.rest.PagedIterable;
 import com.azure.resourcemanager.AzureResourceManager;
-import com.azure.resourcemanager.compute.models.VirtualMachineSize;
 import com.azure.resourcemanager.resources.models.Provider;
 import com.azure.resourcemanager.resources.models.ProviderResourceType;
 
@@ -11,7 +9,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class LocationCache {
@@ -34,8 +31,6 @@ public final class LocationCache {
                             < achieveTimeInMillis.get(key) + EXPIRE_TIME_IN_MILLIS) {
                     return regions.get(key);
                 } else {
-                    Set<String> locations = new HashSet<>();
-
                     Provider byName = azureClient.providers().getByName("Microsoft.Compute");
                     ProviderResourceType resourceType = byName.resourceTypes()
                             .stream()
@@ -47,21 +42,7 @@ public final class LocationCache {
                         throw new RuntimeException("Virtual machines provider not registered");
                     }
 
-                    for (String location : resourceType.locations()) {
-                        if (!locations.contains(location)) {
-                            try {
-                                PagedIterable<VirtualMachineSize> virtualMachineSizes = azureClient
-                                        .virtualMachines().sizes().listByRegion(location);
-                                if (virtualMachineSizes.stream().findAny().isPresent()) {
-                                    locations.add(location);
-                                }
-                            } catch (Exception e) {
-                                LOGGER.log(Level.SEVERE, e.getMessage(), e);
-                                // some of the provider regions might not be valid for other API calls.
-                                // The SDK call will throw an exception instead of returning an empty list
-                            }
-                        }
-                    }
+                    Set<String> locations = new HashSet<>(resourceType.locations());
 
                     achieveTimeInMillis.put(key, System.currentTimeMillis());
                     regions.put(key, locations);
