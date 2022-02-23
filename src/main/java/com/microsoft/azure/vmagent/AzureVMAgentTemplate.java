@@ -1479,7 +1479,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             model.add(SkuName.STANDARD_LRS.toString());
 
             /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
-            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[Mm]?[Ss]|[Ss][0-9]+).*")) {
+            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[aAMm]?[Ss]|[Ss][0-9]+).*")) {
                 model.add(SkuName.PREMIUM_LRS.toString());
             }
             return model;
@@ -1494,7 +1494,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             model.add(DiskSkuTypes.STANDARD_SSD_LRS.toString());
 
             /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
-            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[Mm]?[Ss]|[Ss][0-9]+).*")) {
+            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[aAMm]?[Ss]|[Ss][0-9]+).*")) {
                 model.add(DiskSkuTypes.PREMIUM_LRS.toString());
             }
             return model;
