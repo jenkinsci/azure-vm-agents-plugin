@@ -114,6 +114,7 @@ public class IntegrationTest {
         public String galleryName;
         public String galleryImageDefinition;
         public String galleryImageVersion;
+        public boolean galleryImageSpecialized;
         public String gallerySubscriptionId;
         public String galleryResourceGroup;
         public List<AzureTagPair> customTags;
@@ -394,6 +395,7 @@ public class IntegrationTest {
                 null,
                 null,
                 null,
+                false,
                 null,
                 null
         ));

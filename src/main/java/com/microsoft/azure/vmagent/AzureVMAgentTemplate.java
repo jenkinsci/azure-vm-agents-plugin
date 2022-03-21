@@ -100,6 +100,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String galleryName;
         private String galleryImageDefinition;
         private String galleryImageVersion;
+        private boolean galleryImageSpecialized;
         private String gallerySubscriptionId;
         private String galleryResourceGroup;
         private ImageReferenceType type;
@@ -115,6 +116,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 String galleryName,
                 String galleryImageDefinition,
                 String galleryImageVersion,
+                boolean galleryImageSpecialized,
                 String gallerySubscriptionId,
                 String galleryResourceGroup) {
             this.uri = uri;
@@ -126,6 +128,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.galleryName = galleryName;
             this.galleryImageDefinition = galleryImageDefinition;
             this.galleryImageVersion = galleryImageVersion;
+            this.galleryImageSpecialized = galleryImageSpecialized;
             this.gallerySubscriptionId = gallerySubscriptionId;
             this.galleryResourceGroup = galleryResourceGroup;
 
@@ -187,6 +190,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public String getGalleryImageVersion() {
             return galleryImageVersion;
+        }
+
+        public boolean getGalleryImageSpecialized() {
+            return galleryImageSpecialized;
         }
 
         public String getGallerySubscriptionId() {
@@ -369,6 +376,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private transient String galleryName;
     private transient String galleryImageDefinition;
     private transient String galleryImageVersion;
+    private transient boolean galleryImageSpecialized;
     private transient String gallerySubscriptionId;
     private transient String galleryResourceGroup;
     private transient String availabilitySet;
@@ -504,6 +512,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Restricted(NoExternalUse.class)
     public String getGalleryImageVersion() {
         return imageReference != null ? imageReference.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public boolean getGalleryImageSpecialized() {
+        return imageReference != null ? imageReference.getGalleryImageSpecialized() : false;
     }
 
     /**
@@ -834,6 +850,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (StringUtils.isNotBlank(galleryImageVersion)) {
             imageReference.galleryImageVersion = galleryImageVersion;
+        }
+        if (galleryImageSpecialized) {
+            imageReference.galleryImageSpecialized = true;
         }
 
         if (StringUtils.isNotBlank(gallerySubscriptionId)) {
@@ -1234,6 +1253,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         imageReference.galleryName,
                         imageReference.galleryImageDefinition,
                         imageReference.galleryImageVersion,
+                        imageReference.galleryImageSpecialized,
                         imageReference.gallerySubscriptionId,
                         imageReference.galleryResourceGroup
                 )
@@ -1695,6 +1715,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String galleryName,
                 @QueryParameter String galleryImageDefinition,
                 @QueryParameter String galleryImageVersion,
+                @QueryParameter boolean galleryImageSpecialized,
                 @QueryParameter String gallerySubscriptionId,
                 @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
@@ -1718,6 +1739,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     galleryName,
                     galleryImageDefinition,
                     galleryImageVersion,
+                    galleryImageSpecialized,
                     gallerySubscriptionId,
                     galleryResourceGroup
             );
@@ -1761,8 +1783,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "galleryName: {29}\n\t"
                             + "galleryImageDefinition: {30}\n\t"
                             + "galleryImageVersion: {31}\n\t"
-                            + "galleryResourceGroup: {32}\n\t"
-                            + "gallerySubscriptionId: {33}",
+                            + "galleryImageSpecialized: {32}\n\t"
+                            + "galleryResourceGroup: {33}\n\t"
+                            + "gallerySubscriptionId: {34}",
                     new Object[]{
                             "",
                             "",
@@ -1796,6 +1819,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryName,
                             galleryImageDefinition,
                             galleryImageVersion,
+                            galleryImageSpecialized,
                             galleryResourceGroup,
                             gallerySubscriptionId});
 

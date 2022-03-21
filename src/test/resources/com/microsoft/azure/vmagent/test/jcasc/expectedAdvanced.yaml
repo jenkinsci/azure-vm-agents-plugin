@@ -20,6 +20,7 @@
       executeInitScriptAsRoot: true
       imageReference:
         galleryImageDefinition: "Linux"
+        galleryImageSpecialized: false
         galleryImageVersion: "latest"
         galleryName: "gallery"
         galleryResourceGroup: "gallery"

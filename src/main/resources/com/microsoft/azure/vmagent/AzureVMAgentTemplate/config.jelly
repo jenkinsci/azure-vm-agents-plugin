@@ -197,6 +197,9 @@
                         <f:entry title="${%Gallery_Image_Version}" field="galleryImageVersion">
                             <f:textbox/>
                         </f:entry>
+                        <f:entry title="${%Gallery_Image_Specialized}" field="galleryImageSpecialized">
+                            <f:checkbox/>
+                        </f:entry>
                     </f:dropdownListBlock>
                 </f:dropdownList>
 
@@ -302,6 +305,6 @@
             </div>
         </f:entry>
         <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}" method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
+                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,galleryImageSpecialized,gallerySubscriptionId,galleryResourceGroup,agentLaunchMethod,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
     </div>
 </j:jelly>
