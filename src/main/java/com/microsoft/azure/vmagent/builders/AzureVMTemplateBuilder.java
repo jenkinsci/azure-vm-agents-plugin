@@ -132,6 +132,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
         azureVMAgentTemplate.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
+        azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(
+            fluent.getAdvancedImage().getGalleryImageSpecialized());
         return azureVMAgentTemplate;
     }
 }

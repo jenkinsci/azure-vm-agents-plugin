@@ -400,7 +400,11 @@ public final class AzureVMManagementServiceDelegate {
 
             boolean osDiskSizeChanged = osDiskSize > 0;
             boolean availabilitySetEnabled = availabilitySet != null;
-            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled) {
+            boolean isSpecializedImage = false;
+            if (template.getImageReference() != null) {
+                isSpecializedImage = template.getImageReference().getGalleryImageSpecialized();
+            }
+            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled || isSpecializedImage) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
@@ -443,6 +447,11 @@ public final class AzureVMManagementServiceDelegate {
                             JsonNode propertiesNode = resource.get("properties");
                             ((ObjectNode) propertiesNode).replace("availabilitySet",
                                     availabilitySetNode);
+                        }
+                        if (isSpecializedImage) {
+                            // For specialized image remove the osProfile from the properties of the VirtualMachine resource
+                            JsonNode propertiesNode = resource.get("properties");
+                           ((ObjectNode) propertiesNode).remove("osProfile");
                         }
                     }
                 }

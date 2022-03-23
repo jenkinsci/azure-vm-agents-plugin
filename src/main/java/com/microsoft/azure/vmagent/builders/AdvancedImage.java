@@ -23,7 +23,9 @@ public class AdvancedImage {
 
     private String galleryImageDefinition;
 
-    private String  galleryImageVersion;
+    private String galleryImageVersion;
+
+    private boolean galleryImageSpecialized;
 
     private String gallerySubscriptionId;
 
@@ -74,6 +76,7 @@ public class AdvancedImage {
                          String galleryName,
                          String galleryImageDefinition,
                          String galleryImageVersion,
+                         boolean galleryImageSpecialized,
                          String gallerySubscriptionId,
                          String galleryResourceGroup,
                          String agentLaunchMethod,
@@ -104,6 +107,7 @@ public class AdvancedImage {
         this.galleryName = galleryName;
         this.galleryImageDefinition = galleryImageDefinition;
         this.galleryImageVersion = galleryImageVersion;
+        this.galleryImageSpecialized = galleryImageSpecialized;
         this.gallerySubscriptionId = gallerySubscriptionId;
         this.galleryResourceGroup = galleryResourceGroup;
         this.agentLaunchMethod = agentLaunchMethod;
@@ -167,6 +171,10 @@ public class AdvancedImage {
 
     public String getGalleryImageVersion() {
         return galleryImageVersion;
+    }
+
+    public boolean getGalleryImageSpecialized() {
+        return galleryImageSpecialized;
     }
 
     public String getGallerySubscriptionId() {

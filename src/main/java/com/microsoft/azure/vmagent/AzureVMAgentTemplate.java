@@ -100,6 +100,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         private String galleryName;
         private String galleryImageDefinition;
         private String galleryImageVersion;
+        private boolean galleryImageSpecialized;
         private String gallerySubscriptionId;
         private String galleryResourceGroup;
         private ImageReferenceType type;
@@ -187,6 +188,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public String getGalleryImageVersion() {
             return galleryImageVersion;
+        }
+
+        public boolean getGalleryImageSpecialized() {
+            return galleryImageSpecialized;
+        }
+        @DataBoundSetter
+        public void setGalleryImageSpecialized(boolean galleryImageSpecialized) {
+            this.galleryImageSpecialized = galleryImageSpecialized;
         }
 
         public String getGallerySubscriptionId() {
@@ -504,6 +513,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @Restricted(NoExternalUse.class)
     public String getGalleryImageVersion() {
         return imageReference != null ? imageReference.getGalleryImageVersion() : null;
+    }
+
+    /**
+     * Used by jelly for loading the data, not written to.
+     */
+    @Restricted(NoExternalUse.class)
+    public boolean getGalleryImageSpecialized() {
+        return imageReference != null ? imageReference.getGalleryImageSpecialized() : false;
     }
 
     /**
@@ -1234,6 +1251,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         imageReference.galleryName,
                         imageReference.galleryImageDefinition,
                         imageReference.galleryImageVersion,
+                        imageReference.galleryImageSpecialized,
                         imageReference.gallerySubscriptionId,
                         imageReference.galleryResourceGroup
                 )
@@ -1695,6 +1713,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String galleryName,
                 @QueryParameter String galleryImageDefinition,
                 @QueryParameter String galleryImageVersion,
+                @QueryParameter boolean galleryImageSpecialized,
                 @QueryParameter String gallerySubscriptionId,
                 @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
