@@ -13,7 +13,6 @@
       doNotUseMachineIfInitFails: true
       executeInitScriptAsRoot: true
       imageReference:
-        galleryImageSpecialized: false
         version: "latest"
       imageTopLevelType: "basic"
       installDocker: true

@@ -925,7 +925,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -947,7 +946,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -969,7 +967,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -991,7 +988,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -1013,7 +1009,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -1035,7 +1030,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -1057,7 +1051,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),
@@ -1079,7 +1072,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
                                     testEnv.galleryName,
                                     testEnv.galleryImageDefinition,
                                     testEnv.galleryImageVersion,
-                                    testEnv.galleryImageSpecialized,
                                     testEnv.gallerySubscriptionId,
                                     testEnv.galleryResourceGroup
                             ),

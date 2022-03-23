@@ -102,7 +102,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                         fluent.getAdvancedImage().getGalleryName(),
                         fluent.getAdvancedImage().getGalleryImageDefinition(),
                         fluent.getAdvancedImage().getGalleryImageVersion(),
-                        fluent.getAdvancedImage().getGalleryImageSpecialized(),
                         fluent.getAdvancedImage().getGallerySubscriptionId(),
                         fluent.getAdvancedImage().getGalleryResourceGroup()),
                 fluent.getAdvancedImage().getAgentLaunchMethod(),
@@ -133,6 +132,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
         azureVMAgentTemplate.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
+        azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(
+            fluent.getAdvancedImage().getGalleryImageSpecialized());
         return azureVMAgentTemplate;
     }
 }
