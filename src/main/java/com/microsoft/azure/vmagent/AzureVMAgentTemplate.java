@@ -65,13 +65,13 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.servlet.ServletException;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1885,7 +1885,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 md.update(resourceGroupName.getBytes(StandardCharsets.UTF_8));
             }
 
-            String uid = DatatypeConverter.printBase64Binary(md.digest());
+            String uid = Base64.getEncoder().encodeToString(md.digest());
             uid = uid.substring(0, GEN_STORAGE_ACCOUNT_UID_LENGTH);
             uid = uid.toLowerCase();
             uid = uid.replaceAll("[^a-z0-9]", "a");
