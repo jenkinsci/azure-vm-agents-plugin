@@ -37,6 +37,7 @@
                     <imageVersion>latest</imageVersion>
                     <agentLaunchMethod>SSH</agentLaunchMethod>
                     <preInstallSsh>true</preInstallSsh>
+                    <sshConfig>RemoteForward 1234 target.machine:1234</sshConfig>
                     <initScript>sudo add-apt-repository ppa:openjdk-r/ppa -y
                         sudo apt-get -y update
                         sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y</initScript>

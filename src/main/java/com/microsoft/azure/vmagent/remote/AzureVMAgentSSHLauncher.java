@@ -279,11 +279,23 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         return "C:\\remoting";
     }
 
-    private Session getRemoteSession(String userName, String password, String dnsName, int sshPort) throws JSchException {
+    private Session getRemoteSession(String userName, String password, String dnsName, int sshPort, String sshConfig) throws JSchException {
         LOGGER.log(Level.INFO,
                 "Getting remote session for user {0} to host {1}:{2}",
                 new Object[]{userName, dnsName, sshPort});
         JSch remoteClient = new JSch();
+        if (StringUtils.isNotBlank(sshConfig)) {
+            try {
+                ConfigRepository configRepository = OpenSSHConfig.parse(sshConfig);
+                remoteClient.setConfigRepository(configRepository);
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE,
+                        "AzureVMAgentSSHLauncher: getRemoteSession: "
+                                + "Got exception while using custom openssh config: {0} {1}",
+                        new Object[]{sshConfig, e.getMessage()});
+                throw new JSchException("Unable to parse openssh config", e);
+            }
+        }
         final Session session = remoteClient.getSession(userName, dnsName, sshPort);
         session.setConfig("StrictHostKeyChecking", "no");
         session.setPassword(password);
@@ -296,7 +308,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 new Object[]{userName, dnsName, sshPort});
         return session;
     }
-    
+
     public void copyFileToRemote(AzureVMAgent agent, InputStream stream, String remotePath) throws Exception {
     	copyFileToRemote(connectToSsh(agent), stream, remotePath);
     }
@@ -335,11 +347,11 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix)  throws Exception {
     	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, false, null);
     }
-    
+
     public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix, boolean executeAsRoot, String passwordIfRoot)  throws Exception {
     	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, executeAsRoot, passwordIfRoot);
     }
-    
+
     /* Helper method for most common call (without root). */
     private int executeRemoteCommand(Session jschSession, String command, PrintStream logger, boolean isUnix) {
         return executeRemoteCommand(jschSession, command, logger, isUnix, false, null);
@@ -435,7 +447,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                         creds.getUsername(),
                         creds.getPassword().getPlainText(),
                         agent.getPublicDNSName(),
-                        agent.getSshPort());
+                        agent.getSshPort(),
+                        agent.getSshConfig());
                 LOGGER.fine("Got remote connection");
             } catch (Exception e) {
                 // Retry till max count and throw exception if not successful even after that

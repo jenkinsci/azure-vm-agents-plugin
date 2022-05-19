@@ -40,5 +40,7 @@ public class AzureVMAgentTemplateReadResolveTest {
         assertThat(reference.getVersion(), is("latest"));
 
         assertThat(reference.getType(), is(ImageReferenceType.REFERENCE));
+
+        assertThat(template.getAdvancedImageInside().getSshConfig(), is("RemoteForward 1234 target.machine:1234"));
     }
 }

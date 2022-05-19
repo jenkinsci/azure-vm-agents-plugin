@@ -105,6 +105,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                         fluent.getAdvancedImage().getGallerySubscriptionId(),
                         fluent.getAdvancedImage().getGalleryResourceGroup()),
                 fluent.getAdvancedImage().getAgentLaunchMethod(),
+                fluent.getAdvancedImage().getSshConfig(),
                 fluent.getAdvancedImage().getInitScript(),
                 fluent.getAdvancedImage().getTerminateScript(),
                 fluent.getCredentialsId(),

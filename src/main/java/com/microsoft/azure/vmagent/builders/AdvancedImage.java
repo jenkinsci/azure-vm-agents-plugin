@@ -35,6 +35,8 @@ public class AdvancedImage {
 
     private boolean preInstallSsh;
 
+    private String sshConfig;
+
     private String initScript;
 
     private String terminateScript;
@@ -81,6 +83,7 @@ public class AdvancedImage {
                          String galleryResourceGroup,
                          String agentLaunchMethod,
                          boolean preInstallSsh,
+                         String sshConfig,
                          String initScript,
                          String terminateScript,
                          boolean executeInitScriptAsRoot,
@@ -112,6 +115,7 @@ public class AdvancedImage {
         this.galleryResourceGroup = galleryResourceGroup;
         this.agentLaunchMethod = agentLaunchMethod;
         this.preInstallSsh = preInstallSsh;
+        this.sshConfig = sshConfig;
         this.initScript = initScript;
         this.terminateScript = terminateScript;
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
@@ -191,6 +195,10 @@ public class AdvancedImage {
 
     public boolean isPreInstallSsh() {
         return preInstallSsh;
+    }
+
+    public String getSshConfig() {
+        return sshConfig;
     }
 
     public String getInitScript() {
