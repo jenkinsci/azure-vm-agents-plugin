@@ -98,12 +98,11 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         final int currentPoolSize
                 = ((AzureVMCloudPoolRetentionStrategy) currentTemplate.getRetentionStrategy()).getPoolSize();
 
-        Computer.threadPoolForRemoting.submit(new Runnable() {
-            @Override
-            public void run() {
-                checkPoolSizeAndDelete(agentComputer, currentPoolSize);
-            }
-        });
+        Computer.threadPoolForRemoting.submit(() -> checkPoolSizeAndDelete(agentComputer, currentPoolSize));
+
+        if (agentComputer.isOffline() && !agentComputer.isConnecting() && agentComputer.isLaunchSupported()) {
+            agentComputer.tryReconnect();
+        }
 
         return 1;
     }

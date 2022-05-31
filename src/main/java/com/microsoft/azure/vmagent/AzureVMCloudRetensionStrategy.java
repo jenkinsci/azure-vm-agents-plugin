@@ -61,39 +61,38 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
         return check(agentNode, new ExecutionEngine());
     }
 
-    protected long check(final AzureVMComputer agentNode, ExecutionEngine executionEngine) {
+    protected long check(final AzureVMComputer agentComputer, ExecutionEngine executionEngine) {
         // Determine whether we can recycle this machine.
         // The CRS is the way that nodes that are currently operating "correctly"
         // can be retained/reclaimed.  Any failure modes need to be dealt with through
-        // the clean up task.
+        // the cleanup task.
 
-        boolean canRecycle = true;
         // Node must be idle
-        canRecycle &= agentNode.isIdle();
+        boolean canRecycle = agentComputer.isIdle();
         // The node must also be online.  This also implies not temporarily disconnected
         // (like by a user).
-        canRecycle &= agentNode.isOnline();
+        canRecycle &= agentComputer.isOnline();
         // The configured idle time must be > 0 (which means leave forever)
         canRecycle &= idleTerminationMillis > 0;
         // The number of ms it's been idle must be greater than the current idle time.
-        canRecycle &= idleTerminationMillis < (System.currentTimeMillis() - agentNode.getIdleStartMilliseconds());
+        canRecycle &= idleTerminationMillis < (System.currentTimeMillis() - agentComputer.getIdleStartMilliseconds());
 
-        if (agentNode.getNode() == null) {
+        if (agentComputer.getNode() == null) {
             return 1;
         }
 
-        final AzureVMAgent agent = agentNode.getNode();
+        final AzureVMAgent agent = agentComputer.getNode();
 
         if (canRecycle) {
             LOGGER.log(Level.INFO, "Idle timeout reached for agent: {0}, action: {1}",
-                    new Object[]{agentNode.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"});
+                    new Object[]{agentComputer.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"});
 
             Callable<Void> task = () -> {
                 // Block cleanup while we execute so the cleanup task doesn't try to take it
                 // away (node will go offline).  Also blocks cleanup in case of shutdown.
                 agent.blockCleanUpAction();
                 if (agent.isShutdownOnIdle()) {
-                    LOGGER.log(Level.INFO, "Going to idleTimeout agent: {0}", agentNode.getName());
+                    LOGGER.log(Level.INFO, "Going to idleTimeout agent: {0}", agentComputer.getName());
                     agent.shutdown(Messages._Idle_Timeout_Shutdown());
                 } else {
                     agent.deprovision(Messages._Idle_Timeout_Delete());
@@ -112,24 +111,29 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                                 defaultTimeoutInSeconds
                         ));
             } catch (AzureCloudException ae) {
-                LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s", agentNode.getName()), ae);
+                LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s", agentComputer.getName()), ae);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
-                AzureVMAgent node = agentNode.getNode();
+                AzureVMAgent node = agentComputer.getNode();
                 if (node != null) {
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
-                        String.format("Exception occurred while calling timeout on node %s", agentNode.getName()), e);
+                        String.format("Exception occurred while calling timeout on node %s", agentComputer.getName()), e);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
-                AzureVMAgent node = agentNode.getNode();
+                AzureVMAgent node = agentComputer.getNode();
                 if (node != null) {
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             }
         }
+
+        if (agentComputer.isOffline() && !agentComputer.isConnecting() && agentComputer.isLaunchSupported()) {
+            agentComputer.tryReconnect();
+        }
+
         return 1;
     }
 

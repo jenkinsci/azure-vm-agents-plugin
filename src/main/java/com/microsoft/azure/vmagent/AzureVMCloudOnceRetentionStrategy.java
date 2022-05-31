@@ -38,6 +38,11 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
                 done(agentComputer);
             }
         }
+
+        if (agentComputer.isOffline() && !agentComputer.isConnecting() && agentComputer.isLaunchSupported()) {
+            agentComputer.tryReconnect();
+        }
+
         return 1;
     }
 
