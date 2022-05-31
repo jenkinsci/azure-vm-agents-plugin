@@ -111,7 +111,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                                 defaultTimeoutInSeconds
                         ));
             } catch (AzureCloudException ae) {
-                LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s", agentComputer.getName()), ae);
+                LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s",
+                        agentComputer.getName()), ae);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentComputer.getNode();
@@ -120,7 +121,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
-                        String.format("Exception occurred while calling timeout on node %s", agentComputer.getName()), e);
+                        String.format("Exception occurred while calling timeout on node %s",
+                                agentComputer.getName()), e);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentComputer.getNode();
