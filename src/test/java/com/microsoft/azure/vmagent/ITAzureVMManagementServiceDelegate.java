@@ -39,7 +39,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -670,20 +672,44 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void getVirtualMachineCountTest() {
-        try {
-            Random rand = new Random();
-            final int numberOfAgents = rand.nextInt(4) + 1;
-            final String vmName = "vmnotcounted";
-            createDefaultDeployment(numberOfAgents, null);
-            createAzureVM(vmName);
+    public void getVirtualMachineCountTest() throws Exception {
+        // Given
+        Random rand = new Random();
+        final int numberOfAgents = rand.nextInt(4) + 1;
+        final String vmName = "vmnotcounted";
+        createDefaultDeployment(numberOfAgents, null);
+        createAzureVM(vmName);
+        final int expectedVMCountForRG = numberOfAgents;
+        final int expectedVMCountForMissingRG = 0;
 
-            Assert.assertEquals(numberOfAgents, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup));
-            Assert.assertEquals(0, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing"));
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
-        }
+        // When
+        final int actualVMCountForRG = delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup);
+        final int actualVMCountForMissingRG = delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing");
+
+        // Then
+        Assert.assertEquals(expectedVMCountForRG, actualVMCountForRG);
+        Assert.assertEquals(expectedVMCountForMissingRG, actualVMCountForMissingRG);
+    }
+
+    @Test
+    public void getVirtualMachineCountsByTemplateTest() throws Exception {
+        // Given
+        Random rand = new Random();
+        final String templateName = "myTemplate";
+        final int numberOfAgents = rand.nextInt(4) + 1;
+        final String vmName = "vmnotcounted";
+        createDefaultDeployment(templateName, numberOfAgents, null);
+        createAzureVM(vmName);
+        final Map<String, Integer> expectedVMCountForRG = Collections.singletonMap(templateName, Integer.valueOf(numberOfAgents));
+        final Map<String, Integer> expectedVMCountForMissingRG = Collections.emptyMap();
+
+        // When
+        final Map<String, Integer> actualVMCountForRG = delegate.getVirtualMachineCountsByTemplate("testCloud", testEnv.azureResourceGroup);
+        final Map<String, Integer> actualVMCountForMissingRG = delegate.getVirtualMachineCountsByTemplate("testCloud", testEnv.azureResourceGroup + "-missing");
+
+        // Then
+        Assert.assertEquals(expectedVMCountForRG, actualVMCountForRG);
+        Assert.assertEquals(expectedVMCountForMissingRG, actualVMCountForMissingRG);
     }
 
     @Test
