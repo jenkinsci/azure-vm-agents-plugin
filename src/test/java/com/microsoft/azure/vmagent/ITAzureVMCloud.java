@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.microsoft.azure.vmagent.test;
+package com.microsoft.azure.vmagent;
 
-import com.microsoft.azure.vmagent.AzureVMAgent;
-import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.Node;
