@@ -319,11 +319,28 @@ public class IntegrationTest {
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(templateName, numberOfAgents, true, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
             int numberOfAgents,
             boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
         return createDefaultDeployment(numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            boolean usePrivateIP,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
@@ -344,6 +361,19 @@ public class IntegrationTest {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
+        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, enableMSI, enableUAMI, ephemeralOSDisk, nsgName, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            boolean usePrivateIP,
+            boolean enableMSI,
+            boolean enableUAMI,
+            boolean ephemeralOSDisk,
+            String nsgName,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws Exception {
         final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
         final String terminateScript = "echo \"" + UUID.randomUUID().toString() + "\"";
