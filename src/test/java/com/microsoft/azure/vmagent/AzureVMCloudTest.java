@@ -57,7 +57,7 @@ public class AzureVMCloudTest {
         final String templateName = "myTemplate";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
         final int templateCount = 123;
-        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, Integer.valueOf(templateCount));
+        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, templateCount);
         final int expectedCloud = templateCount;
         final int expectedTemplate = templateCount;
 
@@ -77,9 +77,9 @@ public class AzureVMCloudTest {
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
-        instance.setCurrentVirtualMachineCount(Collections.singletonMap("foo", Integer.valueOf(234)));
+        instance.setCurrentVirtualMachineCount(Collections.singletonMap("foo", 234));
         final int templateCount = 123;
-        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, Integer.valueOf(templateCount));
+        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, templateCount);
         final int expectedCloud = templateCount;
         final int expectedTemplate = templateCount;
 
@@ -100,7 +100,7 @@ public class AzureVMCloudTest {
         final String templateName = "myTemplate";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
         final int templateCount = 123;
-        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, Integer.valueOf(templateCount));
+        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, templateCount);
         final int expectedCloud = 0;
         final int expectedTemplate = 0;
         instance.setCurrentVirtualMachineCount(vmCount);
@@ -122,7 +122,7 @@ public class AzureVMCloudTest {
         final String templateName = "myTemplate";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
         final int templateCount = 123;
-        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, Integer.valueOf(templateCount));
+        final Map<String, Integer> vmCount = Collections.singletonMap(templateName, templateCount);
         final int expectedCloud = templateCount + 2;
         final int expectedTemplate = templateCount + 2;
         instance.setCurrentVirtualMachineCount(vmCount);

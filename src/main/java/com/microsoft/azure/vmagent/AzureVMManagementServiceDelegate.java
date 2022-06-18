@@ -1694,10 +1694,10 @@ public final class AzureVMManagementServiceDelegate {
      * @return Total VM count
      */
     public int getVirtualMachineCount(String cloudName, String resourceGroupName) {
-    	final Map<String, Integer> countsByTemplate = getVirtualMachineCountsByTemplate(cloudName, resourceGroupName);
+        final Map<String, Integer> countsByTemplate = getVirtualMachineCountsByTemplate(cloudName, resourceGroupName);
         int count = 0;
         for (Integer countForTemplate : countsByTemplate.values() ) {
-        	count += countForTemplate.intValue();
+            count += countForTemplate;
         }
         return count;
     }
@@ -1710,25 +1710,25 @@ public final class AzureVMManagementServiceDelegate {
      */
     @Restricted(NoExternalUse.class)
     Map<String, Integer> getVirtualMachineCountsByTemplate(final String cloudName, final String resourceGroupName) {
-    	final Map<String, Integer> result = new TreeMap<>();
+        final Map<String, Integer> result = new TreeMap<>();
         try {
             final PagedIterable<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
             for (final VirtualMachine vm : vms) {
                 final Map<String, String> tags = vm.tags();
-                final String resourcesTag = tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME) ? tags.get(Constants.AZURE_RESOURCES_TAG_NAME) : null;
-                final String cloudTag = tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME) ? tags.get(Constants.AZURE_CLOUD_TAG_NAME) : null;
-                final String templateTag = tags.containsKey(Constants.AZURE_TEMPLATE_TAG_NAME) ? tags.get(Constants.AZURE_TEMPLATE_TAG_NAME) : null;
+                final String resourcesTag = tags.getOrDefault(Constants.AZURE_RESOURCES_TAG_NAME, null);
+                final String cloudTag = tags.getOrDefault(Constants.AZURE_CLOUD_TAG_NAME, null);
+                final String templateTag = tags.getOrDefault(Constants.AZURE_TEMPLATE_TAG_NAME, null);
                 if (resourcesTag == null || cloudTag == null || !deployTag.isFromSameInstance(new AzureUtil.DeploymentTag(resourcesTag))) {
-                	continue; // not a VM we created so don't count it
+                    continue; // not a VM we created so don't count it
                 }
                 final String templateThisVmBelongsTo;
                 if (!cloudTag.equals(cloudName)) {
-                	continue; // not a VM from the cloud we're counting
+                    continue; // not a VM from the cloud we're counting
                 }
                 templateThisVmBelongsTo = (templateTag == null) ? "" : templateTag;
                 final Integer existingCountForThisTemplate = result.get(templateThisVmBelongsTo);
-                final Integer newCountForThisTemplate = Integer.valueOf(existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate.intValue() + 1));
+                final Integer newCountForThisTemplate = existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate + 1);
                 result.put(templateThisVmBelongsTo, newCountForThisTemplate);
             }
         } catch (ManagementException e) {

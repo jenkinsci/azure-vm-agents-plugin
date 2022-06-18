@@ -373,7 +373,7 @@ public class AzureVMCloud extends Cloud {
             int count = 0;
             if (approximateVirtualMachineCountsByTemplate != null) {
                 for (final Integer templateCount : approximateVirtualMachineCountsByTemplate.values()) {
-                    count += templateCount.intValue();
+                    count += templateCount;
                 }
             }
             return count;
@@ -384,7 +384,7 @@ public class AzureVMCloud extends Cloud {
      * Retrieves the current count of the number of virtual machines for a specific
      * template.
      *
-     * @param templateName The name of the template whose VMs are being counted.
+     * @param template the template VMs are being counted for.
      * @return The number of VMs of that template.
      */
     @Restricted(NoExternalUse.class)
@@ -394,7 +394,7 @@ public class AzureVMCloud extends Cloud {
             if (approximateVirtualMachineCountsByTemplate != null) {
                 final Integer templateCount = approximateVirtualMachineCountsByTemplate.get(templateName);
                 if (templateCount != null) {
-                    return templateCount.intValue();
+                    return templateCount;
                 }
             }
             return 0;
@@ -417,7 +417,7 @@ public class AzureVMCloud extends Cloud {
             final int newCount = currentCount + delta;
             if (approximateVirtualMachineCountsByTemplate == null) {
                 if (newCount != 0) {
-                    setCurrentVirtualMachineCount(Collections.singletonMap(templateName, Integer.valueOf(newCount)));
+                    setCurrentVirtualMachineCount(Collections.singletonMap(templateName, newCount));
                 }
             } else {
                 if (newCount == 0) {
@@ -426,7 +426,7 @@ public class AzureVMCloud extends Cloud {
                         approximateVirtualMachineCountsByTemplate = null;
                     }
                 } else {
-                    approximateVirtualMachineCountsByTemplate.put(templateName, Integer.valueOf(newCount));
+                    approximateVirtualMachineCountsByTemplate.put(templateName, newCount);
                 }
             }
         }
