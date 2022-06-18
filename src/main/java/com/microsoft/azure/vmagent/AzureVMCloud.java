@@ -34,6 +34,7 @@ import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.azure.vmagent.util.PoolLock;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.init.Initializer;
@@ -56,6 +57,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -71,6 +74,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
@@ -122,7 +126,8 @@ public class AzureVMCloud extends Cloud {
     private transient String configurationStatus;
 
     // Approximate virtual machine count.  Updated periodically.
-    private int approximateVirtualMachineCount;
+    @CheckForNull
+    private transient Map<String, Integer> approximateVirtualMachineCountsByTemplate;
 
     private transient AzureResourceManager azureClient;
 
@@ -358,74 +363,94 @@ public class AzureVMCloud extends Cloud {
     }
 
     /**
-     * Retrieves the current approximate virtual machine count.
+     * Retrieves the current approximate virtual machine count,
+     * counting only VMs we've made.
      *
      * @return The approximate count
      */
     public int getApproximateVirtualMachineCount() {
         synchronized (this) {
-            return approximateVirtualMachineCount;
+            int count = 0;
+            if (approximateVirtualMachineCountsByTemplate != null) {
+                for (final Integer templateCount : approximateVirtualMachineCountsByTemplate.values()) {
+                    count += templateCount;
+                }
+            }
+            return count;
         }
     }
 
     /**
-     * Given the number of VMs that are desired, returns the number of VMs that
-     * can be allocated and adjusts the number of VMs we believe exist.
-     * If the number desired is less than 0, this subtracts from the total number
-     * of virtual machines we currently have available.
+     * Retrieves the current count of the number of virtual machines for a specific
+     * template.
      *
-     * @param delta Number that are desired, or if less than 0, the number we are 'returning' to the pool
-     * @param templateLimit max agents for the template in use
-     * @return Number that can be allocated, up to the number desired.  0 if the number desired was < 0
+     * @param template the template VMs are being counted for.
+     * @return The number of VMs of that template.
      */
-    public int adjustVirtualMachineCount(int delta, int templateLimit) {
+    @Restricted(NoExternalUse.class)
+    int getApproximateVirtualMachineCountForTemplate(AzureVMAgentTemplate template) {
+        final String templateName = template.getTemplateName();
         synchronized (this) {
-            if (delta < 0) {
-                LOGGER.log(Level.FINE, "Current estimated VM count: {0}, reducing by {1}",
-                        new Object[]{approximateVirtualMachineCount, delta});
-                approximateVirtualMachineCount = Math.max(0, approximateVirtualMachineCount + delta);
-                return 0;
+            if (approximateVirtualMachineCountsByTemplate != null) {
+                final Integer templateCount = approximateVirtualMachineCountsByTemplate.get(templateName);
+                if (templateCount != null) {
+                    return templateCount;
+                }
+            }
+            return 0;
+        }
+    }
+
+    /**
+     * Adjusts our estimate of the current number of VMs we have for a specific
+     * template.
+     *
+     * @param delta    The change to make. Positive means we think we've got more
+     *                 VMs, negative means we think we've got fewer.
+     * @param template the template we're talking about.
+     */
+    @Restricted(NoExternalUse.class)
+    void adjustApproximateVirtualMachineCount(int delta, AzureVMAgentTemplate template) {
+        final String templateName = template.getTemplateName();
+        synchronized (this) {
+            final int currentCount = getApproximateVirtualMachineCountForTemplate(template);
+            final int newCount = currentCount + delta;
+            if (approximateVirtualMachineCountsByTemplate == null) {
+                if (newCount != 0) {
+                    setCurrentVirtualMachineCount(Collections.singletonMap(templateName, newCount));
+                }
             } else {
-                LOGGER.log(Level.FINE, "Current estimated VM count: {0}, quantity desired {1}",
-                        new Object[]{approximateVirtualMachineCount, delta});
-                int limit = determineLimit(templateLimit);
-                if (approximateVirtualMachineCount + delta <= limit) {
-                    // Enough available, return the desired quantity, and update the number we think we
-                    // have laying around.
-                    approximateVirtualMachineCount += delta;
-                    return delta;
+                if (newCount == 0) {
+                    approximateVirtualMachineCountsByTemplate.remove(templateName);
+                    if (approximateVirtualMachineCountsByTemplate.isEmpty()) {
+                        approximateVirtualMachineCountsByTemplate = null;
+                    }
                 } else {
-                    // Not enough available, return what we have. Remember we could
-                    // go negative (if for instance another Jenkins instance had
-                    // a higher limit.
-                    int quantityAvailable = Math.max(0, limit - approximateVirtualMachineCount);
-                    approximateVirtualMachineCount += quantityAvailable;
-                    return quantityAvailable;
+                    approximateVirtualMachineCountsByTemplate.put(templateName, newCount);
                 }
             }
         }
     }
 
-    private int determineLimit(int templateLimit) {
-        int cloudLimit = getMaxVirtualMachinesLimit();
-        if (templateLimit > cloudLimit) {
-            return cloudLimit;
-        }
-        if (templateLimit == 0) {
-            return cloudLimit;
-        }
-        return templateLimit;
-    }
-
     /**
-     * Sets the new approximate virtual machine count.
+     * Sets the new approximate virtual machine counts.
      * This is run by the verification task to update the VM count periodically.
      *
-     * @param newCount New approximate count
+     * @param countsIndexedByTemplateName New approximate counts
      */
-    public void setVirtualMachineCount(int newCount) {
+    @Restricted(NoExternalUse.class)
+    void setCurrentVirtualMachineCount(Map<String, Integer> countsIndexedByTemplateName) {
         synchronized (this) {
-            approximateVirtualMachineCount = newCount;
+            if (countsIndexedByTemplateName == null || countsIndexedByTemplateName.isEmpty()) {
+                approximateVirtualMachineCountsByTemplate = null;
+            } else {
+                if (approximateVirtualMachineCountsByTemplate == null) {
+                    approximateVirtualMachineCountsByTemplate = new TreeMap<>(countsIndexedByTemplateName);
+                } else {
+                    approximateVirtualMachineCountsByTemplate.clear();
+                    approximateVirtualMachineCountsByTemplate.putAll(countsIndexedByTemplateName);
+                }
+            }
         }
     }
 
@@ -675,26 +700,22 @@ public class AzureVMCloud extends Cloud {
         if (numberOfAgents > 0) {
             if (template.getMaximumDeploymentSize() > 0 && numberOfAgents > template.getMaximumDeploymentSize()) {
                 LOGGER.log(Level.FINE,
-                    "Setting size of deployment from {0} to {1} nodes, according to template's maximum deployment size",
-                    new Object[]{numberOfAgents, template.getMaximumDeploymentSize()});
+                        "Reduced template {0} deployment from {1} to {2} nodes, due to its maximumDeploymentSize",
+                        new Object[] {template.getTemplateName(), numberOfAgents,
+                                template.getMaximumDeploymentSize() });
                 numberOfAgents = template.getMaximumDeploymentSize();
             }
 
             try {
                 // Determine how many agents we can actually provision from here and
                 // adjust our count (before deployment to avoid races)
-                int adjustedNumberOfAgents = adjustVirtualMachineCount(numberOfAgents,
-                        template.getMaxVirtualMachinesLimit());
+                final int adjustedNumberOfAgents;
+                synchronized (this) {
+                    adjustedNumberOfAgents = calculateNumberOfAgentsToRequest(template, numberOfAgents);
+                    adjustApproximateVirtualMachineCount(adjustedNumberOfAgents, template);
+                }
                 if (adjustedNumberOfAgents == 0) {
-                    LOGGER.log(Level.INFO,
-                            "Not able to create {0} nodes, at or above maximum VM count of {1} and already {2} VM(s)",
-                            new Object[]{numberOfAgents, determineLimit(template.getMaxVirtualMachinesLimit()),
-                                getApproximateVirtualMachineCount()});
                     return plannedNodes;
-                } else if (adjustedNumberOfAgents < numberOfAgents) {
-                    LOGGER.log(Level.INFO,
-                            "Able to create new nodes, but can only create {0} (desired {1})",
-                            new Object[]{adjustedNumberOfAgents, numberOfAgents});
                 }
                 doProvision(adjustedNumberOfAgents, plannedNodes, template);
                 // wait for deployment completion and then check for created nodes
@@ -708,6 +729,49 @@ public class AzureVMCloud extends Cloud {
 
         LOGGER.log(Level.INFO, "{0} planned node(s)", plannedNodes.size());
         return plannedNodes;
+    }
+
+    /**
+     * Works out how many VMs our limits allow us to request.
+     *
+     * @param template              The template in question
+     * @param desiredNumberOfAgents The number of VMs we'd like to have if there
+     *                              were no limits.
+     * @return The number we can request before exceeding our cloud and template
+     *         limits.
+     */
+    @Restricted(NoExternalUse.class) // Package access for tests only
+    int calculateNumberOfAgentsToRequest(final AzureVMAgentTemplate template, int desiredNumberOfAgents) {
+        final int currentVMsForTemplate = Math.max(0, getApproximateVirtualMachineCountForTemplate(template));
+        final int maxVMsForTemplate = template.getMaxVirtualMachinesLimit() > 0
+                ? template.getMaxVirtualMachinesLimit()
+                : Integer.MAX_VALUE;
+        final int currentVMsForCloud = Math.max(0, getApproximateVirtualMachineCount());
+        final int maxVMsForCloud = getMaxVirtualMachinesLimit() > 0 ? getMaxVirtualMachinesLimit()
+                : Integer.MAX_VALUE;
+        final int maxBeforeTemplateLimit = Math.max(0, maxVMsForTemplate - currentVMsForTemplate);
+        final int maxBeforeCloudLimit = Math.max(0, maxVMsForCloud - currentVMsForCloud);
+        final int adjustedNumberOfAgents = Math.min(Math.min(maxBeforeTemplateLimit, maxBeforeCloudLimit),
+                desiredNumberOfAgents);
+        final String templateMsg = desiredNumberOfAgents > maxBeforeTemplateLimit
+                ? ", have template limit of {3} but have {4} VMs already so we can have {5} more"
+                : ", currently have {4} VMs of this template";
+        final String cloudMsg = desiredNumberOfAgents > maxBeforeCloudLimit
+                ? ", have cloud limit of {6} but have {7} VMs already so we can only have {8} more"
+                : ", currently have {7} VMs in cloud";
+        final Object[] logParams = new Object[] {template.getTemplateName(), desiredNumberOfAgents,
+                adjustedNumberOfAgents, maxVMsForTemplate, currentVMsForTemplate, maxBeforeTemplateLimit,
+                maxVMsForCloud, currentVMsForCloud, maxBeforeCloudLimit };
+        if (adjustedNumberOfAgents == 0) {
+            LOGGER.log(Level.INFO, "Wanted to create {1} nodes from template {0} but cannot create any"
+                    + templateMsg + cloudMsg, logParams);
+        } else if (adjustedNumberOfAgents < desiredNumberOfAgents) {
+            LOGGER.log(Level.INFO, "Wanted to create {1} nodes from template {0} but can only create {2}"
+                    + templateMsg + cloudMsg, logParams);
+        } else {
+            LOGGER.log(Level.INFO, "Creating {1} nodes from template {0}" + templateMsg + cloudMsg, logParams);
+        }
+        return adjustedNumberOfAgents;
     }
 
     public void doProvision(final int numberOfNewAgents,
@@ -858,8 +922,8 @@ public class AzureVMCloud extends Cloud {
                                     // Do not throw to avoid it being recorded
                                 }
                             }
-                            template.retrieveAzureCloudReference().adjustVirtualMachineCount(-1,
-                                    template.getMaxVirtualMachinesLimit());
+                            template.retrieveAzureCloudReference().adjustApproximateVirtualMachineCount(-1,
+                                    template);
                             // Update the template status given this new issue.
                             template.handleTemplateProvisioningFailure(e.getMessage(), stage);
                         }

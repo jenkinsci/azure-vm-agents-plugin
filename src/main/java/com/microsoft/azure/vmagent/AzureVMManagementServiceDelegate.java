@@ -67,6 +67,8 @@ import jenkins.slaves.JnlpAgentReceiver;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1692,36 +1694,54 @@ public final class AzureVMManagementServiceDelegate {
      * @return Total VM count
      */
     public int getVirtualMachineCount(String cloudName, String resourceGroupName) {
+        final Map<String, Integer> countsByTemplate = getVirtualMachineCountsByTemplate(cloudName, resourceGroupName);
+        int count = 0;
+        for (Integer countForTemplate : countsByTemplate.values() ) {
+            count += countForTemplate;
+        }
+        return count;
+    }
+
+    /**
+     * Retrieves count of virtual machine in a azure subscription indexed by template name.
+     *
+     * @return {@link Map} of {@link String} template name to {@link Integer} count of VMs from that template.
+     * @throws ManagementException if we get an Azure error that isn't 404.
+     */
+    @Restricted(NoExternalUse.class)
+    Map<String, Integer> getVirtualMachineCountsByTemplate(final String cloudName, final String resourceGroupName) {
+        final Map<String, Integer> result = new TreeMap<>();
         try {
             final PagedIterable<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
-            int count = 0;
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
-            for (VirtualMachine vm : vms) {
+            for (final VirtualMachine vm : vms) {
                 final Map<String, String> tags = vm.tags();
-                if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME)
-                    && deployTag.isFromSameInstance(
-                    new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
-                    if (tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME)) {
-                        if (tags.get(Constants.AZURE_CLOUD_TAG_NAME).equals(cloudName)) {
-                            count++;
-                        }
-                    } else {
-                        // keep backwards compatibility, omitting the resource created before updates
-                        // until all the resources has cloud tag
-                        count++;
-                    }
+                final String resourcesTag = tags.getOrDefault(Constants.AZURE_RESOURCES_TAG_NAME, null);
+                final String cloudTag = tags.getOrDefault(Constants.AZURE_CLOUD_TAG_NAME, null);
+                final String templateTag = tags.getOrDefault(Constants.AZURE_TEMPLATE_TAG_NAME, null);
+                if (resourcesTag == null || cloudTag == null || !deployTag.isFromSameInstance(new AzureUtil.DeploymentTag(resourcesTag))) {
+                    continue; // not a VM we created so don't count it
                 }
+                final String templateThisVmBelongsTo;
+                if (!cloudTag.equals(cloudName)) {
+                    continue; // not a VM from the cloud we're counting
+                }
+                templateThisVmBelongsTo = (templateTag == null) ? "" : templateTag;
+                final Integer existingCountForThisTemplate = result.get(templateThisVmBelongsTo);
+                final Integer newCountForThisTemplate = existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate + 1);
+                result.put(templateThisVmBelongsTo, newCountForThisTemplate);
             }
-            return count;
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() != 404) {
                 throw e;
             }
-            return 0;
+            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines from cloud '" + cloudName + "' resourceGroup '" + resourceGroupName + "'.", e);
+            return Collections.emptyMap();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines", e);
-            return 0;
+            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines from cloud '" + cloudName + "' resourceGroup '" + resourceGroupName + "'.", e);
+            return Collections.emptyMap();
         }
+        return result;
     }
 
     /**

@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.microsoft.azure.vmagent.test;
+package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementException;
 import com.azure.resourcemanager.resources.models.GenericResource;
-import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
-import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask.DeploymentRegistrar;
-import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.TaskListener;
@@ -48,7 +44,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
     public void cleanDeploymentsTest() throws Exception {
         final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
         final String cloudName = "fake_cloud_name";
-        final DeploymentRegistrar deploymentRegistrar = DeploymentRegistrar.getInstance();
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance();
 
         deploymentRegistrar.registerDeployment(cloudName, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
         AzureVMAgentCleanUpTask cleanUpMock = spy(AzureVMAgentCleanUpTask.class);
@@ -86,11 +82,11 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         AzureVMAgentCleanUpTask cleanUpTask = spy(AzureVMAgentCleanUpTask.class);
         when(cleanUpTask.getValidVMs()).thenReturn(emptyValidVMsList);
 
-        final DeploymentRegistrar deploymentRegistrarMock_nonMatching1 = mock(DeploymentRegistrar.class);
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrarMock_nonMatching1 = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrarMock_nonMatching1.getDeploymentTag()).thenReturn(nonMatchingTagValue1);
-        final DeploymentRegistrar deploymentRegistrarMock_nonMatching2 = mock(DeploymentRegistrar.class);
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrarMock_nonMatching2 = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrarMock_nonMatching2.getDeploymentTag()).thenReturn(nonMatchingTagValue2);
-        final DeploymentRegistrar deploymentRegistrarMock_matching = mock(DeploymentRegistrar.class);
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrarMock_matching = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrarMock_matching.getDeploymentTag()).thenReturn(matchingTagValue);
 
         createAzureVM(vmName, tagName, tagValue.get());
@@ -118,9 +114,9 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         when(cloud.getAzureClient()).thenReturn(azureClient);
         when(cloud.getServiceDelegate()).thenReturn(delegate);
 
-        final DeploymentRegistrar deploymentRegistrarMock = mock(DeploymentRegistrar.class);
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrarMock = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrarMock.getDeploymentTag()).thenReturn(tagValue);
-        final DeploymentRegistrar deploymentRegistrarMock_matching = mock(DeploymentRegistrar.class);
+        final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrarMock_matching = mock(AzureVMAgentCleanUpTask.DeploymentRegistrar.class);
         when(deploymentRegistrarMock_matching.getDeploymentTag()).thenReturn(matchingTagValue);
 
         final AzureVMDeploymentInfo deployment = createDefaultDeployment(2, deploymentRegistrarMock);

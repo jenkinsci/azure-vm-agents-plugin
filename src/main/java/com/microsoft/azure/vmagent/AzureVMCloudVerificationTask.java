@@ -24,6 +24,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -132,7 +133,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                         "AzureVMCloudVerificationTask: verify: cloud {0} already verified pass",
                         cloudName);
                 // Update the count.
-                cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                updateCloudVirtualMachineCounts(cloud);
                 return;
             }
 
@@ -141,7 +142,7 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
                 LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: validate: {0} "
                         + "verified pass", cloudName);
                 // Update the count
-                cloud.setVirtualMachineCount(getVirtualMachineCount(cloud));
+                updateCloudVirtualMachineCounts(cloud);
                 // We grab the current VM count and
                 cloud.setConfigurationStatus(Constants.VERIFIED_PASS);
                 return;
@@ -181,28 +182,35 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
     }
 
     /**
-     * Retrieve the current VM count.
+     * Retrieves the current VM count for the cloud and caches the result in the
+     * cloud instance.
      *
-     * @param cloud The Azure VM Cloud
-     * @return The current VM count
+     * @param cloud The cloud to update.
+     * @return true if we were successful, false if we failed (the reason will be in
+     *         the log).
      */
-    public static int getVirtualMachineCount(AzureVMCloud cloud) {
-        LOGGER.log(getStaticNormalLoggingLevel(), "AzureVMCloudVerificationTask: getVirtualMachineCount: start");
-        try {
-            int vmCount = cloud.getServiceDelegate().getVirtualMachineCount(cloud.getCloudName(),
-                    cloud.getResourceGroupName());
+    private static boolean updateCloudVirtualMachineCounts(AzureVMCloud cloud) {
+        synchronized (cloud) {
             LOGGER.log(getStaticNormalLoggingLevel(),
-                    "AzureVMCloudVerificationTask: getVirtualMachineCount: end, cloud {0} has currently {1} vms",
-                    new Object[]{cloud.getCloudName(), vmCount});
-            return vmCount;
-        } catch (Exception e) {
-            LOGGER.log(getStaticNormalLoggingLevel(),
-                    "AzureVMCloudVerificationTask: getVirtualMachineCount: failed to retrieve vm count:\n{0}",
-                    e.toString());
-            // We could have failed for any number of reasons.  Just return the current
-            // number of virtual machines.
-            return cloud.getApproximateVirtualMachineCount();
+                    "AzureVMCloudVerificationTask: updateCloudVirtualMachineCounts({0},{1}): start",
+                    new Object[]{cloud.getCloudName(), cloud.getResourceGroupName()});
+            try {
+                final AzureVMManagementServiceDelegate sd = cloud.getServiceDelegate();
+                final Map<String, Integer> counts = sd.getVirtualMachineCountsByTemplate(cloud.getCloudName(),
+                        cloud.getResourceGroupName());
+                cloud.setCurrentVirtualMachineCount(counts);
+                LOGGER.log(getStaticNormalLoggingLevel(),
+                        "AzureVMCloudVerificationTask: updateCloudVirtualMachineCounts({0},{1}): end",
+                        new Object[]{cloud.getCloudName(), cloud.getResourceGroupName()});
+                return true;
+            } catch (Exception e) {
+                LOGGER.log(getStaticNormalLoggingLevel(),
+                        "AzureVMCloudVerificationTask: updateCloudVirtualMachineCounts({0},{1}): failed\n{2}",
+                        new Object[]{cloud.getCloudName(), cloud.getResourceGroupName(), e});
+                return false;
+            }
         }
+
     }
 
 
@@ -212,12 +220,13 @@ public final class AzureVMCloudVerificationTask extends AsyncPeriodicWork {
 
     @Override
     public void execute(TaskListener arg0) {
-        for (Cloud cloud : Jenkins.get().clouds) {
-            if (cloud instanceof AzureVMCloud) {
-                AzureVMCloud azureVMCloud = (AzureVMCloud) cloud;
-                synchronized (azureVMCloud) {
-                    azureVMCloud.setVirtualMachineCount(getVirtualMachineCount(azureVMCloud));
-                }
+        for (final Cloud anyTypeOfCloud : Jenkins.get().clouds) {
+            if (!(anyTypeOfCloud instanceof AzureVMCloud)) {
+                continue; // not one of ours; ignore.
+            }
+            final AzureVMCloud cloud = (AzureVMCloud) anyTypeOfCloud;
+            synchronized (cloud) {
+                updateCloudVirtualMachineCounts(cloud);
             }
         }
     }

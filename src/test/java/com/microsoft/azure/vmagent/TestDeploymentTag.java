@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.microsoft.azure.vmagent.test;
+package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import org.junit.Assert;

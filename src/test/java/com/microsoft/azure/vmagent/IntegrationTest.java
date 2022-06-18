@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-package com.microsoft.azure.vmagent.test;
+package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementException;
@@ -39,13 +39,6 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.microsoft.azure.util.AzureCredentials;
-import com.microsoft.azure.vmagent.AvailabilityType;
-import com.microsoft.azure.vmagent.AzureTagPair;
-import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
-import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
-import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.util.Secret;
@@ -326,11 +319,28 @@ public class IntegrationTest {
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(templateName, numberOfAgents, true, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
             int numberOfAgents,
             boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws AzureCloudException, IOException, Exception {
         return createDefaultDeployment(numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            boolean usePrivateIP,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws AzureCloudException, IOException, Exception {
+        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
@@ -351,6 +361,19 @@ public class IntegrationTest {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
+        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, enableMSI, enableUAMI, ephemeralOSDisk, nsgName, deploymentRegistrar);
+    }
+
+    protected AzureVMDeploymentInfo createDefaultDeployment(
+            String templateName,
+            int numberOfAgents,
+            boolean usePrivateIP,
+            boolean enableMSI,
+            boolean enableUAMI,
+            boolean ephemeralOSDisk,
+            String nsgName,
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
+    ) throws Exception {
         final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
         final String terminateScript = "echo \"" + UUID.randomUUID().toString() + "\"";

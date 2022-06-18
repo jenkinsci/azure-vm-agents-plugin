@@ -661,7 +661,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         // Adjust estimated virtual machine count.
         AzureVMCloud parentCloud = getCloud();
         if (parentCloud != null) {
-            parentCloud.adjustVirtualMachineCount(-1, template.getMaxVirtualMachinesLimit());
+            parentCloud.adjustApproximateVirtualMachineCount(-1, template);
         }
 
         Jenkins.get().removeNode(this);
