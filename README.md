@@ -129,8 +129,6 @@ This plugin can be fully configured by the [Jenkins Configuration as Code plugin
 
 Configure the plugin using the UI initially and then export the configuration and tweak to your needs
 
-Note: Until credentials support is merged into the credentials plugin you will need to also install the `configuration-as-code-support` plugin
-
 ## Configure VM Template using Groovy Script
 
 It is recommended that you use the `configuration-as-code` plugin for automating the plugin configuration. If you can't do that for some reason then you can use groovy script
