@@ -1767,7 +1767,7 @@ public final class AzureVMManagementServiceDelegate {
     public static void terminateVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
         if (delegate != null) {
-            delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
+            delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), agent.getTemplate().getUsePrivateIP(), new ExecutionEngine());
         }
     }
 
@@ -1779,8 +1779,9 @@ public final class AzureVMManagementServiceDelegate {
      */
     public void terminateVirtualMachine(
             String vmName,
-            String resourceGroupName) throws AzureCloudException {
-        terminateVirtualMachine(vmName, resourceGroupName, new ExecutionEngine());
+            String resourceGroupName,
+            boolean usePrivateIP) throws AzureCloudException {
+        terminateVirtualMachine(vmName, resourceGroupName, usePrivateIP, new ExecutionEngine());
     }
 
     /**
@@ -1792,6 +1793,7 @@ public final class AzureVMManagementServiceDelegate {
     public void terminateVirtualMachine(
             final String vmName,
             final String resourceGroupName,
+            final boolean usePrivateIP,
             ExecutionEngine executionEngine) throws AzureCloudException {
         try {
             if (virtualMachineExists(vmName, resourceGroupName)) {
@@ -1835,7 +1837,7 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
             executionEngine.executeAsync((Callable<Void>) () -> {
-                removeIPName(resourceGroupName, vmName);
+                removeIPName(resourceGroupName, vmName, usePrivateIP);
                 return null;
             }, new NoRetryStrategy());
         }
@@ -1883,7 +1885,8 @@ public final class AzureVMManagementServiceDelegate {
      *
      */
     public void removeIPName(String resourceGroupName,
-                             String vmName) {
+                             String vmName,
+                             boolean usePrivateIP) {
         final String nic = vmName + "NIC";
         try {
             LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
@@ -1894,8 +1897,11 @@ public final class AzureVMManagementServiceDelegate {
 
         final String ip = vmName + "IPName";
         try {
-            LOGGER.log(Level.INFO, "Remove IP {0}", ip);
-            azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
+            // Does not attempt to remove public IP if private IP is used because public IP does not exist
+            if (!usePrivateIP) {
+                LOGGER.log(Level.INFO, "Remove IP {0}", ip);
+                azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
+            }
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Exception while deleting IPName", e);
         }
