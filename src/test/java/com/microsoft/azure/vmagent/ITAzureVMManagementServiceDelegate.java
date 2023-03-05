@@ -719,7 +719,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             VirtualMachine vm = createAzureVM(vmName);
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
 
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
@@ -738,7 +738,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
             //VM is missing so terminateVirtualMachine should be a no-op and no exception should be thrown
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
         } catch (Exception e) {
@@ -753,7 +753,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String nodeName = deploymentInfo.getVmBaseName() + "0";
 
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
+            delegate.removeIPName(testEnv.azureResourceGroup, nodeName, false);
             //should fail because the VM is still using them
             Assert.assertNotNull(
                     azureClient
@@ -768,7 +768,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
 
             // destroy the vm first
             azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
+            delegate.removeIPName(testEnv.azureResourceGroup, nodeName, false);
             ManagementException managementException = assertThrows(ManagementException.class, () ->
                     azureClient
                             .publicIpAddresses()

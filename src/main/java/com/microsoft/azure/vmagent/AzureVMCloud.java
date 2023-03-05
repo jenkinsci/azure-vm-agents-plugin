@@ -913,7 +913,8 @@ public class AzureVMCloud extends Cloud {
                                 try {
                                     getServiceDelegate().terminateVirtualMachine(
                                             vmName,
-                                            template.getResourceGroupName());
+                                            template.getResourceGroupName(),
+                                            template.getUsePrivateIP());
                                 } catch (AzureCloudException terminateEx) {
                                     LOGGER.log(
                                             Level.SEVERE,
