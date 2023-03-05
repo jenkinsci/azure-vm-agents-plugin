@@ -1073,12 +1073,12 @@ public class AzureVMCloud extends Cloud {
                 return;
             }
             LogRecorderManager manager = h.getLog();
-            Map<String, LogRecorder> logRecorders = manager.logRecorders;
-            if (!logRecorders.containsKey(LOG_RECORDER_NAME)) {
-                LogRecorder recorder = new LogRecorder(LOG_RECORDER_NAME);
+            LogRecorder recorder = new LogRecorder(LOG_RECORDER_NAME);
+            List<LogRecorder> logRecorders = manager.getRecorders();
+            if (!logRecorders.contains(recorder)) {
                 String packageName = AzureVMAgent.class.getPackage().getName();
-                recorder.targets.add(new LogRecorder.Target(packageName, Level.WARNING));
-                logRecorders.put(LOG_RECORDER_NAME, recorder);
+                recorder.getLoggers().add(new LogRecorder.Target(packageName, Level.WARNING));
+                logRecorders.add(recorder);
                 recorder.save();
             }
         }
