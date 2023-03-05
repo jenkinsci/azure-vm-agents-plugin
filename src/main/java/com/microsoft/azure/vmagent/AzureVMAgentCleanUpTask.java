@@ -223,15 +223,9 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //    being accepted by Azure.
                 // To avoid this, we implement a retry.  If we hit an exception, we will decrement the number
                 // of retries.  If we hit 0, we remove the deployment from our list.
-                Deployment deployment;
-                try {
-                    deployment = azureClient.deployments().
-                            getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
-                } catch (NullPointerException e) {
-                    LOGGER.log(getNormalLoggingLevel(), "Deployment " + info.getDeploymentName()
-                           + " not found, skipping");
-                    continue;
-                }
+                Deployment deployment = azureClient.deployments().
+                        getByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
+
                 if (deployment == null) {
                     LOGGER.log(getNormalLoggingLevel(), "Deployment " + info.getDeploymentName()
                            + " not found, skipping");
