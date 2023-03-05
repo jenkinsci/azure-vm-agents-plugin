@@ -221,7 +221,22 @@ public class AzureVMCloud extends Cloud {
         return this;
     }
 
-    @Override
+//    @Override
+    public String getIcon() {
+        return "symbol-azure plugin-azure-vm-agents";
+    }
+
+//    @Override
+    public String getIconClassName() {
+        return getIcon();
+    }
+
+//    @Override
+    public String getIconAltText() {
+        return "Azure";
+    }
+
+        @Override
     public boolean canProvision(CloudState cloudState) {
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(cloudState.getLabel());
         // return false if there is no template for this label.
