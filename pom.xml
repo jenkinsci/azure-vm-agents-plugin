@@ -47,7 +47,7 @@
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <jenkins.version>2.361.4</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>198.vf9c2fdfde55c</azure-credentials.version>
+        <azure-credentials.version>254.v64da_8176c83a</azure-credentials.version>
     </properties>
 
     <dependencyManagement>
