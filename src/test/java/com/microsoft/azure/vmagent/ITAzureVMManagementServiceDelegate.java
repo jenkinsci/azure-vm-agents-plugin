@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-package com.microsoft.azure.vmagent.test;
+package com.microsoft.azure.vmagent;
 
 import com.azure.core.management.exception.ManagementException;
 import com.azure.resourcemanager.compute.models.AvailabilitySet;
@@ -27,14 +27,6 @@ import com.azure.resourcemanager.network.models.PublicIpAddress;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
-import com.microsoft.azure.vmagent.AvailabilityType;
-import com.microsoft.azure.vmagent.AzureVMAgent;
-import com.microsoft.azure.vmagent.AzureVMAgentCleanUpTask;
-import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.AzureVMDeploymentInfo;
-import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
-import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.RetryStrategy;
 import com.microsoft.azure.vmagent.util.AzureUtil;
@@ -47,7 +39,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -678,20 +672,44 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void getVirtualMachineCountTest() {
-        try {
-            Random rand = new Random();
-            final int numberOfAgents = rand.nextInt(4) + 1;
-            final String vmName = "vmnotcounted";
-            createDefaultDeployment(numberOfAgents, null);
-            createAzureVM(vmName);
+    public void getVirtualMachineCountTest() throws Exception {
+        // Given
+        Random rand = new Random();
+        final int numberOfAgents = rand.nextInt(4) + 1;
+        final String vmName = "vmnotcounted";
+        createDefaultDeployment(numberOfAgents, null);
+        createAzureVM(vmName);
+        final int expectedVMCountForRG = numberOfAgents;
+        final int expectedVMCountForMissingRG = 0;
 
-            Assert.assertEquals(numberOfAgents, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup));
-            Assert.assertEquals(0, delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing"));
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
-        }
+        // When
+        final int actualVMCountForRG = delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup);
+        final int actualVMCountForMissingRG = delegate.getVirtualMachineCount("testCloud", testEnv.azureResourceGroup + "-missing");
+
+        // Then
+        Assert.assertEquals(expectedVMCountForRG, actualVMCountForRG);
+        Assert.assertEquals(expectedVMCountForMissingRG, actualVMCountForMissingRG);
+    }
+
+    @Test
+    public void getVirtualMachineCountsByTemplateTest() throws Exception {
+        // Given
+        Random rand = new Random();
+        final String templateName = "myTemplate";
+        final int numberOfAgents = rand.nextInt(4) + 1;
+        final String vmName = "vmnotcounted";
+        createDefaultDeployment(templateName, numberOfAgents, null);
+        createAzureVM(vmName);
+        final Map<String, Integer> expectedVMCountForRG = Collections.singletonMap(templateName, Integer.valueOf(numberOfAgents));
+        final Map<String, Integer> expectedVMCountForMissingRG = Collections.emptyMap();
+
+        // When
+        final Map<String, Integer> actualVMCountForRG = delegate.getVirtualMachineCountsByTemplate("testCloud", testEnv.azureResourceGroup);
+        final Map<String, Integer> actualVMCountForMissingRG = delegate.getVirtualMachineCountsByTemplate("testCloud", testEnv.azureResourceGroup + "-missing");
+
+        // Then
+        Assert.assertEquals(expectedVMCountForRG, actualVMCountForRG);
+        Assert.assertEquals(expectedVMCountForMissingRG, actualVMCountForMissingRG);
     }
 
     @Test
@@ -701,7 +719,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             VirtualMachine vm = createAzureVM(vmName);
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
 
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
@@ -720,50 +738,9 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
             //VM is missing so terminateVirtualMachine should be a no-op and no exception should be thrown
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void removeIPNameTest() {
-        try {
-            final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
-            final String nodeName = deploymentInfo.getVmBaseName() + "0";
-
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
-            //should fail because the VM is still using them
-            Assert.assertNotNull(
-                    azureClient
-                            .publicIpAddresses()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
-            );
-            Assert.assertNotNull(
-                    azureClient
-                            .networkInterfaces()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
-            );
-
-            // destroy the vm first
-            azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName);
-            ManagementException managementException = assertThrows(ManagementException.class, () ->
-                    azureClient
-                            .publicIpAddresses()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
-            );
-
-            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
-            managementException = assertThrows(ManagementException.class, () ->
-                    azureClient
-                            .networkInterfaces()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
-            );
-            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             Assert.fail(e.getMessage());

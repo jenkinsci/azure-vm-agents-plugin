@@ -68,6 +68,8 @@ import jenkins.slaves.JnlpAgentReceiver;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -801,7 +803,9 @@ public final class AzureVMManagementServiceDelegate {
                     publicIPIdNode.put("id", "[resourceId('Microsoft.Network/publicIPAddresses', concat("
                             + ipName
                             + "))]");
-                    // propertiesNode.putObject("publicIPAddress").put
+                    ObjectNode ipAddressPropertiesNode = MAPPER.createObjectNode();
+                    ipAddressPropertiesNode.put("deleteOption", "Delete");
+                    publicIPIdNode.set("properties", ipAddressPropertiesNode);
                     propertiesNode.set("publicIPAddress", publicIPIdNode);
                     break;
                 }
@@ -1694,36 +1698,54 @@ public final class AzureVMManagementServiceDelegate {
      * @return Total VM count
      */
     public int getVirtualMachineCount(String cloudName, String resourceGroupName) {
+        final Map<String, Integer> countsByTemplate = getVirtualMachineCountsByTemplate(cloudName, resourceGroupName);
+        int count = 0;
+        for (Integer countForTemplate : countsByTemplate.values() ) {
+            count += countForTemplate;
+        }
+        return count;
+    }
+
+    /**
+     * Retrieves count of virtual machine in a azure subscription indexed by template name.
+     *
+     * @return {@link Map} of {@link String} template name to {@link Integer} count of VMs from that template.
+     * @throws ManagementException if we get an Azure error that isn't 404.
+     */
+    @Restricted(NoExternalUse.class)
+    Map<String, Integer> getVirtualMachineCountsByTemplate(final String cloudName, final String resourceGroupName) {
+        final Map<String, Integer> result = new TreeMap<>();
         try {
             final PagedIterable<VirtualMachine> vms = azureClient.virtualMachines().listByResourceGroup(resourceGroupName);
-            int count = 0;
             final AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
-            for (VirtualMachine vm : vms) {
+            for (final VirtualMachine vm : vms) {
                 final Map<String, String> tags = vm.tags();
-                if (tags.containsKey(Constants.AZURE_RESOURCES_TAG_NAME)
-                    && deployTag.isFromSameInstance(
-                    new AzureUtil.DeploymentTag(tags.get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
-                    if (tags.containsKey(Constants.AZURE_CLOUD_TAG_NAME)) {
-                        if (tags.get(Constants.AZURE_CLOUD_TAG_NAME).equals(cloudName)) {
-                            count++;
-                        }
-                    } else {
-                        // keep backwards compatibility, omitting the resource created before updates
-                        // until all the resources has cloud tag
-                        count++;
-                    }
+                final String resourcesTag = tags.getOrDefault(Constants.AZURE_RESOURCES_TAG_NAME, null);
+                final String cloudTag = tags.getOrDefault(Constants.AZURE_CLOUD_TAG_NAME, null);
+                final String templateTag = tags.getOrDefault(Constants.AZURE_TEMPLATE_TAG_NAME, null);
+                if (resourcesTag == null || cloudTag == null || !deployTag.isFromSameInstance(new AzureUtil.DeploymentTag(resourcesTag))) {
+                    continue; // not a VM we created so don't count it
                 }
+                final String templateThisVmBelongsTo;
+                if (!cloudTag.equals(cloudName)) {
+                    continue; // not a VM from the cloud we're counting
+                }
+                templateThisVmBelongsTo = (templateTag == null) ? "" : templateTag;
+                final Integer existingCountForThisTemplate = result.get(templateThisVmBelongsTo);
+                final Integer newCountForThisTemplate = existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate + 1);
+                result.put(templateThisVmBelongsTo, newCountForThisTemplate);
             }
-            return count;
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() != 404) {
                 throw e;
             }
-            return 0;
+            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines from cloud '" + cloudName + "' resourceGroup '" + resourceGroupName + "'.", e);
+            return Collections.emptyMap();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines", e);
-            return 0;
+            LOGGER.log(Level.SEVERE, "Failed to retrieve count of virtual machines from cloud '" + cloudName + "' resourceGroup '" + resourceGroupName + "'.", e);
+            return Collections.emptyMap();
         }
+        return result;
     }
 
     /**
@@ -1749,7 +1771,7 @@ public final class AzureVMManagementServiceDelegate {
     public static void terminateVirtualMachine(AzureVMAgent agent) throws AzureCloudException {
         AzureVMManagementServiceDelegate delegate = agent.getServiceDelegate();
         if (delegate != null) {
-            delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), new ExecutionEngine());
+            delegate.terminateVirtualMachine(agent.getNodeName(), agent.getResourceGroupName(), agent.getTemplate().getUsePrivateIP(), new ExecutionEngine());
         }
     }
 
@@ -1761,8 +1783,9 @@ public final class AzureVMManagementServiceDelegate {
      */
     public void terminateVirtualMachine(
             String vmName,
-            String resourceGroupName) throws AzureCloudException {
-        terminateVirtualMachine(vmName, resourceGroupName, new ExecutionEngine());
+            String resourceGroupName,
+            boolean usePrivateIP) throws AzureCloudException {
+        terminateVirtualMachine(vmName, resourceGroupName, usePrivateIP, new ExecutionEngine());
     }
 
     /**
@@ -1774,6 +1797,7 @@ public final class AzureVMManagementServiceDelegate {
     public void terminateVirtualMachine(
             final String vmName,
             final String resourceGroupName,
+            final boolean usePrivateIP,
             ExecutionEngine executionEngine) throws AzureCloudException {
         try {
             if (virtualMachineExists(vmName, resourceGroupName)) {
@@ -1814,14 +1838,7 @@ public final class AzureVMManagementServiceDelegate {
             if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
                 throw AzureCloudException.create(e);
             }
-        } finally {
-            LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
-            executionEngine.executeAsync((Callable<Void>) () -> {
-                removeIPName(resourceGroupName, vmName);
-                return null;
-            }, new NoRetryStrategy());
         }
-
     }
 
     public void removeImage(AzureResourceManager azureClient, String vmName, String resourceGroupName) {
@@ -1857,29 +1874,6 @@ public final class AzureVMManagementServiceDelegate {
             // the container is empty and we should delete it
             LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
             container.delete();
-        }
-    }
-
-    /**
-     * Remove the IP name.
-     *
-     */
-    public void removeIPName(String resourceGroupName,
-                             String vmName) {
-        final String nic = vmName + "NIC";
-        try {
-            LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
-            azureClient.networkInterfaces().deleteByResourceGroup(resourceGroupName, nic);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while deleting NIC", e);
-        }
-
-        final String ip = vmName + "IPName";
-        try {
-            LOGGER.log(Level.INFO, "Remove IP {0}", ip);
-            azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while deleting IPName", e);
         }
     }
 

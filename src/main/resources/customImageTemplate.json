@@ -19,7 +19,7 @@
     },
     "resources": [
         {
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2022-07-01",
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[concat(variables('vmName'), copyIndex(), 'NIC')]",
             "location": "[variables('location')]",
