@@ -802,7 +802,9 @@ public final class AzureVMManagementServiceDelegate {
                     publicIPIdNode.put("id", "[resourceId('Microsoft.Network/publicIPAddresses', concat("
                             + ipName
                             + "))]");
-                    // propertiesNode.putObject("publicIPAddress").put
+                    ObjectNode ipAddressPropertiesNode = MAPPER.createObjectNode();
+                    ipAddressPropertiesNode.put("deleteOption", "Delete");
+                    publicIPIdNode.set("properties", ipAddressPropertiesNode);
                     propertiesNode.set("publicIPAddress", publicIPIdNode);
                     break;
                 }
@@ -1834,14 +1836,7 @@ public final class AzureVMManagementServiceDelegate {
             if (!Constants.ERROR_CODE_RESOURCE_NF.equalsIgnoreCase(e.getMessage())) {
                 throw AzureCloudException.create(e);
             }
-        } finally {
-            LOGGER.log(Level.INFO, "Clean operation starting for {0} NIC and IP", vmName);
-            executionEngine.executeAsync((Callable<Void>) () -> {
-                removeIPName(resourceGroupName, vmName, usePrivateIP);
-                return null;
-            }, new NoRetryStrategy());
         }
-
     }
 
     public void removeImage(AzureResourceManager azureClient, String vmName, String resourceGroupName) {
@@ -1877,33 +1872,6 @@ public final class AzureVMManagementServiceDelegate {
             // the container is empty and we should delete it
             LOGGER.log(Level.INFO, "removeStorageBlob: Removing empty container ", containerName);
             container.delete();
-        }
-    }
-
-    /**
-     * Remove the IP name.
-     *
-     */
-    public void removeIPName(String resourceGroupName,
-                             String vmName,
-                             boolean usePrivateIP) {
-        final String nic = vmName + "NIC";
-        try {
-            LOGGER.log(Level.INFO, "Remove NIC {0}", nic);
-            azureClient.networkInterfaces().deleteByResourceGroup(resourceGroupName, nic);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while deleting NIC", e);
-        }
-
-        final String ip = vmName + "IPName";
-        try {
-            // Does not attempt to remove public IP if private IP is used because public IP does not exist
-            if (!usePrivateIP) {
-                LOGGER.log(Level.INFO, "Remove IP {0}", ip);
-                azureClient.publicIpAddresses().deleteByResourceGroup(resourceGroupName, ip);
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exception while deleting IPName", e);
         }
     }
 
