@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.59</version>
+        <version>4.61</version>
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
@@ -66,7 +66,7 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>azure-sdk</artifactId>
-            <version>118.v43f74dd9ca_dc</version>
+            <version>132.v62b_48eb_6f32f</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -76,7 +76,6 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>jsch</artifactId>
-            <version>0.1.55.61.va_e9ee26616e7</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -109,9 +108,8 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
+            <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
-            <version>2.2</version>
         </dependency>
     </dependencies>
 
