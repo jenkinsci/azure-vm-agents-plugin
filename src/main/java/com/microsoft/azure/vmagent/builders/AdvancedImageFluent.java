@@ -38,6 +38,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private boolean preInstallSsh;
 
+    private String sshConfig;
+
     private String initScript;
 
     private String terminateScript;
@@ -137,6 +139,11 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public T withPreInstallSsh(boolean preInstallSsh) {
         this.preInstallSsh = preInstallSsh;
+        return (T) this;
+    }
+
+    public T withSshConfig(String sshConfig) {
+        this.sshConfig = sshConfig;
         return (T) this;
     }
 
@@ -277,6 +284,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isPreInstallSsh() {
         return preInstallSsh;
+    }
+
+    public String getSshConfig() {
+        return sshConfig;
     }
 
     public String getInitScript() {

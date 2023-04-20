@@ -105,6 +105,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private int sshPort;
 
+    private String sshConfig;
+
     private final Mode mode;
 
     private String templateName;
@@ -156,6 +158,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String vmCredentialsId,
             String sshPrivateKey,
             String sshPassPhrase,
+            String sshConfig,
             String jvmOptions,
             boolean shutdownOnIdle,
             boolean eligibleForReuse,
@@ -187,6 +190,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.azureCredentialsId = azureCredentialsId;
         this.sshPrivateKey = sshPrivateKey;
         this.sshPassPhrase = sshPassPhrase;
+        this.sshConfig = sshConfig;
         this.jvmOptions = jvmOptions;
         this.shutdownOnIdle = shutdownOnIdle;
         this.eligibleForReuse = eligibleForReuse;
@@ -230,6 +234,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String vmCredentialsId,
             String sshPrivateKey,
             String sshPassPhrase,
+            String sshConfig,
             String jvmOptions,
             boolean shutdownOnIdle,
             boolean eligibleForReuse,
@@ -272,6 +277,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 vmCredentialsId,
                 sshPrivateKey,
                 sshPassPhrase,
+                sshConfig,
                 jvmOptions,
                 shutdownOnIdle,
                 eligibleForReuse,
@@ -432,6 +438,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public void setSshPort(int sshPort) {
         this.sshPort = sshPort;
+    }
+
+    public String getSshConfig() {
+        return sshConfig;
     }
 
     public String getPublicIP() {

@@ -25,6 +25,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
@@ -300,6 +301,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private final String agentLaunchMethod;
 
     private boolean preInstallSsh;
+
+    private String sshConfig;
 
     private final String initScript;
 
@@ -675,6 +678,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
         templateProperties.put("agentLaunchMethod",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
+        templateProperties.put("sshConfig",
+                isBasic ? "" : template.getSshConfig());
         templateProperties.put("initScript",
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
         templateProperties.put("terminateScript",
@@ -1049,6 +1054,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return preInstallSsh;
     }
 
+    public String getSshConfig() {
+        return sshConfig;
+    }
+
+    @DataBoundSetter
+    public void setSshConfig(String sshConfig) {
+        this.sshConfig = sshConfig;
+    }
+
     public String getInitScript() {
         return initScript;
     }
@@ -1265,6 +1279,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withOsType(getOsType())
                 .withLaunchMethod(getAgentLaunchMethod())
                 .withPreInstallSsh(isPreInstallSsh())
+                .withSshConfig(getSshConfig())
                 .withInitScript(getInitScript())
                 .withVirtualNetworkName(getVirtualNetworkName())
                 .withVirtualNetworkResourceGroupName(getVirtualNetworkResourceGroupName())
@@ -1366,6 +1381,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 builtInImage,
                 osType,
                 agentLaunchMethod,
+                sshConfig,
                 initScript,
                 credentialsId,
                 virtualNetworkName,
@@ -1585,6 +1601,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        public FormValidation doCheckSshConfig(
+                @QueryParameter String value) {
+            if (!StringUtils.isBlank(value)) {
+                try {
+                    OpenSSHConfig.parse(value);
+                } catch (IOException e) {
+                    return FormValidation.warningWithMarkup(Messages.Ssh_Config_Invalid());
+                }
+            }
+            return FormValidation.ok();
+        }
+
         public FormValidation doCheckInitScript(
                 @QueryParameter String value,
                 @QueryParameter String agentLaunchMethod) {
@@ -1714,6 +1742,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String gallerySubscriptionId,
                 @QueryParameter String galleryResourceGroup,
                 @QueryParameter String agentLaunchMethod,
+                @QueryParameter String sshConfig,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
@@ -1778,7 +1807,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "galleryImageDefinition: {30}\n\t"
                             + "galleryImageVersion: {31}\n\t"
                             + "galleryResourceGroup: {32}\n\t"
-                            + "gallerySubscriptionId: {33}",
+                            + "gallerySubscriptionId: {33}\n\t"
+                            + "sshConfig: {34}",
                     new Object[]{
                             "",
                             "",
@@ -1813,7 +1843,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryImageDefinition,
                             galleryImageVersion,
                             galleryResourceGroup,
-                            gallerySubscriptionId});
+                            gallerySubscriptionId,
+                            sshConfig});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1836,6 +1867,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     builtInImage,
                     osType,
                     agentLaunchMethod,
+                    sshConfig,
                     initScript,
                     credentialsId,
                     virtualNetworkName,

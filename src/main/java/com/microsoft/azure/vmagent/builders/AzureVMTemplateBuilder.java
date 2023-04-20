@@ -118,6 +118,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
                 );
+        azureVMAgentTemplate.setSshConfig(fluent.getAdvancedImage().getSshConfig());
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
         azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());

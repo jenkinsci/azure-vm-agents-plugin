@@ -1,0 +1,19 @@
+<div>
+  <p><b>SSH Client configuration valid for openssh</b></p>
+  <p>Any openssh config file content supported by <a href="https://epaul.github.io/jsch-documentation/javadoc/com/jcraft/jsch/OpenSSHConfig.html">JSCH</a> is valid</p>
+  <p>
+    For example:
+    <ul>
+      <li>
+        <strong>Port Forwarding</strong>
+        <p>
+          (potentially insecure) Allow TCP access from the Azure instance to servers on the Jenkins controller network.
+          <pre><code>RemoteForward 8000 HOST_ON_CONTROLLER_NETWORK:8000
+RemoteForward 3000 ANOTHER_HOST_ON_CONTROLLER_NETWORK:3000</code></pre>
+        </p>
+      </li>
+    </ul>
+  </p>
+  <p>Be aware that some settings may conflict with agent startup behaviour and result in
+    startup errors (eg: IdentityFile, User, etc). See <code>man ssh_config</code> for option detail.</p>
+</div>

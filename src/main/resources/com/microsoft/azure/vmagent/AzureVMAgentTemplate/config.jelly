@@ -212,6 +212,10 @@
                     <f:select/>
                 </f:entry>
 
+                <f:entry title="${%Ssh_Config}" field="sshConfig" help="/plugin/azure-vm-agents/help-sshConfig.html">
+                    <f:textarea/>
+                </f:entry>
+
                 <f:entry title="${%Pre_Install_Ssh}" field="preInstallSsh"
                          help="/plugin/azure-vm-agents/help-preInstallSsh.html">
                     <f:checkbox default="true"/>

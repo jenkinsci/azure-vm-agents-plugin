@@ -56,6 +56,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.*;
@@ -1117,6 +1118,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.getCredentialsId(),
                     null,
                     null,
+                    template.getAdvancedImageInside().getSshConfig(),
                     (String) properties.get("jvmOptions"),
                     template.isShutdownOnIdle(),
                     false,
@@ -1952,6 +1954,7 @@ public final class AzureVMManagementServiceDelegate {
             String builtInImage,
             String osType,
             String agentLaunchMethod,
+            String sshConfig,
             String initScript,
             String credentialsId,
             String virtualNetworkName,
@@ -2008,6 +2011,13 @@ public final class AzureVMManagementServiceDelegate {
 
             //verify JVM Options
             validationResult = verifyJvmOptions(jvmOptions);
+            addValidationResultIfFailed(validationResult, errors);
+            if (returnOnSingleError && errors.size() > 0) {
+                return errors;
+            }
+
+            //verify SSH Config
+            validationResult = verifySshConfig(sshConfig);
             addValidationResultIfFailed(validationResult, errors);
             if (returnOnSingleError && errors.size() > 0) {
                 return errors;
@@ -2370,6 +2380,18 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
+    private static String verifySshConfig(String sshConfig) {
+        if (StringUtils.isBlank(sshConfig)) {
+            return Constants.OP_SUCCESS;
+        } else {
+            try {
+                OpenSSHConfig.parse(sshConfig);
+            } catch (IOException e) {
+                return Messages.Ssh_Config_Invalid() + e.getMessage();
+            }
+        }
+        return Constants.OP_SUCCESS;
+    }
     /**
      * Verify the validity of the image parameters (does not verify actual
      * values).
