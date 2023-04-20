@@ -405,7 +405,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String imageTopLevelType,
             ImageReferenceTypeClass imageReference,
             String agentLaunchMethod,
-            String sshConfig,
             String initScript,
             String terminateScript,
             String credentialsId,
@@ -453,7 +452,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.initScript = initScript;
         this.terminateScript = terminateScript;
         this.agentLaunchMethod = agentLaunchMethod;
-        this.sshConfig = sshConfig;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
@@ -1058,6 +1056,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getSshConfig() {
         return sshConfig;
+    }
+
+    @DataBoundSetter
+    public void setSshConfig(String sshConfig) {
+        this.sshConfig = sshConfig;
     }
 
     public String getInitScript() {

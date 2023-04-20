@@ -105,7 +105,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                         fluent.getAdvancedImage().getGallerySubscriptionId(),
                         fluent.getAdvancedImage().getGalleryResourceGroup()),
                 fluent.getAdvancedImage().getAgentLaunchMethod(),
-                fluent.getAdvancedImage().getSshConfig(),
                 fluent.getAdvancedImage().getInitScript(),
                 fluent.getAdvancedImage().getTerminateScript(),
                 fluent.getCredentialsId(),
@@ -119,6 +118,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
                 );
+        azureVMAgentTemplate.setSshConfig(fluent.getAdvancedImage().getSshConfig());
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
         azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());
