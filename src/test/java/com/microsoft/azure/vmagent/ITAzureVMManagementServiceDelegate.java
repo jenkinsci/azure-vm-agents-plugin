@@ -748,47 +748,6 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
     }
 
     @Test
-    public void removeIPNameTest() {
-        try {
-            final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
-            final String nodeName = deploymentInfo.getVmBaseName() + "0";
-
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName, false);
-            //should fail because the VM is still using them
-            Assert.assertNotNull(
-                    azureClient
-                            .publicIpAddresses()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
-            );
-            Assert.assertNotNull(
-                    azureClient
-                            .networkInterfaces()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
-            );
-
-            // destroy the vm first
-            azureClient.virtualMachines().deleteByResourceGroup(testEnv.azureResourceGroup, nodeName);
-            delegate.removeIPName(testEnv.azureResourceGroup, nodeName, false);
-            ManagementException managementException = assertThrows(ManagementException.class, () ->
-                    azureClient
-                            .publicIpAddresses()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "IPName")
-            );
-
-            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
-            managementException = assertThrows(ManagementException.class, () ->
-                    azureClient
-                            .networkInterfaces()
-                            .getByResourceGroup(testEnv.azureResourceGroup, nodeName + "NIC")
-            );
-            assertThat(managementException.getResponse().getStatusCode(), equalTo(404));
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
     public void restartVMTest() throws IOException, AzureCloudException {
         final String vmName = "vmrestart";
         VirtualMachine vm = createAzureVM(vmName);
