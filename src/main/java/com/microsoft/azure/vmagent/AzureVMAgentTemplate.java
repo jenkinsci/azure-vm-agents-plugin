@@ -735,7 +735,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(builtInImage).get(Constants.INSTALL_GIT));
             }
-            if ((builtInImage.equals(Constants.UBUNTU_1604_LTS) || builtInImage.equals(Constants.UBUNTU_2004_LTS))
+            if ((builtInImage.equals(Constants.UBUNTU_1604_LTS)
+                   || builtInImage.equals(Constants.UBUNTU_2004_LTS)
+                   || builtInImage.equals(Constants.UBUNTU_2204_LTS))
                     && template.isInstallDocker()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
@@ -1584,6 +1586,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public ListBoxModel doFillBuiltInImageItems() {
             ListBoxModel model = new ListBoxModel();
+            model.add(Constants.UBUNTU_2204_LTS);
             model.add(Constants.UBUNTU_2004_LTS);
             model.add(Constants.UBUNTU_1604_LTS);
             model.add(Constants.WINDOWS_SERVER_2022);
@@ -1848,8 +1851,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
-            String result = AzureClientHolder.getDelegate(azureCredentialsId).verifyConfiguration(resourceGroupName,
-                    maxVirtualMachinesLimit, deploymentTimeout);
+            String result = AzureClientHolder.getDelegate(azureCredentialsId)
+                    .verifyConfiguration(resourceGroupName, deploymentTimeout);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }

@@ -427,19 +427,6 @@ public final class AzureUtil {
     }
 
     /**
-     * Checks if the maximum virtual machines limit is valid.
-     *
-     * @param maxVMLimit Maximum Virtual Limit
-     * @return true if it is valid else return false
-     */
-    public static boolean isValidMAxVMLimit(String maxVMLimit) {
-        if (StringUtils.isBlank(maxVMLimit) || !maxVMLimit.matches(Constants.REG_EX_DIGIT)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Checks if the deployment Timeout is valid.
      *
      * @param deploymentTimeout Deployment Timeout

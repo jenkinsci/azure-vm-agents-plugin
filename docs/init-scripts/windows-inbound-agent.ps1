@@ -32,27 +32,28 @@ $jenkinsserverurl = $args[0]
 $vmname = $args[1]
 $secret = $args[2]
 
-# Downloading jenkins agent jar
-Write-Output "Downloading jenkins agent jar "
-$slaveSource = $jenkinsserverurl + "jnlpJars/agent.jar"
-$destSource = "C:\agent.jar"
+# Download the service wrapper
+$wrapperExec = "c:\jenkins\jenkins-agent.exe"
+$configFile = "c:\jenkins\jenkins-agent.xml"
+$agentSource = $jenkinsserverurl + "jnlpJars/agent.jar"
+
+mkdir C:\jenkins
 $wc = New-Object System.Net.WebClient
-$wc.DownloadFile($slaveSource, $destSource)
+$wc.DownloadFile("https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW.NET461.exe", $wrapperExec)
+$wc.DownloadFile("https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/jenkins-slave.exe.config", "c:\jenkins\jenkins-agent.exe.config")
+$wc.DownloadFile("https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/jenkins-slave.xml", $configFile)
 
-# execute agent
+# Prepare config
 Write-Output "Executing agent process "
-$java="java"
-$jar="-jar"
-$serverURL=$jenkinsserverurl + "computer/" + $vmname + '/jenkins-agent.jnlp'
-
-# TODO look at porting the run as service part of the old script from https://raw.githubusercontent.com/Azure/jenkins/master/agents_scripts/Jenkins-Windows-Init-Script-Jnlp.ps1
-while ($true) {
-  try {
-    # Launch
-    & $java -jar $destSource -secret $secret -jnlpUrl $serverURL
-  }
-  catch [System.Exception] {
-    Write-Output $_.Exception.ToString()
-  }
-  Start-Sleep 10
+$configExec = "java"
+$configArgs = "-jnlpUrl `"${jenkinsserverurl}/computer/${vmname}/jenkins-agent.jnlp`" -workDir C:\jenkins\workDir"
+if ($secret) {
+    $configArgs += " -secret `"$secret`""
 }
+(Get-Content $configFile).replace('@JAVA@', $configExec) | Set-Content $configFile
+(Get-Content $configFile).replace('@ARGS@', $configArgs) | Set-Content $configFile
+(Get-Content $configFile).replace('@SLAVE_JAR_URL', $agentSource) | Set-Content $configFile
+
+# Install the service
+& $wrapperExec install
+& $wrapperExec start

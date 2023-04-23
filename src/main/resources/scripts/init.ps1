@@ -1,4 +1,4 @@
-# Install Agent jar and connect via JNLP
+# Install Agent jar and connect as an Inbound agent
 # Jenkins plugin will dynamically pass the server name and vm name.
 # If your jenkins server is configured for security , make sure to edit command for how agent executes
 $jenkinsserverurl = $args[0]

@@ -264,11 +264,17 @@ public final class AzureVMManagementServiceDelegate {
                     && (isBasic || referenceType == ImageReferenceType.REFERENCE
                     || template.isPreInstallSsh());
 
-            final boolean useCustomScriptExtension
+            boolean windows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS);
+            boolean inboundAgent = properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_JNLP);
+            boolean useCustomScriptExtension
                     = preInstallSshInWindows
-                    || properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
-                    && !StringUtils.isBlank((String) properties.get("initScript"))
-                    && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_JNLP);
+                    || windows
+                    && StringUtils.isNotBlank((String) properties.get("initScript"))
+                    && inboundAgent;
+
+            if (!useCustomScriptExtension && !windows && inboundAgent) {
+                useCustomScriptExtension = true;
+            }
 
             // check if a custom image id has been provided otherwise work with publisher and offer
             boolean useManagedDisk = diskType.equals(Constants.DISK_MANAGED);
@@ -315,6 +321,17 @@ public final class AzureVMManagementServiceDelegate {
                     templateLocation);
 
             final JsonNode tmp = MAPPER.readTree(embeddedTemplate);
+
+            if (useCustomScriptExtension) {
+                ArrayNode resources = (ArrayNode) tmp.get("resources");
+                for (JsonNode resource : resources) {
+                    String type = resource.get("type").asText();
+                    if (type.contains("virtualMachine")) {
+                        ArrayNode vmResources = (ArrayNode) resource.get("resources");
+                        vmResources.remove(windows ? 1 : 0);
+                    }
+                }
+            }
 
             // Add count variable for loop....
             final ObjectNode count = MAPPER.createObjectNode();
@@ -1450,6 +1467,8 @@ public final class AzureVMManagementServiceDelegate {
                 imageProperties("Canonical", "UbuntuServer", "16.04-LTS", "16.04-LTS", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2004_LTS,
                 imageProperties("canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2", "20_04-lts-gen2", Constants.OS_TYPE_LINUX));
+        imageProperties.put(Constants.UBUNTU_2204_LTS,
+                imageProperties("canonical", "0001-com-ubuntu-server-jammy", "22_04-lts-gen2", "22_04-lts-gen2", Constants.OS_TYPE_LINUX));
 
         return imageProperties;
     }
@@ -1479,12 +1498,14 @@ public final class AzureVMManagementServiceDelegate {
         tools.put(Constants.WINDOWS_SERVER_2022, new HashMap<>());
         tools.put(Constants.UBUNTU_1604_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
+        tools.put(Constants.UBUNTU_2204_LTS, new HashMap<>());
         try {
             windows(Constants.WINDOWS_SERVER_2016, tools);
             windows(Constants.WINDOWS_SERVER_2019, tools);
             windows(Constants.WINDOWS_SERVER_2022, tools);
             ubuntu(Constants.UBUNTU_1604_LTS, tools);
             ubuntu(Constants.UBUNTU_2004_LTS, tools);
+            ubuntu(Constants.UBUNTU_2204_LTS, tools);
 
             return tools;
         } catch (IOException e) {
@@ -1575,13 +1596,11 @@ public final class AzureVMManagementServiceDelegate {
      * Validates certificate configuration.
      *
      * @param resourceGroupName Resource group name.
-     * @param maxVMLimit        Max limit of virtual machines.
      * @param timeOut           Timeout of the verification.
      * @return Verification result.
      */
     public String verifyConfiguration(
             String resourceGroupName,
-            String maxVMLimit,
             String timeOut) {
         try {
             if (!AzureUtil.isValidTimeOut(timeOut)) {
@@ -1593,11 +1612,7 @@ public final class AzureVMManagementServiceDelegate {
                 return "Error: " + Messages.Azure_GC_Template_ResourceGroupName_Err();
             }
 
-            if (!AzureUtil.isValidMAxVMLimit(maxVMLimit)) {
-                return "Invalid Limit, Should be a positive number, e.g. " + Constants.DEFAULT_MAX_VM_LIMIT;
-            }
-
-            if (!(AzureUtil.isValidTimeOut(timeOut) && AzureUtil.isValidMAxVMLimit(maxVMLimit)
+            if (!(AzureUtil.isValidTimeOut(timeOut)
                     && AzureUtil.isValidResourceGroupName(resourceGroupName))) {
                     return Messages.Azure_GC_Template_Val_Profile_Err();
             }
