@@ -1547,8 +1547,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         public ListBoxModel doFillAgentLaunchMethodItems() {
             ListBoxModel model = new ListBoxModel();
-            model.add(Constants.LAUNCH_METHOD_SSH);
-            model.add(Constants.LAUNCH_METHOD_JNLP);
+            model.add(Messages.AzureVMAgentTemplate_SSH_Agent_Launch_Method(), Constants.LAUNCH_METHOD_SSH);
+            model.add(Messages.AzureVMAgentTemplate_Inbound_Agent_Launch_Method(), Constants.LAUNCH_METHOD_JNLP);
 
             return model;
         }
