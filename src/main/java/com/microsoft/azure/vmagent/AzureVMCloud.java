@@ -1108,7 +1108,6 @@ public class AzureVMCloud extends Cloud {
         @RequirePOST
         public FormValidation doVerifyConfiguration(
                 @QueryParameter String azureCredentialsId,
-                @QueryParameter String maxVirtualMachinesLimit,
                 @QueryParameter String deploymentTimeout,
                 @QueryParameter String resourceGroupReferenceType,
                 @QueryParameter String newResourceGroupName,
@@ -1123,7 +1122,7 @@ public class AzureVMCloud extends Cloud {
             AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
             final String validationResult = AzureVMManagementServiceDelegate
                     .getInstance(azureClient, azureCredentialsId)
-                    .verifyConfiguration(resourceGroupName, maxVirtualMachinesLimit, deploymentTimeout);
+                    .verifyConfiguration(resourceGroupName, deploymentTimeout);
             if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
                 return FormValidation.error(validationResult);
             }

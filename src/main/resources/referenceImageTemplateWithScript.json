@@ -116,13 +116,39 @@
                     "properties": {
                         "publisher": "Microsoft.Compute",
                         "type": "CustomScriptExtension",
-                        "typeHandlerVersion": "1.7",
+                        "typeHandlerVersion": "1.10",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
                                 "[variables('startupScriptURI')]"
                             ],
                             "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File ', variables('startupScriptName'),' ', variables('jenkinsServerURL'),' ', variables('vmName'),copyIndex(),' ', variables('clientSecrets')[copyIndex()])]"
+                        },
+                        "protectedSettings": {
+                            "storageAccountName": "[variables('storageAccountName')]",
+                            "storageAccountKey": "[parameters('storageAccountKey')]"
+                        }
+                    }
+                },
+                {
+                    "type": "extensions",
+                    "name": "[concat('customScript', variables('vmName'), copyIndex())]",
+                    "apiVersion": "2020-06-01",
+                    "location": "[variables('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex())]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.1",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "skipDos2Unix": true,
+                            "fileUris": [
+                                "[variables('startupScriptURI')]"
+                            ],
+                            "commandToExecute": "[concat('bash ', variables('startupScriptName'),' ', variables('jenkinsServerURL'),' ', variables('vmName'),copyIndex(),' ', variables('clientSecrets')[copyIndex()])]"
                         },
                         "protectedSettings": {
                             "storageAccountName": "[variables('storageAccountName')]",

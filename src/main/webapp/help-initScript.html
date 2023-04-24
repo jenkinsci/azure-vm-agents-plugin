@@ -5,7 +5,7 @@
     Below are examples of initialization scripts, Java is <b>required</b>, others are optional:
     <ol>
       <li>
-        <b>Ubuntu (Only support SSH)</b>
+        <b>Ubuntu via SSH</b>
         <p>
           <pre><code># Install Java
 sudo apt-get -y update
@@ -17,7 +17,7 @@ java -version
 sudo apt-get install -y git
 
 # Install Maven
-MAVEN_VERSION=3.8.4
+MAVEN_VERSION=3.9.1
 
 sudo curl -O https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
 sudo tar zxvf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt/
@@ -40,12 +40,19 @@ sudo docker --version
         </pre>
       </p>
       </li>
+    <li>
+        <b>Ubuntu as an inbound agent</b>
+        <p>
+            You can use this <a target="_blank" href="https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/master/docs/init-scripts/linux-inbound-agent.ps1">sample</a>.<br>
+            Java, the agent jar and connecting to Jenkins are <b>required</b>, others are optional.
+        </p>
+    </li>
       <li>
         <b>Windows via SSH</b>
         <p>
           You can use this <a target="_blank" href="https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/master/docs/init-scripts/windows-ssh.ps1">sample</a>.<br>
           Java is <b>required</b>, others are optional.<br>
-          We recommend to use SSH rather than inbound agent. You need less init code and get much clearer logs.
+          We recommend to use SSH rather than inbound agent. It's simpler to setup and you get much clearer logs.
         </p>
       </li>
       <li>
@@ -64,7 +71,7 @@ sudo docker --version
         </p>
         <p>
           The server url should already have a trailing slash.  Then execute the following to connect:
-          <pre><code>java.exe -jar [slave jar location] [-secret [client secret if required]] [server url]computer/[vm name]/slave-agent.jnlp</code></pre>
+          <pre><code>java.exe -jar [agent jar location] [-secret [client secret if required]] [server url]computer/[vm name]/jenkins-agent.jnlp</code></pre>
         </p>
       </li>
     </ol>
