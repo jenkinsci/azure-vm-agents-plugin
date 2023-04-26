@@ -1,16 +1,18 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:c="/lib/credentials"
-         xmlns:f="/lib/form">
+         xmlns:f="/lib/form" xmlns:l="/lib/layout">
     <div>
       <f:entry title="${%Template_Name}" field="templateName"
                help="/plugin/azure-vm-agents/help-templateName.html">
         <f:textbox/>
       </f:entry>
-      <f:block>
-        <div align="right">
-          <f:repeatableDeleteButton value="${%Delete_Template}"/>
-        </div>
-      </f:block>
+      <l:isAdmin>
+        <f:block>
+          <div align="right">
+            <f:repeatableDeleteButton value="${%Delete_Template}"/>
+          </div>
+        </f:block>
+      </l:isAdmin>
       <f:advanced title="${%Agent template details}">
         <f:section title="${%General_Configuration}">
 
@@ -34,12 +36,14 @@
           </f:entry>
 
           <f:entry title="${%Custom_Tag}" field="tags">
-            <f:repeatableProperty field="tags">
-              <f:entry>
-                <div align="right">
-                  <f:repeatableDeleteButton/>
-                </div>
-              </f:entry>
+            <f:repeatableProperty field="tags" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
+              <l:isAdmin>
+                <f:entry>
+                  <div align="right">
+                    <f:repeatableDeleteButton/>
+                  </div>
+                </f:entry>
+              </l:isAdmin>
             </f:repeatableProperty>
           </f:entry>
 
@@ -315,9 +319,11 @@
             </f:advanced>
           </f:radioBlock>
         </f:section>
-        <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}"
-                          method="verifyConfiguration"
-                          with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,galleryImageSpecialized,gallerySubscriptionId,galleryResourceGroup,sshConfig,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
+        <l:isAdmin>
+          <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}"
+                            method="verifyConfiguration"
+                            with="azureCredentialsId,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName,maxVirtualMachinesLimit,deploymentTimeout,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,galleryImageSpecialized,gallerySubscriptionId,galleryResourceGroup,sshConfig,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
+        </l:isAdmin>
       </f:advanced>
     </div>
 </j:jelly>
