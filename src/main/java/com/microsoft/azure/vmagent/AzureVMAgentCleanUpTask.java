@@ -397,8 +397,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 resourcesMarkedForDeletion.add(resource);
             }
 
-            LOGGER.log(getNormalLoggingLevel(), "cleanLeakedResources: %d resources marked for deletion"
-                + resourcesMarkedForDeletion.size());
+            LOGGER.log(getNormalLoggingLevel(), String.format("cleanLeakedResources: %d resources marked for deletion",
+                    resourcesMarkedForDeletion.size()));
 
             while (!resourcesMarkedForDeletion.isEmpty()) {
                 try {

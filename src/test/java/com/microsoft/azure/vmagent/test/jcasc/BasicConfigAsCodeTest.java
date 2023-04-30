@@ -4,6 +4,7 @@ import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
+import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import hudson.model.Node;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
@@ -20,6 +21,7 @@ import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 
 public class BasicConfigAsCodeTest {
@@ -44,7 +46,7 @@ public class BasicConfigAsCodeTest {
         // vmTemplate
         AzureVMAgentTemplate template = cloud.getVmTemplates().get(0);
 
-        assertThat(template.getAgentLaunchMethod(), is("SSH"));
+        assertThat(template.getLauncher(), instanceOf(AzureSSHLauncher.class));
         assertThat(template.getBuiltInImage(), is("Ubuntu 16.14 LTS"));
         assertThat(template.getCredentialsId(), is("admin-cred"));
         assertThat(template.getDiskType(), is("managed"));
@@ -71,8 +73,6 @@ public class BasicConfigAsCodeTest {
         assertThat(template.getNoOfParallelJobs(), is(1));
         assertThat(template.getOsDiskSize(), is(0));
         assertThat(template.getOsType(), is("Linux"));
-
-        assertThat(template.isPreInstallSsh(), is(true));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(60L));

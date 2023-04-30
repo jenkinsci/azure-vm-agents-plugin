@@ -8,7 +8,7 @@ jenkins:
         newResourceGroupName: "vm-agent"
         resourceGroupReferenceType: "new"
         vmTemplates:
-          - agentLaunchMethod: "SSH"
+          - launcher: "ssh"
             builtInImage: "Ubuntu 16.14 LTS"
             credentialsId: "admin-cred"
             diskType: "managed"
@@ -29,7 +29,6 @@ jenkins:
             noOfParallelJobs: 1
             osDiskSize: 0
             osType: "Linux"
-            preInstallSsh: true
             retentionStrategy:
               azureVMCloudRetentionStrategy:
                 idleTerminationMinutes: 60

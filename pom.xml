@@ -47,7 +47,7 @@
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <jenkins.version>2.361.4</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <azure-credentials.version>254.v64da_8176c83a</azure-credentials.version>
+        <hpi.compatibleSinceVersion>846</hpi.compatibleSinceVersion>
     </properties>
 
     <dependencyManagement>
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-credentials</artifactId>
-            <version>${azure-credentials.version}</version>
+            <version>254.v64da_8176c83a</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -174,7 +174,6 @@
                 </executions>
                 <configuration>
                     <configLocation>checkstyle.xml</configLocation>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <resourceIncludes>src/main/resources/**</resourceIncludes>
                     <!--
