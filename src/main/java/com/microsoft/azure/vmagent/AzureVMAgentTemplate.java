@@ -35,6 +35,9 @@ import com.microsoft.azure.vmagent.builders.AvailabilityBuilder;
 import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
+import com.microsoft.azure.vmagent.launcher.AzureInboundLauncher;
+import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import com.microsoft.azure.vmagent.util.AzureClientHolder;
 import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
@@ -55,17 +58,6 @@ import hudson.security.ACL;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
-
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -82,6 +74,17 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.ServletException;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * This class defines the configuration of Azure instance templates.
@@ -298,11 +301,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String osType;
 
-    private final String agentLaunchMethod;
+    private transient String agentLaunchMethod;
 
-    private boolean preInstallSsh;
+    private AzureComputerLauncher launcher;
 
-    private String sshConfig;
+    private transient boolean preInstallSsh;
+
+    private transient String sshConfig;
 
     private final String initScript;
 
@@ -404,7 +409,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String osType,
             String imageTopLevelType,
             ImageReferenceTypeClass imageReference,
-            String agentLaunchMethod,
+            AzureComputerLauncher launcher,
             String initScript,
             String terminateScript,
             String credentialsId,
@@ -451,7 +456,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.osType = osType;
         this.initScript = initScript;
         this.terminateScript = terminateScript;
-        this.agentLaunchMethod = agentLaunchMethod;
+        this.launcher = launcher;
         this.credentialsId = credentialsId;
         this.virtualNetworkName = virtualNetworkName;
         this.virtualNetworkResourceGroupName = virtualNetworkResourceGroupName;
@@ -676,10 +681,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         : template.getImageReference().getGalleryResourceGroup());
         templateProperties.put("osType",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
+        boolean isSSH = template.getLauncher() instanceof AzureSSHLauncher;
+        String agentLaunchMethod = isSSH ? Constants.LAUNCH_METHOD_SSH : Constants.LAUNCH_METHOD_JNLP;
         templateProperties.put("agentLaunchMethod",
-                isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : template.getAgentLaunchMethod());
-        templateProperties.put("sshConfig",
-                isBasic ? "" : template.getSshConfig());
+                isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : agentLaunchMethod);
+        if (isSSH) {
+            templateProperties.put("sshConfig",
+                    isBasic ? "" : ((AzureSSHLauncher) template.getLauncher()).getSshConfig());
+        }
         templateProperties.put("initScript",
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
         templateProperties.put("terminateScript",
@@ -786,6 +795,24 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (StringUtils.isBlank(storageAccountType)) {
             storageAccountType = SkuName.STANDARD_LRS.toString();
+        }
+
+        if (StringUtils.isNotBlank(agentLaunchMethod)) {
+            if (agentLaunchMethod.equalsIgnoreCase(Constants.LAUNCH_METHOD_SSH)) {
+                AzureSSHLauncher azureSSHLauncher = new AzureSSHLauncher();
+
+                if (StringUtils.isNotBlank(sshConfig)) {
+                    azureSSHLauncher.setSshConfig(sshConfig);
+                }
+                if (preInstallSsh) {
+                    azureSSHLauncher.setPreInstallSsh(preInstallSsh);
+                }
+                launcher = azureSSHLauncher;
+
+            } else if (agentLaunchMethod.equalsIgnoreCase(Constants.LAUNCH_METHOD_JNLP)) {
+                launcher = new AzureInboundLauncher();
+            }
+            agentLaunchMethod = null;
         }
 
         if (StringUtils.isBlank(newStorageAccountName) && StringUtils.isBlank(existingStorageAccountName)
@@ -1047,24 +1074,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return osType;
     }
 
-    @DataBoundSetter
-    public void setPreInstallSsh(boolean preInstallSsh) {
-        this.preInstallSsh = preInstallSsh;
-    }
-
-    public boolean isPreInstallSsh() {
-        return preInstallSsh;
-    }
-
-    public String getSshConfig() {
-        return sshConfig;
-    }
-
-    @DataBoundSetter
-    public void setSshConfig(String sshConfig) {
-        this.sshConfig = sshConfig;
-    }
-
     public String getInitScript() {
         return initScript;
     }
@@ -1147,10 +1156,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public int getNoOfParallelJobs() {
         return noOfParallelJobs;
-    }
-
-    public String getAgentLaunchMethod() {
-        return agentLaunchMethod;
     }
 
     public ProvisionStrategy getTemplateProvisionStrategy() {
@@ -1254,12 +1259,21 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return uamiID;
     }
 
+    public AzureComputerLauncher getLauncher() {
+        return launcher;
+    }
+
     @DataBoundSetter
     public void setDoNotUseMachineIfInitFails(boolean doNotUseMachineIfInitFails) {
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
     }
 
     public AdvancedImage getAdvancedImageInside() {
+        boolean isSSH = launcher instanceof AzureSSHLauncher;
+        boolean preInstallSshLocal = launcher != null
+                && isSSH && ((AzureSSHLauncher) launcher).isPreInstallSsh();
+        String sshConfigLocal = launcher != null
+                && isSSH ? ((AzureSSHLauncher) launcher).getSshConfig() : null;
         return new AdvancedImageBuilder()
                 .withCustomImage(imageReference.uri)
                 .withCustomManagedImage(imageReference.id)
@@ -1279,9 +1293,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 )
                 .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
                 .withOsType(getOsType())
-                .withLaunchMethod(getAgentLaunchMethod())
-                .withPreInstallSsh(isPreInstallSsh())
-                .withSshConfig(getSshConfig())
+                .withLaunchMethod(isSSH ? Constants.LAUNCH_METHOD_SSH : Constants.LAUNCH_METHOD_JNLP)
+                .withPreInstallSsh(preInstallSshLocal)
+                .withSshConfig(sshConfigLocal)
                 .withInitScript(getInitScript())
                 .withVirtualNetworkName(getVirtualNetworkName())
                 .withVirtualNetworkResourceGroupName(getVirtualNetworkResourceGroupName())
@@ -1382,8 +1396,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 imageReference,
                 builtInImage,
                 osType,
-                agentLaunchMethod,
-                sshConfig,
+                launcher,
                 initScript,
                 credentialsId,
                 virtualNetworkName,
@@ -1474,6 +1487,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @SuppressWarnings("unused") // Used by jelly
+        @Restricted(DoNotUse.class) // Used by jelly
+        public AzureComputerLauncher getDefaultComputerLauncher() {
+            return new AzureSSHLauncher();
+        }
+
         public ListBoxModel doFillAvailabilitySetItems(
                 @RelativePath("../..") @QueryParameter String azureCredentialsId,
                 @RelativePath("../..") @QueryParameter String resourceGroupReferenceType,
@@ -1542,14 +1561,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             for (Node.Mode m : hudson.Functions.getNodeModes()) {
                 model.add(m.getDescription(), m.getName());
             }
-            return model;
-        }
-
-        public ListBoxModel doFillAgentLaunchMethodItems() {
-            ListBoxModel model = new ListBoxModel();
-            model.add(Messages.AzureVMAgentTemplate_SSH_Agent_Launch_Method(), Constants.LAUNCH_METHOD_SSH);
-            model.add(Messages.AzureVMAgentTemplate_Inbound_Agent_Launch_Method(), Constants.LAUNCH_METHOD_JNLP);
-
             return model;
         }
 
@@ -1662,6 +1673,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             List<FormValidation> errors = new ArrayList<>();
             // Check whether the template name is valid, and then check
             // whether it would be shortened on VM creation.
+
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.ok();
+            }
+
             if (!AzureUtil.isValidTemplateName(value)) {
                 errors.add(FormValidation.error(Messages.Azure_GC_Template_Name_Not_Valid()));
             }
@@ -1670,7 +1686,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 errors.add(FormValidation.warning(Messages.Azure_GC_TemplateStatus_Warn_Msg()));
             }
 
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 return FormValidation.aggregate(errors);
             }
 
@@ -1744,8 +1760,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter boolean galleryImageSpecialized,
                 @QueryParameter String gallerySubscriptionId,
                 @QueryParameter String galleryResourceGroup,
-                @QueryParameter String agentLaunchMethod,
-                @QueryParameter String sshConfig,
+                @RelativePath("..") @QueryParameter String sshConfig,
                 @QueryParameter String initScript,
                 @QueryParameter String credentialsId,
                 @QueryParameter String virtualNetworkName,
@@ -1797,7 +1812,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "offer: {17};\n\t"
                             + "sku: {18};\n\t"
                             + "version: {19};\n\t"
-                            + "agentLaunchMethod: {20};\n\t"
+                            + "sshConfig: {20};\n\t"
                             + "initScript: {21};\n\t"
                             + "credentialsId: {22};\n\t"
                             + "virtualNetworkName: {23};\n\t"
@@ -1810,8 +1825,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             + "galleryImageDefinition: {30}\n\t"
                             + "galleryImageVersion: {31}\n\t"
                             + "galleryResourceGroup: {32}\n\t"
-                            + "gallerySubscriptionId: {33}\n\t"
-                            + "sshConfig: {34}",
+                            + "gallerySubscriptionId: {33}",
                     new Object[]{
                             "",
                             "",
@@ -1833,7 +1847,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             imageOffer,
                             imageSku,
                             imageVersion,
-                            agentLaunchMethod,
+                            sshConfig,
                             initScript,
                             credentialsId,
                             virtualNetworkName,
@@ -1846,8 +1860,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryImageDefinition,
                             galleryImageVersion,
                             galleryResourceGroup,
-                            gallerySubscriptionId,
-                            sshConfig});
+                            gallerySubscriptionId});
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
@@ -1855,6 +1868,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     .verifyConfiguration(resourceGroupName, deploymentTimeout);
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
+            }
+
+            AzureSSHLauncher azureComputerLauncher = new AzureSSHLauncher();
+            if (StringUtils.isNotBlank(sshConfig)) {
+                azureComputerLauncher.setSshConfig(sshConfig);
             }
 
             final List<String> errors = AzureClientHolder.getDelegate(azureCredentialsId).verifyTemplate(
@@ -1869,8 +1887,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     image,
                     builtInImage,
                     osType,
-                    agentLaunchMethod,
-                    sshConfig,
+                    azureComputerLauncher,
                     initScript,
                     credentialsId,
                     virtualNetworkName,

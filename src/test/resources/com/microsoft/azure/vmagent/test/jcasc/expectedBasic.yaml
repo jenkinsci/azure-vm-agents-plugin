@@ -6,8 +6,7 @@
     newResourceGroupName: "vm-agent"
     resourceGroupReferenceType: "new"
     vmTemplates:
-    - agentLaunchMethod: "SSH"
-      builtInImage: "Ubuntu 16.14 LTS"
+    - builtInImage: "Ubuntu 16.14 LTS"
       credentialsId: "admin-cred"
       diskType: "managed"
       doNotUseMachineIfInitFails: true
@@ -19,11 +18,11 @@
       installGit: true
       installMaven: true
       labels: "ubuntu"
+      launcher: "ssh"
       location: "East US"
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
       osType: "Linux"
-      preInstallSsh: true
       retentionStrategy:
         azureVMCloudRetentionStrategy:
           idleTerminationMinutes: 60

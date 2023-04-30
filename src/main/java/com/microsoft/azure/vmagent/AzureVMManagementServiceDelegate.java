@@ -58,6 +58,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
+import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
+import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.*;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
@@ -259,10 +261,13 @@ public final class AzureVMManagementServiceDelegate {
             boolean isBasic = template.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC);
             ImageReferenceType referenceType = template.getImageReference().getType();
 
+            boolean preInstallSSH = template.getLauncher() instanceof AzureSSHLauncher
+                    && ((AzureSSHLauncher) template.getLauncher()).isPreInstallSsh();
+
             final boolean preInstallSshInWindows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS)
                     && properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_SSH)
                     && (isBasic || referenceType == ImageReferenceType.REFERENCE
-                    || template.isPreInstallSsh());
+                    || preInstallSSH);
 
             boolean windows = properties.get("osType").equals(Constants.OS_TYPE_WINDOWS);
             boolean inboundAgent = properties.get("agentLaunchMethod").equals(Constants.LAUNCH_METHOD_JNLP);
@@ -1968,8 +1973,7 @@ public final class AzureVMManagementServiceDelegate {
             AzureVMAgentTemplate.ImageReferenceTypeClass imageReferenceType,
             String builtInImage,
             String osType,
-            String agentLaunchMethod,
-            String sshConfig,
+            AzureComputerLauncher launcher,
             String initScript,
             String credentialsId,
             String virtualNetworkName,
@@ -1993,19 +1997,19 @@ public final class AzureVMManagementServiceDelegate {
 
             validationResult = verifyTemplateName(templateName);
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
             validationResult = verifyNoOfExecutors(noOfParallelJobs);
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
             validationResult = verifyRetentionTime(retentionStrategy);
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
@@ -2020,22 +2024,25 @@ public final class AzureVMManagementServiceDelegate {
 
             validationResult = verifyAdminPassword(adminPassword);
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
             //verify JVM Options
             validationResult = verifyJvmOptions(jvmOptions);
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
             //verify SSH Config
-            validationResult = verifySshConfig(sshConfig);
-            addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
-                return errors;
+            if (launcher instanceof AzureSSHLauncher) {
+                String sshConfig = ((AzureSSHLauncher) launcher).getSshConfig();
+                validationResult = verifySshConfig(sshConfig);
+                addValidationResultIfFailed(validationResult, errors);
+                if (returnOnSingleError && !errors.isEmpty()) {
+                    return errors;
+                }
             }
 
             validationResult = verifyImageParameters(
@@ -2045,7 +2052,7 @@ public final class AzureVMManagementServiceDelegate {
                     osType
             );
             addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && errors.size() > 0) {
+            if (returnOnSingleError && !errors.isEmpty()) {
                 return errors;
             }
 
@@ -2340,7 +2347,7 @@ public final class AzureVMManagementServiceDelegate {
             String resourceGroupName,
             String storageAccountName,
             String storageAccountType) {
-        boolean isAvailable = false;
+        boolean isAvailable;
         try {
             if (StringUtils.isBlank(storageAccountType)) {
                 return Messages.Azure_GC_Template_SA_Type_Null_Or_Empty();

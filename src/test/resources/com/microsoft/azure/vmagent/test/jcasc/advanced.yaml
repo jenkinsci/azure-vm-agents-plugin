@@ -11,7 +11,7 @@ jenkins:
         maxVirtualMachinesLimit: 10
         resourceGroupReferenceType: "existing"
         vmTemplates:
-          - agentLaunchMethod: "SSH"
+          - launcher: "ssh"
             agentWorkspace: "/opt/jenkins"
             availabilityType:
               availabilitySet: "vm-agents"
@@ -43,7 +43,6 @@ jenkins:
             nsgName: "an-nsg"
             osDiskSize: 40
             osType: "Linux"
-            preInstallSsh: false
             retentionStrategy:
               azureVMCloudRetentionStrategy:
                 idleTerminationMinutes: 40

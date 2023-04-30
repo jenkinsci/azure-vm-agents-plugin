@@ -2,6 +2,10 @@ package com.microsoft.azure.vmagent.builders;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloudBaseRetentionStrategy;
+import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
+import com.microsoft.azure.vmagent.launcher.AzureInboundLauncher;
+import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
+import com.microsoft.azure.vmagent.util.Constants;
 
 public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplateBuilder> {
 
@@ -77,6 +81,18 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     }
 
     public AzureVMAgentTemplate build() {
+        String agentLaunchMethod = fluent.getAdvancedImage().getAgentLaunchMethod();
+        AzureComputerLauncher launcher;
+        if (agentLaunchMethod.equals(Constants.LAUNCH_METHOD_JNLP)) {
+            launcher = new AzureInboundLauncher();
+        } else {
+            AzureSSHLauncher azureSSHLauncher = new AzureSSHLauncher();
+            azureSSHLauncher.setSshConfig(fluent.getAdvancedImage().getSshConfig());
+            azureSSHLauncher.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
+
+            launcher = azureSSHLauncher;
+        }
+
         AzureVMAgentTemplate azureVMAgentTemplate = new AzureVMAgentTemplate(
                 fluent.getName(),
                 fluent.getDescription(),
@@ -104,7 +120,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                         fluent.getAdvancedImage().getGalleryImageVersion(),
                         fluent.getAdvancedImage().getGallerySubscriptionId(),
                         fluent.getAdvancedImage().getGalleryResourceGroup()),
-                fluent.getAdvancedImage().getAgentLaunchMethod(),
+                launcher,
                 fluent.getAdvancedImage().getInitScript(),
                 fluent.getAdvancedImage().getTerminateScript(),
                 fluent.getCredentialsId(),
@@ -118,7 +134,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
                 fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
                 );
-        azureVMAgentTemplate.setSshConfig(fluent.getAdvancedImage().getSshConfig());
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
         azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());
@@ -131,7 +146,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setEnableMSI(fluent.getAdvancedImage().isEnableMSI());
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
-        azureVMAgentTemplate.setPreInstallSsh(fluent.getAdvancedImage().isPreInstallSsh());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
         azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(
             fluent.getAdvancedImage().getGalleryImageSpecialized());

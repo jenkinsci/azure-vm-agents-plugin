@@ -9,8 +9,7 @@
     maxVirtualMachinesLimit: 10
     resourceGroupReferenceType: "existing"
     vmTemplates:
-    - agentLaunchMethod: "SSH"
-      agentWorkspace: "/opt/jenkins"
+    - agentWorkspace: "/opt/jenkins"
       availabilityType:
         availabilitySet: "vm-agents"
       builtInImage: "Windows Server 2016"
@@ -31,6 +30,7 @@
         cat /etc/hosts
       jvmOptions: "-xmx"
       labels: "linux"
+      launcher: "ssh"
       location: "UK South"
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1

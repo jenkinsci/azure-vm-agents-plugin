@@ -403,7 +403,6 @@ public class IntegrationTest {
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);
         when(templateMock.getTerminateScript()).thenReturn(terminateScript);
-        when(templateMock.getAgentLaunchMethod()).thenReturn(launchMethod);
         when(templateMock.getImageTopLevelType()).thenReturn(Constants.IMAGE_TOP_LEVEL_ADVANCED);
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
         when(templateMock.getTags()).thenReturn(testEnv.templateTags);
@@ -431,7 +430,6 @@ public class IntegrationTest {
         when(templateMock.getOsDiskStorageAccountType()).thenReturn(storageType);
         when(templateMock.getDiskType()).thenReturn(Constants.DISK_MANAGED);
         when(templateMock.getOsDiskSize()).thenReturn(testEnv.osDiskSize);
-        when(templateMock.isPreInstallSsh()).thenReturn(true);
         when(templateMock.isEnableMSI()).thenReturn(enableMSI);
         when(templateMock.isEnableUAMI()).thenReturn(enableUAMI);
         when(templateMock.isEphemeralOSDisk()).thenReturn(ephemeralOSDisk);
