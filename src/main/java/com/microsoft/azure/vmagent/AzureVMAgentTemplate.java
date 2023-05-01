@@ -21,6 +21,7 @@ import com.azure.resourcemanager.compute.models.AvailabilitySet;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
@@ -85,6 +86,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
 /**
  * This class defines the configuration of Azure instance templates.
@@ -1444,16 +1446,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item owner) {
-            // when configuring the job, you only want those credentials that are available to ACL.SYSTEM selectable
-            // as we cannot select from a user's credentials unless they are the only user submitting the build
-            // (which we cannot assume) thus ACL.SYSTEM is correct here.
-            return new StandardListBoxModel().withAll(
-                    CredentialsProvider.lookupCredentials(
-                            StandardUsernamePasswordCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+        @POST
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String credentialsId) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(CredentialsProvider.CREATE)
+                    && !context.hasPermission(CredentialsProvider.UPDATE)) {
+                return model.includeCurrentValue(credentialsId);
+            }
+
+            return model
+                    .includeCurrentValue(credentialsId)
+                    .includeAs(ACL.SYSTEM, context, SSHUserPrivateKey.class)
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
         }
 
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
