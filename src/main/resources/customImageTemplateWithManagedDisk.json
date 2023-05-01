@@ -15,7 +15,18 @@
         "storageAccountType": "Standard_LRS",
         "jenkinsTag": "ManagedByAzureVMAgents",
         "resourceTag": "AzureJenkins",
-        "blobEndpointSuffix": ".blob.core.windows.net/"
+        "blobEndpointSuffix": ".blob.core.windows.net/",
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                        "keyData": "[parameters('adminPasswordOrKey')]"
+                    }
+                ]
+            }
+        }
     },
     "resources": [
         {
@@ -86,8 +97,9 @@
                 },
                 "osProfile": {
                     "computerName": "[concat(variables('vmName'), copyIndex())]",
-                    "adminUsername": "[variables('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPasswordOrKey')]",
+                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('linuxConfiguration'))]"
                 },
                 "storageProfile": {
                     "imageReference": {

@@ -581,7 +581,6 @@ public final class AzureVMManagementServiceDelegate {
             // Grab the username/pass
             StandardUsernamePasswordCredentials creds = template.getVMCredentials();
 
-            putVariable(tmp, "adminUsername", creds.getUsername());
             putVariableIfNotBlank(tmp, "storageAccountName", storageAccountName);
             putVariableIfNotBlank(tmp, "storageAccountType", storageAccountType);
             putVariableIfNotBlank(tmp, "blobEndpointSuffix", blobEndpointSuffix);
@@ -618,8 +617,12 @@ public final class AzureVMManagementServiceDelegate {
 
             final ObjectNode parameters = MAPPER.createObjectNode();
 
-            defineParameter(tmp, "adminPassword", "secureString");
-            putParameter(parameters, "adminPassword", creds.getPassword().getPlainText());
+            defineParameter(tmp, "authenticationType", "string");
+            putParameter(parameters, "authenticationType", "password");
+            defineParameter(tmp, "adminUsername", "string");
+            putParameter(parameters, "adminUsername", creds.getUsername());
+            defineParameter(tmp, "adminPasswordOrKey", "secureString");
+            putParameter(parameters, "adminPasswordOrKey", creds.getPassword().getPlainText());
 
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
