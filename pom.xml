@@ -76,6 +76,8 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>jsch</artifactId>
+            <!-- TODO https://github.com/jenkinsci/jsch-plugin/pull/33 -->
+            <version>0.2.8.63.vf67c9d214a_59</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>

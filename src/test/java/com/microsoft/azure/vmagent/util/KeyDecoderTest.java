@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PemDecoderTest {
+class KeyDecoderTest {
 
     private static final String TEST_RSA_PEM_FORMAT = "-----BEGIN RSA PRIVATE KEY-----\n" +
             "MIIG4wIBAAKCAYEAs/Y3nKws6i7hlVGsj/5N8s8Zuj9ri8kNGPaRXSNhlE+BuhmU\n" +
@@ -97,7 +97,7 @@ class PemDecoderTest {
 
     @Test
     void getRsaPublicKey() throws IOException {
-        String actual = PemDecoder.getRsaPublicKey(TEST_RSA_PEM_FORMAT, null);
+        String actual = KeyDecoder.getRsaPublicKey(TEST_RSA_PEM_FORMAT, null);
         String expected = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCz9jecrCzqLuGVUayP/k3yzxm6P2uLyQ0Y9pFdI2GUT4G6GZQ70An6jVTufdLSMUL9Sb9xv0Hq/rWsO56vAEl5VJu1vqzmZ+EkfdsiFxiDLdYRhH47pnOYP4CEZmmYl5bO9cdYPvaa0WscRmGuZKm6vM/uniq2xxFEq/CWTTVXMCAvM8JDroP1VdeoPPaXBQROsxxxvw0AsU7PVcdT7YumC2iKeBb6KIePDNdw/6Xv71YQHSnNT9oM49xK8cx2M8j6WBmxHZSQo3fCHLALxdmfd9r/HA5l0WJeBZMM9S9EEd6gw+MaZJ1ChFVvhGYZqcLFqAYUem0UjyV7tdZCMwPQ004pjfkVrfHDQ6szSaKBFAKk2A8+RdGDg9XkKAbbUvam7ISoCu3qFLHSiBABtNmD1AN8huNhexVlCuvJAZKSEnJ0lpPSkFDZrzX1cG0cWuPvRXUpxmVBnSdAHM62uhFA7XuYOcvlUkLnqibIaDibFyvOLuD5xuEyTK4CXnB2r4E=";
         assertEquals(expected, actual);
     }
@@ -109,7 +109,7 @@ class PemDecoderTest {
     // and
     // https://serverfault.com/a/950686
     void getOpenSSHPublicKey() throws IOException {
-        String actual = PemDecoder.getRsaPublicKey(TEST_OPENSSH_FORMAT, null);
+        String actual = KeyDecoder.getRsaPublicKey(TEST_OPENSSH_FORMAT, null);
         String expected = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCZB+n+z6RjyRuOSpiUdByT93BiVVVjIUHsctV9TucKTEbJ1POvG/B3z96/m69SwtBfhUIx8dHEJszbMUewGnKuzNgnHOh4kHh7iipa4qocbEUBI1l+RMjO5soe6kdQTzYirIWxqdkx/S/BfbAKv4rsGMB9UqKu9mCUmV5uhZPcb1kiAxLZinPiEB8FI0+b+ZJec9mZMb8QPRzc/oMr5f5JHvLugu1e+up67weOLQo6JTh6WNCUf1Okag/TTzyjXVU/EuT1hPfI9JS4fYojEDrOHR9zNNAN5WybjIA9MPiN0eHtW6Tz5MfauHpUcfrmUJUQ1lHb2DRI/TVNzoaNOV05O/pMK3nTbVmm1Zi6YFvJmMnPicytyJDXZalqVUqx25F491mNm9vvmR6+X2ODPtIPhFmrNE/uMR4X77Ui0bgRJ6hHH/Gr8u3WhAuoCewMLQsK81D1MgTW0Ri+5j6TCIGVYsNI9pydhBUX41p40HgJpm8B6WHMo1wS4fYKSYxGAYU=";
         assertEquals(expected, actual);
     }

@@ -49,6 +49,7 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.BlobUrlParts;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.common.StorageSharedKeyCredential;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,10 +62,10 @@ import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
-import com.microsoft.azure.vmagent.retry.NoRetryStrategy;
 import com.microsoft.azure.vmagent.util.*;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import hudson.model.Descriptor.FormException;
+import hudson.util.Secret;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpAgentReceiver;
@@ -618,18 +619,21 @@ public final class AzureVMManagementServiceDelegate {
 
             final ObjectNode parameters = MAPPER.createObjectNode();
 
-            defineParameter(tmp, "authenticationType", "string");
-            putParameter(parameters, "authenticationType", "password");
             defineParameter(tmp, "adminUsername", "string");
             putParameter(parameters, "adminUsername", creds.getUsername());
-            defineParameter(tmp, "adminPasswordOrKey", "secureString");
 
+            defineParameter(tmp, "authenticationType", "string");
+            defineParameter(tmp, "adminPasswordOrKey", "secureString");
             if (creds instanceof StandardUsernamePasswordCredentials) {
                 StandardUsernamePasswordCredentials passwordCredentials = (StandardUsernamePasswordCredentials) creds;
                 putParameter(parameters, "adminPasswordOrKey", passwordCredentials.getPassword().getPlainText());
-
+                putParameter(parameters, "authenticationType", "password");
             } else {
-                defineParameter(tmp, "adminPasswordOrKey", "string");
+                SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
+                String privateKey = sshCredentials.getPrivateKeys().get(0);
+                String rsaPublicKey = KeyDecoder.getRsaPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
+                putParameter(parameters, "adminPasswordOrKey", rsaPublicKey);
+                putParameter(parameters, "authenticationType", "key");
             }
 
             // Register the deployment for cleanup
@@ -2035,6 +2039,13 @@ public final class AzureVMManagementServiceDelegate {
                 if (returnOnSingleError && !errors.isEmpty()) {
                     return errors;
                 }
+            } else {
+                SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
+                validationResult = verifySSHKey(sshCredentials.getPrivateKeys(), sshCredentials.getPassphrase());
+                addValidationResultIfFailed(validationResult, errors);
+                if (returnOnSingleError && !errors.isEmpty()) {
+                    return errors;
+                }
             }
 
             //verify JVM Options
@@ -2401,6 +2412,25 @@ public final class AzureVMManagementServiceDelegate {
         } else {
             return Messages.Azure_GC_Template_PWD_Not_Valid();
         }
+    }
+
+    private static String verifySSHKey(List<String> sshKeys, Secret passphrase) {
+        if (sshKeys == null || sshKeys.isEmpty()) {
+            return "Error missing keys";
+        }
+
+        if (sshKeys.size() > 1) {
+            return "Error size";
+        }
+
+        String sshKey = sshKeys.get(0);
+        try {
+            KeyDecoder.getRsaPublicKey(sshKey, Secret.toString(passphrase));
+        } catch (IOException e) {
+            return "Error key format";
+        }
+
+        return Constants.OP_SUCCESS;
     }
 
     private static String verifyJvmOptions(String jvmOptions) {

@@ -16,6 +16,7 @@
 package com.microsoft.azure.vmagent.remote;
 
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.*;
@@ -35,6 +36,7 @@ import hudson.remoting.Channel;
 import hudson.remoting.Channel.Listener;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -277,7 +279,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         return "C:\\remoting";
     }
 
-    private Session getRemoteSession(String userName, String password, String dnsName, int sshPort, String sshConfig) throws JSchException {
+    private Session getRemoteSession(String userName, String passwordOrKey, String passphrase, String dnsName, int sshPort, String sshConfig, boolean passwordAuth) throws JSchException {
         LOGGER.log(Level.INFO,
                 "Getting remote session for user {0} to host {1}:{2}",
                 new Object[]{userName, dnsName, sshPort});
@@ -296,7 +298,13 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
         }
         final Session session = remoteClient.getSession(userName, dnsName, sshPort);
         session.setConfig("StrictHostKeyChecking", "no");
-        session.setPassword(password);
+        if (passwordAuth) {
+            session.setPassword(passwordOrKey);
+        } else {
+            remoteClient.addIdentity("key", passwordOrKey.getBytes(StandardCharsets.UTF_8),
+                    null,
+                    passphrase != null ? passphrase.getBytes(StandardCharsets.UTF_8) : null);
+        }
         // pinging server for every 1 minutes to keep the connection alive
         final int serverAliveIntervalInMillis = 60 * 1000;
         session.setServerAliveInterval(serverAliveIntervalInMillis);
@@ -433,17 +441,27 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             try {
                 // Grab the username/pass
                 StandardUsernameCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
-                String password = null;
+                String passwordOrKey;
+                String passphrase = null;
+                boolean passwordAuth = false;
                 if (creds instanceof StandardUsernamePasswordCredentials) {
-                    password = ((StandardUsernamePasswordCredentials) creds).getPassword().getPlainText();
+                    passwordOrKey = ((StandardUsernamePasswordCredentials) creds).getPassword().getPlainText();
+                    passwordAuth = true;
+                } else {
+                    SSHUserPrivateKey sshCreds = (SSHUserPrivateKey) creds;
+                    passwordOrKey = sshCreds.getPrivateKeys().get(0);
+                    Secret secretPassphrase = sshCreds.getPassphrase();
+                    passphrase = secretPassphrase != null ? secretPassphrase.getPlainText() : null;
                 }
 
                 session = getRemoteSession(
                         creds.getUsername(),
-                        password,
+                        passwordOrKey,
+                        passphrase,
                         agent.getPublicDNSName(),
                         agent.getSshPort(),
-                        agent.getSshConfig());
+                        agent.getSshConfig(),
+                        passwordAuth);
                 LOGGER.fine("Got remote connection");
             } catch (Exception e) {
                 // Retry till max count and throw exception if not successful even after that

@@ -14,10 +14,10 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 
-public final class PemDecoder {
+public final class KeyDecoder {
     private static final int CAPACITY = 4;
 
-    private PemDecoder() {
+    private KeyDecoder() {
     }
 
     public static String getRsaPublicKey(String privateKey, String privateSshKeyPassphrase) throws IOException {
