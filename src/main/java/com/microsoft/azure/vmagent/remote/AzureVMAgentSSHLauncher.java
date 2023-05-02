@@ -16,6 +16,7 @@
 package com.microsoft.azure.vmagent.remote;
 
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.*;
 import com.microsoft.azure.vmagent.AzureVMAgent;
@@ -158,9 +159,6 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                 // Execute initialization script
                 // Make sure to change file permission for execute if needed. TODO: need to test
 
-                // Grab the username/pass
-                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
-
                 if (isUnix) {
                     command = "sh " + REMOTE_INIT_FILE_NAME;
                 } else {
@@ -171,8 +169,8 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
                         command,
                         logger,
                         isUnix,
-                        agent.getExecuteInitScriptAsRoot(),
-                        creds.getPassword().getPlainText());
+                        agent.getExecuteInitScriptAsRoot()
+                );
                 if (exitStatus != 0) {
                     if (agent.getDoNotUseMachineIfInitFails()) {
                         LOGGER.log(Level.SEVERE, "Init script failed on " + agent.getNodeName() + ": exit code={0} "
@@ -345,16 +343,16 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
     }
 
     public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix)  throws Exception {
-    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, false, null);
+    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, false);
     }
 
-    public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix, boolean executeAsRoot, String passwordIfRoot)  throws Exception {
-    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, executeAsRoot, passwordIfRoot);
+    public int executeRemoteCommand(AzureVMAgent agent, String command, PrintStream logger, boolean isUnix, boolean executeAsRoot)  throws Exception {
+    	return executeRemoteCommand(connectToSsh(agent), command, logger, isUnix, executeAsRoot);
     }
 
     /* Helper method for most common call (without root). */
     private int executeRemoteCommand(Session jschSession, String command, PrintStream logger, boolean isUnix) {
-        return executeRemoteCommand(jschSession, command, logger, isUnix, false, null);
+        return executeRemoteCommand(jschSession, command, logger, isUnix, false);
     }
 
     /* Executes a remote command, as root if desired. */
@@ -363,8 +361,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             String command,
             PrintStream logger,
             boolean isUnix,
-            boolean executeAsRoot,
-            String passwordIfRoot) {
+            boolean executeAsRoot) {
         ChannelExec channel = null;
         try {
             // If root, modify the command to set up sudo -S
@@ -382,15 +379,9 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             channel.setErrStream(System.err);
             final InputStream inputStream = channel.getInputStream();
             final InputStream errorStream = channel.getErrStream();
-            final OutputStream outputStream = channel.getOutputStream();
             final int connectTimeoutInMillis = 60 * 1000;
             channel.connect(connectTimeoutInMillis);
 
-            // If as root, push the password
-            if (isUnix && executeAsRoot) {
-                outputStream.write((passwordIfRoot + "\n").getBytes(StandardCharsets.UTF_8));
-                outputStream.flush();
-            }
 
             // Read from input stream
             try {
@@ -441,11 +432,15 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             currRetryCount++;
             try {
                 // Grab the username/pass
-                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
+                StandardUsernameCredentials creds = AzureUtil.getCredentials(agent.getVMCredentialsId());
+                String password = null;
+                if (creds instanceof StandardUsernamePasswordCredentials) {
+                    password = ((StandardUsernamePasswordCredentials) creds).getPassword().getPlainText();
+                }
 
                 session = getRemoteSession(
                         creds.getUsername(),
-                        creds.getPassword().getPlainText(),
+                        password,
                         agent.getPublicDNSName(),
                         agent.getSshPort(),
                         agent.getSshConfig());

@@ -49,6 +49,7 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.BlobUrlParts;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.common.StorageSharedKeyCredential;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -579,7 +580,7 @@ public final class AzureVMManagementServiceDelegate {
 
             putVariable(tmp, "vmSize", template.getVirtualMachineSize());
             // Grab the username/pass
-            StandardUsernamePasswordCredentials creds = template.getVMCredentials();
+            StandardUsernameCredentials creds = template.getVMCredentials();
 
             putVariableIfNotBlank(tmp, "storageAccountName", storageAccountName);
             putVariableIfNotBlank(tmp, "storageAccountType", storageAccountType);
@@ -622,7 +623,14 @@ public final class AzureVMManagementServiceDelegate {
             defineParameter(tmp, "adminUsername", "string");
             putParameter(parameters, "adminUsername", creds.getUsername());
             defineParameter(tmp, "adminPasswordOrKey", "secureString");
-            putParameter(parameters, "adminPasswordOrKey", creds.getPassword().getPlainText());
+
+            if (creds instanceof StandardUsernamePasswordCredentials) {
+                StandardUsernamePasswordCredentials passwordCredentials = (StandardUsernamePasswordCredentials) creds;
+                putParameter(parameters, "adminPasswordOrKey", passwordCredentials.getPassword().getPlainText());
+
+            } else {
+                defineParameter(tmp, "adminPasswordOrKey", "string");
+            }
 
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
@@ -2017,18 +2025,16 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             //verify password
-            String adminPassword = "";
-            try {
-                StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(credentialsId);
-                adminPassword = creds.getPassword().getPlainText();
-            } catch (AzureCloudException e) {
-                LOGGER.log(Level.SEVERE, "Could not load the VM credentials", e);
-            }
+            String adminPassword;
+            StandardUsernameCredentials creds = AzureUtil.getCredentials(credentialsId);
+            if (creds instanceof StandardUsernamePasswordCredentials) {
+                adminPassword = ((StandardUsernamePasswordCredentials) creds).getPassword().getPlainText();
 
-            validationResult = verifyAdminPassword(adminPassword);
-            addValidationResultIfFailed(validationResult, errors);
-            if (returnOnSingleError && !errors.isEmpty()) {
-                return errors;
+                validationResult = verifyAdminPassword(adminPassword);
+                addValidationResultIfFailed(validationResult, errors);
+                if (returnOnSingleError && !errors.isEmpty()) {
+                    return errors;
+                }
             }
 
             //verify JVM Options

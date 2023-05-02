@@ -16,10 +16,8 @@
 package com.microsoft.azure.vmagent;
 
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.remote.AzureVMAgentSSHLauncher;
-import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.CleanUpAction;
 import com.microsoft.azure.vmagent.util.Constants;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -40,8 +38,15 @@ import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
 import hudson.util.FormValidation;
 import hudson.util.LogTaskListener;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jenkins.model.Jenkins;
-
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
@@ -50,15 +55,6 @@ import org.jvnet.localizer.Localizable;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
@@ -633,9 +629,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     // Execute termination script
                     // Make sure to change file permission for execute if needed.
 
-                    // Grab the username/pass
-                    StandardUsernamePasswordCredentials creds = AzureUtil.getCredentials(vmCredentialsId);
-
                     if (isUnix) {
                         command = "sh " + REMOTE_TERMINATE_FILE_NAME;
                     } else {
@@ -647,8 +640,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                             command,
                             terminateStream,
                             isUnix,
-                            executeInitScriptAsRoot,
-                            creds.getPassword().getPlainText());
+                            executeInitScriptAsRoot);
                     if (exitStatus != 0) {
                         LOGGER.log(Level.SEVERE,
                                 "Terminate script failed: exit code={0} ", exitStatus);

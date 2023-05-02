@@ -24,6 +24,7 @@ import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.util.AzureBaseCredentials;
@@ -1084,7 +1085,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return credentialsId;
     }
 
-    public StandardUsernamePasswordCredentials getVMCredentials() throws AzureCloudException {
+    public StandardUsernameCredentials getVMCredentials() throws AzureCloudException {
         return AzureUtil.getCredentials(credentialsId);
     }
 
@@ -1452,9 +1453,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             }
 
             return model
-                    .includeCurrentValue(credentialsId)
                     .includeAs(ACL.SYSTEM, context, SSHUserPrivateKey.class)
-                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class)
+                    .includeCurrentValue(credentialsId);
         }
 
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
