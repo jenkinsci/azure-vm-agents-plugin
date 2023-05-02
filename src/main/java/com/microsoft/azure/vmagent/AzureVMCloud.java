@@ -1029,7 +1029,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     public AzureResourceManager getAzureClient() {
-        if (azureClient == null) {
+        if (azureClient == null && credentialsId != null) {
             this.azureClient = AzureResourceManagerCache.get(credentialsId);
         }
 
