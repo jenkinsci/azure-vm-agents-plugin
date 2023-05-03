@@ -64,6 +64,8 @@ import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import com.microsoft.azure.vmagent.util.*;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
+import com.sshtools.common.publickey.InvalidPassphraseException;
+import com.sshtools.common.ssh.SshException;
 import hudson.model.Descriptor.FormException;
 import hudson.util.Secret;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
@@ -631,7 +633,7 @@ public final class AzureVMManagementServiceDelegate {
             } else {
                 SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
                 String privateKey = sshCredentials.getPrivateKeys().get(0);
-                String rsaPublicKey = KeyDecoder.getRsaPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
+                String rsaPublicKey = KeyDecoder.getPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
                 putParameter(parameters, "adminPasswordOrKey", rsaPublicKey);
                 putParameter(parameters, "authenticationType", "key");
             }
@@ -2414,7 +2416,7 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private static String verifySSHKey(List<String> sshKeys, Secret passphrase) {
+    private static String verifySSHKey(List<String> sshKeys, Secret passphrase) throws RuntimeException {
         if (sshKeys == null || sshKeys.isEmpty()) {
             return Messages.AzureVMManagementServiceDelegate_SSH_Missing_Key();
         }
@@ -2425,8 +2427,8 @@ public final class AzureVMManagementServiceDelegate {
 
         String sshKey = sshKeys.get(0);
         try {
-            KeyDecoder.getRsaPublicKey(sshKey, Secret.toString(passphrase));
-        } catch (IOException e) {
+            KeyDecoder.getPublicKey(sshKey, Secret.toString(passphrase));
+        } catch (IOException | InvalidPassphraseException | SshException e) {
             LOGGER.log(Level.INFO, "Failed to validate SSH key", e);
             return Messages.AzureVMManagementServiceDelegate_SSH_Invalid_Key_Format();
         }

@@ -80,8 +80,9 @@
             <version>0.2.8.63.vf67c9d214a_59</version>
         </dependency>
         <dependency>
-            <groupId>org.jenkins-ci.plugins</groupId>
-            <artifactId>bouncycastle-api</artifactId>
+            <groupId>com.sshtools</groupId>
+            <artifactId>maverick-synergy-client</artifactId>
+            <version>3.0.10</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
