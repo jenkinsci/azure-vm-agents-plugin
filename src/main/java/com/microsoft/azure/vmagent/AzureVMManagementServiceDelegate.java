@@ -2416,18 +2416,19 @@ public final class AzureVMManagementServiceDelegate {
 
     private static String verifySSHKey(List<String> sshKeys, Secret passphrase) {
         if (sshKeys == null || sshKeys.isEmpty()) {
-            return "Error missing keys";
+            return Messages.AzureVMManagementServiceDelegate_SSH_Missing_Key();
         }
 
         if (sshKeys.size() > 1) {
-            return "Error size";
+            return Messages.AzureVMManagementServiceDelegate_SSH_Multiple_Keys_Found();
         }
 
         String sshKey = sshKeys.get(0);
         try {
             KeyDecoder.getRsaPublicKey(sshKey, Secret.toString(passphrase));
         } catch (IOException e) {
-            return "Error key format";
+            LOGGER.log(Level.INFO, "Failed to validate SSH key", e);
+            return Messages.AzureVMManagementServiceDelegate_SSH_Invalid_Key_Format();
         }
 
         return Constants.OP_SUCCESS;
