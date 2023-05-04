@@ -16,8 +16,8 @@ public final class KeyDecoder {
             SshException {
         SshKeyPair keyPair = SshKeyUtils.getPrivateKey(privateKey, privateSshKeyPassphrase);
 
-        String publisKey = Base64.getEncoder().encodeToString(keyPair.getPublicKey().getEncoded());
-        return keyPair.getPublicKey().getAlgorithm() + " " + publisKey;
+        String publicKey = Base64.getEncoder().encodeToString(keyPair.getPublicKey().getEncoded());
+        return keyPair.getPublicKey().getAlgorithm() + " " + publicKey;
     }
 
 }
