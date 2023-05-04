@@ -21,10 +21,11 @@ import com.azure.resourcemanager.compute.models.AvailabilitySet;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
@@ -49,7 +50,6 @@ import hudson.RelativePath;
 import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Item;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -65,7 +65,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,11 +79,11 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
 /**
  * This class defines the configuration of Azure instance templates.
@@ -1086,7 +1085,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return credentialsId;
     }
 
-    public StandardUsernamePasswordCredentials getVMCredentials() throws AzureCloudException {
+    public StandardUsernameCredentials getVMCredentials() throws AzureCloudException {
         return AzureUtil.getCredentials(credentialsId);
     }
 
@@ -1444,16 +1443,19 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item owner) {
-            // when configuring the job, you only want those credentials that are available to ACL.SYSTEM selectable
-            // as we cannot select from a user's credentials unless they are the only user submitting the build
-            // (which we cannot assume) thus ACL.SYSTEM is correct here.
-            return new StandardListBoxModel().withAll(
-                    CredentialsProvider.lookupCredentials(
-                            StandardUsernamePasswordCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+        @POST
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String credentialsId) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(CredentialsProvider.CREATE)
+                    && !context.hasPermission(CredentialsProvider.UPDATE)) {
+                return model.includeCurrentValue(credentialsId);
+            }
+
+            return model
+                    .includeAs(ACL.SYSTEM, context, SSHUserPrivateKey.class)
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class)
+                    .includeCurrentValue(credentialsId);
         }
 
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {

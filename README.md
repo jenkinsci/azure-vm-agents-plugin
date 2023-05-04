@@ -68,7 +68,7 @@ To use this plugin to create VM agents, first you need to have an Azure Service 
      Jenkins will only build a project on this node when that project is restricted to certain nodes using a label expression, and that expression matches this node's name and/or labels.
      This allows an agent to be reserved for certain kinds of jobs.
 10. Select a built-in image, you can choose between Windows Server 2016 and Ubuntu 16.04 LTS. You can also choose to install some tools on the agent, including Git, Maven and Docker (JDK is always installed).
-11. Specify Admin Credentials (a username/password credentials), this is the username and password if you want to log into the agent VM.
+11. Specify Admin Credentials - This needs to be either an "SSH Username with private key" or "Username with password" credential
 12. Click Verify Template to make sure all your configurations are correct, then Save.
 
 ### Run Jenkins Jobs on Azure VM Agents
