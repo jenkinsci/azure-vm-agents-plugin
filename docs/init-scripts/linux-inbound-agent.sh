@@ -9,6 +9,7 @@ export USER=jenkins
 
 mkdir -p /opt/jenkins
 mkdir -p /home/$USER/inbound-agent
+chown $USER:$USER /home/$USER/inbound-agent
 
 (
   cd /opt/jenkins || exit
