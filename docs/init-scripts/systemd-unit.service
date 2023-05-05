@@ -4,7 +4,7 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/java -jar /home/${USER}/inbound-agent/agent.jar -jnlpUrl ${JENKINS_URL} -secret @/home/${USER}/inbound-agent/agent-secret -workDir /home/${USER}/inbound-agent
+ExecStart=/usr/bin/java -jar /home/${USER}/inbound-agent/agent.jar -jnlpUrl ${AGENT_URL} -secret @/home/${USER}/inbound-agent/agent-secret -workDir /home/${USER}/inbound-agent
 User=${USER}
 WorkingDirectory=/home/${USER}/inbound-agent
 Restart=on-failure
