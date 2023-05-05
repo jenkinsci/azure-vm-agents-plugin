@@ -27,7 +27,7 @@ chown $USER:$USER /home/$USER/inbound-agent
   curl -O "$JENKINS_URL/jnlpJars/agent.jar"
   echo "${SECRET}" > agent-secret
 
-  curl -O https://raw.githubusercontent.com/timja/azure-vm-agents-plugin/agent-as-service/docs/init-scripts/systemd-unit.service
+  curl -O https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/HEAD/docs/init-scripts/systemd-unit.service
   export AGENT_URL="$JENKINS_URL/computer/$AGENT_NAME/jenkins-agent.jnlp"
   envsubst < systemd-unit.service > /etc/systemd/system/jenkins-agent.service
   rm -f systemd-unit.service
