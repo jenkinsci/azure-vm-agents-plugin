@@ -129,6 +129,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final boolean ephemeralOSDisk;
 
+    private final boolean encryptionAtHost;
+
     private final String uamiID;
 
     private String javaPath;
@@ -177,6 +179,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean enableMSI,
             boolean enableUAMI,
             boolean ephemeralOSDisk,
+            boolean encryptionAtHost,
             String uamiID,
             String javaPath,
             String remotingOptions,
@@ -215,6 +218,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.enableMSI = enableMSI;
         this.enableUAMI = enableUAMI;
         this.ephemeralOSDisk = ephemeralOSDisk;
+        this.encryptionAtHost = encryptionAtHost;
         this.uamiID = uamiID;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
@@ -252,6 +256,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean enableMSI,
             boolean enableUAMI,
             boolean ephemeralOSDisk,
+            boolean encryptionAtHost,
             String uamiID,
             AzureVMAgentTemplate template,
             String fqdn,
@@ -296,6 +301,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 enableMSI,
                 enableUAMI,
                 ephemeralOSDisk,
+                encryptionAtHost,
                 uamiID,
                 javaPath,
                 remotingOptions,
@@ -506,6 +512,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean isEphemeralOSDisk() {
         return ephemeralOSDisk;
+    }
+
+    public boolean isEncryptionAtHost() {
+        return encryptionAtHost;
     }
 
     public AzureVMAgentTemplate getTemplate() {

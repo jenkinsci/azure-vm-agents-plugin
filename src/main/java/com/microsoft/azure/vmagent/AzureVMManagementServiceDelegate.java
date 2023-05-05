@@ -228,6 +228,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
+            final boolean encryptionAtHost = template.isEncryptionAtHost();
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
             final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
@@ -495,6 +496,7 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
             putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
+            putVariable(tmp, "encryptionAtHost", Boolean.toString(encryptionAtHost));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
             String imageId = getImageId(properties);
@@ -1158,6 +1160,7 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("enableMSI"),
                     (Boolean) properties.get("enableUAMI"),
                     (Boolean) properties.get("ephemeralOSDisk"),
+                    (Boolean) properties.get("encryptionAtHost"),
                     (String) properties.get("uamiID"),
                     template,
                     fqdn,
