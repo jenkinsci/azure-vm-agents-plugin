@@ -1,0 +1,14 @@
+[Unit]
+Description=Jenkins Inbound Agent
+Wants=network.target
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/java -jar /home/${USER}/inbound-agent/agent.jar -jnlpUrl ${JENKINS_URL} -secret @/home/${USER}/inbound-agent/agent-secret -workDir /home/${USER}/inbound-agent
+User=${USER}
+WorkingDirectory=/home/${USER}/inbound-agent
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
