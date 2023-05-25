@@ -21,10 +21,10 @@ import com.azure.resourcemanager.compute.models.AvailabilitySet;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
@@ -49,7 +49,6 @@ import hudson.RelativePath;
 import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Item;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -58,6 +57,17 @@ import hudson.security.ACL;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
+
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -65,7 +75,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,17 +83,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.DoNotUse;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * This class defines the configuration of Azure instance templates.
@@ -1099,7 +1097,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return credentialsId;
     }
 
-    public StandardUsernamePasswordCredentials getVMCredentials() throws AzureCloudException {
+    public StandardUsernameCredentials getVMCredentials() throws AzureCloudException {
         return AzureUtil.getCredentials(credentialsId);
     }
 
@@ -1440,11 +1438,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return list;
         }
 
+        @POST
         public ListBoxModel doFillVirtualMachineSizeItems(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
-                @QueryParameter String location)
-
-                throws IOException, ServletException {
+                @QueryParameter String location) {
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
             ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
@@ -1457,18 +1455,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item owner) {
-            // when configuring the job, you only want those credentials that are available to ACL.SYSTEM selectable
-            // as we cannot select from a user's credentials unless they are the only user submitting the build
-            // (which we cannot assume) thus ACL.SYSTEM is correct here.
-            return new StandardListBoxModel().withAll(
-                    CredentialsProvider.lookupCredentials(
-                            StandardUsernamePasswordCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()));
+        @POST
+        public ListBoxModel doFillCredentialsIdItems(@QueryParameter String credentialsId) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(Jenkins.ADMINISTER)) {
+                return model.includeCurrentValue(credentialsId);
+            }
+
+            return model
+                    .includeAs(ACL.SYSTEM, context, SSHUserPrivateKey.class)
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
         }
 
+        @POST
         public ListBoxModel doFillOsTypeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             model.add(Constants.OS_TYPE_LINUX);
@@ -1476,12 +1476,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId) {
-            ListBoxModel model = new ListBoxModel();
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
+            ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
+
             AzureBaseCredentials credential = AzureCredentialUtil.getCredential(null, azureCredentialsId);
             if (credential != null) {
                 String envName = credential.getAzureEnvironmentName();
@@ -1506,12 +1509,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return new AzureSSHLauncher();
         }
 
+        @POST
         public ListBoxModel doFillAvailabilitySetItems(
                 @RelativePath("../..") @QueryParameter String azureCredentialsId,
                 @RelativePath("../..") @QueryParameter String resourceGroupReferenceType,
                 @RelativePath("../..") @QueryParameter String newResourceGroupName,
                 @RelativePath("../..") @QueryParameter String existingResourceGroupName,
                 @RelativePath("..") @QueryParameter String location) {
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
+
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Availability Set in current resource group and location ---", "");
             if (StringUtils.isBlank(azureCredentialsId)) {
@@ -1539,8 +1545,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillStorageAccountTypeItems(@QueryParameter String virtualMachineSize) {
-
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Storage Account Type ---", "");
 
@@ -1553,8 +1559,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillOsDiskStorageAccountTypeItems(@QueryParameter String virtualMachineSize) {
-
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Storage Account Type ---", "");
 
@@ -1568,6 +1574,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
             ListBoxModel model = new ListBoxModel();
             for (Node.Mode m : hudson.Functions.getNodeModes()) {
@@ -1576,12 +1583,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillExistingStorageAccountNameItems(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
                 @RelativePath("..") @QueryParameter String newResourceGroupName,
                 @RelativePath("..") @QueryParameter String existingResourceGroupName,
-                @QueryParameter String storageAccountType) throws IOException, ServletException {
+                @QueryParameter String storageAccountType) {
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
+
             ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
@@ -1607,6 +1617,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public ListBoxModel doFillBuiltInImageItems() {
             ListBoxModel model = new ListBoxModel();
             model.add(Constants.UBUNTU_2204_LTS);
@@ -1618,6 +1629,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public FormValidation doCheckStorageAccountType(
                 @QueryParameter String value,
                 @QueryParameter String diskType) {
@@ -1627,8 +1639,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckSshConfig(
                 @QueryParameter String value) {
+            if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                return FormValidation.ok();
+            }
+
             if (!StringUtils.isBlank(value)) {
                 try {
                     OpenSSHConfig.parse(value);
@@ -1639,6 +1656,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckInitScript(
                 @QueryParameter String value,
                 @QueryParameter String agentLaunchMethod) {
@@ -1648,6 +1666,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckStorageAccountName(@QueryParameter String value) {
             if (StringUtils.isBlank(value)) {
                 return FormValidation.ok(Messages.SA_Blank_Create_New());
@@ -1655,6 +1674,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public ListBoxModel doFillDiskTypeItems() {
             ListBoxModel model = new ListBoxModel();
             model.add("Managed Disk", Constants.DISK_MANAGED);
@@ -1662,6 +1682,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        @POST
         public FormValidation doAgentLaunchMethod(@QueryParameter String value) {
             if (Constants.LAUNCH_METHOD_JNLP.equals(value)) {
                 return FormValidation.warning(Messages.Azure_GC_LaunchMethod_Warn_Msg());
@@ -1678,10 +1699,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
          * @param osType           OS type
          * @return The validation result
          */
+        @POST
         public FormValidation doCheckTemplateName(
                 @QueryParameter String value,
                 @QueryParameter boolean templateDisabled,
                 @QueryParameter String osType) {
+            if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                return FormValidation.ok();
+            }
+
             List<FormValidation> errors = new ArrayList<>();
             // Check whether the template name is valid, and then check
             // whether it would be shortened on VM creation.
@@ -1705,6 +1731,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckNoOfParallelJobs(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 String result = AzureVMManagementServiceDelegate.verifyNoOfExecutors(value);
@@ -1718,7 +1745,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckAdminPassword(@QueryParameter String value) {
+            if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                return FormValidation.ok();
+            }
+
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidPassword(value)) {
                     return FormValidation.ok();
@@ -1729,6 +1761,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
+        @POST
         public FormValidation doCheckJvmOptions(@QueryParameter String value) {
             if (StringUtils.isNotBlank(value)) {
                 if (AzureUtil.isValidJvmOption(value)) {
@@ -1740,7 +1773,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return FormValidation.ok();
         }
 
-        @RequirePOST
+        @POST
         public FormValidation doVerifyConfiguration(
                 @RelativePath("..") @QueryParameter String azureCredentialsId,
                 @RelativePath("..") @QueryParameter String resourceGroupReferenceType,

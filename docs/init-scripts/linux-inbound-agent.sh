@@ -4,10 +4,15 @@ JENKINS_URL=$1
 AGENT_NAME=$2
 SECRET=$3
 
-mkdir /opt/jenkins
+# Update if your user is called something different
+export USER=jenkins
+
+mkdir -p /opt/jenkins
+mkdir -p /home/$USER/inbound-agent
+chown $USER:$USER /home/$USER/inbound-agent
 
 (
-  cd /opt/jenkins
+  cd /opt/jenkins || exit
   apt-get update
   apt-get install -y default-jdk git
 
@@ -18,7 +23,16 @@ mkdir /opt/jenkins
 
   mvn --version
 
+  cd /home/$USER/inbound-agent || exit
   curl -O "$JENKINS_URL/jnlpJars/agent.jar"
+  echo "${SECRET}" > agent-secret
 
-  java -jar agent.jar -jnlpUrl "$JENKINS_URL/computer/$AGENT_NAME/jenkins-agent.jnlp" -secret "$SECRET" -workDir /opt/jenkins/workDir
-) |& tee /opt/jenkins/init-script.log
+  curl -O https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/HEAD/docs/init-scripts/systemd-unit.service
+  export AGENT_URL="$JENKINS_URL/computer/$AGENT_NAME/jenkins-agent.jnlp"
+  envsubst < systemd-unit.service > /etc/systemd/system/jenkins-agent.service
+  rm -f systemd-unit.service
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable jenkins-agent
+  sudo systemctl start jenkins-agent || sudo systemctl status jenkins-agent
+) |& tee /home/$USER/inbound-agent/init-script.log

@@ -22,7 +22,6 @@ import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.resources.models.Deployment;
 import com.azure.resourcemanager.resources.models.DeploymentOperation;
 import com.azure.resourcemanager.resources.models.ResourceGroup;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureImdsCredentials;
@@ -42,7 +41,6 @@ import hudson.logging.LogRecorder;
 import hudson.logging.LogRecorderManager;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
-import hudson.model.Item;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.security.ACL;
@@ -59,21 +57,22 @@ import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1029,7 +1028,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     public AzureResourceManager getAzureClient() {
-        if (azureClient == null) {
+        if (azureClient == null && credentialsId != null) {
             this.azureClient = AzureResourceManagerCache.get(credentialsId);
         }
 
@@ -1114,41 +1113,40 @@ public class AzureVMCloud extends Cloud {
                 @QueryParameter String existingResourceGroupName) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
-            String resourceGroupName = getResourceGroupName(
-                    resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-            if (StringUtils.isBlank(resourceGroupName)) {
-                resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
+            try {
+                String resourceGroupName = getResourceGroupName(
+                        resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+                if (StringUtils.isBlank(resourceGroupName)) {
+                    resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
+                }
+                AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                final String validationResult = AzureVMManagementServiceDelegate
+                        .getInstance(azureClient, azureCredentialsId)
+                        .verifyConfiguration(resourceGroupName, deploymentTimeout);
+                if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
+                    return FormValidation.error(validationResult);
+                }
+                return FormValidation.ok(Messages.Azure_Config_Success());
+            } catch (Exception e) {
+                return FormValidation.error(e, "Failed to verify configuration");
             }
-            AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
-            final String validationResult = AzureVMManagementServiceDelegate
-                    .getInstance(azureClient, azureCredentialsId)
-                    .verifyConfiguration(resourceGroupName, deploymentTimeout);
-            if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
-                return FormValidation.error(validationResult);
-            }
-            return FormValidation.ok(Messages.Azure_Config_Success());
         }
 
-        public ListBoxModel doFillAzureCredentialsIdItems(@AncestorInPath Item owner) {
-            StandardListBoxModel result = new StandardListBoxModel();
-            if (owner == null) {
-                if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
-                    return result;
-                }
-            } else {
-                if (!owner.hasPermission(owner.EXTENDED_READ)
-                        && !owner.hasPermission(CredentialsProvider.USE_ITEM)) {
-                    return result;
-                }
+        @POST
+        public ListBoxModel doFillAzureCredentialsIdItems(@QueryParameter String azureCredentialsId) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(Jenkins.ADMINISTER)) {
+                return model.includeCurrentValue(azureCredentialsId);
             }
-            return new StandardListBoxModel()
-                    .includeEmptyValue()
-                    .includeAs(ACL.SYSTEM, owner, AzureCredentials.class)
-                    .includeAs(ACL.SYSTEM, owner, AzureImdsCredentials.class);
+            return model
+                    .includeAs(ACL.SYSTEM, context, AzureCredentials.class)
+                    .includeAs(ACL.SYSTEM, context, AzureImdsCredentials.class);
         }
 
-        public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId)
-                throws IOException, ServletException {
+        @POST
+        public ListBoxModel doFillExistingResourceGroupNameItems(@QueryParameter String azureCredentialsId) {
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Resource Group ---", "");
             if (StringUtils.isBlank(azureCredentialsId)) {
@@ -1157,9 +1155,11 @@ public class AzureVMCloud extends Cloud {
 
             try {
                 final AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                Set<String> resourceGroupNames = new HashSet<>();
                 for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
-                    model.add(resourceGroup.name());
+                   resourceGroupNames.add(resourceGroup.name());
                 }
+                resourceGroupNames.stream().sorted(String::compareToIgnoreCase).forEach(model::add);
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Cannot list resource group name: ", e);
             }

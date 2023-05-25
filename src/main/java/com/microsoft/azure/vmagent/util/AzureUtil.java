@@ -20,18 +20,16 @@ import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.resources.models.Subscription;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import hudson.security.ACL;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
-
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 public final class AzureUtil {
 
@@ -396,14 +394,14 @@ public final class AzureUtil {
                 shortenedDeploymentHash);
     }
 
-    public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) throws AzureCloudException {
+    public static StandardUsernameCredentials getCredentials(String credentialsId) throws AzureCloudException {
         // Grab the pass
-        StandardUsernamePasswordCredentials creds = CredentialsMatchers.firstOrNull(
+        StandardUsernameCredentials creds = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(
-                        StandardUsernamePasswordCredentials.class,
+                        StandardUsernameCredentials.class,
                         Jenkins.getInstance(),
                         ACL.SYSTEM,
-                        Collections.<DomainRequirement>emptyList()),
+                        Collections.emptyList()),
                 CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {

@@ -23,12 +23,14 @@
   </f:entry>
 
   <f:entry title="${%Custom_Tag}" field="cloudTags">
-    <f:repeatableProperty field="cloudTags">
-      <f:entry>
-        <div align="right">
-          <f:repeatableDeleteButton/>
-        </div>
-      </f:entry>
+    <f:repeatableProperty field="cloudTags" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
+      <l:isAdmin>
+        <f:entry>
+          <div align="right">
+            <f:repeatableDeleteButton/>
+          </div>
+        </f:entry>
+      </l:isAdmin>
     </f:repeatableProperty>
   </f:entry>
 
@@ -49,10 +51,12 @@
     </f:radioBlock>
   </f:entry>
 
-  <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
-                    with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName"/>
+  <l:isAdmin>
+    <f:validateButton title="${%Verify_Configuration}" progress="${%Verifying}" method="verifyConfiguration"
+      with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName"/>
+  </l:isAdmin>
 
-  <f:repeatable add="${%Azure_Virtual_Machine_Template}" field="vmTemplates">
+  <f:repeatable add="${%Azure_Virtual_Machine_Template}" field="vmTemplates" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
     <st:include page="config.jelly" class="${descriptor.clazz}"/>
   </f:repeatable>
 </j:jelly>
