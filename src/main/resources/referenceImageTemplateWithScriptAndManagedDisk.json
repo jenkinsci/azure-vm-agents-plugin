@@ -101,6 +101,9 @@
                             }
                         }
                     ]
+                },
+                "securityProfile": {
+                    "encryptionAtHost": "[variables('encryptionAtHost')]"
                 }
             },
             "resources": [

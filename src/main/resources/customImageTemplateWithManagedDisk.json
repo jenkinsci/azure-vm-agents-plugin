@@ -32,7 +32,7 @@
                         "blobUri": "[variables('image')]",
                         "storageAccountType": "[variables('storageAccountType')]"
                     }
-                }
+               }
             },
             "tags": {
                 "JenkinsManagedTag": "[variables('jenkinsTag')]",
@@ -111,6 +111,9 @@
                             }
                         }
                     ]
+                },
+                "securityProfile": {
+                    "encryptionAtHost": "[variables('encryptionAtHost')]"
                 }
             },
             "tags": {
