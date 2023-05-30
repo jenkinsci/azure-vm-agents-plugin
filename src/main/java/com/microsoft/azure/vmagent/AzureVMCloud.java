@@ -22,6 +22,7 @@ import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.resources.models.Deployment;
 import com.azure.resourcemanager.resources.models.DeploymentOperation;
 import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.StatusMessage;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureImdsCredentials;
@@ -566,8 +567,13 @@ public class AzureVMCloud extends Cloud {
                                 final String statusCode = op.statusCode();
                                 final Object statusMessage = op.statusMessage();
                                 String finalStatusMessage = statusCode;
+
                                 if (statusMessage != null) {
-                                    finalStatusMessage += " - " + statusMessage;
+                                    if (statusMessage instanceof StatusMessage) {
+                                        finalStatusMessage += " - " + ((StatusMessage) statusMessage).error().getMessage();
+                                    } else {
+                                        finalStatusMessage += " - " + statusMessage;
+                                    }
                                 }
                                 throw AzureCloudException.create(
                                         String.format("Deployment %s: %s:%s - %s",
