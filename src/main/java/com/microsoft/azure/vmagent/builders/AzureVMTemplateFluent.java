@@ -34,6 +34,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private boolean ephemeralOSDisk;
 
+    private boolean encryptionAtHost;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -138,6 +140,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T withEphemeralOSDisk(boolean isEphemeral) {
         this.ephemeralOSDisk = isEphemeral;
+        return (T) this;
+    }
+
+    public T withEncryptionAtHost(boolean isEncryptionAtHost) {
+        this.encryptionAtHost = isEncryptionAtHost;
         return (T) this;
     }
 
@@ -248,6 +255,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public boolean isEphemeralOSDisk() {
         return ephemeralOSDisk;
+    }
+
+    public boolean isEncryptionAtHost() {
+        return encryptionAtHost;
     }
 
     public int getOsDiskSize() {

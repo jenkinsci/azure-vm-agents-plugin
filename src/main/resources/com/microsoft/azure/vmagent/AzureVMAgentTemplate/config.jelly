@@ -116,6 +116,10 @@
             <f:textbox/>
           </f:entry>
 
+          <f:entry title="${%Enable_Encryption_At_Host}" field="encryptionAtHost">
+            <f:checkbox/>
+          </f:entry>
+
           <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}"
                                         descriptors="${descriptor.azureVMRetentionStrategy}"/>
 

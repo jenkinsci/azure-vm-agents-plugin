@@ -268,6 +268,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean ephemeralOSDisk;
 
+    private boolean encryptionAtHost;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -717,6 +719,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? false : template.isEnableUAMI());
         templateProperties.put("ephemeralOSDisk",
                 isBasic ? false : template.isEphemeralOSDisk());
+        templateProperties.put("encryptionAtHost",
+                isBasic ? false : template.isEncryptionAtHost());
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
 
@@ -973,6 +977,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setEphemeralOSDisk(boolean ephemeralOSDisk) {
         this.ephemeralOSDisk = ephemeralOSDisk;
+    }
+
+    public boolean isEncryptionAtHost() {
+        return encryptionAtHost;
+    }
+
+    @DataBoundSetter
+    public void setEncryptionAtHost(boolean encryptionAtHost) {
+        this.encryptionAtHost = encryptionAtHost;
     }
 
     @DataBoundSetter
@@ -1560,7 +1573,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             }
             return model;
         }
-
 
         @POST
         public ListBoxModel doFillUsageModeItems() throws IOException, ServletException {
