@@ -125,7 +125,7 @@
                     ]
                 },
                 "securityProfile": {
-                    "encryptionAtHost": "[variables('encryptionAtHost')]"
+                    "encryptionAtHost": "[if(bool(variables('encryptionAtHost')), json('true'), json('null'))]"
                 }
             },
             "tags": {
