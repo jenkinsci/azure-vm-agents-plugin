@@ -533,6 +533,27 @@ public final class AzureVMManagementServiceDelegate {
                 imageId = galleryImageVersion.id();
                 LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{imageId});
                 putVariableIfNotBlank(tmp, "imageId", imageId);
+
+                Map<String, String> imageTags = galleryImageVersion.tags();
+                if (imageTags != null) {
+                    String planInfo = imageTags.get("PlanInfo");
+                    String planProduct = imageTags.get("PlanProduct");
+                    String planPublisher = imageTags.get("PlanPublisher");
+
+                    if (StringUtils.isNotBlank(planInfo) && StringUtils.isNotBlank(planProduct)
+                            && StringUtils.isNotBlank(planPublisher)) {
+                        for (JsonNode resource : resources) {
+                            String type = resource.get("type").asText();
+                            if (type.contains("virtualMachine")) {
+                                ObjectNode planNode = MAPPER.createObjectNode();
+                                planNode.put("name", planInfo);
+                                planNode.put("publisher", planPublisher);
+                                planNode.put("product", planProduct);
+                                ((ObjectNode) resource).replace("plan", planNode);
+                            }
+                        }
+                    }
+                }
             }
 
             if (imageId != null) {
