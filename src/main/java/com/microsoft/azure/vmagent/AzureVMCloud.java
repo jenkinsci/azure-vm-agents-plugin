@@ -94,8 +94,6 @@ public class AzureVMCloud extends Cloud {
     private static final int DEFAULT_SSH_CONNECT_RETRY_COUNT = 3;
     private static final int SHH_CONNECT_RETRY_INTERNAL_SECONDS = 20;
 
-    private final String cloudName;
-
     private final String credentialsId;
 
     private final int maxVirtualMachinesLimit;
@@ -159,7 +157,6 @@ public class AzureVMCloud extends Cloud {
         this.existingResourceGroupName = existingResourceGroupName;
         this.resourceGroupName = getResourceGroupName(
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-        this.cloudName = getOrGenerateCloudName(cloudName, azureCredentialsId, this.resourceGroupName);
 
         if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches(Constants.REG_EX_DIGIT)) {
             this.maxVirtualMachinesLimit = Constants.DEFAULT_MAX_VM_LIMIT;
@@ -268,7 +265,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     public String getCloudName() {
-        return cloudName;
+        return this.name;
     }
 
     public static String getOrGenerateCloudName(String cloudName, String credentialId, String resourceGroupName) {
@@ -616,7 +613,7 @@ public class AzureVMCloud extends Cloud {
         final List<PlannedNode> plannedNodes = new ArrayList<>(numberOfAgents);
 
         if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
-            AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName());
+            AzureVMCloudVerificationTask.verify(this.name, template.getTemplateName());
         }
         if (template.getTemplateProvisionStrategy().isVerifiedFailed()) {
             LOGGER.log(Level.INFO, "Template {0} has just verified failed", template.getTemplateName());
