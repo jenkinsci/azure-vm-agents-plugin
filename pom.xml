@@ -45,14 +45,14 @@
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
-        <jenkins.version>2.423-rc34197.1024b_9eb_344b_</jenkins.version> <!-- TODO https://github.com/jenkinsci/jenkins/pull/8310 -->
+        <jenkins.version>2.423-rc34199.8c3d6c65b_758</jenkins.version> <!-- TODO https://github.com/jenkinsci/jenkins/pull/8310 -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <hpi.compatibleSinceVersion>846</hpi.compatibleSinceVersion>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
+            <dependencyns>
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-2.414.x</artifactId>
                 <version>2401.v7a_d68f8d0b_09</version>
