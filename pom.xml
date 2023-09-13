@@ -52,7 +52,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependencyns>
+            <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-2.414.x</artifactId>
                 <version>2401.v7a_d68f8d0b_09</version>
