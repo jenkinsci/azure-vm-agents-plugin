@@ -2,7 +2,7 @@ jenkins:
   clouds:
     - azureVM:
         azureCredentialsId: "azure-cred"
-        cloudName: "azure"
+        name: "azure"
         deploymentTimeout: 1200
         maxVirtualMachinesLimit: 10
         newResourceGroupName: "vm-agent"
