@@ -45,7 +45,7 @@
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
-        <jenkins.version>2.423-rc34199.8c3d6c65b_758</jenkins.version> <!-- TODO https://github.com/jenkinsci/jenkins/pull/8310 -->
+        <jenkins.version>2.423-rc34200.231db_9490cb_c</jenkins.version> <!-- TODO https://github.com/jenkinsci/jenkins/pull/8310 -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <hpi.compatibleSinceVersion>883</hpi.compatibleSinceVersion>
     </properties>
