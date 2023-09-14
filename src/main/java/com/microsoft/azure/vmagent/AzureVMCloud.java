@@ -135,7 +135,7 @@ public class AzureVMCloud extends Cloud {
 
     @DataBoundConstructor
     public AzureVMCloud(
-            String cloudName,
+            String name,
             String azureCredentialsId,
             String maxVirtualMachinesLimit,
             String deploymentTimeout,
@@ -145,7 +145,7 @@ public class AzureVMCloud extends Cloud {
             List<AzureVMAgentTemplate> vmTemplates) {
         super(
                 getOrGenerateCloudName(
-                        cloudName,
+                        name,
                         azureCredentialsId,
                         getResourceGroupName(
                                 resourceGroupReferenceType,
@@ -268,10 +268,10 @@ public class AzureVMCloud extends Cloud {
         return this.name;
     }
 
-    public static String getOrGenerateCloudName(String cloudName, String credentialId, String resourceGroupName) {
-        return StringUtils.isBlank(cloudName)
+    public static String getOrGenerateCloudName(String name, String credentialId, String resourceGroupName) {
+        return StringUtils.isBlank(name)
                 ? AzureUtil.getCloudName(credentialId, resourceGroupName)
-                : cloudName;
+                : name;
     }
 
     public String getNewResourceGroupName() {

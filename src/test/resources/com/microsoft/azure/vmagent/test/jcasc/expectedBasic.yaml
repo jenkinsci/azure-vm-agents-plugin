@@ -1,8 +1,8 @@
 - azureVM:
     azureCredentialsId: "azure-cred"
-    cloudName: "azure"
     deploymentTimeout: 1200
     maxVirtualMachinesLimit: 10
+    name: "azure"
     newResourceGroupName: "vm-agent"
     resourceGroupReferenceType: "new"
     vmTemplates:
