@@ -4,7 +4,7 @@
   <f:block>
     <a href="${rootURL}/log/${descriptor.logRecorderName}/" target="_blank">${%Azure_VM_Agent_Log_Link}</a>
   </f:block>
-  <f:entry title="${%Cloud_Name}" field="cloudName"
+  <f:entry title="${%Cloud_Name}" field="name"
            help="/plugin/azure-vm-agents/help-cloudName.html">
     <f:textbox/>
   </f:entry>

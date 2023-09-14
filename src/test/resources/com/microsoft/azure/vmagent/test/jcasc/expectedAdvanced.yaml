@@ -1,12 +1,12 @@
 - azureVM:
     azureCredentialsId: "azure-cred"
-    cloudName: "azure"
     cloudTags:
     - name: "author"
       value: "gavin"
     deploymentTimeout: 1200
     existingResourceGroupName: "vm-agents"
     maxVirtualMachinesLimit: 10
+    name: "azure"
     resourceGroupReferenceType: "existing"
     vmTemplates:
     - agentWorkspace: "/opt/jenkins"
