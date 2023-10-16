@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.sshtools</groupId>
             <artifactId>maverick-synergy-client</artifactId>
-            <version>3.0.10</version>
+            <version>3.0.11</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
