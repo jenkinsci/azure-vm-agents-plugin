@@ -331,7 +331,9 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             final AzureResourceManager azureClient = cloud.getAzureClient();
 
             if (azureClient == null) {
-                LOGGER.log(getNormalLoggingLevel(), "cleanLeakedResources: Skipping cleanup as cloud is not configured with a valid credential");
+                LOGGER.log(getNormalLoggingLevel(),
+                        "cleanLeakedResources: Skipping cleanup as cloud is not configured with a "
+                                + "valid credential");
                 return;
             }
 
