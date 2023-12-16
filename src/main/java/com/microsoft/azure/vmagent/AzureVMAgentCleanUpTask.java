@@ -329,6 +329,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         try {
             final List<String> validVMs = getValidVMs();
             final AzureResourceManager azureClient = cloud.getAzureClient();
+
+            if (azureClient == null) {
+                LOGGER.log(getNormalLoggingLevel(),
+                        "cleanLeakedResources: Skipping cleanup as cloud is not configured with a "
+                                + "valid credential");
+                return;
+            }
+
             final AzureVMManagementServiceDelegate serviceDelegate = cloud.getServiceDelegate();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
