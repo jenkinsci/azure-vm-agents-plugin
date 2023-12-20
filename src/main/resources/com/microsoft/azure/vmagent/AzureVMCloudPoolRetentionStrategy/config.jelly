@@ -9,4 +9,8 @@
         <f:textbox default="3" />
     </f:entry>
 
+    <f:entry title="${%Single_Use_Agents}" field="singleUseAgents">
+        <f:checkbox/>
+    </f:entry>
+
 </j:jelly>

@@ -5,10 +5,14 @@ import com.microsoft.azure.vmagent.util.TemplateUtil;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.model.Executor;
+import hudson.model.ExecutorListener;
 import hudson.model.Computer;
+import hudson.model.Queue;
 import hudson.model.Descriptor;
 import hudson.model.DescriptorVisibilityFilter;
 import hudson.slaves.Cloud;
+import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -19,22 +23,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetentionStrategy {
+public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetentionStrategy implements ExecutorListener {
     private static final long serialVersionUID = 1577788691L;
 
     private final long retentionMillis;
 
     private final int poolSize;
 
+    private final boolean singleUseAgents;
+
     private static final long IDLE_LIMIT_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
     @DataBoundConstructor
-    public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
+    public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize, boolean singleUseAgents) {
         retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
         this.poolSize = Math.max(poolSize, 0);
+        this.singleUseAgents = singleUseAgents;
     }
 
     @Override
@@ -159,6 +166,53 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     public int getPoolSize() {
         return poolSize;
+    }
+
+    @Override
+    public void taskAccepted(Executor executor, Queue.Task task) {
+
+    }
+
+    @Override
+    public void taskCompleted(Executor executor, Queue.Task task, long durationMS) {
+        done(executor);
+    }
+
+    @Override
+    public void taskCompletedWithProblems(Executor executor, Queue.Task task, long durationMS, Throwable problems) {
+        done(executor);
+    }
+
+    public void done(Executor executor) {
+        final AbstractCloudComputer<?> computer = (AbstractCloudComputer) executor.getOwner();
+        if (!(computer instanceof AzureVMComputer)) {
+            return;
+        }
+        done((AzureVMComputer) computer);
+    }
+    public void done(AzureVMComputer computer) {
+        if(!isSingleUseAgents()){
+            return;
+        }
+
+        final AzureVMAgent agent = computer.getNode();
+        if (agent == null) {
+            return;
+        }
+
+        computer.setAcceptingTasks(false);
+        if (agent.isShutdownOnIdle()) {
+            LOGGER.log(Level.FINE, "Tagging VM to shutdown when idle: {0}",
+                    computer.getName());
+            agent.setCleanUpAction(CleanUpAction.SHUTDOWN, Messages._Build_Action_Shutdown_Agent());
+        } else {
+            LOGGER.log(Level.FINE, "Tagging VM to delete when idle: {0}", computer.getName());
+            agent.setCleanUpAction(CleanUpAction.DELETE, Messages._Build_Action_Delete_Agent());
+        }
+    }
+
+    public boolean isSingleUseAgents() {
+        return singleUseAgents;
     }
 
     @Override
