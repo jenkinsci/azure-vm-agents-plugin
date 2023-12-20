@@ -191,7 +191,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         done((AzureVMComputer) computer);
     }
     public void done(AzureVMComputer computer) {
-        if(!isSingleUseAgents()){
+        if (!isSingleUseAgents()) {
             return;
         }
 
