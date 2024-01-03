@@ -16,6 +16,7 @@ import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.RetentionStrategy;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,18 +31,26 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     private final int poolSize;
 
-    private final boolean singleUseAgents;
+    private boolean singleUseAgents;
 
     private static final long IDLE_LIMIT_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
-    @DataBoundConstructor
+    @Deprecated
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize, boolean singleUseAgents) {
         retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
         this.poolSize = Math.max(poolSize, 0);
         this.singleUseAgents = singleUseAgents;
+    }
+
+    @DataBoundConstructor
+    public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
+        retentionInHours = Math.max(retentionInHours, 0);
+        this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
+        this.poolSize = Math.max(poolSize, 0);
+        this.singleUseAgents = false;
     }
 
     @Override
@@ -212,7 +221,12 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
     }
 
     public boolean isSingleUseAgents() {
-        return singleUseAgents;
+        return this.singleUseAgents;
+    }
+
+    @DataBoundSetter
+    public void setSingleUseAgents(boolean singleUseAgents) {
+        this.singleUseAgents = singleUseAgents;
     }
 
     @Override
@@ -232,7 +246,6 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-
         @Override @NonNull
         public String getDisplayName() {
             return "Azure VM Pool Retention Strategy";
