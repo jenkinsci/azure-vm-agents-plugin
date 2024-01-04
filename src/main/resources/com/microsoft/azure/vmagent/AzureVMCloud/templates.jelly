@@ -1,0 +1,65 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <!-- with empty type attribute, takes full width space, works only because core doesn't provide a CSS "app-page-body-" -->
+  <l:layout title="${it.name} - ${%Agent templates}"
+            type="${request.hasParameter('expand') ? 'full-screen' : 'two-column'}">
+    <st:include page="sidepanel.jelly"/>
+
+    <l:main-panel>
+      <j:choose>
+        <j:when test="${not empty it.vmTemplates}">
+          <l:app-bar title="${it.name} - ${%Agent templates}">
+            <l:isAdmin>
+              <a name="newTemplate" class="jenkins-button jenkins-button--primary" href="new">
+                <l:icon src="symbol-add"/>
+                ${%Add an agent template}
+              </a>
+            </l:isAdmin>
+          </l:app-bar>
+
+          <table id="templates" class="jenkins-table sortable">
+            <thead>
+              <tr>
+                <th initialSortDir="down">${%Name}</th>
+                <th class="jenkins-table__cell--tight"/>
+              </tr>
+            </thead>
+            <tbody>
+              <j:forEach var="template" items="${it.vmTemplates}">
+                <tr id="template_${template.templateName}">
+                  <td>
+                    <a href="${it.getCloudUrl(request,app,cloud)}template/${template.templateName}" class="jenkins-table__button">${template.templateName}</a>
+                  </td>
+                  <td class="jenkins-table__cell--tight">
+                    <div class="jenkins-table__cell__button-wrapper">
+                      <a href="${it.getCloudUrl(request,app,cloud)}template/${template.templateName}" class="jenkins-table__button">
+                        <l:icon src="symbol-settings"/>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </j:forEach>
+            </tbody>
+          </table>
+        </j:when>
+        <j:otherwise>
+          <l:app-bar title="${it.name} - ${%Agent templates}"/>
+          <div >
+            <section>
+              <div>
+                <div class="jenkins-!-padding-bottom-3">No agent template added yet.</div>
+                <div>
+                  <a name="newTemplate" class="jenkins-button jenkins-button--primary" href="new">
+                    <l:icon src="symbol-add"/>
+                    ${%Add an agent template}
+                  </a>
+                </div>
+              </div>
+            </section>
+          </div>
+        </j:otherwise>
+      </j:choose>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>
