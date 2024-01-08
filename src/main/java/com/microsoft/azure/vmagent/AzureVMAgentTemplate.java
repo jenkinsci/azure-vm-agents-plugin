@@ -1457,6 +1457,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         if (StringUtils.isBlank(newTemplate.getTemplateName())) {
             throw new Descriptor.FormException("Template name is mandatory", "templateName");
         }
+        boolean templateNameExists = azureCloud.templateNameExists(newTemplate.getTemplateName());
+        if (templateNameExists) {
+            throw new Descriptor.FormException("Agent template name must be unique", "templateName");
+        }
+
         azureVMCloud.addTemplate(newTemplate);
         j.save();
         // take the user back.

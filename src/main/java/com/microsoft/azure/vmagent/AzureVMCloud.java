@@ -1053,6 +1053,11 @@ public class AzureVMCloud extends Cloud {
         return (AzureVMAgentTemplate.DescriptorImpl) Jenkins.get().getDescriptorOrDie(AzureVMAgentTemplate.class);
     }
 
+    boolean templateNameExists(String templateName) {
+        return vmTemplates.stream()
+                .anyMatch(template -> templateName.equals(template.getTemplateName()));
+    }
+
     @POST
     public HttpResponse doCreate(StaplerRequest req, StaplerResponse rsp)
             throws IOException, ServletException, Descriptor.FormException {
@@ -1062,6 +1067,11 @@ public class AzureVMCloud extends Cloud {
 
         if (StringUtils.isBlank(newTemplate.getTemplateName())) {
             throw new Descriptor.FormException("Template name is mandatory", "templateName");
+        }
+
+        boolean templateNameExists = templateNameExists(newTemplate.getTemplateName());
+        if (templateNameExists) {
+            throw new Descriptor.FormException("Agent template name must be unique", "templateName");
         }
 
         addTemplate(newTemplate);
