@@ -54,17 +54,24 @@ import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
+import hudson.slaves.Cloud;
 import hudson.slaves.RetentionStrategy;
+import hudson.util.FormApply;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.HttpRedirect;
+import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.verb.POST;
 
 import javax.servlet.ServletException;
@@ -1421,6 +1428,54 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 nsgName);
     }
 
+    /**
+     * Deletes the template.
+     */
+    @POST
+    public HttpResponse doDoDelete(@AncestorInPath AzureVMCloud azureVMCloud) throws IOException {
+        Jenkins j = Jenkins.get();
+        j.checkPermission(Jenkins.ADMINISTER);
+        if (azureVMCloud == null) {
+            throw new IllegalStateException("Cloud could not be found");
+        }
+        azureVMCloud.removeTemplate(this);
+        j.save();
+        // take the user back.
+        return new HttpRedirect("../../templates");
+    }
+
+    @POST
+    public HttpResponse doConfigSubmit(StaplerRequest req, @AncestorInPath AzureVMCloud azureVMCloud)
+            throws IOException, ServletException, Descriptor.FormException {
+        Jenkins j = Jenkins.get();
+        j.checkPermission(Jenkins.ADMINISTER);
+        if (azureVMCloud == null) {
+            throw new IllegalStateException("Cloud could not be found");
+        }
+        azureVMCloud.removeTemplate(this);
+        AzureVMAgentTemplate newTemplate = reconfigure(req, req.getSubmittedForm());
+        if (StringUtils.isBlank(newTemplate.getTemplateName())) {
+            throw new Descriptor.FormException("Template name is mandatory", "templateName");
+        }
+        boolean templateNameExists = azureCloud.templateNameExists(newTemplate.getTemplateName());
+        if (templateNameExists) {
+            throw new Descriptor.FormException("Agent template name must be unique", "templateName");
+        }
+
+        azureVMCloud.addTemplate(newTemplate);
+        j.save();
+        // take the user back.
+        return FormApply.success("../../templates");
+    }
+
+    private AzureVMAgentTemplate reconfigure(@NonNull final StaplerRequest req, JSONObject form)
+            throws Descriptor.FormException {
+        if (form == null) {
+            return null;
+        }
+        return getDescriptor().newInstance(req, form);
+    }
+
     @Extension
     public static final class DescriptorImpl extends Descriptor<AzureVMAgentTemplate> {
 
@@ -1440,9 +1495,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @POST
         public ListBoxModel doFillVirtualMachineSizeItems(
-                @RelativePath("..") @QueryParameter String azureCredentialsId,
+                @QueryParameter("cloudName") String cloudName,
                 @QueryParameter String location) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
+
+            String azureCredentialsId = getAzureCredentialsIdFromCloud(cloudName);
 
             ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
@@ -1476,9 +1533,33 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        private String getAzureCredentialsIdFromCloud(String cloudName) {
+            AzureVMCloud cloud = getAzureCloud(cloudName);
+
+            if (cloud != null) {
+                return cloud.getAzureCredentialsId();
+            }
+
+            return null;
+        }
+
+        private AzureVMCloud getAzureCloud(String cloudName) {
+            Cloud cloud = Jenkins.get().getCloud(cloudName);
+
+            if (cloud instanceof AzureVMCloud) {
+                return (AzureVMCloud) cloud;
+            }
+
+            return null;
+        }
+
         @POST
-        public ListBoxModel doFillLocationItems(@RelativePath("..") @QueryParameter String azureCredentialsId) {
+        public ListBoxModel doFillLocationItems(
+                @QueryParameter("cloudName") String cloudName
+        ) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
+
+            String azureCredentialsId = getAzureCredentialsIdFromCloud(cloudName);
 
             ListBoxModel model = new ListBoxModel();
             if (StringUtils.isBlank(azureCredentialsId)) {
@@ -1511,21 +1592,27 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @POST
         public ListBoxModel doFillAvailabilitySetItems(
-                @RelativePath("../..") @QueryParameter String azureCredentialsId,
-                @RelativePath("../..") @QueryParameter String resourceGroupReferenceType,
-                @RelativePath("../..") @QueryParameter String newResourceGroupName,
-                @RelativePath("../..") @QueryParameter String existingResourceGroupName,
+                @QueryParameter("cloudName") String cloudName,
                 @RelativePath("..") @QueryParameter String location) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Availability Set in current resource group and location ---", "");
+
+            AzureVMCloud cloud = getAzureCloud(cloudName);
+            if (cloud == null) {
+                return model;
+            }
+
+            String azureCredentialsId = cloud.getAzureCredentialsId();
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
 
-            //resourceGroupReferenceType passed wrong value in 2.60.1-LTS, we won't use this value until bug resolved.
-            resourceGroupReferenceType = null;
+            String resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
+            String newResourceGroupName = cloud.getNewResourceGroupName();
+            String existingResourceGroupName = cloud.getExistingResourceGroupName();
+
 
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
@@ -1585,19 +1672,23 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @POST
         public ListBoxModel doFillExistingStorageAccountNameItems(
-                @RelativePath("..") @QueryParameter String azureCredentialsId,
-                @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
-                @RelativePath("..") @QueryParameter String newResourceGroupName,
-                @RelativePath("..") @QueryParameter String existingResourceGroupName,
+                @QueryParameter("cloudName") String cloudName,
                 @QueryParameter String storageAccountType) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
+            AzureVMCloud cloud = getAzureCloud(cloudName);
             ListBoxModel model = new ListBoxModel();
+            if (cloud == null) {
+                return model;
+            }
+            String azureCredentialsId = cloud.getAzureCredentialsId();
+
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
-            //resourceGroupReferenceType passed wrong value in 2.60.1-LTS, we won't use this value until bug resolved.
-            resourceGroupReferenceType = null;
+            String resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
+            String newResourceGroupName = cloud.getNewResourceGroupName();
+            String existingResourceGroupName = cloud.getExistingResourceGroupName();
 
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
@@ -1775,12 +1866,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @POST
         public FormValidation doVerifyConfiguration(
-                @RelativePath("..") @QueryParameter String azureCredentialsId,
-                @RelativePath("..") @QueryParameter String resourceGroupReferenceType,
-                @RelativePath("..") @QueryParameter String newResourceGroupName,
-                @RelativePath("..") @QueryParameter String existingResourceGroupName,
-                @RelativePath("..") @QueryParameter String maxVirtualMachinesLimit,
-                @RelativePath("..") @QueryParameter String deploymentTimeout,
+                @QueryParameter String cloudName,
                 @QueryParameter String templateName,
                 @QueryParameter String labels,
                 @QueryParameter String location,
@@ -1802,7 +1888,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String galleryName,
                 @QueryParameter String galleryImageDefinition,
                 @QueryParameter String galleryImageVersion,
-                @QueryParameter boolean galleryImageSpecialized,
                 @QueryParameter String gallerySubscriptionId,
                 @QueryParameter String galleryResourceGroup,
                 @RelativePath("..") @QueryParameter String sshConfig,
@@ -1830,13 +1915,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     galleryResourceGroup
             );
 
-            String resourceGroupName = AzureVMCloud.getResourceGroupName(
-                    resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+            AzureVMCloud cloud = (AzureVMCloud) Jenkins.get().getCloud(cloudName);
+
             String storageAccountName = getStorageAccountName(
                     storageAccountNameReferenceType, newStorageAccountName, existingStorageAccountName);
             if (storageAccountName.trim().isEmpty()) {
                 storageAccountName = AzureVMAgentTemplate.generateUniqueStorageAccountName(
-                        resourceGroupName, templateName);
+                        cloud.getResourceGroupName(), templateName);
             }
 
             LOGGER.log(Level.INFO,
@@ -1876,7 +1961,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             "",
                             "",
                             "",
-                            resourceGroupName,
+                            cloud.getResourceGroupName(),
                             templateName,
                             labels,
                             location,
@@ -1909,8 +1994,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             // First validate the subscription info.  If it is not correct,
             // then we can't validate the
-            String result = AzureClientHolder.getDelegate(azureCredentialsId)
-                    .verifyConfiguration(resourceGroupName, deploymentTimeout);
+            String result = AzureClientHolder.getDelegate(cloud.getAzureCredentialsId())
+                    .verifyConfiguration(cloud.getResourceGroupName(), String.valueOf(cloud.getDeploymentTimeout()));
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }
@@ -1920,7 +2005,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 azureComputerLauncher.setSshConfig(sshConfig);
             }
 
-            final List<String> errors = AzureClientHolder.getDelegate(azureCredentialsId).verifyTemplate(
+            final List<String> errors = AzureClientHolder.getDelegate(cloud.getAzureCredentialsId()).verifyTemplate(
                     templateName,
                     labels,
                     location,
@@ -1940,7 +2025,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     subnetName,
                     new AzureVMCloudRetensionStrategy(0),
                     jvmOptions,
-                    resourceGroupName,
+                    cloud.getResourceGroupName(),
                     false,
                     usePrivateIP,
                     nsgName);

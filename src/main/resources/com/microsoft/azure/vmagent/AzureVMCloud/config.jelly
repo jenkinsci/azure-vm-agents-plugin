@@ -56,7 +56,7 @@
       with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName"/>
   </l:isAdmin>
 
-  <f:repeatable add="${%Azure_Virtual_Machine_Template}" field="vmTemplates" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
-    <st:include page="config.jelly" class="${descriptor.clazz}"/>
-  </f:repeatable>
+  <div class="alert alert-info">
+    <a href="templates">${%Agent templates have moved}</a>.
+  </div>
 </j:jelly>

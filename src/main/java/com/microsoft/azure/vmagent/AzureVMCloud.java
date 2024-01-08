@@ -47,10 +47,13 @@ import hudson.security.ACL;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.slaves.SlaveComputer;
+import hudson.util.FormApply;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
+import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
@@ -59,7 +62,10 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.verb.POST;
 
@@ -321,6 +327,16 @@ public class AzureVMCloud extends Cloud {
         this.vmTemplates = new CopyOnWriteArrayList<>(newTemplates);
     }
 
+    public void addTemplate(AzureVMAgentTemplate template) {
+        template.addAzureCloudReference(this);
+        ensureVmTemplateList();
+        vmTemplates.add(template);
+    }
+
+    public void removeTemplate(AzureVMAgentTemplate t) {
+        this.vmTemplates.remove(t);
+    }
+
     public List<AzureTagPair> getCloudTags() {
         return cloudTags;
     }
@@ -483,6 +499,11 @@ public class AzureVMCloud extends Cloud {
         return null;
     }
 
+    @SuppressWarnings("unused") // called by jelly
+    public AzureVMAgentTemplate getTemplate(String name) {
+        return getAzureAgentTemplate(name);
+    }
+
     /**
      * Returns agent template associated with the name.
      *
@@ -490,16 +511,7 @@ public class AzureVMCloud extends Cloud {
      * @return Agent template that has the name assigned
      */
     public AzureVMAgentTemplate getAzureAgentTemplate(String name) {
-        if (StringUtils.isBlank(name)) {
-            return null;
-        }
-
-        for (AzureVMAgentTemplate agentTemplate : vmTemplates) {
-            if (name.equals(agentTemplate.getTemplateName())) {
-                return agentTemplate;
-            }
-        }
-        return null;
+        return getVmTemplates().stream().filter(t -> name.equals(t.getTemplateName())).findFirst().orElse(null);
     }
 
     /**
@@ -1034,6 +1046,46 @@ public class AzureVMCloud extends Cloud {
 
     public AzureVMManagementServiceDelegate getServiceDelegate() {
         return AzureVMManagementServiceDelegate.getInstance(getAzureClient(), credentialsId);
+    }
+
+    @Restricted(NoExternalUse.class) // jelly
+    public AzureVMAgentTemplate.DescriptorImpl getTemplateDescriptor() {
+        return (AzureVMAgentTemplate.DescriptorImpl) Jenkins.get().getDescriptorOrDie(AzureVMAgentTemplate.class);
+    }
+
+    boolean templateNameExists(String templateName) {
+        return vmTemplates.stream()
+                .anyMatch(template -> templateName.equals(template.getTemplateName()));
+    }
+
+    @POST
+    public HttpResponse doCreate(StaplerRequest req, StaplerResponse rsp)
+            throws IOException, ServletException, Descriptor.FormException {
+        Jenkins j = Jenkins.get();
+        j.checkPermission(Jenkins.ADMINISTER);
+        AzureVMAgentTemplate newTemplate = getTemplateDescriptor().newInstance(req, req.getSubmittedForm());
+
+        if (StringUtils.isBlank(newTemplate.getTemplateName())) {
+            throw new Descriptor.FormException("Template name is mandatory", "templateName");
+        }
+
+        boolean templateNameExists = templateNameExists(newTemplate.getTemplateName());
+        if (templateNameExists) {
+            throw new Descriptor.FormException("Agent template name must be unique", "templateName");
+        }
+
+        addTemplate(newTemplate);
+        j.save();
+        // take the user back.
+        return FormApply.success("templates");
+    }
+
+    @Override
+    public Cloud reconfigure(@NonNull StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+        // cloud configuration doesn't contain templates anymore, so just keep existing ones.
+        var newInstance = (AzureVMCloud) super.reconfigure(req, form);
+        newInstance.setVmTemplates(this.vmTemplates);
+        return newInstance;
     }
 
     @Extension
