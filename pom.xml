@@ -66,7 +66,7 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>azure-sdk</artifactId>
-            <version>132.v62b_48eb_6f32f</version>
+            <version>157.v855da_0b_eb_dc2</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
