@@ -37,7 +37,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
 
-    @Deprecated
+    @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize, boolean singleUseAgents) {
         retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
@@ -45,7 +45,7 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         this.singleUseAgents = singleUseAgents;
     }
 
-    @DataBoundConstructor
+    @Deprecated
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
         retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
