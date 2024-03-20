@@ -45,14 +45,6 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         this.singleUseAgents = singleUseAgents;
     }
 
-    @Deprecated
-    public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
-        retentionInHours = Math.max(retentionInHours, 0);
-        this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
-        this.poolSize = Math.max(poolSize, 0);
-        this.singleUseAgents = false;
-    }
-
     @Override
     public long check(final AzureVMComputer agentComputer) {
         final AzureVMAgent agentNode = agentComputer.getNode();
