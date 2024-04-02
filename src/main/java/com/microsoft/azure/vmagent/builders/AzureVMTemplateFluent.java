@@ -164,8 +164,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
     }
 
     public T addNewPoolRetentionStrategy(String retentionTime, String poolSize, boolean singleUseAgents) {
-        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
-                Integer.parseInt(poolSize), singleUseAgents);
+        AzureVMCloudPoolRetentionStrategy retentionStrategy1 = new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
+                Integer.parseInt(poolSize));
+        retentionStrategy1.setSingleUseAgents(singleUseAgents);
+        this.retentionStrategy = retentionStrategy1;
         return (T) this;
     }
 
