@@ -661,6 +661,10 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "authenticationType", "key");
             }
 
+            if (!Constants.LICENSE_TYPE_CLASSIC.equals(template.getLicenseType())) {
+                addLicenseType(tmp, template.getLicenseType());
+            }
+
             // Register the deployment for cleanup
             deploymentRegistrar.registerDeployment(
                     cloudName, template.getResourceGroupName(), deploymentName, scriptUri);
@@ -743,6 +747,20 @@ public final class AzureVMManagementServiceDelegate {
             if (type.contains("networkInterfaces")) {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 properties.put("enableAcceleratedNetworking", "true");
+            }
+        }
+    }
+
+    private void addLicenseType(JsonNode template, String licenseType) {
+        if (Constants.LICENSE_TYPE_WINDOWS_CLIENT.equals(licenseType) || Constants.LICENSE_TYPE_WINDOWS_SERVER.equals(licenseType)) {
+            ArrayNode resources = (ArrayNode) template.get("resources");
+            for (JsonNode resource : resources) {
+                String type = resource.get("type").asText();
+                if (type.contains("virtualMachine")) {
+                    ObjectNode properties = (ObjectNode) resource.get("properties");
+                    properties.put("licenseType", licenseType);
+                    return;
+                }
             }
         }
     }

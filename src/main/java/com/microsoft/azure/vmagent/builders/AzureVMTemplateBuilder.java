@@ -132,7 +132,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().getJvmOptions(),
                 fluent.getRetentionStrategy(),
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails(),
+                fluent.getAdvancedImage().getLicenseType()
                 );
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());

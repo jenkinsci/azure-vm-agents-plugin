@@ -70,6 +70,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private boolean templateDisabled;
 
+    private String licenseType;
+
     public AdvancedImageFluent() {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imageVersion = "latest";
@@ -84,6 +86,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.usePrivateIP = false;
         this.noOfParallelJobs = "1";
         this.templateDisabled = false;
+        this.licenseType = Constants.LICENSE_TYPE_CLASSIC;
     }
 
     //CHECKSTYLE:OFF
@@ -348,5 +351,9 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isTemplateDisabled() {
         return templateDisabled;
+    }
+
+    public String getLicenseType() {
+        return licenseType;
     }
 }

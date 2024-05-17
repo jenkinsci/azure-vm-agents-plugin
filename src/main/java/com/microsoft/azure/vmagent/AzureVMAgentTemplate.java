@@ -378,6 +378,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private int maxVirtualMachinesLimit;
 
+    private String licenseType;
+
     // deprecated fields
     private transient boolean isInstallDocker;
     private transient boolean isInstallMaven;
@@ -428,7 +430,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String jvmOptions,
             RetentionStrategy<?> retentionStrategy,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails
+            boolean doNotUseMachineIfInitFails,
+            String licenseType
     ) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
@@ -474,6 +477,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.templateStatusDetails = "";
+        this.licenseType = licenseType;
 
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
@@ -1365,6 +1369,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.maximumDeploymentSize = maximumDeploymentSize;
     }
 
+    public String getLicenseType() {
+        return licenseType;
+    }
+
+    @DataBoundSetter
+    public void setLicenseType(String licenseType) {
+        this.licenseType = licenseType;
+    }
+
     /**
      * Provision new agents using this template.
      *
@@ -1530,6 +1543,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             ListBoxModel model = new ListBoxModel();
             model.add(Constants.OS_TYPE_LINUX);
             model.add(Constants.OS_TYPE_WINDOWS);
+            return model;
+        }
+
+        @POST
+        public ListBoxModel doFillLicenseTypeItems() {
+            ListBoxModel model = new ListBoxModel();
+            model.add(Constants.LICENSE_TYPE_CLASSIC);
+            model.add(Constants.LICENSE_TYPE_WINDOWS_CLIENT);
+            model.add(Constants.LICENSE_TYPE_WINDOWS_SERVER);
             return model;
         }
 

@@ -88,6 +88,15 @@ public final class Constants {
     public static final String OS_TYPE_LINUX = "Linux";
 
     /**
+     * Windows License Types.
+     */
+    public static final String LICENSE_TYPE_CLASSIC = "Classic";
+
+    public static final String LICENSE_TYPE_WINDOWS_CLIENT = "Windows_Client";
+
+    public static final String LICENSE_TYPE_WINDOWS_SERVER = "Windows_Server";
+
+    /**
      * Usage types for template names.
      **/
     public static final String USAGE_TYPE_DEPLOYMENT = "Deployment";
