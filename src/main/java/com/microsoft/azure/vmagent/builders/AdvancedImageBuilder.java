@@ -108,7 +108,6 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getNsgName(),
                 fluent.getJvmOptions(),
                 fluent.getNoOfParallelJobs(),
-                fluent.isTemplateDisabled(),
-                fluent.getLicenseType());
+                fluent.isTemplateDisabled());
     }
 }

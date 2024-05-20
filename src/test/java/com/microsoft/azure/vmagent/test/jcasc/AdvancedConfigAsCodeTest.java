@@ -78,7 +78,6 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.getNoOfParallelJobs(), is(1));
         assertThat(template.getOsDiskSize(), is(40));
         assertThat(template.getOsType(), is("Linux"));
-        assertThat(template.getLicenseType(), is("Classic"));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(40L));

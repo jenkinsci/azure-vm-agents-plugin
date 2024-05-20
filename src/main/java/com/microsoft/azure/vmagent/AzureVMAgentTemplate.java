@@ -430,8 +430,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String jvmOptions,
             RetentionStrategy<?> retentionStrategy,
             boolean executeInitScriptAsRoot,
-            boolean doNotUseMachineIfInitFails,
-            String licenseType
+            boolean doNotUseMachineIfInitFails
     ) {
         this.templateName = templateName;
         this.templateDesc = templateDesc;
@@ -477,7 +476,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.templateStatusDetails = "";
-        this.licenseType = licenseType;
 
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();

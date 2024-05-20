@@ -31,7 +31,6 @@
                     <isInstallMaven>false</isInstallMaven>
                     <isInstallDocker>false</isInstallDocker>
                     <osType>Linux</osType>
-                    <licenseType>Classic</licenseType>
                     <imagePublisher>Canonical</imagePublisher>
                     <imageOffer>UbuntuServer</imageOffer>
                     <imageSku>16.04-LTS</imageSku>

@@ -37,7 +37,6 @@ jenkins:
             installMaven: false
             jvmOptions: "-xmx"
             labels: "linux"
-            licenseType: "Classic"
             location: "UK South"
             newStorageAccountName: "agent-storage"
             noOfParallelJobs: 1

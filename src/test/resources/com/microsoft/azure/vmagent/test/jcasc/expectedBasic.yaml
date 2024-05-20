@@ -19,7 +19,6 @@
       installMaven: true
       labels: "ubuntu"
       launcher: "ssh"
-      licenseType: "Classic"
       location: "East US"
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
