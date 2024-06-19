@@ -306,6 +306,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean installDocker;
 
+    private boolean trustedLaunch;
+
     private final String osType;
 
     private transient String agentLaunchMethod;
@@ -630,6 +632,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setSpotInstance(boolean spotInstance) {
         this.spotInstance = spotInstance;
+    }
+
+    public boolean isTrustedLaunch() {
+        return trustedLaunch;
+    }
+
+    @DataBoundSetter
+    public void setTrustedLaunch(boolean trustedLaunch) {
+        this.trustedLaunch = trustedLaunch;
     }
 
     public boolean isAcceleratedNetworking() {

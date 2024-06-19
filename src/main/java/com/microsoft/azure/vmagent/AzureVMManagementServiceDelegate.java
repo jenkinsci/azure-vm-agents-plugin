@@ -629,6 +629,10 @@ public final class AzureVMManagementServiceDelegate {
             if (template.isSpotInstance()) {
                 addSpotInstance(tmp);
             }
+            
+            if (template.isTrustedLaunch()) {
+                addTrustedLaunch(tmp);
+            }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
                 addPublicIPResourceNode(tmp, tags);
@@ -736,6 +740,44 @@ public final class AzureVMManagementServiceDelegate {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 properties.put("priority", "Spot");
                 properties.put("evictionPolicy", "Delete");
+            }
+        }
+    }
+    
+    
+    private void addTrustedLaunch(JsonNode template) {
+    	ObjectNode parameterNode = (ObjectNode) template.get("parameters");
+    	ObjectNode securityTypeNode = MAPPER.createObjectNode();
+    	securityTypeNode.put("type", "string");
+    	securityTypeNode.put("defaultValue", "TrustedLaunch");
+    	ArrayNode allowedValuesNode = MAPPER.createArrayNode();
+    	allowedValuesNode.add("Standard");
+    	allowedValuesNode.add("TrustedLaunch");
+    	securityTypeNode.set("allowedValues", allowedValuesNode);
+    	ObjectNode metaDataNode = MAPPER.createObjectNode();
+    	metaDataNode.put("description", "Security Type of the Virtual Machine.");
+    	securityTypeNode.set("metadata", metaDataNode);
+    	parameterNode.set("securityType", securityTypeNode);
+    	
+    	ObjectNode variableNode = (ObjectNode) template.get("variables");
+    	ObjectNode profileNode = MAPPER.createObjectNode();    	
+    	ObjectNode settingsNode = MAPPER.createObjectNode();
+    	settingsNode.put("secureBootEnabled", true);
+    	settingsNode.put("vTpmEnabled", true);
+    	
+    	profileNode.set("uefiSettings", settingsNode);
+    	profileNode.put("securityType", "[parameters('securityType')]");
+    	
+    	variableNode.set("securityProfileJson", profileNode);
+    	
+    	
+    	
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                properties.put("securityProfile", "[if(equals(parameters('securityType'), 'TrustedLaunch'), variables('securityProfileJson'), null())]");                
             }
         }
     }
