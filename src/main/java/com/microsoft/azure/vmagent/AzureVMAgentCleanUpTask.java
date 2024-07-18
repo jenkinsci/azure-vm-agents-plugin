@@ -499,16 +499,30 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Check if the virtual machine exists.  If not, it could have been
                 // deleted in the background.  Remove from Jenkins if that is the case.
+                // if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
+                //     LOGGER.log(getNormalLoggingLevel(),
+                //             "Node {0} doesn't exist, removing",
+                //             agentNode.getDisplayName());
+                //     try {
+                //         Jenkins.get().removeNode(agentNode);
+                //     } catch (IOException e) {
+                //         LOGGER.log(Level.WARNING,
+                //                 "Node {0} could not be removed: {1}",
+                //                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
+                //     }
+                //     continue;
+                // }
+             
+                // Echo statement to log before the step
+                System.out.println("Checking if virtual machine exists for node: " + agentNode.getDisplayName());
+             
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                            "Node {0} doesn't exist, removing",
-                            agentNode.getDisplayName());
+                    System.out.println("Node " + agentNode.getDisplayName() + " doesn't exist, removing.");
                     try {
                         Jenkins.get().removeNode(agentNode);
+                        System.out.println("Node " + agentNode.getDisplayName() + " successfully removed.");
                     } catch (IOException e) {
-                        LOGGER.log(Level.WARNING,
-                                "Node {0} could not be removed: {1}",
-                                new Object[]{agentNode.getDisplayName(), e.getMessage()});
+                        System.out.println("Node " + agentNode.getDisplayName() + " could not be removed: " + e.getMessage());
                     }
                     continue;
                 }
