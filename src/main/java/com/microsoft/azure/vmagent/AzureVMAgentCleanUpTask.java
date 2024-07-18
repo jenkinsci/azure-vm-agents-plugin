@@ -499,32 +499,32 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Check if the virtual machine exists.  If not, it could have been
                 // deleted in the background.  Remove from Jenkins if that is the case.
-                // if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-                //     LOGGER.log(getNormalLoggingLevel(),
-                //             "Node {0} doesn't exist, removing",
-                //             agentNode.getDisplayName());
-                //     try {
-                //         Jenkins.get().removeNode(agentNode);
-                //     } catch (IOException e) {
-                //         LOGGER.log(Level.WARNING,
-                //                 "Node {0} could not be removed: {1}",
-                //                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
-                //     }
-                //     continue;
-                // }
-                // Echo statement to log before the step
-                System.out.println("Checking if virtual machine exists for node: " + agentNode.getDisplayName());
+                LOGGER.log(Level.INFO, "Checking if virtual machine exists for node: {0}", agentNode.getDisplayName());
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-                    System.out.println("Node " + agentNode.getDisplayName() + " doesn't exist, removing.");
+                    LOGGER.log(getNormalLoggingLevel(),
+                            "Node {0} doesn't exist, removing",
+                            agentNode.getDisplayName());
                     try {
                         Jenkins.get().removeNode(agentNode);
-                        System.out.println("Node " + agentNode.getDisplayName() + " successfully removed.");
                     } catch (IOException e) {
-                        System.out.println("Node " + agentNode.getDisplayName() + " could not be removed: "
-                                          + e.getMessage());
+                        LOGGER.log(Level.WARNING,
+                                "Node {0} could not be removed: {1}",
+                                new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }
                     continue;
                 }
+                // Echo statement to log before the step
+               // LOGGER.log(Level.INFO, "Checking if virtual machine exists for node: {0}", agentNode.getDisplayName());
+               // if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
+               //     LOGGER.log(Level.INFO, "Node {0} doesn't exist, removing.", agentNode.getDisplayName());
+               //     try {
+               //         Jenkins.get().removeNode(agentNode);
+               //         LOGGER.log(Level.INFO, "Node {0} successfully removed.", agentNode.getDisplayName());
+               //     } catch (IOException e) {
+               //         LOGGER.log(Level.WARNING, "Node {0} could not be removed: {1}", new Object[]{agentNode.getDisplayName(), e.getMessage()});
+               //     }
+               //     continue;
+               // }
 
                 // Machine exists but is in either DELETE or SHUTDOWN state.
                 // Execute that action.
