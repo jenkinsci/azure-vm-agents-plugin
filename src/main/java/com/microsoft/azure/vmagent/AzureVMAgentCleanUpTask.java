@@ -499,7 +499,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Check if the virtual machine exists.  If not, it could have been
                 // deleted in the background.  Remove from Jenkins if that is the case.
-                LOGGER.log(getNormalLoggingLevel(), "Checking if virtual machine exists for node: {0}", agentNode.getDisplayName());
+                LOGGER.log(getNormalLoggingLevel(),
+                    "Checking if virtual machine exists for node: {0}", 
+                    agentNode.getDisplayName()
+                );
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "Node {0} doesn't exist, removing",
