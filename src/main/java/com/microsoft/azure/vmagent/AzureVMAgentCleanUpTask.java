@@ -512,17 +512,16 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 //     }
                 //     continue;
                 // }
-             
                 // Echo statement to log before the step
                 System.out.println("Checking if virtual machine exists for node: " + agentNode.getDisplayName());
-             
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
                     System.out.println("Node " + agentNode.getDisplayName() + " doesn't exist, removing.");
                     try {
                         Jenkins.get().removeNode(agentNode);
                         System.out.println("Node " + agentNode.getDisplayName() + " successfully removed.");
                     } catch (IOException e) {
-                        System.out.println("Node " + agentNode.getDisplayName() + " could not be removed: " + e.getMessage());
+                        System.out.println("Node " + agentNode.getDisplayName() + " could not be removed: "
+                                          + e.getMessage());
                     }
                     continue;
                 }
