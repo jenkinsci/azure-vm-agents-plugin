@@ -471,17 +471,25 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
+                // Debug logging
+                LOGGER.log(getNormalLoggingLevel(), "Processing node: {0}", agentNode.getDisplayName());
+
                 // If the machine is not offline, then don't do anything.
                 if (!azureComputer.isOffline()) {
+                    LOGGER.log(
+                        getNormalLoggingLevel(),
+                        "Node {0} is not offline, skipping", agentNode.getDisplayName());
                     continue;
                 }
 
                 // If the machine is not idle, don't do anything.
                 // Could have been taken offline by the plugin while still running
                 // builds.
-                if (!azureComputer.isIdle()) {
-                    continue;
-                }
+                // if (!azureComputer.isIdle()) {
+                //     LOGGER.log(getNormalLoggingLevel(),
+                //  "Node {0} is not idle, skipping", agentNode.getDisplayName());
+                //     continue;
+                // }
 
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
@@ -499,16 +507,26 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // Check if the virtual machine exists.  If not, it could have been
                 // deleted in the background.  Remove from Jenkins if that is the case.
-                LOGGER.log(getNormalLoggingLevel(),
-                    "Checking if virtual machine exists for node: {0}",
-                    agentNode.getDisplayName()
-                );
-                if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
+                LOGGER.log(
+                    getNormalLoggingLevel(),
+                    "Checking if virtual machine exists for node: {0}", agentNode.getDisplayName());
+                boolean vmExists = AzureVMManagementServiceDelegate.virtualMachineExists(agentNode);
+                LOGGER.log(
+                    getNormalLoggingLevel(),
+                    "Virtual machine existence check for node {0}: {1}",
+                    new Object[]{
+                        agentNode.getDisplayName(),
+                        vmExists});
+
+                if (!vmExists) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "Node {0} doesn't exist, removing",
                             agentNode.getDisplayName());
                     try {
                         Jenkins.get().removeNode(agentNode);
+                        LOGGER.log(
+                            getNormalLoggingLevel(),
+                            "Node {0} successfully removed", agentNode.getDisplayName());
                     } catch (IOException e) {
                         LOGGER.log(Level.WARNING,
                                 "Node {0} could not be removed: {1}",
@@ -516,20 +534,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     }
                     continue;
                 }
-                // Echo statement to log before the step
-               // LOGGER.log(Level.INFO, "Checking if virtual machine exists for node: {0}",
-                // agentNode.getDisplayName());
-               // if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-               //     LOGGER.log(Level.INFO, "Node {0} doesn't exist, removing.", agentNode.getDisplayName());
-               //     try {
-               //         Jenkins.get().removeNode(agentNode);
-               //         LOGGER.log(Level.INFO, "Node {0} successfully removed.", agentNode.getDisplayName());
-               //     } catch (IOException e) {
-            //    LOGGER.log(Level.WARNING, "Node {0} could not be removed:
-               //  {1}", new Object[]{agentNode.getDisplayName(), e.getMessage()});
-               //     }
-               //     continue;
-               // }
 
                 // Machine exists but is in either DELETE or SHUTDOWN state.
                 // Execute that action.
