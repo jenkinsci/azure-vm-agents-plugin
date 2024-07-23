@@ -471,6 +471,25 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
+                // If the machine is not offline, then don't do anything.
+                if (!azureComputer.isOffline()) {
+                    continue;
+                }
+
+                // Even if offline, a machine that has been temporarily marked offline
+                // should stay (this could be for investigation).
+                if (azureComputer.isSetOfflineByUser()) {
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} was set offline by user, skipping",
+                            agentNode.getDisplayName());
+                    continue;
+                }
+
+                // If the machine is in "keep" state, skip
+                if (agentNode.isCleanUpBlocked()) {
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} blocked to cleanup", agentNode.getDisplayName());
+                    continue;
+                }
+
                 // Check if the virtual machine exists.  If not, it could have been
                 // deleted in the background.  Remove from Jenkins if that is the case.
                 if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
@@ -487,29 +506,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     continue;
                 }
 
-                // If the machine is not offline, then don't do anything.
-                if (!azureComputer.isOffline()) {
-                    continue;
-                }
-
                 // If the machine is not idle, don't do anything.
                 // Could have been taken offline by the plugin while still running
                 // builds.
                 if (!azureComputer.isIdle()) {
-                    continue;
-                }
-
-                // Even if offline, a machine that has been temporarily marked offline
-                // should stay (this could be for investigation).
-                if (azureComputer.isSetOfflineByUser()) {
-                    LOGGER.log(getNormalLoggingLevel(), "Node {0} was set offline by user, skipping",
-                            agentNode.getDisplayName());
-                    continue;
-                }
-
-                // If the machine is in "keep" state, skip
-                if (agentNode.isCleanUpBlocked()) {
-                    LOGGER.log(getNormalLoggingLevel(), "Node {0} blocked to cleanup", agentNode.getDisplayName());
                     continue;
                 }
 
