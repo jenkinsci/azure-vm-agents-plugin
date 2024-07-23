@@ -489,9 +489,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
 
                 // If the machine is not offline, then don't do anything.
                 if (!azureComputer.isOffline()) {
-                    LOGGER.log(
-                        getNormalLoggingLevel(),
-                        "Node {0} is not offline, skipping", agentNode.getDisplayName());
                     continue;
                 }
 
@@ -499,8 +496,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 // Could have been taken offline by the plugin while still running
                 // builds.
                 if (!azureComputer.isIdle()) {
-                    LOGGER.log(getNormalLoggingLevel(),
-                "Node {0} is not idle, skipping", agentNode.getDisplayName());
                     continue;
                 }
 
