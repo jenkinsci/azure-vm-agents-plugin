@@ -471,42 +471,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                 AzureVMComputer azureComputer = (AzureVMComputer) computer;
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
-                // Debug logging
-                LOGGER.log(getNormalLoggingLevel(), "Processing node: {0}", agentNode.getDisplayName());
-
-                // If the machine is not offline, then don't do anything.
-                if (!azureComputer.isOffline()) {
-                    LOGGER.log(
-                        getNormalLoggingLevel(),
-                        "Node {0} is not offline, skipping", agentNode.getDisplayName());
-                    continue;
-                }
-
-                // If the machine is not idle, don't do anything.
-                // Could have been taken offline by the plugin while still running
-                // builds.
-                // if (!azureComputer.isIdle()) {
-                //     LOGGER.log(getNormalLoggingLevel(),
-                //  "Node {0} is not idle, skipping", agentNode.getDisplayName());
-                //     continue;
-                // }
-
-                // Even if offline, a machine that has been temporarily marked offline
-                // should stay (this could be for investigation).
-                if (azureComputer.isSetOfflineByUser()) {
-                    LOGGER.log(getNormalLoggingLevel(), "Node {0} was set offline by user, skipping",
-                            agentNode.getDisplayName());
-                    continue;
-                }
-
-                // If the machine is in "keep" state, skip
-                if (agentNode.isCleanUpBlocked()) {
-                    LOGGER.log(getNormalLoggingLevel(), "Node {0} blocked to cleanup", agentNode.getDisplayName());
-                    continue;
-                }
-
                 // Check if the virtual machine exists.  If not, it could have been
-                // deleted in the background.  Remove from Jenkins if that is the case.
+                // deleted in the background.  Remove from Jenkins if that is the case
                 LOGGER.log(
                     getNormalLoggingLevel(),
                     "Checking if virtual machine exists for node: {0}", agentNode.getDisplayName());
@@ -518,6 +484,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                         agentNode.getDisplayName(),
                         vmExists});
 
+                // Remove Node if virtual machine does not exist
                 if (!vmExists) {
                     LOGGER.log(getNormalLoggingLevel(),
                             "Node {0} doesn't exist, removing",
@@ -532,6 +499,37 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                                 "Node {0} could not be removed: {1}",
                                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }
+                    continue;
+                }
+
+                // If the machine is not offline, then don't do anything.
+                if (!azureComputer.isOffline()) {
+                    LOGGER.log(
+                        getNormalLoggingLevel(),
+                        "Node {0} is not offline, skipping", agentNode.getDisplayName());
+                    continue;
+                }
+
+                // If the machine is not idle, don't do anything.
+                // Could have been taken offline by the plugin while still running
+                // builds.
+                if (!azureComputer.isIdle()) {
+                    LOGGER.log(getNormalLoggingLevel(),
+                "Node {0} is not idle, skipping", agentNode.getDisplayName());
+                    continue;
+                }
+
+                // Even if offline, a machine that has been temporarily marked offline
+                // should stay (this could be for investigation).
+                if (azureComputer.isSetOfflineByUser()) {
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} was set offline by user, skipping",
+                            agentNode.getDisplayName());
+                    continue;
+                }
+
+                // If the machine is in "keep" state, skip
+                if (agentNode.isCleanUpBlocked()) {
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} blocked to cleanup", agentNode.getDisplayName());
                     continue;
                 }
 
