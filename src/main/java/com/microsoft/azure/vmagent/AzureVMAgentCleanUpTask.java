@@ -476,13 +476,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     continue;
                 }
 
-                // If the machine is not idle, don't do anything.
-                // Could have been taken offline by the plugin while still running
-                // builds.
-                if (!azureComputer.isIdle()) {
-                    continue;
-                }
-
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
                 if (azureComputer.isSetOfflineByUser()) {
@@ -510,6 +503,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                                 "Node {0} could not be removed: {1}",
                                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }
+                    continue;
+                }
+
+                // If the machine is not idle, don't do anything.
+                // Could have been taken offline by the plugin while still running
+                // builds.
+                if (!azureComputer.isIdle()) {
                     continue;
                 }
 
