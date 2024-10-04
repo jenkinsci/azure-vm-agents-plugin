@@ -232,6 +232,7 @@ public final class AzureVMManagementServiceDelegate {
             final String storageAccountType = template.getStorageAccountType();
             final String diskType = template.getDiskType();
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
+            final boolean encryptionAtHost = template.isEncryptionAtHost();
             final int osDiskSize = template.getOsDiskSize();
             final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
             final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
@@ -499,6 +500,7 @@ public final class AzureVMManagementServiceDelegate {
             copyVariableIfNotBlank(tmp, properties, "imageVersion");
             copyVariableIfNotBlank(tmp, properties, "osType");
             putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
+            putVariable(tmp, "encryptionAtHost", Boolean.toString(encryptionAtHost));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
 
             String imageId = getImageId(properties);
@@ -531,6 +533,27 @@ public final class AzureVMManagementServiceDelegate {
                 imageId = galleryImageVersion.id();
                 LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{imageId});
                 putVariableIfNotBlank(tmp, "imageId", imageId);
+
+                Map<String, String> imageTags = galleryImageVersion.tags();
+                if (imageTags != null) {
+                    String planInfo = imageTags.get("PlanInfo");
+                    String planProduct = imageTags.get("PlanProduct");
+                    String planPublisher = imageTags.get("PlanPublisher");
+
+                    if (StringUtils.isNotBlank(planInfo) && StringUtils.isNotBlank(planProduct)
+                            && StringUtils.isNotBlank(planPublisher)) {
+                        for (JsonNode resource : resources) {
+                            String type = resource.get("type").asText();
+                            if (type.contains("virtualMachine")) {
+                                ObjectNode planNode = MAPPER.createObjectNode();
+                                planNode.put("name", planInfo);
+                                planNode.put("publisher", planPublisher);
+                                planNode.put("product", planProduct);
+                                ((ObjectNode) resource).replace("plan", planNode);
+                            }
+                        }
+                    }
+                }
             }
 
             if (imageId != null) {
@@ -606,6 +629,10 @@ public final class AzureVMManagementServiceDelegate {
             if (template.isSpotInstance()) {
                 addSpotInstance(tmp);
             }
+            
+            if (template.isTrustedLaunch()) {
+                addTrustedLaunch(tmp);
+            }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
                 addPublicIPResourceNode(tmp, tags);
@@ -636,6 +663,10 @@ public final class AzureVMManagementServiceDelegate {
                 String rsaPublicKey = KeyDecoder.getPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
                 putParameter(parameters, "adminPasswordOrKey", rsaPublicKey);
                 putParameter(parameters, "authenticationType", "key");
+            }
+
+            if (!Constants.LICENSE_TYPE_CLASSIC.equals(template.getLicenseType())) {
+                addLicenseType(tmp, template.getLicenseType());
             }
 
             // Register the deployment for cleanup
@@ -712,6 +743,44 @@ public final class AzureVMManagementServiceDelegate {
             }
         }
     }
+    
+    
+    private void addTrustedLaunch(JsonNode template) {
+    	ObjectNode parameterNode = (ObjectNode) template.get("parameters");
+    	ObjectNode securityTypeNode = MAPPER.createObjectNode();
+    	securityTypeNode.put("type", "string");
+    	securityTypeNode.put("defaultValue", "TrustedLaunch");
+    	ArrayNode allowedValuesNode = MAPPER.createArrayNode();
+    	allowedValuesNode.add("Standard");
+    	allowedValuesNode.add("TrustedLaunch");
+    	securityTypeNode.set("allowedValues", allowedValuesNode);
+    	ObjectNode metaDataNode = MAPPER.createObjectNode();
+    	metaDataNode.put("description", "Security Type of the Virtual Machine.");
+    	securityTypeNode.set("metadata", metaDataNode);
+    	parameterNode.set("securityType", securityTypeNode);
+    	
+    	ObjectNode variableNode = (ObjectNode) template.get("variables");
+    	ObjectNode profileNode = MAPPER.createObjectNode();    	
+    	ObjectNode settingsNode = MAPPER.createObjectNode();
+    	settingsNode.put("secureBootEnabled", true);
+    	settingsNode.put("vTpmEnabled", true);
+    	
+    	profileNode.set("uefiSettings", settingsNode);
+    	profileNode.put("securityType", "[parameters('securityType')]");
+    	
+    	variableNode.set("securityProfileJson", profileNode);
+    	
+    	
+    	
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                properties.put("securityProfile", "[if(equals(parameters('securityType'), 'TrustedLaunch'), variables('securityProfileJson'), null())]");                
+            }
+        }
+    }
 
     private void addAcceleratedNetworking(JsonNode template) {
         ArrayNode resources = (ArrayNode) template.get("resources");
@@ -720,6 +789,20 @@ public final class AzureVMManagementServiceDelegate {
             if (type.contains("networkInterfaces")) {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 properties.put("enableAcceleratedNetworking", "true");
+            }
+        }
+    }
+
+    private void addLicenseType(JsonNode template, String licenseType) {
+        if (Constants.LICENSE_TYPE_WINDOWS_CLIENT.equals(licenseType) || Constants.LICENSE_TYPE_WINDOWS_SERVER.equals(licenseType)) {
+            ArrayNode resources = (ArrayNode) template.get("resources");
+            for (JsonNode resource : resources) {
+                String type = resource.get("type").asText();
+                if (type.contains("virtualMachine")) {
+                    ObjectNode properties = (ObjectNode) resource.get("properties");
+                    properties.put("licenseType", licenseType);
+                    return;
+                }
             }
         }
     }
@@ -1175,6 +1258,7 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("enableMSI"),
                     (Boolean) properties.get("enableUAMI"),
                     (Boolean) properties.get("ephemeralOSDisk"),
+                    (Boolean) properties.get("encryptionAtHost"),
                     (String) properties.get("uamiID"),
                     template,
                     fqdn,
@@ -1485,8 +1569,6 @@ public final class AzureVMManagementServiceDelegate {
                 imageProperties("MicrosoftWindowsServer", "WindowsServer", "2019-Datacenter", "2019-Datacenter-with-Containers", Constants.OS_TYPE_WINDOWS));
         imageProperties.put(Constants.WINDOWS_SERVER_2022,
                 imageProperties("MicrosoftWindowsServer", "WindowsServer", "2022-datacenter-azure-edition-core", "2022-datacenter-azure-edition-core", Constants.OS_TYPE_WINDOWS));
-        imageProperties.put(Constants.UBUNTU_1604_LTS,
-                imageProperties("Canonical", "UbuntuServer", "16.04-LTS", "16.04-LTS", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2004_LTS,
                 imageProperties("canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2", "20_04-lts-gen2", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2204_LTS,
@@ -1518,14 +1600,12 @@ public final class AzureVMManagementServiceDelegate {
         tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<>());
         tools.put(Constants.WINDOWS_SERVER_2019, new HashMap<>());
         tools.put(Constants.WINDOWS_SERVER_2022, new HashMap<>());
-        tools.put(Constants.UBUNTU_1604_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2204_LTS, new HashMap<>());
         try {
             windows(Constants.WINDOWS_SERVER_2016, tools);
             windows(Constants.WINDOWS_SERVER_2019, tools);
             windows(Constants.WINDOWS_SERVER_2022, tools);
-            ubuntu(Constants.UBUNTU_1604_LTS, tools);
             ubuntu(Constants.UBUNTU_2004_LTS, tools);
             ubuntu(Constants.UBUNTU_2204_LTS, tools);
 

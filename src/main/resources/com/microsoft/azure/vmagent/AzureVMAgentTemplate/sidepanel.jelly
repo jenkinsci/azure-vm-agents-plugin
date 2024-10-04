@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:t="/lib/hudson">
+  <l:header />
+  <l:side-panel>
+    <l:tasks>
+      <l:task href="." icon="symbol-settings"
+              title="${app.hasPermission(app.ADMINISTER) ? '%Configure' : '%View Configuration'}"/>
+      <l:task href="../../templates" icon="symbol-details" title="${%Agent templates}"/>
+      <t:actions />
+    </l:tasks>
+  </l:side-panel>
+</j:jelly>

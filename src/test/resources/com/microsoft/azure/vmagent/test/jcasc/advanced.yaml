@@ -2,7 +2,7 @@ jenkins:
   clouds:
     - azureVM:
         azureCredentialsId: "azure-cred"
-        cloudName: "azure"
+        name: "azure"
         cloudTags:
           - name: "author"
             value: "gavin"

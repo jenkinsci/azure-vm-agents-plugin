@@ -123,6 +123,9 @@
                             }
                         }
                     ]
+                },
+                "securityProfile": {
+                    "encryptionAtHost": "[if(bool(variables('encryptionAtHost')), json('true'), json('null'))]"
                 }
             },
             "tags": {

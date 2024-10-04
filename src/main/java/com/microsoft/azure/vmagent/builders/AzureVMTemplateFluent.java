@@ -34,6 +34,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private boolean ephemeralOSDisk;
 
+    private boolean encryptionAtHost;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -141,6 +143,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
 
+    public T withEncryptionAtHost(boolean isEncryptionAtHost) {
+        this.encryptionAtHost = isEncryptionAtHost;
+        return (T) this;
+    }
+
     public T withOsDiskSize(int osDiskSize) {
         this.osDiskSize = osDiskSize;
         return (T) this;
@@ -156,9 +163,12 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
 
-    public T addNewPoolRetentionStrategy(String retentionTime, String poolSize) {
-        this.retentionStrategy = new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
+    public T addNewPoolRetentionStrategy(String retentionTime, String poolSize, boolean singleUseAgents) {
+        AzureVMCloudPoolRetentionStrategy retentionStrategy1 =
+          new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
                 Integer.parseInt(poolSize));
+        retentionStrategy1.setSingleUseAgents(singleUseAgents);
+        this.retentionStrategy = retentionStrategy1;
         return (T) this;
     }
 
@@ -248,6 +258,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public boolean isEphemeralOSDisk() {
         return ephemeralOSDisk;
+    }
+
+    public boolean isEncryptionAtHost() {
+        return encryptionAtHost;
     }
 
     public int getOsDiskSize() {

@@ -269,7 +269,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     deploymentsToClean.add(info);
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to get/delete deployment: {0}", e);
+                LOGGER.log(Level.WARNING, String.format("Failed to get/delete deployment: %s",
+                        info.getDeploymentName()), e);
                 // Check the number of attempts remaining. If greater than 0, decrement
                 // and add back into the queue.
                 if (info.hasAttemptsRemaining()) {
@@ -329,6 +330,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         try {
             final List<String> validVMs = getValidVMs();
             final AzureResourceManager azureClient = cloud.getAzureClient();
+
+            if (azureClient == null) {
+                LOGGER.log(getNormalLoggingLevel(),
+                        "cleanLeakedResources: Skipping cleanup as cloud is not configured with a "
+                                + "valid credential");
+                return;
+            }
+
             final AzureVMManagementServiceDelegate serviceDelegate = cloud.getServiceDelegate();
             // can't use listByTag because for some reason that method strips all the tags from the outputted resources
             // (https://github.com/Azure/azure-sdk-for-java/issues/1436)
@@ -468,13 +477,6 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     continue;
                 }
 
-                // If the machine is not idle, don't do anything.
-                // Could have been taken offline by the plugin while still running
-                // builds.
-                if (!azureComputer.isIdle()) {
-                    continue;
-                }
-
                 // Even if offline, a machine that has been temporarily marked offline
                 // should stay (this could be for investigation).
                 if (azureComputer.isSetOfflineByUser()) {
@@ -502,6 +504,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                                 "Node {0} could not be removed: {1}",
                                 new Object[]{agentNode.getDisplayName(), e.getMessage()});
                     }
+                    continue;
+                }
+
+                // If the machine is not idle, don't do anything.
+                // Could have been taken offline by the plugin while still running
+                // builds.
+                if (!azureComputer.isIdle()) {
                     continue;
                 }
 

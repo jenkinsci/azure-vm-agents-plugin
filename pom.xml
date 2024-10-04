@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.63</version>
+        <version>4.88</version>
     </parent>
 
     <artifactId>azure-vm-agents</artifactId>
@@ -45,17 +45,17 @@
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
-        <jenkins.version>2.361.4</jenkins.version>
+        <jenkins.version>2.426.3</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <hpi.compatibleSinceVersion>846</hpi.compatibleSinceVersion>
+        <hpi.compatibleSinceVersion>883</hpi.compatibleSinceVersion>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.361.x</artifactId>
-                <version>2062.v154408a_24d20</version>
+                <artifactId>bom-2.426.x</artifactId>
+                <version>3208.vb_21177d4b_cd9</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -66,12 +66,12 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>azure-sdk</artifactId>
-            <version>132.v62b_48eb_6f32f</version>
+            <version>174.va_89c1df897d2</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-credentials</artifactId>
-            <version>254.v64da_8176c83a</version>
+            <version>293.vb_d506148f506</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.sshtools</groupId>
             <artifactId>maverick-synergy-client</artifactId>
-            <version>3.0.10</version>
+            <version>3.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -109,11 +109,11 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>cloud-stats</artifactId>
-            <version>267.v577e3742c282</version>
+            <version>336.v788e4055508b_</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -160,12 +160,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.5.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>10.12.0</version>
+                        <version>10.18.2</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -194,6 +194,15 @@
                         com/microsoft/azure/vmagent/AzureVMManagementServiceDelegate.java,
                         com/microsoft/azure/vmagent/remote/AzureVMAgentSSHLauncher.java
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkCount>1C</forkCount>
+                    <parallel>all</parallel>
+                    <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>
             </plugin>
         </plugins>
