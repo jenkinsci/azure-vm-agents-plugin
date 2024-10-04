@@ -269,7 +269,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     deploymentsToClean.add(info);
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to get/delete deployment: {0}", e);
+                LOGGER.log(Level.WARNING, String.format("Failed to get/delete deployment: %s",
+                        info.getDeploymentName()), e);
                 // Check the number of attempts remaining. If greater than 0, decrement
                 // and add back into the queue.
                 if (info.hasAttemptsRemaining()) {

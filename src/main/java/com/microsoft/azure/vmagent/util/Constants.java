@@ -128,7 +128,6 @@ public final class Constants {
     public static final String WINDOWS_SERVER_2022 = "Windows Server 2022";
     public static final String WINDOWS_SERVER_2019 = "Windows Server 2019";
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
-    public static final String UBUNTU_1604_LTS = "Ubuntu 16.04 LTS";
     public static final String UBUNTU_2004_LTS = "Ubuntu 20.04 LTS";
     public static final String UBUNTU_2204_LTS = "Ubuntu 22.04 LTS";
 

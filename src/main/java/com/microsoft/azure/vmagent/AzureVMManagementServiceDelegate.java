@@ -1569,8 +1569,6 @@ public final class AzureVMManagementServiceDelegate {
                 imageProperties("MicrosoftWindowsServer", "WindowsServer", "2019-Datacenter", "2019-Datacenter-with-Containers", Constants.OS_TYPE_WINDOWS));
         imageProperties.put(Constants.WINDOWS_SERVER_2022,
                 imageProperties("MicrosoftWindowsServer", "WindowsServer", "2022-datacenter-azure-edition-core", "2022-datacenter-azure-edition-core", Constants.OS_TYPE_WINDOWS));
-        imageProperties.put(Constants.UBUNTU_1604_LTS,
-                imageProperties("Canonical", "UbuntuServer", "16.04-LTS", "16.04-LTS", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2004_LTS,
                 imageProperties("canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2", "20_04-lts-gen2", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2204_LTS,
@@ -1602,14 +1600,12 @@ public final class AzureVMManagementServiceDelegate {
         tools.put(Constants.WINDOWS_SERVER_2016, new HashMap<>());
         tools.put(Constants.WINDOWS_SERVER_2019, new HashMap<>());
         tools.put(Constants.WINDOWS_SERVER_2022, new HashMap<>());
-        tools.put(Constants.UBUNTU_1604_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2204_LTS, new HashMap<>());
         try {
             windows(Constants.WINDOWS_SERVER_2016, tools);
             windows(Constants.WINDOWS_SERVER_2019, tools);
             windows(Constants.WINDOWS_SERVER_2022, tools);
-            ubuntu(Constants.UBUNTU_1604_LTS, tools);
             ubuntu(Constants.UBUNTU_2004_LTS, tools);
             ubuntu(Constants.UBUNTU_2204_LTS, tools);
 
