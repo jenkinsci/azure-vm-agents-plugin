@@ -16,6 +16,7 @@
 package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.exception.ManagementError;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
@@ -575,15 +576,7 @@ public class AzureVMCloud extends Cloud {
                                     && !state.equalsIgnoreCase("running")) {
                                 final String statusCode = op.statusCode();
                                 final Object statusMessage = op.statusMessage();
-                                String finalStatusMessage = statusCode;
-
-                                if (statusMessage != null) {
-                                    if (statusMessage instanceof StatusMessage) {
-                                        finalStatusMessage += " - " + ((StatusMessage) statusMessage).error().getMessage();
-                                    } else {
-                                        finalStatusMessage += " - " + statusMessage;
-                                    }
-                                }
+                                String finalStatusMessage = getStatusMessage(statusCode, statusMessage);
                                 throw AzureCloudException.create(
                                         String.format("Deployment %s: %s:%s - %s",
                                                 state, type, resource, finalStatusMessage));
@@ -617,6 +610,20 @@ public class AzureVMCloud extends Cloud {
         throw AzureCloudException.create(String.format(
                 "Deployment %s failed, max timeout reached (%d seconds)",
                 deploymentName, timeoutInSeconds));
+    }
+
+    private static String getStatusMessage(String statusCode, Object statusMessage) {
+        String finalStatusMessage = statusCode;
+
+        if (statusMessage != null) {
+            if (statusMessage instanceof StatusMessage) {
+                ManagementError error = ((StatusMessage) statusMessage).error();
+                finalStatusMessage += " - " + error.getMessage();
+            } else {
+                finalStatusMessage += " - " + statusMessage;
+            }
+        }
+        return finalStatusMessage;
     }
 
     @Override
