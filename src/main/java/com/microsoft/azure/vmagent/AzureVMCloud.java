@@ -16,12 +16,14 @@
 package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.exception.ManagementError;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.resources.models.Deployment;
 import com.azure.resourcemanager.resources.models.DeploymentOperation;
 import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.StatusMessage;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.util.AzureImdsCredentials;
@@ -574,10 +576,7 @@ public class AzureVMCloud extends Cloud {
                                     && !state.equalsIgnoreCase("running")) {
                                 final String statusCode = op.statusCode();
                                 final Object statusMessage = op.statusMessage();
-                                String finalStatusMessage = statusCode;
-                                if (statusMessage != null) {
-                                    finalStatusMessage += " - " + statusMessage;
-                                }
+                                String finalStatusMessage = getStatusMessage(statusCode, statusMessage);
                                 throw AzureCloudException.create(
                                         String.format("Deployment %s: %s:%s - %s",
                                                 state, type, resource, finalStatusMessage));
@@ -611,6 +610,20 @@ public class AzureVMCloud extends Cloud {
         throw AzureCloudException.create(String.format(
                 "Deployment %s failed, max timeout reached (%d seconds)",
                 deploymentName, timeoutInSeconds));
+    }
+
+    private static String getStatusMessage(String statusCode, Object statusMessage) {
+        String finalStatusMessage = statusCode;
+
+        if (statusMessage != null) {
+            if (statusMessage instanceof StatusMessage) {
+                ManagementError error = ((StatusMessage) statusMessage).error();
+                finalStatusMessage += " - " + error.getMessage();
+            } else {
+                finalStatusMessage += " - " + statusMessage;
+            }
+        }
+        return finalStatusMessage;
     }
 
     @Override
