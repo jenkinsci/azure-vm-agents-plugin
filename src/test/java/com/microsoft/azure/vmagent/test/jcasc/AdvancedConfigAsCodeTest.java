@@ -70,6 +70,7 @@ public class AdvancedConfigAsCodeTest {
         assertThat(template.isInstallDocker(), is(false));
         assertThat(template.isInstallGit(), is(false));
         assertThat(template.isInstallMaven(), is(false));
+        assertThat(template.isInstallQemu(), is(false));
 
         assertThat(template.getLabels(), is("linux"));
         assertThat(template.getLocation(), is("UK South"));

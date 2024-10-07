@@ -306,6 +306,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean installDocker;
 
+    private boolean installQemu;
+
     private boolean trustedLaunch;
 
     private final String osType;
@@ -386,6 +388,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private transient boolean isInstallDocker;
     private transient boolean isInstallMaven;
     private transient boolean isInstallGit;
+    private transient boolean isInstallQemu;
 
     private transient String image;
     private transient String imageId;
@@ -760,6 +763,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
                                 .get(builtInImage).get(Constants.INSTALL_MAVEN));
             }
+            if (template.isInstallQemu()) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(
+                        AzureVMManagementServiceDelegate.PRE_INSTALLED_TOOLS_SCRIPT
+                                .get(builtInImage).get(Constants.INSTALL_QEMU));
+            }
             if (template.isInstallGit()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
@@ -862,6 +871,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (isInstallMaven) {
             installMaven = true;
+        }
+
+        if (isInstallQemu) {
+            installQemu = true;
         }
 
         if (imageReference == null) {
@@ -1084,6 +1097,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     }
 
     @DataBoundSetter
+    public void setInstallQemu(boolean installQemu) {
+        this.installQemu = installQemu;
+    }
+
+    @DataBoundSetter
     public void setInstallDocker(boolean installDocker) {
         this.installDocker = installDocker;
     }
@@ -1098,6 +1116,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public boolean isInstallDocker() {
         return installDocker;
+    }
+
+    public boolean isInstallQemu() {
+        return installQemu;
     }
 
     public String getOsType() {
@@ -1347,6 +1369,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withInstallGit(isInstallGit())
                 .withInstallDocker(isInstallDocker())
                 .withInstallMaven(isInstallMaven())
+                .withInstallQemu(isInstallQemu())
                 .build();
     }
 

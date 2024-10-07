@@ -160,6 +160,7 @@ public final class Constants {
      */
     public static final String INSTALL_JAVA = "Java";
     public static final String INSTALL_MAVEN = "Maven";
+    public static final String INSTALL_QEMU = "QEMU";
     public static final String INSTALL_GIT = "Git";
     public static final String INSTALL_DOCKER = "Docker";
     public static final String INSTALL_JNLP = "Jnlp";

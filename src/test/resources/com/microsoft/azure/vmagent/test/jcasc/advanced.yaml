@@ -35,6 +35,7 @@ jenkins:
             installDocker: false
             installGit: false
             installMaven: false
+            installQemu: false
             jvmOptions: "-xmx"
             labels: "linux"
             location: "UK South"

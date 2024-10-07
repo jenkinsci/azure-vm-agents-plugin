@@ -30,6 +30,7 @@
                     <isInstallGit>false</isInstallGit>
                     <isInstallMaven>false</isInstallMaven>
                     <isInstallDocker>false</isInstallDocker>
+                    <isInstallQemu>false</isInstallQemu>
                     <osType>Linux</osType>
                     <imagePublisher>Canonical</imagePublisher>
                     <imageOffer>UbuntuServer</imageOffer>

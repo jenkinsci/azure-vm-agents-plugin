@@ -10,14 +10,18 @@ public class BuiltInImage {
 
     private boolean isInstallDocker;
 
+    private boolean isInstallQemu;
+
     public BuiltInImage(String builtInImage,
                         boolean isInstallGit,
                         boolean isInstallMaven,
-                        boolean isInstallDocker) {
+                        boolean isInstallDocker,
+                        boolean isInstallQemu) {
         this.builtInImage = builtInImage;
         this.isInstallGit = isInstallGit;
         this.isInstallMaven = isInstallMaven;
         this.isInstallDocker = isInstallDocker;
+        this.isInstallQemu = isInstallQemu;
     }
 
     public String getBuiltInImage() {
@@ -34,5 +38,9 @@ public class BuiltInImage {
 
     public boolean isInstallDocker() {
         return isInstallDocker;
+    }
+
+    public boolean isInstallQemu() {
+        return isInstallQemu;
     }
 }
