@@ -1853,7 +1853,6 @@ public final class AzureVMManagementServiceDelegate {
                 final Integer newCountForThisTemplate = existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate + 1);
                 result.put(templateThisVmBelongsTo, newCountForThisTemplate);
             }
-
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() != 404) {
                 throw e;
