@@ -354,6 +354,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "jenkinsTag", Constants.AZURE_JENKINS_TAG_VALUE);
             putVariable(tmp, "resourceTag", deploymentRegistrar.getDeploymentTag().get());
             putVariable(tmp, "cloudTag", cloudName);
+            putVariable(tmp, "templateTag", template.getTemplateName());
             putVariable(tmp, "osDiskStorageAccountType", template.getOsDiskStorageAccountType());
 
             // add purchase plan for image if needed in reference configuration
@@ -1852,6 +1853,7 @@ public final class AzureVMManagementServiceDelegate {
                 final Integer newCountForThisTemplate = existingCountForThisTemplate == null ? 1 : (existingCountForThisTemplate + 1);
                 result.put(templateThisVmBelongsTo, newCountForThisTemplate);
             }
+
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() != 404) {
                 throw e;
