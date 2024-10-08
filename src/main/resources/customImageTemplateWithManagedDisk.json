@@ -15,6 +15,7 @@
         "storageAccountType": "Standard_LRS",
         "jenkinsTag": "ManagedByAzureVMAgents",
         "resourceTag": "AzureJenkins",
+        "templateTag": "",
         "blobEndpointSuffix": ".blob.core.windows.net/",
         "linuxConfiguration": {
             "disablePasswordAuthentication": true,
@@ -130,7 +131,8 @@
             },
             "tags": {
                 "JenkinsManagedTag": "[variables('jenkinsTag')]",
-                "JenkinsResourceTag": "[variables('resourceTag')]"
+                "JenkinsResourceTag": "[variables('resourceTag')]",
+                "JenkinsTemplateTag": "[variables('templateTag')]"
             }
         }
     ]
