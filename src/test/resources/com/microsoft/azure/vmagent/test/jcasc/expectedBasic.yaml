@@ -17,6 +17,7 @@
       installDocker: true
       installGit: true
       installMaven: true
+      installQemu: true
       labels: "ubuntu"
       launcher: "ssh"
       location: "East US"

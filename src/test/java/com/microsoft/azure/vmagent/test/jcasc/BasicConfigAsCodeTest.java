@@ -65,6 +65,7 @@ public class BasicConfigAsCodeTest {
         assertThat(template.isInstallDocker(), is(true));
         assertThat(template.isInstallGit(), is(true));
         assertThat(template.isInstallMaven(), is(true));
+        assertThat(template.isInstallQemu(), is(true));
 
         assertThat(template.getLabels(), is("ubuntu"));
         assertThat(template.getLocation(), is("East US"));

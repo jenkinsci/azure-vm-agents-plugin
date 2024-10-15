@@ -23,6 +23,7 @@ jenkins:
             installDocker: true
             installGit: true
             installMaven: true
+            installQemu: true
             labels: "ubuntu"
             location: "East US"
             newStorageAccountName: "agent-storage"

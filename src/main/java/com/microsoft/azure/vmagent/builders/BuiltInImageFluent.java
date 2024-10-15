@@ -11,11 +11,14 @@ public class BuiltInImageFluent<T extends BuiltInImageFluent<T>> {
 
     private boolean isInstallDocker;
 
+    private boolean isInstallQemu;
+
     public BuiltInImageFluent() {
         builtInImage = Constants.WINDOWS_SERVER_2016;
         isInstallDocker = false;
         isInstallMaven = false;
         isInstallGit = false;
+        isInstallQemu = false;
     }
 
     //CHECKSTYLE:OFF
@@ -38,6 +41,11 @@ public class BuiltInImageFluent<T extends BuiltInImageFluent<T>> {
         this.isInstallDocker = installDocker;
         return (T) this;
     }
+
+    public T withInstallQemu(boolean installQemu) {
+        this.isInstallQemu = installQemu;
+        return (T) this;
+    }
     //CHECKSTYLE:ON
 
     public String getBuiltInImage() {
@@ -54,5 +62,9 @@ public class BuiltInImageFluent<T extends BuiltInImageFluent<T>> {
 
     public boolean isInstallDocker() {
         return isInstallDocker;
+    }
+
+    public boolean isInstallQemu() {
+        return isInstallQemu;
     }
 }

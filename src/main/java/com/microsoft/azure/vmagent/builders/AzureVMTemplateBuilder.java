@@ -142,6 +142,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setInstallGit(fluent.getBuiltInImage().isInstallGit());
         azureVMAgentTemplate.setInstallMaven(fluent.getBuiltInImage().isInstallMaven());
         azureVMAgentTemplate.setInstallDocker(fluent.getBuiltInImage().isInstallDocker());
+        azureVMAgentTemplate.setInstallQemu(fluent.getBuiltInImage().isInstallQemu());
         azureVMAgentTemplate.setUsePrivateIP(fluent.getAdvancedImage().isUsePrivateIP());
         azureVMAgentTemplate.setEnableMSI(fluent.getAdvancedImage().isEnableMSI());
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());

@@ -15,6 +15,7 @@ public class BuiltInImageBuilder extends BuiltInImageFluent<BuiltInImageBuilder>
         fluent.withInstallDocker(image.isInstallDocker());
         fluent.withInstallGit(image.isInstallGit());
         fluent.withInstallMaven(image.isInstallMaven());
+        fluent.withInstallQemu(image.isInstallQemu());
     }
 
     public BuiltInImageBuilder(BuiltInImageFluent<?> fluent) {
@@ -27,12 +28,14 @@ public class BuiltInImageBuilder extends BuiltInImageFluent<BuiltInImageBuilder>
         fluent.withInstallDocker(image.isInstallDocker());
         fluent.withInstallGit(image.isInstallGit());
         fluent.withInstallMaven(image.isInstallMaven());
+        fluent.withInstallQemu(image.isInstallQemu());
     }
 
     public BuiltInImage build() {
         return new BuiltInImage(fluent.getBuiltInImage(),
                 fluent.isInstallGit(),
                 fluent.isInstallMaven(),
-                fluent.isInstallDocker());
+                fluent.isInstallDocker(),
+                fluent.isInstallQemu());
     }
 }

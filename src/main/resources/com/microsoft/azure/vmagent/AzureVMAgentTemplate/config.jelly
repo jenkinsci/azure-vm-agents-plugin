@@ -172,6 +172,10 @@
         <f:entry title="Install Docker" field="installDocker">
           <f:checkbox/>
         </f:entry>
+
+        <f:entry title="Install QEMU" field="installQemu">
+          <f:checkbox/>
+        </f:entry>
       </f:section>
     </f:radioBlock>
 

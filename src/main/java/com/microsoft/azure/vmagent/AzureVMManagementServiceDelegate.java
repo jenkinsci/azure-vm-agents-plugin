@@ -167,6 +167,8 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_MAVEN_WINDOWS_FILENAME = "windowsInstallMavenScript.ps1";
 
+    private static final String INSTALL_QEMU_WINDOWS_FILENAME = "windowsInstallQemuScript.ps1";
+
     private static final String INSTALL_GIT_UBUNTU_FILENAME = "ubuntuInstallGitScript.sh";
 
     private static final String INSTALL_JAVA_UBUNTU_FILENAME = "ubuntuInstallJavaScript.sh";
@@ -174,6 +176,8 @@ public final class AzureVMManagementServiceDelegate {
     private static final String INSTALL_MAVEN_UBUNTU_FILENAME = "ubuntuInstallMavenScript.sh";
 
     private static final String INSTALL_DOCKER_UBUNTU_FILENAME = "ubuntuInstallDockerScript.sh";
+
+    private static final String INSTALL_QEMU_UBUNTU_FILENAME = "ubuntuInstallQemuScript.sh";
 
     private static final String PRE_INSTALL_SSH_FILENAME = "sshInit.ps1";
 
@@ -1627,6 +1631,9 @@ public final class AzureVMManagementServiceDelegate {
                 Constants.INSTALL_MAVEN,
                 loadScript(INSTALL_MAVEN_UBUNTU_FILENAME));
         tools.get(imageName).put(
+                Constants.INSTALL_QEMU,
+                loadScript(INSTALL_QEMU_UBUNTU_FILENAME));
+        tools.get(imageName).put(
                 Constants.INSTALL_GIT,
                 loadScript(INSTALL_GIT_UBUNTU_FILENAME));
         tools.get(imageName).put(
@@ -1641,6 +1648,9 @@ public final class AzureVMManagementServiceDelegate {
         tools.get(imageName).put(
                 Constants.INSTALL_MAVEN,
                 loadScript(INSTALL_MAVEN_WINDOWS_FILENAME));
+        tools.get(imageName).put(
+                Constants.INSTALL_QEMU,
+                loadScript(INSTALL_QEMU_WINDOWS_FILENAME));                
         tools.get(imageName).put(
                 Constants.INSTALL_GIT,
                 loadScript(INSTALL_GIT_WINDOWS_FILENAME));
