@@ -3,6 +3,8 @@
   <l:layout permission="${it.EXTENDED_READ}" title="${it.name} Configuration">
     <st:include page="sidepanel.jelly"/>
     <l:main-panel>
+      <j:set var="instance" value="${it.node}" />
+      <j:set var="descriptor" value="${instance.descriptor}" />
       <l:app-bar title="${it.name} Configuration" />
       <f:entry title="${%Name}">
         <f:readOnlyTextbox value="${it.name}"/>
@@ -18,6 +20,7 @@
       <f:entry title="${%Private_IP}">
         <f:readOnlyTextbox value="${it.privateIP}"/>
       </f:entry>
+      <f:descriptorList title="${%Node Properties}" descriptors="${h.getNodePropertyDescriptors(descriptor.clazz)}" field="nodeProperties" />
       <a href="${it.azurePortalLink}">View on Azure Portal</a>
     </l:main-panel>
   </l:layout>

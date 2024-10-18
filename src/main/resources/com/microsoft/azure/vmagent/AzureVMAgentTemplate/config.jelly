@@ -179,6 +179,8 @@
       </f:section>
     </f:radioBlock>
 
+    <f:descriptorList title="${%Node Properties}" field="nodeProperties" descriptors="${descriptor.nodePropertyDescriptors}" />
+
     <f:radioBlock name="imageTopLevelType" value="advanced" title="${%Advanced_Image}"
                   checked="${instance.isTopLevelType('advanced')}" inline="true">
       <f:dropdownList name="imageReference">

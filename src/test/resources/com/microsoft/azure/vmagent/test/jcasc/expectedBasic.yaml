@@ -23,6 +23,11 @@
       location: "East US"
       newStorageAccountName: "agent-storage"
       noOfParallelJobs: 1
+      nodeProperties:
+      - envVars:
+          env:
+          - key: "FOO"
+            value: "BAR"
       osType: "Linux"
       retentionStrategy:
         azureVMCloudRetentionStrategy:

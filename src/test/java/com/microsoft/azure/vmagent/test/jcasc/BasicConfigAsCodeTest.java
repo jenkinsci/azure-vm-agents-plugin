@@ -5,7 +5,10 @@ import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
+import hudson.EnvVars;
 import hudson.model.Node;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
@@ -17,12 +20,15 @@ import org.junit.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static hudson.Functions.getEnvVars;
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class BasicConfigAsCodeTest {
 
@@ -90,6 +96,12 @@ public class BasicConfigAsCodeTest {
         assertThat(template.getUsePrivateIP(), is(false));
 
         assertThat(template.getVirtualMachineSize(), is("Standard_DS2_v2"));
+
+        assertNotNull(template.getNodeProperties());
+        EnvironmentVariablesNodeProperty property = template.getNodeProperties().get(EnvironmentVariablesNodeProperty.class);
+        assertNotNull("The EnvironmentVariablesNodeProperty should not be null", property);
+        assertTrue("The environment variable FOO should exist", property.getEnvVars().containsKey("FOO"));
+
     }
 
     @Test

@@ -51,11 +51,16 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.Node;
+import hudson.model.Saveable;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
 import hudson.slaves.Cloud;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
+import hudson.slaves.AbstractCloudSlave;
 import hudson.slaves.RetentionStrategy;
+import hudson.util.DescribableList;
 import hudson.util.FormApply;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -384,6 +389,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String licenseType;
 
+    private /* lazily initialized */ DescribableList<NodeProperty<?>, NodePropertyDescriptor> nodeProperties;
+
     // deprecated fields
     private transient boolean isInstallDocker;
     private transient boolean isInstallMaven;
@@ -434,6 +441,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String agentWorkspace,
             String jvmOptions,
             RetentionStrategy<?> retentionStrategy,
+            List<? extends NodeProperty<?>> nodeProperties,
             boolean executeInitScriptAsRoot,
             boolean doNotUseMachineIfInitFails
     ) {
@@ -490,6 +498,49 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         labelDataSet = Label.parse(labels);
 
         this.tags = new ArrayList<>();
+
+        this.nodeProperties = new DescribableList<>(Saveable.NOOP, Util.fixNull(nodeProperties));
+    }
+
+    @Deprecated
+    public AzureVMAgentTemplate(
+            String templateName,
+            String templateDesc,
+            String labels,
+            String location,
+            AvailabilityTypeClass availabilityType,
+            String virtualMachineSize,
+            String storageAccountNameReferenceType,
+            String storageAccountType,
+            String newStorageAccountName,
+            String existingStorageAccountName,
+            String diskType,
+            String noOfParallelJobs,
+            Node.Mode usageMode,
+            String osType,
+            String imageTopLevelType,
+            ImageReferenceTypeClass imageReference,
+            AzureComputerLauncher launcher,
+            String initScript,
+            String terminateScript,
+            String credentialsId,
+            String virtualNetworkName,
+            String virtualNetworkResourceGroupName,
+            String subnetName,
+            String nsgName,
+            String agentWorkspace,
+            String jvmOptions,
+            RetentionStrategy<?> retentionStrategy,
+            boolean executeInitScriptAsRoot,
+            boolean doNotUseMachineIfInitFails
+    ) {
+        this(templateName, templateDesc, labels, location, availabilityType, virtualMachineSize,
+            storageAccountNameReferenceType, storageAccountType, newStorageAccountName, existingStorageAccountName,
+            diskType, noOfParallelJobs, usageMode, osType, imageTopLevelType, imageReference, launcher, initScript,
+            terminateScript, credentialsId, virtualNetworkName, virtualNetworkResourceGroupName, subnetName, nsgName,
+            agentWorkspace, jvmOptions, retentionStrategy, null, executeInitScriptAsRoot,
+            doNotUseMachineIfInitFails
+        );
     }
 
     @DataBoundSetter
@@ -1409,6 +1460,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.licenseType = licenseType;
     }
 
+    public DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties() {
+        return Objects.requireNonNull(nodeProperties);
+    }
+
     /**
      * Provision new agents using this template.
      *
@@ -1914,6 +1969,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 }
             }
             return FormValidation.ok();
+        }
+
+        public List<NodePropertyDescriptor> getNodePropertyDescriptors() {
+            return NodePropertyDescriptor.for_(NodeProperty.all(), AbstractCloudSlave.class);
         }
 
         @POST

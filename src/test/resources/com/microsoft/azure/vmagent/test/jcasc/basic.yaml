@@ -44,3 +44,8 @@ jenkins:
             usageMode: "NORMAL"
             usePrivateIP: false
             virtualMachineSize: "Standard_DS2_v2"
+            nodeProperties:
+              - envVars:
+                  env:
+                    - key: "FOO"
+                      value: "BAR"
