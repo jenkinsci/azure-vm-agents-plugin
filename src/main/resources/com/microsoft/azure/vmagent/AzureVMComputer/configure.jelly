@@ -5,23 +5,21 @@
     <l:main-panel>
       <j:set var="instance" value="${it.node}" />
       <j:set var="descriptor" value="${instance.descriptor}" />
+      <j:set var="readOnlyMode" value="true" />
       <l:app-bar title="${it.name} Configuration" />
-      <f:entry title="${%Name}">
-        <f:readOnlyTextbox value="${it.name}"/>
-      </f:entry>
+      <p><a href="${it.azurePortalLink}">View on Azure Portal</a></p>
       <f:entry title="${%FQDN}">
-        <f:readOnlyTextbox value="${it.publicDNSName}"/>
+        <f:textbox value="${it.publicDNSName}"/>
       </f:entry>
       <j:if test="${!empty(it.publicIP)}">
         <f:entry title="${%Public_IP}">
-          <f:readOnlyTextbox value="${it.publicIP}"/>
+          <f:textbox value="${it.publicIP}"/>
         </f:entry>
       </j:if>
       <f:entry title="${%Private_IP}">
-        <f:readOnlyTextbox value="${it.privateIP}"/>
+        <f:textbox value="${it.privateIP}"/>
       </f:entry>
       <f:descriptorList title="${%Node Properties}" descriptors="${h.getNodePropertyDescriptors(descriptor.clazz)}" field="nodeProperties" />
-      <a href="${it.azurePortalLink}">View on Azure Portal</a>
     </l:main-panel>
   </l:layout>
 </j:jelly>
