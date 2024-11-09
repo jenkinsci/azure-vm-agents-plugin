@@ -33,16 +33,18 @@ import hudson.slaves.ComputerLauncher;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
 import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 import hudson.slaves.SlaveComputer;
+import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import hudson.util.LogTaskListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -151,7 +153,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String label,
             ComputerLauncher launcher,
             RetentionStrategy<AzureVMComputer> retentionStrategy,
-            List<? extends NodeProperty<?>> nodeProperties,
+            String fqdn,
             String cloudName,
             String vmCredentialsId,
             String sshPrivateKey,
@@ -181,7 +183,13 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String remotingOptions,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
-        super(name, nodeDescription, remoteFS, numExecutors, mode, label, launcher, retentionStrategy, nodeProperties);
+        super(name, remoteFS, launcher);
+        setNodeDescription(nodeDescription);
+        setNumExecutors(numExecutors);
+        setMode(mode);
+        setLabelString(label);
+        setRetentionStrategy(retentionStrategy);
+        setNodeProperties(getNodeProperties(fqdn, template));
 
         this.cloudName = cloudName;
         this.templateName = templateName;
@@ -218,6 +226,24 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.uamiID = uamiID;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
+    }
+
+    private static DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties(
+            String fqdn, AzureVMAgentTemplate template
+    ) {
+        DescribableList<NodeProperty<?>, NodePropertyDescriptor> nodeProperties = template.getNodeProperties();
+        EnvironmentVariablesNodeProperty envVarsNodeProperty = nodeProperties
+                .get(EnvironmentVariablesNodeProperty.class);
+
+        List<EnvironmentVariablesNodeProperty.Entry> newEntries = new ArrayList<>();
+        if (envVarsNodeProperty != null) {
+            nodeProperties.remove(envVarsNodeProperty);
+            newEntries.addAll(envVarsNodeProperty.getEnv());
+        }
+        newEntries.add(new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn));
+        nodeProperties.add(new EnvironmentVariablesNodeProperty(newEntries));
+
+        return nodeProperties;
     }
 
     public AzureVMAgent(
@@ -259,7 +285,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String javaPath,
             String remotingOptions
     ) throws FormException, IOException {
-
         this(name,
                 templateName,
                 nodeDescription,
@@ -271,9 +296,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 agentLaunchMethod.equalsIgnoreCase("SSH")
                         ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
-                Collections.singletonList(new EnvironmentVariablesNodeProperty(
-                        new EnvironmentVariablesNodeProperty.Entry("FQDN", fqdn)
-                )),
+                fqdn,
                 cloudName,
                 vmCredentialsId,
                 sshPrivateKey,

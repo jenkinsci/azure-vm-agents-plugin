@@ -44,6 +44,7 @@ import com.microsoft.azure.vmagent.util.Constants;
 import com.microsoft.azure.vmagent.util.FailureStage;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
@@ -51,11 +52,15 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.Node;
+import hudson.model.Saveable;
 import hudson.model.TaskListener;
 import hudson.model.labels.LabelAtom;
 import hudson.security.ACL;
 import hudson.slaves.Cloud;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
 import hudson.slaves.RetentionStrategy;
+import hudson.util.DescribableList;
 import hudson.util.FormApply;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -384,6 +389,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String licenseType;
 
+    @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "They are serializable in practice")
+    private DescribableList<NodeProperty<?>, NodePropertyDescriptor> nodeProperties =
+            new DescribableList<>(Saveable.NOOP);
+
     // deprecated fields
     private transient boolean isInstallDocker;
     private transient boolean isInstallMaven;
@@ -490,6 +499,18 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         labelDataSet = Label.parse(labels);
 
         this.tags = new ArrayList<>();
+    }
+
+    public DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties() {
+        return nodeProperties;
+    }
+
+    @DataBoundSetter
+    public void setNodeProperties(List<? extends NodeProperty<?>> nodeProperties) throws IOException {
+        if (nodeProperties == null) {
+            this.nodeProperties = new DescribableList<>(Saveable.NOOP);
+        }
+        this.nodeProperties.replaceBy(nodeProperties);
     }
 
     @DataBoundSetter
@@ -825,6 +846,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         if (StringUtils.isBlank(storageAccountType)) {
             storageAccountType = SkuName.STANDARD_LRS.toString();
+        }
+
+        if (nodeProperties == null) {
+            nodeProperties = new DescribableList<>(Saveable.NOOP);
         }
 
         if (StringUtils.isNotBlank(agentLaunchMethod)) {
@@ -1910,6 +1935,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 }
             }
             return FormValidation.ok();
+        }
+
+        // called by stapler
+        public List<NodePropertyDescriptor> getNodePropertyDescriptors() {
+            return NodePropertyDescriptor.for_(NodeProperty.all(), AzureVMAgent.class);
         }
 
         @POST
