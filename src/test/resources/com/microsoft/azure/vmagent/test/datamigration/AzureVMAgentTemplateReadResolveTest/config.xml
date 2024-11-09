@@ -52,19 +52,6 @@
                     <doNotUseMachineIfInitFails>true</doNotUseMachineIfInitFails>
                     <enableMSI>false</enableMSI>
                     <enableUAMI>false</enableUAMI>
-                    <nodeProperties>
-                      <envVars serialization="custom">
-                        <unserializable-parents/>
-                        <tree-map>
-                          <default>
-                            <comparator class="java.lang.String$CaseInsensitiveComparator"/>
-                          </default>
-                          <int>1</int>
-                          <string>FOO</string>
-                          <string>BAR</string>
-                        </tree-map>
-                      </envVars>
-                    </nodeProperties>
                     <retentionStrategy class="com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy">
                         <idleTerminationMillis>3600000</idleTerminationMillis>
                         <idleTerminationMinutes>60</idleTerminationMinutes>
