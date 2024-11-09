@@ -1700,17 +1700,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         @POST
-        public ListBoxModel doFillOsDiskStorageAccountTypeItems(@QueryParameter String virtualMachineSize) {
+        public ListBoxModel doFillOsDiskStorageAccountTypeItems() {
             ListBoxModel model = new ListBoxModel();
             model.add("--- Select Storage Account Type ---", "");
 
             model.add(DiskSkuTypes.STANDARD_LRS.toString());
             model.add(DiskSkuTypes.STANDARD_SSD_LRS.toString());
-
-            /*As introduced in Azure Docs, the size contains 'S' supports premium storage*/
-            if (virtualMachineSize.matches(".*_[a-zA-Z]([0-9]+[aAMm]?[Ss]|[Ss][0-9]+).*")) {
-                model.add(DiskSkuTypes.PREMIUM_LRS.toString());
-            }
+            model.add(DiskSkuTypes.PREMIUM_LRS.toString());
             return model;
         }
 
@@ -2082,7 +2078,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     usePrivateIP,
                     nsgName);
 
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 StringBuilder errorString = new StringBuilder(Messages.Azure_GC_Template_Error_List()).append("\n");
 
                 for (int i = 0; i < errors.size(); i++) {
