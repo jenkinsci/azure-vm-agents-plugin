@@ -2349,7 +2349,7 @@ public final class AzureVMManagementServiceDelegate {
             try {
                 // Custom image verification.  We must verify that the VM image
                 // storage account is the same as the target storage account.
-                // The URI for he storage account should be https://<storageaccountname>.
+                // The URI for the storage account should be https://<storageaccountname>.
                 // Parse that out and verify against the image storageAccountName
 
                 // Check that the image string is a URI by attempting to create
