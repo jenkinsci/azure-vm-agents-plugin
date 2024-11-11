@@ -59,6 +59,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.vmagent.availability.AvailabilitySet;
 import com.microsoft.azure.vmagent.availability.AzureAvailabilityType;
@@ -190,6 +192,10 @@ public final class AzureVMManagementServiceDelegate {
     private final String azureCredentialsId;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final Cache<String, Set<String>> vmSizesByLocation = Caffeine.newBuilder()
+            .expireAfterAccess(24, TimeUnit.HOURS)
+            .build();
 
     public static AzureVMManagementServiceDelegate getInstance(AzureVMCloud cloud) {
         return cloud.getServiceDelegate();
@@ -1768,16 +1774,19 @@ public final class AzureVMManagementServiceDelegate {
             //if the location is not available we'll just return a default list with some of the most common VM sizes
             return new TreeSet<>(DEFAULT_VM_SIZES);
         }
-        try {
-            Set<String> ret = new TreeSet<>();
-            for (VirtualMachineSize vmSize : azureClient.virtualMachines().sizes().listByRegion(location)) {
-                ret.add(vmSize.name());
+
+        return vmSizesByLocation.get(location, location1 -> {
+            try {
+                Set<String> ret = new TreeSet<>();
+                for (VirtualMachineSize vmSize : azureClient.virtualMachines().sizes().listByRegion(location1)) {
+                    ret.add(vmSize.name());
+                }
+                return ret;
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Error while fetching the VM sizes {0}. Will return default list", e);
+                return new TreeSet<>(AVAILABLE_ROLE_SIZES.get(location1));
             }
-            return ret;
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error while fetching the VM sizes {0}. Will return default list", e);
-            return new TreeSet<>(AVAILABLE_ROLE_SIZES.get(location));
-        }
+        });
     }
 
     /**

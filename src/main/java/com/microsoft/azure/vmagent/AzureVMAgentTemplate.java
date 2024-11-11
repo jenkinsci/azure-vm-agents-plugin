@@ -48,6 +48,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
+import hudson.model.AutoCompletionCandidates;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Label;
@@ -1472,7 +1473,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return list;
         }
 
+        private static final Set<String> RECOMMENDED_IMAGES = Set.of(
+                // recommended by Ubuntu image publisher
+                "Standard_D2s_v3", "Standard_D4s_v3", "Standard_E2s_v3",
+                // most used by Azure users
+                "Standard_D2as_v4", "Standard_B2s", "Standard_B2ms", "Standard_DS2_v2", "Standard_B4ms", "Standard_DS3_v2"
+        );
+
         @POST
+<<<<<<< HEAD
         public ListBoxModel doFillNsgNameItems(
                 @QueryParameter("cloudName") String cloudName) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
@@ -1515,20 +1524,29 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
 
         @POST
-        public ListBoxModel doFillVirtualMachineSizeItems(
-                @QueryParameter("cloudName") String cloudName,
-                @QueryParameter String location) {
+        public AutoCompletionCandidates doAutoCompleteVirtualMachineSize(
+                @QueryParameter String cloudName,
+                @QueryParameter String location,
+                @QueryParameter String value) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
             String azureCredentialsId = getAzureCredentialsIdFromCloud(cloudName);
 
-            ListBoxModel model = new ListBoxModel();
+            AutoCompletionCandidates model = new AutoCompletionCandidates();
             if (StringUtils.isBlank(azureCredentialsId)) {
                 return model;
             }
             Set<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
-            for (String vmSize : vmSizes) {
-                model.add(vmSize);
+            // doesn't seem to happen in practice, but might be able to make an option in core to open
+            // the dropdown when the user focuses the input
+            if (StringUtils.isBlank(value)) {
+                vmSizes.stream().filter(RECOMMENDED_IMAGES::contains).forEach(model::add);
+            } else {
+                for (String vmSize : vmSizes) {
+                    if (vmSize.toLowerCase().contains(value.toLowerCase())) {
+                        model.add(vmSize);
+                    }
+                }
             }
             return model;
         }
