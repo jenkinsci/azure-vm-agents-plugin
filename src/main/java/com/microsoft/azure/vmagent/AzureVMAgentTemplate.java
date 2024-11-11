@@ -1477,7 +1477,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 // recommended by Ubuntu image publisher
                 "Standard_D2s_v3", "Standard_D4s_v3", "Standard_E2s_v3",
                 // most used by Azure users
-                "Standard_D2as_v4", "Standard_B2s", "Standard_B2ms", "Standard_DS2_v2", "Standard_B4ms", "Standard_DS3_v2"
+                "Standard_D2as_v4", "Standard_B2s", "Standard_B2ms", "Standard_DS2_v2", "Standard_B4ms",
+                "Standard_DS3_v2"
         );
 
         @POST
