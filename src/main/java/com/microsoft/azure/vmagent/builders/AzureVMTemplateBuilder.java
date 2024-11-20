@@ -21,7 +21,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withDescription(template.getTemplateDesc());
         fluent.withLabels(template.getLabels());
         fluent.withLocation(template.getLocation());
-        fluent.withAvailability(template.getAvailabilityInside());
         fluent.withVirtualMachineSize(template.getVirtualMachineSize());
         if (template.getStorageAccountNameReferenceType().equalsIgnoreCase("new")) {
             fluent.withNewStorageAccount(template.getNewStorageAccountName());
@@ -56,7 +55,6 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withDescription(template.getTemplateDesc());
         fluent.withLabels(template.getLabels());
         fluent.withLocation(template.getLocation());
-        fluent.withAvailability(template.getAvailabilityInside());
         fluent.withVirtualMachineSize(template.getVirtualMachineSize());
         if (template.getStorageAccountNameReferenceType().equalsIgnoreCase("new")) {
             fluent.withNewStorageAccount(template.getNewStorageAccountName());
@@ -98,7 +96,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getDescription(),
                 fluent.getLabels(),
                 fluent.getLocation(),
-                new AzureVMAgentTemplate.AvailabilityTypeClass(fluent.getAvailability().getAvailabilitySet()),
+                null,
                 fluent.getVirtualMachineSize(),
                 fluent.getStorageAccountNameReferenceType(),
                 fluent.getStorageAccountType(),

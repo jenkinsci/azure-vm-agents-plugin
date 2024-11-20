@@ -39,6 +39,7 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.microsoft.azure.util.AzureCredentials;
+import com.microsoft.azure.vmagent.availability.AvailabilitySet;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.util.Secret;
@@ -398,7 +399,7 @@ public class IntegrationTest {
         when(templateMock.getResourceGroupReferenceType()).thenReturn(testEnv.azureResourceGroupReferenceType);
         when(templateMock.getStorageAccountName()).thenReturn(testEnv.azureStorageAccountName);
         when(templateMock.getLocation()).thenReturn(testEnv.azureLocation);
-        when(templateMock.getAvailabilityType()).thenReturn(new AzureVMAgentTemplate.AvailabilityTypeClass(testEnv.availabilitySet));
+        when(templateMock.getAvailabilityType()).thenReturn(new AvailabilitySet(testEnv.availabilitySet));
         when(templateMock.getTemplateName()).thenReturn(templateName);
         when(templateMock.getOsType()).thenReturn(osType);
         when(templateMock.getInitScript()).thenReturn(initScript);

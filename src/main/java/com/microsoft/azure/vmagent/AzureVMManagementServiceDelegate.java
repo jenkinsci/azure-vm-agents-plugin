@@ -59,6 +59,8 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.jcraft.jsch.OpenSSHConfig;
+import com.microsoft.azure.vmagent.availability.AvailabilitySet;
+import com.microsoft.azure.vmagent.availability.AzureAvailabilityType;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
@@ -238,8 +240,9 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final int osDiskSize = template.getOsDiskSize();
-            final AzureVMAgentTemplate.AvailabilityTypeClass availabilityType = template.getAvailabilityType();
-            final String availabilitySet = availabilityType != null ? availabilityType.getAvailabilitySet() : null;
+            final AzureAvailabilityType availabilityType = template.getAvailabilityType();
+            final String availabilitySet = availabilityType instanceof AvailabilitySet ?
+                    ((AvailabilitySet) availabilityType).getName() : null;
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE, "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
