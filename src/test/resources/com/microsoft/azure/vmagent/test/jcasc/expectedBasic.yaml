@@ -6,7 +6,8 @@
     newResourceGroupName: "vm-agent"
     resourceGroupReferenceType: "new"
     vmTemplates:
-    - builtInImage: "Ubuntu 16.14 LTS"
+    - availabilityType: "none"
+      builtInImage: "Ubuntu 16.14 LTS"
       credentialsId: "admin-cred"
       diskType: "managed"
       doNotUseMachineIfInitFails: true

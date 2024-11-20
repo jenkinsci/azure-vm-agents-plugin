@@ -22,8 +22,6 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String location;
 
-    private Availability availability;
-
     private String virtualMachineSize;
 
     private String storageAccountType;
@@ -69,7 +67,6 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         shutdownOnIdle = false;
         usageMode = Node.Mode.NORMAL;
         imageTopLevelType = Constants.IMAGE_TOP_LEVEL_BASIC;
-        availability = new AvailabilityBuilder().build();
         builtInImage = new BuiltInImageBuilder().build();
         advancedImage = new AdvancedImageBuilder().build();
         cloudTags = new ArrayList<>();
@@ -103,11 +100,6 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T withLocation(String location) {
         this.location = location;
-        return (T) this;
-    }
-
-    public T withAvailability(Availability availability) {
-        this.availability = availability;
         return (T) this;
     }
 
@@ -234,10 +226,6 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getLocation() {
         return location;
-    }
-
-    public Availability getAvailability() {
-        return availability;
     }
 
     public String getVirtualMachineSize() {

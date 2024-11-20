@@ -2,7 +2,6 @@ package com.microsoft.azure.vmagent.test.datamigration;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
-import com.microsoft.azure.vmagent.ImageReferenceType;
 import jenkins.model.Jenkins;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,15 +31,6 @@ public class AzureVMAgentTemplateReadResolveTest {
         assertThat(cloud.getVmTemplates(), hasSize(1));
 
         AzureVMAgentTemplate template = cloud.getVmTemplates().get(0);
-
-        AzureVMAgentTemplate.ImageReferenceTypeClass reference = template.getImageReference();
-        assertThat(reference.getPublisher(), is("Canonical"));
-        assertThat(reference.getOffer(), is("UbuntuServer"));
-        assertThat(reference.getSku(), is("16.04-LTS"));
-        assertThat(reference.getVersion(), is("latest"));
-
-        assertThat(reference.getType(), is(ImageReferenceType.REFERENCE));
-
         assertThat(template.getAdvancedImageInside().getSshConfig(), is("RemoteForward 1234 target.machine:1234"));
     }
 }

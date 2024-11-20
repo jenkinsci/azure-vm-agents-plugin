@@ -17,7 +17,6 @@ package com.microsoft.azure.vmagent;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.resourcemanager.AzureResourceManager;
-import com.azure.resourcemanager.compute.models.AvailabilitySet;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
@@ -28,10 +27,10 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.util.AzureBaseCredentials;
 import com.microsoft.azure.util.AzureCredentialUtil;
+import com.microsoft.azure.vmagent.availability.AzureAvailabilityType;
+import com.microsoft.azure.vmagent.availability.NoAvailabilityRequired;
 import com.microsoft.azure.vmagent.builders.AdvancedImage;
 import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
-import com.microsoft.azure.vmagent.builders.Availability;
-import com.microsoft.azure.vmagent.builders.AvailabilityBuilder;
 import com.microsoft.azure.vmagent.builders.BuiltInImage;
 import com.microsoft.azure.vmagent.builders.BuiltInImageBuilder;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
@@ -90,7 +89,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -221,40 +219,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
     }
 
-    public static class AvailabilityTypeClass implements Serializable {
-        private String availabilitySet;
-
-        @DataBoundConstructor
-        public AvailabilityTypeClass(String availabilitySet) {
-            this.availabilitySet = Util.fixEmpty(availabilitySet);
-        }
-
-        private AvailabilityTypeClass() {
-            // used for readResolve to maintain compatibility
-        }
-
-        public String getAvailabilitySet() {
-            return availabilitySet;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            AvailabilityTypeClass that = (AvailabilityTypeClass) o;
-            return Objects.equals(availabilitySet, that.availabilitySet);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(availabilitySet);
-        }
-    }
-
     private static final Logger LOGGER = Logger.getLogger(AzureVMAgentTemplate.class.getName());
 
     private static final int GEN_STORAGE_ACCOUNT_UID_LENGTH = 22;
@@ -268,7 +232,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private final String location;
 
-    private AvailabilityTypeClass availabilityType;
+    private AzureAvailabilityType availabilityType;
 
     private final String virtualMachineSize;
 
@@ -393,26 +357,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private DescribableList<NodeProperty<?>, NodePropertyDescriptor> nodeProperties =
             new DescribableList<>(Saveable.NOOP);
 
-    // deprecated fields
-    private transient boolean isInstallDocker;
-    private transient boolean isInstallMaven;
-    private transient boolean isInstallGit;
-    private transient boolean isInstallQemu;
-
-    private transient String image;
-    private transient String imageId;
-    private transient String imagePublisher;
-    private transient String imageOffer;
-    private transient String imageSku;
-    private transient String imageVersion;
-
-    private transient String galleryName;
-    private transient String galleryImageDefinition;
-    private transient String galleryImageVersion;
-    private transient String gallerySubscriptionId;
-    private transient String galleryResourceGroup;
-    private transient String availabilitySet;
-
 
     @DataBoundConstructor
     public AzureVMAgentTemplate(
@@ -420,7 +364,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             String templateDesc,
             String labels,
             String location,
-            AvailabilityTypeClass availabilityType,
+            AzureAvailabilityType availabilityType,
             String virtualMachineSize,
             String storageAccountNameReferenceType,
             String storageAccountType,
@@ -452,7 +396,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.location = location;
         this.availabilityType = availabilityType;
         if (availabilityType == null) {
-            this.availabilityType = new AvailabilityTypeClass();
+            this.availabilityType = new NoAvailabilityRequired();
         }
         this.virtualMachineSize = virtualMachineSize;
         this.storageAccountType = storageAccountType;
@@ -614,13 +558,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return imageReference != null ? imageReference.getVersion() : null;
     }
 
-    /**
-     * Used by jelly for loading the data, not written to.
-     */
-    @Restricted(NoExternalUse.class)
-    public String getAvailabilitySet() {
-        return availabilityType != null ? availabilityType.getAvailabilitySet() : null;
-    }
 
     public int getMaxVirtualMachinesLimit() {
         return maxVirtualMachinesLimit;
@@ -886,80 +823,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             retentionStrategy = new AzureVMCloudRetensionStrategy(0);
         }
 
-        if (isInstallDocker) {
-            installDocker = true;
-        }
-
-        if (isInstallGit) {
-            installGit = true;
-        }
-
-        if (isInstallMaven) {
-            installMaven = true;
-        }
-
-        if (isInstallQemu) {
-            installQemu = true;
-        }
-
         if (imageReference == null) {
             imageReference = new ImageReferenceTypeClass();
         }
 
         if (availabilityType == null) {
-            availabilityType = new AvailabilityTypeClass();
-        }
-
-        if (StringUtils.isNotBlank(image)) {
-            imageReference.uri = image;
-        }
-
-        if (StringUtils.isNotBlank(imageId)) {
-            imageReference.id = imageId;
-        }
-
-        if (StringUtils.isNotBlank(imagePublisher)) {
-            imageReference.publisher = imagePublisher;
-        }
-
-        if (StringUtils.isNotBlank(imageOffer)) {
-            imageReference.offer = imageOffer;
-        }
-
-        if (StringUtils.isNotBlank(imageSku)) {
-            imageReference.sku = imageSku;
-        }
-
-        if (StringUtils.isNotBlank(imageVersion)) {
-            imageReference.version = imageVersion;
-        }
-
-        if (StringUtils.isNotBlank(galleryName)) {
-            imageReference.galleryName = galleryName;
-        }
-
-        if (StringUtils.isNotBlank(galleryImageDefinition)) {
-            imageReference.galleryImageDefinition = galleryImageDefinition;
-        }
-
-        if (StringUtils.isNotBlank(galleryImageVersion)) {
-            imageReference.galleryImageVersion = galleryImageVersion;
-        }
-
-        if (StringUtils.isNotBlank(gallerySubscriptionId)) {
-            imageReference.gallerySubscriptionId = gallerySubscriptionId;
-        }
-
-        if (StringUtils.isNotBlank(galleryResourceGroup)) {
-            imageReference.galleryResourceGroup = galleryResourceGroup;
+            availabilityType = new NoAvailabilityRequired();
         }
 
         if (imageReference.type == null) {
             imageReference.type = imageReference.determineType();
-        }
-
-        if (StringUtils.isNotBlank(availabilitySet)) {
-            availabilityType.availabilitySet = availabilitySet;
         }
 
         if (tags == null) {
@@ -1095,7 +968,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return shutdownOnIdle;
     }
 
-    public AvailabilityTypeClass getAvailabilityType() {
+    public AzureAvailabilityType getAvailabilityType() {
         return availabilityType;
     }
 
@@ -1398,11 +1271,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .build();
     }
 
-    public Availability getAvailabilityInside() {
-        return new AvailabilityBuilder().withAvailabilitySet(getAvailabilityType().getAvailabilitySet())
-                .build();
-    }
-
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
         return Jenkins.get().getDescriptor(getClass());
@@ -1611,6 +1479,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model;
         }
 
+        public AzureAvailabilityType getDefaultAvailabilityType() {
+            return new NoAvailabilityRequired();
+        }
+
         private String getAzureCredentialsIdFromCloud(String cloudName) {
             AzureVMCloud cloud = getAzureCloud(cloudName);
 
@@ -1666,48 +1538,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         @Restricted(DoNotUse.class) // Used by jelly
         public AzureComputerLauncher getDefaultComputerLauncher() {
             return new AzureSSHLauncher();
-        }
-
-        @POST
-        public ListBoxModel doFillAvailabilitySetItems(
-                @QueryParameter("cloudName") String cloudName,
-                @RelativePath("..") @QueryParameter String location) {
-            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
-
-            ListBoxModel model = new ListBoxModel();
-            model.add("--- Select Availability Set in current resource group and location ---", "");
-
-            AzureVMCloud cloud = getAzureCloud(cloudName);
-            if (cloud == null) {
-                return model;
-            }
-
-            String azureCredentialsId = cloud.getAzureCredentialsId();
-            if (StringUtils.isBlank(azureCredentialsId)) {
-                return model;
-            }
-
-            String resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
-            String newResourceGroupName = cloud.getNewResourceGroupName();
-            String existingResourceGroupName = cloud.getExistingResourceGroupName();
-
-
-            try {
-                AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
-                String resourceGroupName = AzureVMCloud.getResourceGroupName(
-                        resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-                PagedIterable<AvailabilitySet> availabilitySets = azureClient.availabilitySets()
-                        .listByResourceGroup(resourceGroupName);
-                for (AvailabilitySet set : availabilitySets) {
-                    String label = set.region().label();
-                    if (label.equals(location)) {
-                        model.add(set.name());
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Cannot list availability set: ", e);
-            }
-            return model;
         }
 
         @POST

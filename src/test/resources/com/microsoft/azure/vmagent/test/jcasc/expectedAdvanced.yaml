@@ -11,7 +11,8 @@
     vmTemplates:
     - agentWorkspace: "/opt/jenkins"
       availabilityType:
-        availabilitySet: "vm-agents"
+        availabilitySet:
+          name: "vm-agents"
       builtInImage: "Windows Server 2016"
       credentialsId: "admin-cred"
       diskType: "managed"
