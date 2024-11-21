@@ -55,7 +55,7 @@
 
     <f:entry title="${%Virtual_Machine_Size}" field="virtualMachineSize"
              help="/plugin/azure-vm-agents/help-virtualMachineSize.html">
-      <f:select/>
+      <f:textbox data-maxsuggestions="20" />
     </f:entry>
 
     <f:entry title="${%Storage_Account_Type}" field="storageAccountType"
