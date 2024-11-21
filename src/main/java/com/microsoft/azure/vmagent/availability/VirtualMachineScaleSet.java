@@ -2,6 +2,7 @@ package com.microsoft.azure.vmagent.availability;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.OrchestrationMode;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.Messages;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
@@ -20,14 +21,14 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
 
-public class AvailabilitySet extends AzureAvailabilityType {
+public class VirtualMachineScaleSet extends AzureAvailabilityType {
 
-    private static final Logger LOGGER = Logger.getLogger(AvailabilitySet.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(VirtualMachineScaleSet.class.getName());
 
     private final String name;
 
     @DataBoundConstructor
-    public AvailabilitySet(String name) {
+    public VirtualMachineScaleSet(String name) {
         this.name = name;
     }
 
@@ -43,7 +44,7 @@ public class AvailabilitySet extends AzureAvailabilityType {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AvailabilitySet that = (AvailabilitySet) o;
+        VirtualMachineScaleSet that = (VirtualMachineScaleSet) o;
         return Objects.equals(name, that.name);
     }
 
@@ -57,7 +58,7 @@ public class AvailabilitySet extends AzureAvailabilityType {
         @NonNull
         @Override
         public String getDisplayName() {
-            return Messages.availabilitySet();
+            return Messages.scaleSet();
         }
 
         @POST
@@ -67,7 +68,7 @@ public class AvailabilitySet extends AzureAvailabilityType {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
             ListBoxModel model = new ListBoxModel();
-            model.add("--- Select Availability Set in current resource group and location ---", "");
+            model.add("--- Select Scale Set in current resource group and location ---", "");
 
             AzureVMCloud cloud = getAzureCloud(cloudName);
             if (cloud == null) {
@@ -83,17 +84,16 @@ public class AvailabilitySet extends AzureAvailabilityType {
             String newResourceGroupName = cloud.getNewResourceGroupName();
             String existingResourceGroupName = cloud.getExistingResourceGroupName();
 
-
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
-                PagedIterable<com.azure.resourcemanager.compute.models.AvailabilitySet> availabilitySets =
-                        azureClient.availabilitySets()
+                PagedIterable<com.azure.resourcemanager.compute.models.VirtualMachineScaleSet> scaleSets =
+                        azureClient.virtualMachineScaleSets()
                         .listByResourceGroup(resourceGroupName);
-                for (com.azure.resourcemanager.compute.models.AvailabilitySet set : availabilitySets) {
-                    String label = set.region().label();
-                    if (label.equals(location)) {
+                for (com.azure.resourcemanager.compute.models.VirtualMachineScaleSet set : scaleSets) {
+                    String region = set.region().label();
+                    if (region.equals(location) && set.orchestrationMode() == OrchestrationMode.FLEXIBLE) {
                         model.add(set.name());
                     }
                 }

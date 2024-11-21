@@ -61,6 +61,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.microsoft.azure.vmagent.availability.AvailabilitySet;
 import com.microsoft.azure.vmagent.availability.AzureAvailabilityType;
+import com.microsoft.azure.vmagent.availability.VirtualMachineScaleSet;
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
@@ -240,9 +241,6 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final int osDiskSize = template.getOsDiskSize();
-            final AzureAvailabilityType availabilityType = template.getAvailabilityType();
-            final String availabilitySet = availabilityType instanceof AvailabilitySet ?
-                    ((AvailabilitySet) availabilityType).getName() : null;
 
             if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE, "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
@@ -437,12 +435,21 @@ public final class AzureVMManagementServiceDelegate {
             boolean uamiEnabled = template.isEnableUAMI();
 
             boolean osDiskSizeChanged = osDiskSize > 0;
+
+            final AzureAvailabilityType availabilityType = template.getAvailabilityType();
+            final String availabilitySet = availabilityType instanceof AvailabilitySet ?
+                    ((AvailabilitySet) availabilityType).getName() : null;
+
+            final String vmssName = availabilityType instanceof VirtualMachineScaleSet ?
+                    ((VirtualMachineScaleSet) availabilityType).getName() : null;
+
             boolean availabilitySetEnabled = availabilitySet != null;
+            boolean vmssEnabled = vmssName != null;
             boolean isSpecializedImage = false;
             if (template.getImageReference() != null) {
                 isSpecializedImage = template.getImageReference().getGalleryImageSpecialized();
             }
-            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled || isSpecializedImage) {
+            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled || isSpecializedImage || vmssEnabled) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
@@ -485,6 +492,14 @@ public final class AzureVMManagementServiceDelegate {
                             JsonNode propertiesNode = resource.get("properties");
                             ((ObjectNode) propertiesNode).replace("availabilitySet",
                                     availabilitySetNode);
+                        }
+                        if (vmssEnabled) {
+                            ObjectNode vmssNode = MAPPER.createObjectNode();
+                            vmssNode.put("id", String.format(
+                                    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', '%s')]", vmssName));
+                            JsonNode propertiesNode = resource.get("properties");
+                            ((ObjectNode) propertiesNode).replace("virtualMachineScaleSet",
+                                    vmssNode);
                         }
                         if (isSpecializedImage) {
                             // For specialized image remove the osProfile from the properties of the VirtualMachine resource
@@ -643,7 +658,7 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
-                addPublicIPResourceNode(tmp, tags);
+                addPublicIPResourceNode(tmp, tags, List.of("1", "2", "3"));
             }
 
             if (template.isAcceleratedNetworking()) {
@@ -888,13 +903,20 @@ public final class AzureVMManagementServiceDelegate {
 
     private void addPublicIPResourceNode(
             JsonNode template,
-            List<AzureTagPair> tags) throws IOException {
+            List<AzureTagPair> tags,
+            List<String> availabilityZones) throws IOException {
 
         final String ipName = "variables('vmName'), copyIndex(), 'IPName'";
         try (InputStream fragmentStream =
                      AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
 
-            final JsonNode publicIPFragment = MAPPER.readTree(fragmentStream);
+            final ObjectNode publicIPFragment = (ObjectNode) MAPPER.readTree(fragmentStream);
+            ArrayNode zones = MAPPER.createArrayNode();
+            for (String zone : availabilityZones) {
+                zones.add(zone);
+            }
+            publicIPFragment.set("zones", zones);
+
             injectCustomTag(publicIPFragment, tags);
             // Add the virtual network fragment
             ((ArrayNode) template.get("resources")).add(publicIPFragment);
@@ -935,6 +957,7 @@ public final class AzureVMManagementServiceDelegate {
                             + "))]");
                     ObjectNode ipAddressPropertiesNode = MAPPER.createObjectNode();
                     ipAddressPropertiesNode.put("deleteOption", "Delete");
+
                     publicIPIdNode.set("properties", ipAddressPropertiesNode);
                     propertiesNode.set("publicIPAddress", publicIPIdNode);
                     break;
