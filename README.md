@@ -237,3 +237,7 @@ The plugin creates a Jenkins logger called `Azure VM Agent (Auto)`, update that 
 The ARM template which is used to deploy resources will now show up.
 
 More information on Jenkins logs can be found in the Jenkins documentation for [Viewing logs](https://www.jenkins.io/doc/book/system-administration/viewing-logs/).
+
+### Jenkins times out connecting to the agent when using a Public IP address
+
+Ensure you've configured an NSG on the subnet that Jenkins is using or selected one in the advanced configuration of the VM template.
