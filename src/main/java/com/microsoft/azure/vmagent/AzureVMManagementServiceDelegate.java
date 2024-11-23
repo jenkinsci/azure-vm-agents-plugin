@@ -658,7 +658,19 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (!(Boolean) properties.get("usePrivateIP")) {
-                addPublicIPResourceNode(tmp, tags, List.of("1", "2", "3"));
+                List<String> availabilityZones = new ArrayList<>();
+                if (availabilityType instanceof VirtualMachineScaleSet) {
+                    var name = ((VirtualMachineScaleSet) availabilityType).getName();
+
+                    availabilityZones = azureClient.virtualMachineScaleSets()
+                            .getByResourceGroup(resourceGroupName, name)
+                            .availabilityZones()
+                            .stream()
+                            .map(ExpandableStringEnum::toString)
+                            .collect(Collectors.toList());
+                }
+
+                addPublicIPResourceNode(tmp, tags, availabilityZones);
             }
 
             if (template.isAcceleratedNetworking()) {
@@ -911,11 +923,13 @@ public final class AzureVMManagementServiceDelegate {
                      AzureVMManagementServiceDelegate.class.getResourceAsStream(PUBLIC_IP_FRAGMENT_FILENAME)) {
 
             final ObjectNode publicIPFragment = (ObjectNode) MAPPER.readTree(fragmentStream);
-            ArrayNode zones = MAPPER.createArrayNode();
-            for (String zone : availabilityZones) {
-                zones.add(zone);
+            if (!availabilityZones.isEmpty()) {
+                ArrayNode zones = MAPPER.createArrayNode();
+                for (String zone : availabilityZones) {
+                    zones.add(zone);
+                }
+                publicIPFragment.set("zones", zones);
             }
-            publicIPFragment.set("zones", zones);
 
             injectCustomTag(publicIPFragment, tags);
             // Add the virtual network fragment
