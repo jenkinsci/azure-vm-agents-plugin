@@ -137,11 +137,41 @@
         <f:textbox/>
       </f:entry>
     </f:optionalBlock>
+  </f:section>
+
+  <f:section title="${%Networking}"
+             description="${%Networking_description}">
+    <f:entry title="${%VirtualNetwork_Name}" field="virtualNetworkName"
+             help="/plugin/azure-vm-agents/help-virtualNetworkName.html">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%Use_Private_Ip}" field="usePrivateIP"
+             help="/plugin/azure-vm-agents/help-agentPrivateIp.html">
+      <f:checkbox default="false"/>
+    </f:entry>
+
+    <f:entry title="${%NSG_Name}"
+             field="nsgName"
+             description="${%Ensure you create a rule allowing the Jenkins controller to access on port 22}"
+             help="/plugin/azure-vm-agents/help-nsgName.html">
+      <f:select/>
+    </f:entry>
+
+    <f:entry title="${%VirtualNetworkResourceGroup_Name}"
+             field="virtualNetworkResourceGroupName"
+             description="${%Defaults to the resource group of the template if not specified}"
+             help="/plugin/azure-vm-agents/help-virtualNetworkResourceGroupName.html">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%Subnet_Name}" field="subnetName" help="/plugin/azure-vm-agents/help-subnetName.html">
+      <f:textbox/>
+    </f:entry>
 
     <f:entry title="${%Enable_Accelerated_Networking}" field="acceleratedNetworking">
       <f:checkbox/>
     </f:entry>
-
   </f:section>
 
   <f:descriptorList title="${%Node Properties}" field="nodeProperties" descriptors="${descriptor.nodePropertyDescriptors}" />
@@ -270,29 +300,6 @@
       </f:section>
 
       <f:advanced>
-        <f:entry title="${%VirtualNetwork_Name}" field="virtualNetworkName"
-                 help="/plugin/azure-vm-agents/help-virtualNetworkName.html">
-          <f:textbox/>
-        </f:entry>
-
-        <f:entry title="${%VirtualNetworkResourceGroup_Name}" field="virtualNetworkResourceGroupName"
-                 help="/plugin/azure-vm-agents/help-virtualNetworkResourceGroupName.html">
-          <f:textbox/>
-        </f:entry>
-
-        <f:entry title="${%Subnet_Name}" field="subnetName" help="/plugin/azure-vm-agents/help-subnetName.html">
-          <f:textbox/>
-        </f:entry>
-
-        <f:entry title="${%Use_Private_Ip}" field="usePrivateIP"
-                 help="/plugin/azure-vm-agents/help-agentPrivateIp.html">
-          <f:checkbox default="false"/>
-        </f:entry>
-
-        <f:entry title="${%NSG_Name}" field="nsgName" help="/plugin/azure-vm-agents/help-nsgName.html">
-          <f:textbox/>
-        </f:entry>
-
         <f:entry title="${%Java path}" field="javaPath" help="/plugin/azure-vm-agents/help-javaPath.html">
           <f:textbox default="java"/>
         </f:entry>
