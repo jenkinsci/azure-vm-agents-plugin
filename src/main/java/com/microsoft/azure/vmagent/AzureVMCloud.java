@@ -535,7 +535,7 @@ public class AzureVMCloud extends Cloud {
         LOGGER.log(Level.INFO, "Waiting for deployment {0} with VM {1} to be completed",
                 new Object[]{deploymentName, vmName});
 
-        final int sleepTimeInSeconds = 30;
+        final int sleepTimeInSeconds = 5;
         final int timeoutInSeconds = getDeploymentTimeout();
         final int maxTries = timeoutInSeconds / sleepTimeInSeconds;
         int triesLeft = maxTries;

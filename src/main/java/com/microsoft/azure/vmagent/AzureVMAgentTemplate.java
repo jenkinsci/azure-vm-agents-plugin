@@ -18,6 +18,7 @@ package com.microsoft.azure.vmagent;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
+import com.azure.resourcemanager.network.models.NetworkSecurityGroup;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
@@ -674,16 +675,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
         templateProperties.put("terminateScript",
                 isBasic ? "" : template.getTerminateScript());
-        templateProperties.put("virtualNetworkName",
-                isBasic ? "" : template.getVirtualNetworkName());
-        templateProperties.put("virtualNetworkResourceGroupName",
-                isBasic ? "" : template.getVirtualNetworkResourceGroupName());
-        templateProperties.put("subnetName",
-                isBasic ? "" : template.getSubnetName());
-        templateProperties.put("usePrivateIP",
-                isBasic ? false : template.getUsePrivateIP());
-        templateProperties.put("nsgName",
-                isBasic ? "" : template.getNsgName());
+        templateProperties.put("virtualNetworkName", template.getVirtualNetworkName());
+        templateProperties.put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
+        templateProperties.put("subnetName", template.getSubnetName());
+        templateProperties.put("usePrivateIP", template.getUsePrivateIP());
+        templateProperties.put("nsgName", template.getNsgName());
         templateProperties.put("jvmOptions",
                 isBasic ? "" : template.getJvmOptions());
         templateProperties.put("noOfParallelJobs",
@@ -1428,6 +1424,44 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             list.add(AzureVMCloudPoolRetentionStrategy.DESCRIPTOR);
             list.add(AzureVMCloudOnceRetentionStrategy.DESCRIPTOR);
             return list;
+        }
+
+        @POST
+        public ListBoxModel doFillNsgNameItems(
+                @QueryParameter("cloudName") String cloudName) {
+            Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
+
+            ListBoxModel model = new ListBoxModel();
+            model.add("--- Select Network Security Group in current resource group ---", "");
+
+            AzureVMCloud cloud = getAzureCloud(cloudName);
+            if (cloud == null) {
+                return model;
+            }
+
+            String azureCredentialsId = cloud.getAzureCredentialsId();
+            if (StringUtils.isBlank(azureCredentialsId)) {
+                return model;
+            }
+
+            String resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
+            String newResourceGroupName = cloud.getNewResourceGroupName();
+            String existingResourceGroupName = cloud.getExistingResourceGroupName();
+
+            try {
+                AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                String resourceGroupName = AzureVMCloud.getResourceGroupName(
+                        resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
+                PagedIterable<NetworkSecurityGroup> nsgs =
+                        azureClient.networkSecurityGroups()
+                                .listByResourceGroup(resourceGroupName);
+                for (NetworkSecurityGroup nsg : nsgs) {
+                    model.add(nsg.name());
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Cannot list availability set: ", e);
+            }
+            return model;
         }
 
         @POST
