@@ -663,13 +663,14 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         : template.getImageReference().getGalleryResourceGroup());
         templateProperties.put("osType",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_OS_TYPE) : template.getOsType());
-        boolean isSSH = template.getLauncher() instanceof AzureSSHLauncher;
+        var launcher = template.getLauncher() == null ? new AzureSSHLauncher() : template.getLauncher();
+        boolean isSSH = launcher instanceof AzureSSHLauncher;
         String agentLaunchMethod = isSSH ? Constants.LAUNCH_METHOD_SSH : Constants.LAUNCH_METHOD_JNLP;
         templateProperties.put("agentLaunchMethod",
                 isBasic ? defaultProperties.get(Constants.DEFAULT_LAUNCH_METHOD) : agentLaunchMethod);
         if (isSSH) {
             templateProperties.put("sshConfig",
-                    isBasic ? "" : ((AzureSSHLauncher) template.getLauncher()).getSshConfig());
+                    isBasic ? "" : ((AzureSSHLauncher) launcher).getSshConfig());
         }
         templateProperties.put("initScript",
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
