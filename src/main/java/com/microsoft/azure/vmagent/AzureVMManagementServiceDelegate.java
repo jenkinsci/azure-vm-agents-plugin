@@ -1073,6 +1073,7 @@ public final class AzureVMManagementServiceDelegate {
             AzureVMAgentTemplate template,
             String targetScriptName,
             String initScript) throws AzureCloudException {
+        String localInitScript = initScript != null ? initScript : "";
         String targetStorageAccount = template.getStorageAccountName();
         String targetStorageAccountType = template.getStorageAccountType();
         String resourceGroupName = template.getResourceGroupName();
@@ -1100,8 +1101,8 @@ public final class AzureVMManagementServiceDelegate {
             BlobContainerClient container = getCloudBlobContainer(
                     azureClient, resourceGroupName, targetStorageAccount, Constants.CONFIG_CONTAINER_NAME);
             BlobClient blob = container.getBlobClient(targetScriptName);
-            scriptLength = initScript.getBytes(StandardCharsets.UTF_8).length;
-            blob.upload(BinaryData.fromString(initScript).toStream(), scriptLength, true);
+            scriptLength = localInitScript.getBytes(StandardCharsets.UTF_8).length;
+            blob.upload(BinaryData.fromString(localInitScript).toStream(), scriptLength, true);
             return blob.getBlobUrl();
         } catch (Exception e) {
             throw AzureCloudException.create(

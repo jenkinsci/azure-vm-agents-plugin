@@ -228,11 +228,12 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.creationTime = System.currentTimeMillis();
     }
 
-    private static DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties(
+    private static List<NodeProperty<?>> getNodeProperties(
             String fqdn, AzureVMAgentTemplate template
     ) {
-        DescribableList<NodeProperty<?>, NodePropertyDescriptor> nodeProperties = template.getNodeProperties();
-        EnvironmentVariablesNodeProperty envVarsNodeProperty = nodeProperties
+        List<NodeProperty<?>> nodeProperties = new ArrayList<>(template.getNodeProperties());
+        DescribableList<NodeProperty<?>, NodePropertyDescriptor> templateNodeProperties = template.getNodeProperties();
+        EnvironmentVariablesNodeProperty envVarsNodeProperty = templateNodeProperties
                 .get(EnvironmentVariablesNodeProperty.class);
 
         List<EnvironmentVariablesNodeProperty.Entry> newEntries = new ArrayList<>();
