@@ -10,8 +10,27 @@
       <f:form method="post" action="create" name="config" class="jenkins-form">
         <!-- main body of the configuration -->
 
-        <j:set var="descriptor" value="${it.templateDescriptor}"/>
-        <st:include class="${descriptor.clazz}" page="config.jelly"/>
+        <f:entry title="${%Name}">
+          <f:textbox name="name"/>
+        </f:entry>
+
+        <j:set var="descriptor" value="${it.descriptor}"/>
+        <input name="cloudName" value="${it.name}" type="hidden"/>
+
+        <div class="jenkins-radio">
+          <input class="jenkins-radio__input mode-selection" type="radio" id="copy" name="mode" value="copy"/>
+          <label class="jenkins-radio__label" for="copy">${%Copy existing agent template}</label>
+          <div class="jenkins-radio__children">
+            <div class="jenkins-search">
+              <f:combobox clazz="jenkins-search__input copy-field" name="from" field="copyNewTemplateFrom"/>
+              <div class="jenkins-search__icon">
+                <l:icon src="symbol-search"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
         <l:isAdmin>
           <f:bottomButtonBar>
             <f:submit value="${%Create}"/>
