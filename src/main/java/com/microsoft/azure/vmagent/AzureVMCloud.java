@@ -15,6 +15,9 @@
  */
 package com.microsoft.azure.vmagent;
 
+import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
+import static hudson.init.InitMilestone.PLUGINS_STARTED;
+
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementError;
 import com.azure.resourcemanager.AzureResourceManager;
@@ -38,39 +41,25 @@ import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.Functions;
+import hudson.Util;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
 import hudson.logging.LogRecorderManager;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
+import hudson.model.Failure;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.security.ACL;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner.PlannedNode;
 import hudson.slaves.SlaveComputer;
+import hudson.util.ComboBoxModel;
 import hudson.util.FormApply;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.StreamTaskListener;
-import javax.servlet.ServletException;
-import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.cloudstats.CloudStatistics;
-import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
-import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-import org.kohsuke.stapler.interceptor.RequirePOST;
-import org.kohsuke.stapler.verb.POST;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -92,9 +81,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.microsoft.azure.vmagent.util.Constants.MILLIS_IN_SECOND;
-import static hudson.init.InitMilestone.PLUGINS_STARTED;
+import javax.servlet.ServletException;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.cloudstats.CloudStatistics;
+import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
+import org.jenkinsci.plugins.cloudstats.TrackedPlannedNode;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
 public class AzureVMCloud extends Cloud {
 
@@ -200,7 +203,7 @@ public class AzureVMCloud extends Cloud {
                 resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
         configurationStatus = Constants.UNVERIFIED;
 
-        if (cloudTags ==  null) {
+        if (cloudTags == null) {
             cloudTags = new ArrayList<>();
         }
 
@@ -722,8 +725,8 @@ public class AzureVMCloud extends Cloud {
             if (template.getMaximumDeploymentSize() > 0 && numberOfAgents > template.getMaximumDeploymentSize()) {
                 LOGGER.log(Level.FINE,
                         "Reduced template {0} deployment from {1} to {2} nodes, due to its maximumDeploymentSize",
-                        new Object[] {template.getTemplateName(), numberOfAgents,
-                                template.getMaximumDeploymentSize() });
+                        new Object[]{template.getTemplateName(), numberOfAgents,
+                                template.getMaximumDeploymentSize()});
                 numberOfAgents = template.getMaximumDeploymentSize();
             }
 
@@ -759,9 +762,10 @@ public class AzureVMCloud extends Cloud {
      * @param desiredNumberOfAgents The number of VMs we'd like to have if there
      *                              were no limits.
      * @return The number we can request before exceeding our cloud and template
-     *         limits.
+     * limits.
      */
-    @Restricted(NoExternalUse.class) // Package access for tests only
+    @Restricted(NoExternalUse.class)
+    // Package access for tests only
     int calculateNumberOfAgentsToRequest(final AzureVMAgentTemplate template, int desiredNumberOfAgents) {
         final int currentVMsForTemplate = Math.max(0, getApproximateVirtualMachineCountForTemplate(template));
         final int maxVMsForTemplate = template.getMaxVirtualMachinesLimit() > 0
@@ -780,9 +784,9 @@ public class AzureVMCloud extends Cloud {
         final String cloudMsg = desiredNumberOfAgents > maxBeforeCloudLimit
                 ? ", have cloud limit of {6} but have {7} VMs already so we can only have {8} more"
                 : ", currently have {7} VMs in cloud";
-        final Object[] logParams = new Object[] {template.getTemplateName(), desiredNumberOfAgents,
+        final Object[] logParams = new Object[]{template.getTemplateName(), desiredNumberOfAgents,
                 adjustedNumberOfAgents, maxVMsForTemplate, currentVMsForTemplate, maxBeforeTemplateLimit,
-                maxVMsForCloud, currentVMsForCloud, maxBeforeCloudLimit };
+                maxVMsForCloud, currentVMsForCloud, maxBeforeCloudLimit};
         if (adjustedNumberOfAgents == 0) {
             LOGGER.log(Level.INFO, "Wanted to create {1} nodes from template {0} but cannot create any"
                     + templateMsg + cloudMsg, logParams);
@@ -1002,10 +1006,10 @@ public class AzureVMCloud extends Cloud {
             final int timeoutInMinutes = 30;
             String result = future.get(timeoutInMinutes, TimeUnit.MINUTES);
             LOGGER.log(Level.INFO, "Azure Cloud: waitUntilOnline: node {0} is alive, result {1}",
-            new Object[]{agent.getDisplayName(), result});
+                    new Object[]{agent.getDisplayName(), result});
         } catch (Exception ex) {
             throw AzureCloudException.create(String.format("Azure Cloud: waitUntilOnline: "
-                + "Failure waiting {0} till online", agent.getDisplayName()), ex);
+                    + "Failure waiting {0} till online", agent.getDisplayName()), ex);
         } finally {
             future.cancel(true);
         }
@@ -1071,9 +1075,68 @@ public class AzureVMCloud extends Cloud {
                 .anyMatch(template -> templateName.equals(template.getTemplateName()));
     }
 
+    public String checkName(String name) throws Failure {
+        if (name == null) {
+            throw new Failure("Query parameter 'name' is required");
+        }
+
+        final String trimmedName = name.trim();
+        Jenkins.checkGoodName(trimmedName);
+
+        if (templateNameExists(name)) {
+            throw new Failure(Messages.templateAlreadyExists(name));
+        }
+
+        // looks good
+        return trimmedName;
+    }
+
     @POST
-    public HttpResponse doCreate(StaplerRequest req, StaplerResponse rsp)
-            throws IOException, ServletException, Descriptor.FormException {
+    public synchronized void doCreate(
+            StaplerRequest req,
+            StaplerResponse rsp,
+            @QueryParameter String name,
+            @QueryParameter String mode,
+            @QueryParameter String from
+    )
+            throws IOException, ServletException {
+        Jenkins j = Jenkins.get();
+        j.checkPermission(Jenkins.ADMINISTER);
+
+        if (mode != null && mode.equals("copy")) {
+            name = checkName(name);
+
+            if (Util.fixEmpty(from) == null) {
+                throw new Failure(Messages.specifyTemplateToCopyFrom());
+            }
+
+            AzureVMAgentTemplate src = getVmTemplates()
+                    .stream()
+                    .filter(template -> template.getTemplateName().equals(from))
+                    .findFirst()
+                    .orElseThrow(() -> new Failure(Messages.templateNotFound(from)));
+
+            // copy through XStream
+            String xml = Jenkins.XSTREAM.toXML(src);
+            // Not great, but template name is final
+            xml = xml.replace(
+                    "<templateName>"
+                            + src.getTemplateName()
+                            + "</templateName>",
+                    "<templateName>" + name + "</templateName>"
+            );
+            AzureVMAgentTemplate result = (AzureVMAgentTemplate) Jenkins.XSTREAM.fromXML(xml);
+            addTemplate(result);
+            // send the browser to the config page
+            rsp.sendRedirect2(Functions.getNearestAncestorUrl(req, this) + "/" + result.getUrl());
+        } else {
+            handleNewVmAgentTemplatePage(name, req, rsp);
+        }
+    }
+
+
+    @POST
+    public HttpResponse doDoCreate(StaplerRequest req) throws Descriptor.FormException, IOException, ServletException {
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
         AzureVMAgentTemplate newTemplate = getTemplateDescriptor().newInstance(req, req.getSubmittedForm());
@@ -1091,6 +1154,19 @@ public class AzureVMCloud extends Cloud {
         j.save();
         // take the user back.
         return FormApply.success("templates");
+    }
+
+
+    private void handleNewVmAgentTemplatePage(
+            String name,
+            StaplerRequest req,
+            StaplerResponse rsp) throws IOException, ServletException {
+        checkName(name);
+        JSONObject formData = req.getSubmittedForm();
+        formData.put("templateName", name);
+        formData.remove("mode");
+        req.setAttribute("instance", formData);
+        req.getView(this, "_new.jelly").forward(req, rsp);
     }
 
     @Override
@@ -1145,7 +1221,31 @@ public class AzureVMCloud extends Cloud {
             }
         }
 
-        @Override @NonNull
+        @POST
+        public ComboBoxModel doFillCopyNewTemplateFromItems(@QueryParameter String cloudName) {
+            ComboBoxModel model = new ComboBoxModel();
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+            AzureVMCloud cloud = getAzureCloud(cloudName);
+            if (cloud != null) {
+                for (AzureVMAgentTemplate template : cloud.getVmTemplates()) {
+                    model.add(template.getTemplateName());
+                }
+            }
+            return model;
+        }
+
+        private AzureVMCloud getAzureCloud(String cloudName) {
+            Cloud cloud = Jenkins.get().getCloud(cloudName);
+
+            if (cloud instanceof AzureVMCloud) {
+                return (AzureVMCloud) cloud;
+            }
+
+            return null;
+        }
+
+        @Override
+        @NonNull
         public String getDisplayName() {
             return Constants.AZURE_CLOUD_DISPLAY_NAME;
         }
@@ -1219,7 +1319,7 @@ public class AzureVMCloud extends Cloud {
                 final AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
                 Set<String> resourceGroupNames = new HashSet<>();
                 for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
-                   resourceGroupNames.add(resourceGroup.name());
+                    resourceGroupNames.add(resourceGroup.name());
                 }
                 resourceGroupNames.stream().sorted(String::compareToIgnoreCase).forEach(model::add);
             } catch (Exception e) {
