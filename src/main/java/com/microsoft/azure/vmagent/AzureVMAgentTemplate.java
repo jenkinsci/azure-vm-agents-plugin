@@ -223,6 +223,38 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private static final int GEN_STORAGE_ACCOUNT_UID_LENGTH = 22;
 
+    private static final String VALIDATE_DEPLOYMENT_TEMPLATE_MESSAGE = "Verify configuration:\n\t{0}{1}{2}{3}"
+            + "resourceGroupName: {4};\n\t"
+            + "templateName: {5};\n\t"
+            + "labels: {6};\n\t"
+            + "location: {7};\n\t"
+            + "virtualMachineSize: {8};\n\t"
+            + "storageAccountName: {9};\n\t"
+            + "noOfParallelJobs: {10};\n\t"
+            + "imageTopLevelType: {11};\n\t"
+            + "builtInImage: {12};\n\t"
+            + "image: {13};\n\t"
+            + "osType: {14};\n\t"
+            + "id: {15};\n\t"
+            + "publisher: {16};\n\t"
+            + "offer: {17};\n\t"
+            + "sku: {18};\n\t"
+            + "version: {19};\n\t"
+            + "sshConfig: {20};\n\t"
+            + "initScript: {21};\n\t"
+            + "credentialsId: {22};\n\t"
+            + "virtualNetworkName: {23};\n\t"
+            + "virtualNetworkResourceGroupName: {24};\n\t"
+            + "subnetName: {25};\n\t"
+            + "privateIP: {26};\n\t"
+            + "nsgName: {27};\n\t"
+            + "jvmOptions: {28};\n\t"
+            + "galleryName: {29}\n\t"
+            + "galleryImageDefinition: {30}\n\t"
+            + "galleryImageVersion: {31}\n\t"
+            + "galleryResourceGroup: {32}\n\t"
+            + "gallerySubscriptionId: {33}";
+
     // General Configuration
     private final String templateName;
 
@@ -321,7 +353,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     // If disabled, will not attempt to verify or use
     private boolean templateDisabled;
 
-    private String templateStatusDetails;
+    private transient String templateStatusDetails;
 
     private transient AzureVMCloud azureCloud;
 
@@ -338,6 +370,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     private boolean enableMSI;
 
     private boolean enableUAMI;
+    private boolean useEntraIdForStorageAccount;
 
     private String uamiID;
 
@@ -570,6 +603,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setMaxVirtualMachinesLimit(int maxVirtualMachinesLimit) {
         this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+    }
+
+    public boolean isUseEntraIdForStorageAccount() {
+        return useEntraIdForStorageAccount;
+    }
+
+    @DataBoundSetter
+    public void setUseEntraIdForStorageAccount(boolean useEntraIdForStorageAccount) {
+        this.useEntraIdForStorageAccount = useEntraIdForStorageAccount;
     }
 
     public String getJavaPath() {
@@ -1454,6 +1496,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                if (azureClient == null) {
+                    return model;
+                }
+
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
                 PagedIterable<NetworkSecurityGroup> nsgs =
@@ -1634,6 +1680,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                if (azureClient == null) {
+                    return model;
+                }
 
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
@@ -1820,6 +1869,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String storageAccountNameReferenceType,
                 @QueryParameter String newStorageAccountName,
                 @QueryParameter String existingStorageAccountName,
+                @QueryParameter boolean useEntraIdForStorageAccount,
+                @QueryParameter String uamiID,
                 @QueryParameter String storageAccountType,
                 @QueryParameter String noOfParallelJobs,
                 @QueryParameter String imageTopLevelType,
@@ -1844,7 +1895,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 @QueryParameter String subnetName,
                 @QueryParameter boolean usePrivateIP,
                 @QueryParameter String nsgName,
-                @QueryParameter String jvmOptions) {
+                @QueryParameter String jvmOptions
+        ) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             ImageReferenceTypeClass image = new ImageReferenceTypeClass(
@@ -1870,38 +1922,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                         cloud.getResourceGroupName(), templateName);
             }
 
-            LOGGER.log(Level.INFO,
-                    "Verify configuration:\n\t{0}{1}{2}{3}"
-                            + "resourceGroupName: {4};\n\t"
-                            + "templateName: {5};\n\t"
-                            + "labels: {6};\n\t"
-                            + "location: {7};\n\t"
-                            + "virtualMachineSize: {8};\n\t"
-                            + "storageAccountName: {9};\n\t"
-                            + "noOfParallelJobs: {10};\n\t"
-                            + "imageTopLevelType: {11};\n\t"
-                            + "builtInImage: {12};\n\t"
-                            + "image: {13};\n\t"
-                            + "osType: {14};\n\t"
-                            + "id: {15};\n\t"
-                            + "publisher: {16};\n\t"
-                            + "offer: {17};\n\t"
-                            + "sku: {18};\n\t"
-                            + "version: {19};\n\t"
-                            + "sshConfig: {20};\n\t"
-                            + "initScript: {21};\n\t"
-                            + "credentialsId: {22};\n\t"
-                            + "virtualNetworkName: {23};\n\t"
-                            + "virtualNetworkResourceGroupName: {24};\n\t"
-                            + "subnetName: {25};\n\t"
-                            + "privateIP: {26};\n\t"
-                            + "nsgName: {27};\n\t"
-                            + "jvmOptions: {28};\n\t"
-                            + "galleryName: {29}\n\t"
-                            + "galleryImageDefinition: {30}\n\t"
-                            + "galleryImageVersion: {31}\n\t"
-                            + "galleryResourceGroup: {32}\n\t"
-                            + "gallerySubscriptionId: {33}",
+            LOGGER.log(Level.INFO, VALIDATE_DEPLOYMENT_TEMPLATE_MESSAGE,
                     new Object[]{
                             "",
                             "",
@@ -1944,6 +1965,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                     .verifyConfiguration(cloud.getResourceGroupName(), String.valueOf(cloud.getDeploymentTimeout()));
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
+            }
+
+            if (useEntraIdForStorageAccount) {
+                if (StringUtils.isBlank(uamiID)) {
+                    return FormValidation.error("If using Entra ID authentication for storage account "
+                            + "user assigned managed identity must be enabled as well.");
+                }
             }
 
             AzureSSHLauncher azureComputerLauncher = new AzureSSHLauncher();

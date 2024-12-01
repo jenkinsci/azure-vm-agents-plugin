@@ -450,6 +450,9 @@ public final class AzureUtil {
             return true;
         }
         AzureResourceManager defaultClient = AzureResourceManagerCache.get(credentialId);
+        if (defaultClient == null) {
+            return false;
+        }
         PagedIterable<Subscription> subscriptions = defaultClient.subscriptions().list();
         boolean isSubscriptionIdValid = false;
         for (Subscription subscription : subscriptions) {

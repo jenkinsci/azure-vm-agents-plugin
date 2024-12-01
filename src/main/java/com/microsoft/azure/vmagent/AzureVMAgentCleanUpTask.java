@@ -79,12 +79,14 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                        String resourceGroupName,
                        String deploymentName,
                        String scriptUri,
-                       int deleteAttempts) {
+                       int deleteAttempts,
+                       boolean isUseEntraIdForStorageAccount) {
             this.cloudName = cloudName;
             this.deploymentName = deploymentName;
             this.resourceGroupName = resourceGroupName;
             this.scriptUri = scriptUri;
             this.attemptsRemaining = deleteAttempts;
+            this.isUseEntraIdForStorageAccount = isUseEntraIdForStorageAccount;
         }
 
         String getCloudName() {
@@ -103,6 +105,10 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             return scriptUri;
         }
 
+        public boolean isUseEntraIdForStorageAccount() {
+            return isUseEntraIdForStorageAccount;
+        }
+
         boolean hasAttemptsRemaining() {
             return attemptsRemaining > 0;
         }
@@ -111,11 +117,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
             attemptsRemaining--;
         }
 
-        private String cloudName;
-        private String deploymentName;
-        private String resourceGroupName;
-        private String scriptUri;
+        private final String cloudName;
+        private final String deploymentName;
+        private final String resourceGroupName;
+        private final String scriptUri;
         private int attemptsRemaining;
+        private final boolean isUseEntraIdForStorageAccount;
     }
 
     private static final int CLEAN_TIMEOUT_IN_MINUTES = 15;
@@ -165,11 +172,13 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
         public void registerDeployment(String cloudName,
                                        String resourceGroupName,
                                        String deploymentName,
-                                       String scriptUri) {
+                                       String scriptUri,
+                                       boolean isUseEntraIdForStorageAccount) {
             LOGGER.log(Level.FINE, "Registering deployment {0} in {1}",
                     new Object[]{deploymentName, resourceGroupName});
             DeploymentInfo newDeploymentToClean =
-                    new DeploymentInfo(cloudName, resourceGroupName, deploymentName, scriptUri, MAX_DELETE_ATTEMPTS);
+                    new DeploymentInfo(cloudName, resourceGroupName, deploymentName, scriptUri, MAX_DELETE_ATTEMPTS,
+                            isUseEntraIdForStorageAccount);
             deploymentsToClean.add(newDeploymentToClean);
 
             syncDeploymentsToClean();
@@ -247,7 +256,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     azureClient.deployments()
                             .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                     if (StringUtils.isNotBlank(info.scriptUri)) {
-                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName());
+                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName(),
+                                cloud.getAzureCredentialsId(), info.isUseEntraIdForStorageAccount());
                     }
                 } else if (state.equalsIgnoreCase("succeeded")
                         && diffTimeInMinutes > successTimeoutInMinutes) {
@@ -257,7 +267,8 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                     azureClient.deployments()
                             .deleteByResourceGroup(info.getResourceGroupName(), info.getDeploymentName());
                     if (StringUtils.isNotBlank(info.scriptUri)) {
-                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName());
+                        delegate.removeStorageBlob(new URI(info.scriptUri), info.getResourceGroupName(),
+                                cloud.getAzureCredentialsId(), info.isUseEntraIdForStorageAccount());
                     }
                 } else {
                     LOGGER.log(getNormalLoggingLevel(), "Deployment newer than timeout, keeping");
@@ -442,7 +453,12 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                             new Object[]{resource.name(), resourceGroup});
                     azureClient.genericResources().deleteById(resource.id());
                     if (osDiskURI != null) {
-                        serviceDelegate.removeStorageBlob(osDiskURI, resourceGroup);
+                        String jenkinsTemplateTag = resource.tags().get(Constants.AZURE_TEMPLATE_TAG_NAME);
+                        boolean useEntraIdForStorageAccount = cloud
+                                .getTemplate(jenkinsTemplateTag)
+                                .isUseEntraIdForStorageAccount();
+                        serviceDelegate.removeStorageBlob(osDiskURI, resourceGroup,
+                                cloud.getAzureCredentialsId(), useEntraIdForStorageAccount);
                     }
                     if (managedOsDiskId != null) {
                         azureClient.disks().deleteById(managedOsDiskId);

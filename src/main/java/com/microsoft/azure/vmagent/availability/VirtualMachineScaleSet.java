@@ -86,6 +86,9 @@ public class VirtualMachineScaleSet extends AzureAvailabilityType {
 
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                if (azureClient == null) {
+                    return model;
+                }
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
                 PagedIterable<com.azure.resourcemanager.compute.models.VirtualMachineScaleSet> scaleSets =

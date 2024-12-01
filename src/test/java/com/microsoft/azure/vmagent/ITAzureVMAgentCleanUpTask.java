@@ -46,7 +46,8 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         final String cloudName = "fake_cloud_name";
         final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance();
 
-        deploymentRegistrar.registerDeployment(cloudName, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        deploymentRegistrar.registerDeployment(cloudName, testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(),
+                null, false);
         AzureVMAgentCleanUpTask cleanUpMock = spy(AzureVMAgentCleanUpTask.class);
         AzureVMCloud cloudMock = mock(AzureVMCloud.class);
         when(cloudMock.getCloudName()).thenReturn(cloudName);
