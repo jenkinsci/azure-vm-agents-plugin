@@ -1,5 +1,6 @@
 package com.microsoft.azure.vmagent.util;
 
+import com.azure.resourcemanager.AzureResourceManager;
 import com.microsoft.azure.vmagent.AzureVMManagementServiceDelegate;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 
@@ -8,6 +9,10 @@ public final class AzureClientHolder {
     }
 
     public static AzureVMManagementServiceDelegate getDelegate(String credentialId) {
-        return AzureVMManagementServiceDelegate.getInstance(AzureResourceManagerCache.get(credentialId), credentialId);
+        AzureResourceManager azureClient = AzureResourceManagerCache.get(credentialId);
+        if (azureClient == null) {
+            return null;
+        }
+        return AzureVMManagementServiceDelegate.getInstance(azureClient, credentialId);
     }
 }

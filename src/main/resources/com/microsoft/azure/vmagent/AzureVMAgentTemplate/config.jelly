@@ -80,6 +80,13 @@
                  help="/plugin/azure-vm-agents/help-storageAccountName.html">
           <f:select/>
         </f:entry>
+
+        <f:entry
+            title="${%Use Entra authentication to access storage account}"
+            field="useEntraIdForStorageAccount"
+        >
+          <f:checkbox />
+        </f:entry>
       </f:radioBlock>
     </f:entry>
 
@@ -344,6 +351,6 @@
   <l:isAdmin>
     <f:validateButton title="${%Verify_Template}" progress="${%Verifying_Template_MSG}"
                       method="verifyConfiguration"
-                      with="cloudName,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,galleryImageSpecialized,gallerySubscriptionId,galleryResourceGroup,sshConfig,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
+                      with="cloudName,templateName,labels,location,virtualMachineSize,storageAccountNameReferenceType,newStorageAccountName,existingStorageAccountName,useEntraIdForStorageAccount,uamiID,storageAccountType,noOfParallelJobs,imageTopLevelType,builtInImage,image,osType,id,uri,publisher,offer,sku,version,galleryName,galleryImageDefinition,galleryImageVersion,galleryImageSpecialized,gallerySubscriptionId,galleryResourceGroup,sshConfig,initScript,credentialsId,virtualNetworkName,virtualNetworkResourceGroupName,subnetName,usePrivateIP,nsgName,jvmOptions"/>
   </l:isAdmin>
 </j:jelly>

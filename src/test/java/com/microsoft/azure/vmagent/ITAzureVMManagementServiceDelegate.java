@@ -118,7 +118,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         deploymentInfo = createDefaultDeployment(numberOfAgents, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup,
+                deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -192,7 +193,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         when(deploymentRegistrar.getDeploymentTag()).thenReturn(new AzureUtil.DeploymentTag("some_tag/123"));
         AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, false, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -249,7 +250,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMDeploymentInfo deploymentInfo;
         deploymentInfo = createDefaultDeployment(1, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -294,7 +295,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMDeploymentInfo deploymentInfo;
         deploymentInfo = createDefaultDeployment(1, true, true, false, false, "", deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -355,7 +356,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMDeploymentInfo deploymentInfo;
         deploymentInfo = createDefaultDeployment(1, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -403,7 +404,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
         AzureVMDeploymentInfo deploymentInfo;
         deploymentInfo = createDefaultDeployment(1, deploymentRegistrar);
 
-        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null);
+        verify(deploymentRegistrar).registerDeployment("testCloud", testEnv.azureResourceGroup, deploymentInfo.getDeploymentName(), null, false);
         Network actualVNet = null;
         StorageAccount actualStorageAcc = null;
         try {
@@ -719,7 +720,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             VirtualMachine vm = createAzureVM(vmName);
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false);
 
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
@@ -738,7 +739,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             ExecutionEngine executionEngineMock = mock(ExecutionEngine.class);
 
             //VM is missing so terminateVirtualMachine should be a no-op and no exception should be thrown
-            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false, executionEngineMock);
+            delegate.terminateVirtualMachine(vmName, testEnv.azureResourceGroup, false);
             verify(executionEngineMock).executeAsync(any(Callable.class), any(RetryStrategy.class));
 
         } catch (Exception e) {
@@ -1100,8 +1101,8 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String deletedContainerBlobURI = uploadFile(storageAccount, fileName, data, containerName_from_jenkins);
             final String existingContainerBlobURI = uploadFile(storageAccount, fileName, data, containerName_from_user);
 
-            delegate.removeStorageBlob(new URI(deletedContainerBlobURI), testEnv.azureResourceGroup);
-            delegate.removeStorageBlob(new URI(existingContainerBlobURI), testEnv.azureResourceGroup);
+            delegate.removeStorageBlob(new URI(deletedContainerBlobURI), testEnv.azureResourceGroup, null, false);
+            delegate.removeStorageBlob(new URI(existingContainerBlobURI), testEnv.azureResourceGroup, null, false);
 
             Assert.assertFalse(containerExists(deletedContainerBlobURI)); // both container and blob are missing
             Assert.assertTrue(containerExists(existingContainerBlobURI)); // the container is there, but the blob is missing
@@ -1151,7 +1152,7 @@ public class ITAzureVMManagementServiceDelegate extends IntegrationTest {
             final String blobToBeDeleted = uploadFile(storageAccount, fileName1, data, containerName);
             final String notDeletedBlob = uploadFile(storageAccount, fileName2, data, containerName);
 
-            delegate.removeStorageBlob(new URI(blobToBeDeleted), testEnv.azureResourceGroup);
+            delegate.removeStorageBlob(new URI(blobToBeDeleted), testEnv.azureResourceGroup, null, false);
 
             Assert.assertTrue(containerExists(blobToBeDeleted));
             Assert.assertFalse(blobExists(blobToBeDeleted));

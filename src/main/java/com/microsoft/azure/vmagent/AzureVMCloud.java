@@ -595,7 +595,7 @@ public class AzureVMCloud extends Cloud {
                                 getServiceDelegate().setVirtualMachineDetails(newAgent, template);
                                 return newAgent;
                             } else {
-                                LOGGER.log(Level.INFO,
+                                LOGGER.log(Level.FINE,
                                         "Deployment {0} not yet finished ({1}): {2}:{3} - waited {4} seconds",
                                         new Object[]{deploymentName, state, type, resource,
                                                 (maxTries - triesLeft) * sleepTimeInSeconds});
@@ -873,7 +873,7 @@ public class AzureVMCloud extends Cloud {
                                 }
 
                                 try {
-                                    LOGGER.log(Level.INFO, "Adding agent {0} to Jenkins nodes",
+                                    LOGGER.log(Level.FINE, "Adding agent {0} to Jenkins nodes",
                                             agent.getNodeName());
                                     // Place the node in blocked state while it starts.
                                     try {
@@ -1282,6 +1282,10 @@ public class AzureVMCloud extends Cloud {
                     resourceGroupName = Constants.DEFAULT_RESOURCE_GROUP_NAME;
                 }
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                if (azureClient == null) {
+                    return FormValidation.error("Cannot get Azure client");
+                }
+
                 final String validationResult = AzureVMManagementServiceDelegate
                         .getInstance(azureClient, azureCredentialsId)
                         .verifyConfiguration(resourceGroupName, deploymentTimeout);
@@ -1317,6 +1321,10 @@ public class AzureVMCloud extends Cloud {
 
             try {
                 final AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
+                if (azureClient == null) {
+                    return model;
+                }
+
                 Set<String> resourceGroupNames = new HashSet<>();
                 for (ResourceGroup resourceGroup : azureClient.resourceGroups().list()) {
                     resourceGroupNames.add(resourceGroup.name());
