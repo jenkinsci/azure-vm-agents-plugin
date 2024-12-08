@@ -42,6 +42,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.Functions;
+import hudson.RelativePath;
 import hudson.Util;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
@@ -1103,7 +1104,7 @@ public class AzureVMCloud extends Cloud {
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
 
-        if (mode != null && mode.equals("copy")) {
+        if (mode != null && mode.equals("on")) {
             name = checkName(name);
 
             if (Util.fixEmpty(from) == null) {
