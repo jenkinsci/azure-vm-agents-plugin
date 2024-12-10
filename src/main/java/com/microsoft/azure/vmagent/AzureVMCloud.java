@@ -1103,7 +1103,7 @@ public class AzureVMCloud extends Cloud {
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
 
-        if (mode != null && mode.equals("copy")) {
+        if (mode != null && mode.equals("on")) {
             name = checkName(name);
 
             if (Util.fixEmpty(from) == null) {

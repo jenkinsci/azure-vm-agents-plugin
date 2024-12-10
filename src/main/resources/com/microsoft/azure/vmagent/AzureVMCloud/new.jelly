@@ -15,21 +15,17 @@
         </f:entry>
 
         <j:set var="descriptor" value="${it.descriptor}"/>
-        <input name="cloudName" value="${it.name}" type="hidden"/>
 
-        <div class="jenkins-radio">
-          <input class="jenkins-radio__input mode-selection" type="radio" id="copy" name="mode" value="copy"/>
-          <label class="jenkins-radio__label" for="copy">${%Copy existing agent template}</label>
-          <div class="jenkins-radio__children">
-            <div class="jenkins-search">
-              <f:combobox clazz="jenkins-search__input copy-field" name="from" field="copyNewTemplateFrom"/>
-              <div class="jenkins-search__icon">
-                <l:icon src="symbol-search"/>
-              </div>
+        <f:optionalBlock title="${%Copy existing agent template}" name="mode">
+          <div class="jenkins-search">
+            <input name="cloudName" value="${it.name}" type="hidden"/>
+            <f:combobox clazz="jenkins-search__input copy-field" name="from" field="copyNewTemplateFrom"/>
+            <div class="jenkins-search__icon">
+              <l:icon src="symbol-search"/>
             </div>
           </div>
-        </div>
 
+        </f:optionalBlock>
 
         <l:isAdmin>
           <f:bottomButtonBar>
