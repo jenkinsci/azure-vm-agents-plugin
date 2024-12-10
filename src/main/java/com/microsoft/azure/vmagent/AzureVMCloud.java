@@ -42,7 +42,6 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.Functions;
-import hudson.RelativePath;
 import hudson.Util;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
