@@ -1482,7 +1482,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         );
 
         @POST
-<<<<<<< HEAD
         public ListBoxModel doFillNsgNameItems(
                 @QueryParameter("cloudName") String cloudName) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
@@ -1538,8 +1537,9 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 return model;
             }
             Set<String> vmSizes = AzureClientHolder.getDelegate(azureCredentialsId).getVMSizes(location);
-            // doesn't seem to happen in practice, but might be able to make an option in core to open
-            // the dropdown when the user focuses the input
+            // TODO switch to combobox when it allows customising the filtering
+            // so that this actually works
+            // see https://github.com/jenkinsci/design-library-plugin/issues/349
             if (StringUtils.isBlank(value)) {
                 vmSizes.stream().filter(RECOMMENDED_IMAGES::contains).forEach(model::add);
             } else {
