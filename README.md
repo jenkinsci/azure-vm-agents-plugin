@@ -227,6 +227,31 @@ Jenkins.getInstance().clouds.add(myCloud)
 ```
 This sample only contains a few arguments of builder, please find all the arguments in folder [builders](src/main/java/com/microsoft/azure/vmagent/builders).
 
+## Permissions
+
+The required permissions depend on which features of the plugin you are using.
+
+The simplest permission to deploy will be 'Contributor' on the resource group that the Virtual Machines are being deployed to.
+
+### Roles required by feature
+
+- **Deploying Virtual Machines**:
+  - [Virtual Machine Contributor](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/compute#virtual-machine-contributor) to deploy the Virtual Machine
+    - On the resource group
+  - [Network Contributor](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/networking#network-contributor) to deploy the Virtual Network and Public IP Address
+    - On the resource group if deploying new resources, or on the Virtual Network if using an existing network and no Public IP addresses
+- **Uploading file to storage account** - Used by Windows agents and Inbound Agents
+  - [Reader and Data Access](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-account-contributor) if using Storage account keys (default)
+    - On storage account resource
+  - [Storage Blob Data Contributor](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor) if using Azure RBAC
+    - On storage account resource
+- **Managed Identity**: Used when a managed identity is configured for the template and required when using storage RBAC
+  - [Managed Identity Operator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/identity#managed-identity-operator)
+    - On the Managed Identity resource
+- **Azure Compute Gallery**: 
+  - [Reader](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/general#reader)
+    - On the VM image definition
+
 ## Troubleshooting
 
 ### Deployment validation failure
