@@ -90,7 +90,7 @@ public final class Constants {
     /**
      * Windows License Types.
      */
-    public static final String LICENSE_TYPE_CLASSIC = "Classic";
+    public static final String LICENSE_TYPE_NONE = "None";
 
     public static final String LICENSE_TYPE_WINDOWS_CLIENT = "Windows_Client";
 

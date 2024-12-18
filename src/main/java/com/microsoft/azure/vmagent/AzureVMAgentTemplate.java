@@ -1576,9 +1576,20 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         @POST
         public ListBoxModel doFillLicenseTypeItems() {
             ListBoxModel model = new ListBoxModel();
-            model.add(Constants.LICENSE_TYPE_CLASSIC);
+            model.add(Constants.LICENSE_TYPE_NONE);
             model.add(Constants.LICENSE_TYPE_WINDOWS_CLIENT);
             model.add(Constants.LICENSE_TYPE_WINDOWS_SERVER);
+            model.add("RHEL_BASE");
+            model.add("RHEL_BYOS");
+            model.add("RHEL_EUS");
+            model.add("RHEL_SAPAPPS");
+            model.add("RHEL_SAPHA");
+            model.add("RHEL_BASESAPAPPS");
+            model.add("RHEL_BASESAPHA");
+            model.add("SLES");
+            model.add("SLES_BYOS");
+            model.add("SLES_SAP");
+            model.add("SLES_HPC");
             return model;
         }
 

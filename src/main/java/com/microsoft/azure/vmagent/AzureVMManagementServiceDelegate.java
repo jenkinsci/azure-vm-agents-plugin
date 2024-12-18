@@ -732,7 +732,7 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "authenticationType", "key");
             }
 
-            if (!Constants.LICENSE_TYPE_CLASSIC.equals(template.getLicenseType())) {
+            if (!Constants.LICENSE_TYPE_NONE.equals(template.getLicenseType())) {
                 addLicenseType(tmp, template.getLicenseType());
             }
 
@@ -867,15 +867,13 @@ public final class AzureVMManagementServiceDelegate {
     }
 
     private void addLicenseType(JsonNode template, String licenseType) {
-        if (Constants.LICENSE_TYPE_WINDOWS_CLIENT.equals(licenseType) || Constants.LICENSE_TYPE_WINDOWS_SERVER.equals(licenseType)) {
-            ArrayNode resources = (ArrayNode) template.get("resources");
-            for (JsonNode resource : resources) {
-                String type = resource.get("type").asText();
-                if (type.contains("virtualMachine")) {
-                    ObjectNode properties = (ObjectNode) resource.get("properties");
-                    properties.put("licenseType", licenseType);
-                    return;
-                }
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                properties.put("licenseType", licenseType);
+                return;
             }
         }
     }
