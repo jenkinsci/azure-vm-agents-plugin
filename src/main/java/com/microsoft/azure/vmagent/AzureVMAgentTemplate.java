@@ -1737,6 +1737,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             model.add(Constants.UBUNTU_2404_LTS);
             model.add(Constants.UBUNTU_2204_LTS);
             model.add(Constants.UBUNTU_2004_LTS);
+            model.add(Constants.WINDOWS_SERVER_2025);
             model.add(Constants.WINDOWS_SERVER_2022);
             model.add(Constants.WINDOWS_SERVER_2019);
             model.add(Constants.WINDOWS_SERVER_2016);
