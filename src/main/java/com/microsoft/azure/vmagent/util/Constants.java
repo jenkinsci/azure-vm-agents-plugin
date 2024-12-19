@@ -15,6 +15,8 @@
  */
 package com.microsoft.azure.vmagent.util;
 
+import java.util.List;
+
 public final class Constants {
 
     public static final String PLUGIN_NAME = "AzureJenkinsVMAgent";
@@ -91,6 +93,7 @@ public final class Constants {
      * Windows License Types.
      */
     public static final String LICENSE_TYPE_NONE = "None";
+    public static final List<String> NO_LICENSE_TYPE = List.of(LICENSE_TYPE_NONE, "Classic");
 
     public static final String LICENSE_TYPE_WINDOWS_CLIENT = "Windows_Client";
 
@@ -130,6 +133,7 @@ public final class Constants {
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
     public static final String UBUNTU_2004_LTS = "Ubuntu 20.04 LTS";
     public static final String UBUNTU_2204_LTS = "Ubuntu 22.04 LTS";
+    public static final String UBUNTU_2404_LTS = "Ubuntu 24.04 LTS";
 
     /**
      * ResourceGroup reference type.

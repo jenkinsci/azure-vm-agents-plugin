@@ -536,7 +536,7 @@ public final class AzureVMManagementServiceDelegate {
             String imageId = getImageId(properties);
 
             // Gallery Image is a special case for custom image, reuse the logic of custom image by replacing the imageId here
-            if (referenceType == ImageReferenceType.GALLERY) {
+            if (!isBasic && referenceType == ImageReferenceType.GALLERY) {
                 GalleryImageVersion galleryImageVersion;
                 String galleryImageVersionStr = template.getImageReference().getGalleryImageVersion();
                 String galleryImageDefinition = template.getImageReference().getGalleryImageDefinition();
@@ -732,7 +732,7 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "authenticationType", "key");
             }
 
-            if (!Constants.LICENSE_TYPE_NONE.equals(template.getLicenseType())) {
+            if (!Constants.NO_LICENSE_TYPE.contains(template.getLicenseType())) {
                 addLicenseType(tmp, template.getLicenseType());
             }
 
@@ -1657,6 +1657,8 @@ public final class AzureVMManagementServiceDelegate {
                 imageProperties("canonical", "0001-com-ubuntu-server-focal", "20_04-lts-gen2", "20_04-lts-gen2", Constants.OS_TYPE_LINUX));
         imageProperties.put(Constants.UBUNTU_2204_LTS,
                 imageProperties("canonical", "0001-com-ubuntu-server-jammy", "22_04-lts-gen2", "22_04-lts-gen2", Constants.OS_TYPE_LINUX));
+        imageProperties.put(Constants.UBUNTU_2404_LTS,
+                imageProperties("canonical", "ubuntu-24_04-lts", "server", "server", Constants.OS_TYPE_LINUX));
 
         return imageProperties;
     }
@@ -1686,12 +1688,14 @@ public final class AzureVMManagementServiceDelegate {
         tools.put(Constants.WINDOWS_SERVER_2022, new HashMap<>());
         tools.put(Constants.UBUNTU_2004_LTS, new HashMap<>());
         tools.put(Constants.UBUNTU_2204_LTS, new HashMap<>());
+        tools.put(Constants.UBUNTU_2404_LTS, new HashMap<>());
         try {
             windows(Constants.WINDOWS_SERVER_2016, tools);
             windows(Constants.WINDOWS_SERVER_2019, tools);
             windows(Constants.WINDOWS_SERVER_2022, tools);
             ubuntu(Constants.UBUNTU_2004_LTS, tools);
             ubuntu(Constants.UBUNTU_2204_LTS, tools);
+            ubuntu(Constants.UBUNTU_2404_LTS, tools);
 
             return tools;
         } catch (IOException e) {
