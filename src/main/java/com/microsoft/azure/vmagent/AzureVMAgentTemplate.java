@@ -777,7 +777,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                                 .get(builtInImage).get(Constants.INSTALL_GIT));
             }
             if ((builtInImage.equals(Constants.UBUNTU_2004_LTS)
-                   || builtInImage.equals(Constants.UBUNTU_2204_LTS))
+                   || builtInImage.equals(Constants.UBUNTU_2204_LTS) || builtInImage.equals(Constants.UBUNTU_2404_LTS))
                     && template.isInstallDocker()) {
                 stringBuilder.append(getSeparator(template.getOsType()));
                 stringBuilder.append(
@@ -1732,6 +1732,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         @POST
         public ListBoxModel doFillBuiltInImageItems() {
             ListBoxModel model = new ListBoxModel();
+            model.add(Constants.UBUNTU_2404_LTS);
             model.add(Constants.UBUNTU_2204_LTS);
             model.add(Constants.UBUNTU_2004_LTS);
             model.add(Constants.WINDOWS_SERVER_2022);
