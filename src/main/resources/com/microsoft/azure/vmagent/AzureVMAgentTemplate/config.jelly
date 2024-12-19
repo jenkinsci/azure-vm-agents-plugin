@@ -284,28 +284,6 @@
           default="${descriptor.defaultComputerLauncher}"
       />
 
-      <f:section title="${%Initialization_Configuration}">
-        <f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-vm-agents/help-initScript.html">
-          <f:textarea/>
-        </f:entry>
-
-        <f:entry title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot"
-                 help="/plugin/azure-vm-agents/help-executeInitScriptAsRoot.html">
-          <f:checkbox default="true"/>
-        </f:entry>
-
-        <f:entry title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails"
-                 help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html">
-          <f:checkbox default="true"/>
-        </f:entry>
-
-        <f:entry title="${%Terminate_Script}" field="terminateScript"
-                 help="/plugin/azure-vm-agents/help-terminateScript.html">
-          <f:textarea/>
-        </f:entry>
-
-      </f:section>
-
       <f:advanced>
         <f:entry title="${%Java path}" field="javaPath" help="/plugin/azure-vm-agents/help-javaPath.html">
           <f:textbox default="java"/>
@@ -335,6 +313,28 @@
         </f:entry>
       </f:advanced>
     </f:radioBlock>
+  </f:section>
+
+  <f:section title="${%Initialization_Configuration}">
+    <f:entry title="${%Init_Script}" field="initScript" help="/plugin/azure-vm-agents/help-initScript.html">
+      <f:textarea/>
+    </f:entry>
+
+    <f:entry title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot"
+             help="/plugin/azure-vm-agents/help-executeInitScriptAsRoot.html">
+      <f:checkbox default="true"/>
+    </f:entry>
+
+    <f:entry title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails"
+             help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html">
+      <f:checkbox default="true"/>
+    </f:entry>
+
+    <f:entry title="${%Terminate_Script}" field="terminateScript"
+             help="/plugin/azure-vm-agents/help-terminateScript.html">
+      <f:textarea/>
+    </f:entry>
+
   </f:section>
 
   <f:invisibleEntry>

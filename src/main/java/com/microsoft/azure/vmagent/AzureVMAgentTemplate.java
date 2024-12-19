@@ -720,8 +720,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         }
         templateProperties.put("initScript",
                 isBasic ? getBasicInitScript(template) : template.getInitScript());
-        templateProperties.put("terminateScript",
-                isBasic ? "" : template.getTerminateScript());
+        templateProperties.put("terminateScript", template.getTerminateScript());
         templateProperties.put("virtualNetworkName", template.getVirtualNetworkName());
         templateProperties.put("virtualNetworkResourceGroupName", template.getVirtualNetworkResourceGroupName());
         templateProperties.put("subnetName", template.getSubnetName());
@@ -732,19 +731,17 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("noOfParallelJobs",
                 isBasic ? 1 : template.getNoOfParallelJobs());
         templateProperties.put("templateDisabled",
-                isBasic ? false : template.isTemplateDisabled());
-        templateProperties.put("executeInitScriptAsRoot",
-                isBasic ? true : template.getExecuteInitScriptAsRoot());
-        templateProperties.put("doNotUseMachineIfInitFails",
-                isBasic ? true : template.getDoNotUseMachineIfInitFails());
+                !isBasic && template.isTemplateDisabled());
+        // these two properties should really not check isBasic, but it may break existing configurations,
+        // and we can't tell if boolean false is the same as not set
+        templateProperties.put("executeInitScriptAsRoot", isBasic || template.getExecuteInitScriptAsRoot());
+        templateProperties.put("doNotUseMachineIfInitFails", isBasic || template.getDoNotUseMachineIfInitFails());
         templateProperties.put("enableMSI",
-                isBasic ? false : template.isEnableMSI());
+                !isBasic && template.isEnableMSI());
         templateProperties.put("enableUAMI",
-                isBasic ? false : template.isEnableUAMI());
-        templateProperties.put("ephemeralOSDisk",
-                isBasic ? false : template.isEphemeralOSDisk());
-        templateProperties.put("encryptionAtHost",
-                isBasic ? false : template.isEncryptionAtHost());
+                !isBasic && template.isEnableUAMI());
+        templateProperties.put("ephemeralOSDisk", template.isEphemeralOSDisk());
+        templateProperties.put("encryptionAtHost", template.isEncryptionAtHost());
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
 
@@ -785,6 +782,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                                 .get(builtInImage).get(Constants.INSTALL_DOCKER)
                                 .replace("${ADMIN}",
                                         template.getVMCredentials().getUsername()));
+            }
+
+            if (Util.fixEmpty(template.getInitScript()) != null) {
+                stringBuilder.append(getSeparator(template.getOsType()));
+                stringBuilder.append(template.getInitScript());
             }
             return stringBuilder.toString();
         } catch (Exception e) {
@@ -1771,9 +1773,13 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         @POST
         public FormValidation doCheckInitScript(
                 @QueryParameter String value,
-                @QueryParameter String agentLaunchMethod) {
+                @QueryParameter String agentLaunchMethod,
+                @QueryParameter String imageTopLevelType) {
+            if (Constants.IMAGE_TOP_LEVEL_BASIC.equals(imageTopLevelType)) {
+                return FormValidation.ok();
+            }
             if (StringUtils.isBlank(value)) {
-                return FormValidation.warningWithMarkup(Messages.Azure_GC_InitScript_Warn_Msg());
+                return FormValidation.okWithMarkup(Messages.Azure_GC_InitScript_Warn_Msg());
             }
             return FormValidation.ok();
         }
