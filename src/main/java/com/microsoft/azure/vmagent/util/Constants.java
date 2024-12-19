@@ -128,6 +128,7 @@ public final class Constants {
     /**
      * Built In Image.
      */
+    public static final String WINDOWS_SERVER_2025 = "Windows Server 2025";
     public static final String WINDOWS_SERVER_2022 = "Windows Server 2022";
     public static final String WINDOWS_SERVER_2019 = "Windows Server 2019";
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
