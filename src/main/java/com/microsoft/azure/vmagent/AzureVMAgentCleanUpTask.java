@@ -484,12 +484,17 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
     private void cleanVMs(ExecutionEngine executionEngine) {
         LOGGER.log(getNormalLoggingLevel(), "Beginning");
         for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureComputer = (AzureVMComputer) computer;
+            if (computer instanceof AzureVMComputer azureComputer) {
                 final AzureVMAgent agentNode = azureComputer.getNode();
 
                 // If the machine is not offline, then don't do anything.
                 if (!azureComputer.isOffline()) {
+                    continue;
+                }
+
+                if (agentNode == null) {
+                    LOGGER.log(getNormalLoggingLevel(), "Node {0} is missing, skipping",
+                            azureComputer.getDisplayName());
                     continue;
                 }
 
