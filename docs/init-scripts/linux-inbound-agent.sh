@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-JENKINS_URL=$1
-AGENT_NAME=$2
+export JENKINS_URL=$1
+export AGENT_NAME=$2
 SECRET=$3
 
 # Update if your user is called something different
@@ -28,7 +28,6 @@ chown $USER:$USER /home/$USER/inbound-agent
   echo "${SECRET}" > agent-secret
 
   curl -O https://raw.githubusercontent.com/jenkinsci/azure-vm-agents-plugin/HEAD/docs/init-scripts/systemd-unit.service
-  export AGENT_URL="$JENKINS_URL/computer/$AGENT_NAME/jenkins-agent.jnlp"
   envsubst < systemd-unit.service > /etc/systemd/system/jenkins-agent.service
   rm -f systemd-unit.service
 
