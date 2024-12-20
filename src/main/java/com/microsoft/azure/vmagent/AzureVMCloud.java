@@ -634,6 +634,12 @@ public class AzureVMCloud extends Cloud {
         LOGGER.log(Level.FINE, "Starting for label {0} workLoad {1}",
                 new Object[]{cloudState.getLabel(), workLoad}
         );
+
+        if (Jenkins.get().isQuietingDown()) {
+            LOGGER.log(Level.FINE, "Skipping provision as Jenkins is in quiet-down");
+            return Collections.emptyList();
+        }
+
         final AzureVMAgentTemplate template = AzureVMCloud.this.getAzureAgentTemplate(cloudState.getLabel());
 
         // round up the number of required machine

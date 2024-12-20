@@ -48,6 +48,11 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             return NodeProvisioner.StrategyDecision.CONSULT_REMAINING_STRATEGIES;
         }
 
+        if (Jenkins.get().isQuietingDown()) {
+            LOGGER.log(Level.FINE, "Skipping provision as Jenkins is quieting down");
+            return NodeProvisioner.StrategyDecision.CONSULT_REMAINING_STRATEGIES;
+        }
+
         final Label label = strategyState.getLabel();
 
         LoadStatistics.LoadStatisticsSnapshot snapshot = strategyState.getSnapshot();
