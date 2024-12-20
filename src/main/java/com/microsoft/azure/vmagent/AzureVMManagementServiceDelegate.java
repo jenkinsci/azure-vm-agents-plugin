@@ -732,7 +732,7 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "authenticationType", "key");
             }
 
-            if (!Constants.NO_LICENSE_TYPE.contains(template.getLicenseType())) {
+            if (template.getLicenseType() != null && !Constants.NO_LICENSE_TYPE.contains(template.getLicenseType())) {
                 addLicenseType(tmp, template.getLicenseType());
             }
 
