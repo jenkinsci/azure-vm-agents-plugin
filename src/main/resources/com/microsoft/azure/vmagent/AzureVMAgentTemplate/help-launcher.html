@@ -1,11 +1,24 @@
 <div>
-    For Windows agents, if you want to use SSH then the image needs to be custom-prepared with an SSH server preinstalled.<br><br>
+    <p>Controls how Jenkins starts this agent.</p>
+    <p><strong>Launch agents via SSH</strong></p>
+    <p>Required on Windows only: Ensure either your Virtual Machine image includes SSH pre-installed or you select the
+        Pre-Install SSH in Windows Agent option below</p>
 
-    When using connecting to the controller, ensure the following:<br>
-    1)  Jenkins URL (Manage Jenkins --> System --> Jenkins Location) <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;This URL needs to be reachable by the agent, so make sure to configure the firewall rules accordingly. <br>
-    2)  TCP port for JNLP agent agents (Manage Jenkins --> Security --> TCP port for inbound agents). <br><br>
+    <p><strong>Launch agents by connecting it to the controller</strong></p>
+    <p>
+        Allows an agent to be connected to the Jenkins controller whenever it is ready.
+        The agent machine will establish a connection to the Jenkins controller from the agenrt.
+        This means that the agent does not need to be reachable from the controller; the agent just needs to be able to
+        reach the controller.
+    </p>
 
-        &nbsp;&nbsp;&nbsp;&nbsp;This port needs to be reachable from the agent. It is recommended to use a fixed port
-        so that the necessary firewall exceptions can be specified. <br><br>
+    <p>
+        The created Virtual Machine needs to automatically connect to Jenkins on startup. This can be achieved by
+        installing the Jenkins agent as a service using the <em>Initialization script</em> in the <em>VM first startup configuration</em>.
+        The following scripts are provided to help you with this:
+    </p>
+    <ul>
+        <li><a href="https://github.com/jenkinsci/azure-vm-agents-plugin/blob/master/docs/init-scripts/linux-inbound-agent.sh">Linux</a>
+        <li><a href="https://github.com/jenkinsci/azure-vm-agents-plugin/blob/master/docs/init-scripts/windows-inbound-agent.ps1">Windows</a>
+    </ul>
 </div>

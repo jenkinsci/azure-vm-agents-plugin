@@ -48,7 +48,7 @@ $wc.DownloadFile("https://raw.githubusercontent.com/Azure/jenkins/master/agents_
 # Prepare config
 Write-Output "Executing agent process "
 $configExec = "java"
-$configArgs = "-jnlpUrl `"${jenkinsserverurl}/computer/${vmname}/jenkins-agent.jnlp`" -workDir C:\jenkins\workDir"
+$configArgs = "-url `"${jenkinsserverurl}`" -workDir C:\jenkins\workDir -webSocket -name `"${vmname}`""
 if ($secret) {
     $configArgs += " -secret `"$secret`""
 }
