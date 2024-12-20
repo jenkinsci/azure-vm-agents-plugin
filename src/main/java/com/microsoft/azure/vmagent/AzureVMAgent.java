@@ -403,6 +403,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     public void clearCleanUpAction() {
         setCleanUpAction(CleanUpAction.DEFAULT);
         setCleanUpReason(null);
+
+        Computer computer = toComputer();
+        if (computer != null) {
+            computer.setTemporaryOfflineCause(null);
+        }
     }
 
     /**
@@ -424,7 +429,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         AzureVMComputer computer = (AzureVMComputer) this.toComputer();
         if (computer != null) {
             // Set the machine temporarily offline machine with an offline reason.
-            computer.setTemporarilyOffline(true, OfflineCause.create(reason));
+            if (action == CleanUpAction.SHUTDOWN) {
+                computer.setTemporaryOfflineCause(new OfflineCause.IdleOfflineCause());
+            } else {
+                computer.setTemporaryOfflineCause(OfflineCause.create(reason));
+            }
         }
         setCleanUpAction(action);
         setCleanUpReason(reason);
@@ -570,7 +579,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public synchronized void shutdown(Localizable reason) {
         if (isEligibleForReuse()) {
-            LOGGER.log(Level.INFO, "Agent {0} is always shut down", this.
+            LOGGER.log(Level.INFO, "Agent {0} is shut down", this.
                     getDisplayName());
             return;
         }
@@ -583,7 +592,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             return;
         }
         computer.setAcceptingTasks(false);
-        computer.disconnect(OfflineCause.create(reason));
+        computer.setTemporaryOfflineCause(new OfflineCause.IdleOfflineCause());
         LOGGER.log(Level.INFO, "Shutting down agent {0}", this.getDisplayName());
 
         AzureVMManagementServiceDelegate serviceDelegate = getServiceDelegate();
@@ -615,8 +624,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
         ComputerLauncher launcher = computer.getLauncher();
 
-        if ((launcher instanceof AzureVMAgentSSHLauncher)) {
-            AzureVMAgentSSHLauncher azureLauncher = (AzureVMAgentSSHLauncher) launcher;
+        if ((launcher instanceof AzureVMAgentSSHLauncher azureLauncher)) {
             PrintStream terminateStream = new LogTaskListener(LOGGER, Level.INFO).getLogger();
 
             final boolean isUnix = this.getOsType().equals(OperatingSystemTypes.LINUX);
@@ -649,7 +657,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 }
                 if (!skipTerminateScript
                         && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
-                    LOGGER.info("Terminate script is not null, " + "preparing to execute script remotely");
+                    LOGGER.info("Terminate script present for " + computer.getName()
+                    + " preparing to execute script remotely");
                     if (isUnix) {
                         azureLauncher.copyFileToRemote(
                                 this,

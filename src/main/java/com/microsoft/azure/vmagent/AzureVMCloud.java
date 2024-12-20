@@ -657,10 +657,8 @@ public class AzureVMCloud extends Cloud {
             if (numberOfAgents == 0) {
                 break;
             }
-            if (agentComputer instanceof AzureVMComputer && agentComputer.isOffline()) {
-                final AzureVMComputer azureComputer = (AzureVMComputer) agentComputer;
+            if (agentComputer instanceof AzureVMComputer azureComputer && agentComputer.isOffline()) {
                 final AzureVMAgent agentNode = azureComputer.getNode();
-
                 if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
                     LOGGER.log(Level.FINE, "Agent computer eligible for reuse {0}", agentComputer.getName());
 
