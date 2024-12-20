@@ -657,7 +657,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 }
                 if (!skipTerminateScript
                         && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
-                    LOGGER.info("Terminate script present for " + computer.getName() + " preparing to execute script remotely");
+                    LOGGER.info("Terminate script present for " + computer.getName()
+                    + " preparing to execute script remotely");
                     if (isUnix) {
                         azureLauncher.copyFileToRemote(
                                 this,
