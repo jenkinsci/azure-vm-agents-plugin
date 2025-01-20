@@ -56,7 +56,13 @@
       with="azureCredentialsId,maxVirtualMachinesLimit,deploymentTimeout,resourceGroupReferenceType,newResourceGroupName,existingResourceGroupName"/>
   </l:isAdmin>
 
-  <div class="alert alert-info">
-    <a href="templates">${%Agent templates have moved}</a>.
-  </div>
+  <!--
+    Don't show this link on Cloud creation page as it won't have the name in the path.
+    There's nothing to differentiate that this is a new cloud or an existing cloud except mandatory values not being set.
+  -->
+  <j:if test="${it.azureCredentialsId != null}">
+    <div class="alert alert-info">
+      <a href="templates">${%Agent templates have moved}</a>.
+    </div>
+  </j:if>
 </j:jelly>
