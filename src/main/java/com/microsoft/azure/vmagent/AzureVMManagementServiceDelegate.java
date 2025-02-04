@@ -669,7 +669,7 @@ public final class AzureVMManagementServiceDelegate {
 
             // Network properties.  If the vnet name isn't blank then
             // then subnet name can't be either (based on verification rules)
-            if (!isBasic && StringUtils.isNotBlank((String) properties.get("virtualNetworkName"))) {
+            if (StringUtils.isNotBlank((String) properties.get("virtualNetworkName"))) {
                 copyVariableIfNotBlank(tmp, properties, "virtualNetworkName");
                 copyVariable(tmp, properties, "subnetName");
                 if (StringUtils.isNotBlank((String) properties.get("virtualNetworkResourceGroupName"))) {
