@@ -81,7 +81,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -94,8 +94,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.verb.POST;
 
@@ -1097,8 +1097,8 @@ public class AzureVMCloud extends Cloud {
 
     @POST
     public synchronized void doCreate(
-            StaplerRequest req,
-            StaplerResponse rsp,
+            StaplerRequest2 req,
+            StaplerResponse2 rsp,
             @QueryParameter String name,
             @QueryParameter String mode,
             @QueryParameter String from
@@ -1140,7 +1140,7 @@ public class AzureVMCloud extends Cloud {
 
 
     @POST
-    public HttpResponse doDoCreate(StaplerRequest req) throws Descriptor.FormException, IOException, ServletException {
+    public HttpResponse doDoCreate(StaplerRequest2 req) throws Descriptor.FormException, IOException, ServletException {
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
         AzureVMAgentTemplate newTemplate = getTemplateDescriptor().newInstance(req, req.getSubmittedForm());
@@ -1163,8 +1163,8 @@ public class AzureVMCloud extends Cloud {
 
     private void handleNewVmAgentTemplatePage(
             String name,
-            StaplerRequest req,
-            StaplerResponse rsp) throws IOException, ServletException {
+            StaplerRequest2 req,
+            StaplerResponse2 rsp) throws IOException, ServletException {
         checkName(name);
         JSONObject formData = req.getSubmittedForm();
         formData.put("templateName", name);
@@ -1174,7 +1174,7 @@ public class AzureVMCloud extends Cloud {
     }
 
     @Override
-    public Cloud reconfigure(@NonNull StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+    public Cloud reconfigure(@NonNull StaplerRequest2 req, JSONObject form) throws Descriptor.FormException {
         // cloud configuration doesn't contain templates anymore, so just keep existing ones.
         var newInstance = (AzureVMCloud) super.reconfigure(req, form);
         newInstance.setVmTemplates(this.vmTemplates);
