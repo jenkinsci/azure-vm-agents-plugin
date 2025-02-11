@@ -79,7 +79,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -92,7 +92,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.verb.POST;
 
 /**
@@ -1427,7 +1427,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     }
 
     @POST
-    public HttpResponse doConfigSubmit(StaplerRequest req, @AncestorInPath AzureVMCloud azureVMCloud)
+    public HttpResponse doConfigSubmit(StaplerRequest2 req, @AncestorInPath AzureVMCloud azureVMCloud)
             throws IOException, ServletException, Descriptor.FormException {
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
@@ -1450,7 +1450,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return FormApply.success("../../templates");
     }
 
-    private AzureVMAgentTemplate reconfigure(@NonNull final StaplerRequest req, JSONObject form)
+    private AzureVMAgentTemplate reconfigure(@NonNull final StaplerRequest2 req, JSONObject form)
             throws Descriptor.FormException {
         if (form == null) {
             return null;
