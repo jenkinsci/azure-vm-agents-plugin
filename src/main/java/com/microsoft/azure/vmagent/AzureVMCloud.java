@@ -691,6 +691,7 @@ public class AzureVMCloud extends Cloud {
                                                     getServiceDelegate().setVirtualMachineDetails(
                                                             agentNode, template);
                                                     Jenkins.get().addNode(agentNode);
+                                                    azureComputer.setTemporaryOfflineCause(null);
                                                     if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
                                                         retrySshConnect(azureComputer);
                                                     } else { // Wait until node is online

@@ -19,7 +19,7 @@ public abstract class AzureVMCloudBaseRetentionStrategy extends RetentionStrateg
             Computer.threadPoolForRemoting.submit(new Runnable() {
                 @Override
                 public void run() {
-                    if (agent.getTemplate().isShutdownOnIdle()) {
+                    if (agent.getTemplate().isShutdownOnIdle() && !agent.isCleanUpBlocked()) {
                         agent.setEligibleForReuse(false);
                         agent.shutdown(agent.getCleanUpReason());
                         agent.blockCleanUpAction();
