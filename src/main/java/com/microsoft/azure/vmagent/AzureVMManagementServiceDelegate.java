@@ -1169,9 +1169,9 @@ public final class AzureVMManagementServiceDelegate {
         String publicIPStr = "";
         String privateIP = vm.getPrimaryNetworkInterface().primaryPrivateIP();
         String fqdn;
-        if (publicIP == null) {
+        if (publicIP == null || template.getUsePrivateIP()) {
             fqdn = privateIP;
-            LOGGER.log(Level.INFO, "The Azure agent doesn't have a public IP. Will use the private IP");
+            LOGGER.log(Level.INFO, "The Azure agent doesn't have a public IP or usePrivateIP is set. Will use the private IP");
         } else {
             fqdn = publicIP.fqdn();
             publicIPStr = publicIP.ipAddress();
