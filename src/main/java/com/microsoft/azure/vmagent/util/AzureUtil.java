@@ -29,6 +29,8 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import jenkins.model.Jenkins;
+import jenkins.model.JenkinsLocationConfiguration;
+
 import org.apache.commons.lang.StringUtils;
 
 public final class AzureUtil {
@@ -477,7 +479,7 @@ public final class AzureUtil {
             long ts = 0;
 
             if (tag != null && !tag.isEmpty()) {
-                String[] parts = tag.split("/");
+                String[] parts = tag.split("#");
                 if (parts.length >= 1) {
                     id = parts[0];
                 }
@@ -495,7 +497,7 @@ public final class AzureUtil {
         }
 
         public String get() {
-            return instanceId + "/" + Long.toString(timestamp);
+            return instanceId + "#" + Long.toString(timestamp);
         }
 
         // two tags match if they have the same instance id and the timestamp diff is greater than
@@ -518,7 +520,8 @@ public final class AzureUtil {
         protected DeploymentTag(long timestamp) {
             String id = "";
             try {
-                id = Jenkins.get().getLegacyInstanceId();
+                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
+                id = jenkinsLocation.getUrl();
             } catch (Exception e) {
                 id = "AzureJenkins000";
             }
