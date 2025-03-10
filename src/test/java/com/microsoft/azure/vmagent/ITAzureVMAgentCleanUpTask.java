@@ -23,25 +23,23 @@ import com.microsoft.azure.vmagent.util.AzureUtil;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.TaskListener;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
+class ITAzureVMAgentCleanUpTask extends IntegrationTest {
 
     @Test
-    public void cleanDeploymentsTest() throws Exception {
+    void cleanDeploymentsTest() throws Exception {
         final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
         final String cloudName = "fake_cloud_name";
         final AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar = AzureVMAgentCleanUpTask.DeploymentRegistrar.getInstance();
@@ -58,16 +56,16 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         doNothing().when(cleanUpMock).execute(any(TaskListener.class));
 
         cleanUpMock.cleanDeployments(60 * 24, -1); // should be a no-op, the timeout is 1 day
-        Assert.assertTrue(azureClient.deployments().checkExistence(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
+        assertTrue(azureClient.deployments().checkExistence(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
 
         cleanUpMock.cleanDeployments(-1, -1); // should delete all deployments
         Thread.sleep(10 * 1000); // give time for azure to realize that the deployment was deleted
 
-        Assert.assertFalse(azureClient.deployments().checkExistence(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
+        assertFalse(azureClient.deployments().checkExistence(testEnv.azureResourceGroup, deploymentInfo.getDeploymentName()));
     }
 
     @Test
-    public void cleanLeakedResourcesRemovesVM() {
+    void cleanLeakedResourcesRemovesVM() {
         final String vmName = "tstleak";
         final String tagName = Constants.AZURE_RESOURCES_TAG_NAME;
         final AzureUtil.DeploymentTag tagValue = new AzureUtil.DeploymentTag("some_value/123");
@@ -93,10 +91,10 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
         createAzureVM(vmName, tagName, tagValue.get());
 
         cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_nonMatching1);
-        Assert.assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+        assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
 
         cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_nonMatching2);
-        Assert.assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
+        assertNotNull(azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName));
 
         cleanUpTask.cleanLeakedResources(cloud, testEnv.azureResourceGroup, deploymentRegistrarMock_matching);
 
@@ -106,7 +104,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
     }
 
     @Test
-    public void cleanLeakedResourcesRemovesDeployedResources() throws Exception {
+    void cleanLeakedResourcesRemovesDeployedResources() throws Exception {
         final AzureUtil.DeploymentTag tagValue = new AzureUtil.DeploymentTag("some_value/123");
         final AzureUtil.DeploymentTag matchingTagValue = new AzureUtil.DeploymentTag("some_value/9999123");
         final String cloudName = "some_cloud_name";
@@ -139,7 +137,7 @@ public class ITAzureVMAgentCleanUpTask extends IntegrationTest {
                     matchingTagValue.matches(new AzureUtil.DeploymentTag(resource.tags().get(Constants.AZURE_RESOURCES_TAG_NAME)))) {
                 String resourceName = resource.name();
                 String depl = deployment.getVmBaseName() + "0";
-                Assert.assertTrue("Resource shouldn't exist: " + resourceName + " (vmbase: " + depl + " )", resourceName.contains(depl));
+                assertTrue(resourceName.contains(depl), "Resource shouldn't exist: " + resourceName + " (vmbase: " + depl + " )");
             }
         }
     }

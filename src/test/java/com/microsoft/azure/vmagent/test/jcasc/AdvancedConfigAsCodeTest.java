@@ -10,10 +10,9 @@ import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
-import org.junit.ClassRule;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -24,14 +23,12 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 
-public class AdvancedConfigAsCodeTest {
-
-    @ClassRule
-    @ConfiguredWithCode("advanced.yaml")
-    public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class AdvancedConfigAsCodeTest {
 
     @Test
-    public void importAdvancedConfiguration() {
+    @ConfiguredWithCode("advanced.yaml")
+    void importAdvancedConfiguration(JenkinsConfiguredWithCodeRule r) {
         AzureVMCloud cloud = (AzureVMCloud) r.jenkins.clouds.get(0);
 
         // cloud
@@ -98,7 +95,8 @@ public class AdvancedConfigAsCodeTest {
     }
 
     @Test
-    public void exportExportConfiguration() throws Exception {
+    @ConfiguredWithCode("advanced.yaml")
+    void exportExportConfiguration(JenkinsConfiguredWithCodeRule r) throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
         final CNode cloud = getJenkinsRoot(context).get("clouds");

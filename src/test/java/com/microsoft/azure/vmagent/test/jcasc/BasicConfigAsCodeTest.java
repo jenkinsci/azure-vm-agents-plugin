@@ -5,39 +5,33 @@ import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
-import hudson.EnvVars;
 import hudson.model.Node;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
-import hudson.slaves.NodeProperty;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
-import org.junit.ClassRule;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static hudson.Functions.getEnvVars;
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BasicConfigAsCodeTest {
-
-    @ClassRule
-    @ConfiguredWithCode("basic.yaml")
-    public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class BasicConfigAsCodeTest {
 
     @Test
-    public void importBasicConfiguration() {
+    @ConfiguredWithCode("basic.yaml")
+    void importBasicConfiguration(JenkinsConfiguredWithCodeRule r) {
         AzureVMCloud cloud = (AzureVMCloud) r.jenkins.clouds.get(0);
 
         // cloud
@@ -99,13 +93,14 @@ public class BasicConfigAsCodeTest {
 
         assertNotNull(template.getNodeProperties());
         EnvironmentVariablesNodeProperty property = template.getNodeProperties().get(EnvironmentVariablesNodeProperty.class);
-        assertNotNull("The EnvironmentVariablesNodeProperty should not be null", property);
-        assertTrue("The environment variable FOO should exist", property.getEnvVars().containsKey("FOO"));
+        assertNotNull(property, "The EnvironmentVariablesNodeProperty should not be null");
+        assertTrue(property.getEnvVars().containsKey("FOO"), "The environment variable FOO should exist");
 
     }
 
     @Test
-    public void exportBasicConfiguration() throws Exception {
+    @ConfiguredWithCode("basic.yaml")
+    void exportBasicConfiguration(JenkinsConfiguredWithCodeRule r) throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
         final CNode cloud = getJenkinsRoot(context).get("clouds");
