@@ -40,25 +40,25 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.availability.AvailabilitySet;
-import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.util.Secret;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+
+import org.junit.jupiter.api.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,20 +70,20 @@ To execute the integration tests you need to set the credentials env variables (
 and run mvn failsafe:integration-test.
 You will also need to run 'az vm image terms accept --offer kali-linux --plan kali --publish kali-linux' one time.
 */
-public class IntegrationTest {
-    protected static final String OS_TYPE = Constants.OS_TYPE_LINUX;
-
-    @ClassRule
-    public static JenkinsRule jenkinsRule() {
-        JenkinsRule j = new JenkinsRule();
-        j.timeout = 20 * 60;
-        return j;
-    }
-
-    @Rule
-    public Timeout globalTimeout = Timeout.seconds(20 * 60); // integration tests are very slow
+@WithJenkins
+@Timeout(value = 20, unit = TimeUnit.MINUTES)
+class IntegrationTest {
     private static final Logger LOGGER = Logger.getLogger(IntegrationTest.class.getName());
 
+    protected static final String OS_TYPE = Constants.OS_TYPE_LINUX;
+
+    protected static JenkinsRule j;
+
+    @BeforeAll
+    static void setup(JenkinsRule rule) {
+        j = rule;
+        j.timeout = 20 * 60;
+    }
 
     protected static class TestEnvironment {
         public final String subscriptionId;
@@ -104,23 +104,23 @@ public class IntegrationTest {
         public String azureImagePublisher;
         public String azureImageOffer;
         public String azureImageSku;
-        public String azureImageVersion;
-        public String galleryName;
-        public String galleryImageDefinition;
-        public String galleryImageVersion;
+        public final String azureImageVersion;
+        public final String galleryName;
+        public final String galleryImageDefinition;
+        public final String galleryImageVersion;
         public boolean galleryImageSpecialized;
-        public String gallerySubscriptionId;
-        public String galleryResourceGroup;
-        public List<AzureTagPair> customTags;
-        public List<AzureTagPair> templateTags;
+        public final String gallerySubscriptionId;
+        public final String galleryResourceGroup;
+        public final List<AzureTagPair> customTags;
+        public final List<AzureTagPair> templateTags;
         public int osDiskSize;
         public final String azureImageSize;
         public final Map<String, String> blobEndpointSuffixForTemplate;
         public final Map<String, String> blobEndpointSuffixForCloudStorageAccount;
-        public final static String AZUREPUBLIC = "azure public";
-        public final static String AZURECHINA = "azure china";
-        public final static String AZUREUSGOVERMENT = "azure us goverment";
-        public final static String AZUREGERMAN = "azure german";
+        public static final String AZUREPUBLIC = "azure public";
+        public static final String AZURECHINA = "azure china";
+        public static final String AZUREUSGOVERMENT = "azure us goverment";
+        public static final String AZUREGERMAN = "azure german";
 
         TestEnvironment() {
             subscriptionId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_SUBSCRIPTION_ID");
@@ -199,8 +199,8 @@ public class IntegrationTest {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(domainCredentialsMap);
     }
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testEnv = new TestEnvironment();
         LOGGER.log(Level.INFO, "=========================== {0}", testEnv.azureResourceGroup);
 
@@ -214,14 +214,13 @@ public class IntegrationTest {
         clearAzureResources();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         clearAzureResources();
     }
 
     protected void clearAzureResources() {
         try {
-
             ResourceGroups rgs = azureClient.resourceGroups();
             if (rgs.getByName(testEnv.azureResourceGroup) != null) {
                 rgs.deleteByName(testEnv.azureResourceGroup);
@@ -231,11 +230,9 @@ public class IntegrationTest {
                 LOGGER.log(Level.SEVERE, null, e);
             }
         }
-
     }
 
-    protected String downloadFromAzure(String resourceGroup, String storageAccountName, String containerName, String fileName)
-            throws IOException {
+    protected String downloadFromAzure(String resourceGroup, String storageAccountName, String containerName, String fileName) {
         StorageAccount storageAccount = azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName);
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         String storageAccountKey = storageKeys.get(0).value();
@@ -250,9 +247,9 @@ public class IntegrationTest {
         BlobClient blob = blobClient.getBlobClient(fileName);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        blob.download(byteArrayOutputStream);
+        blob.downloadStream(byteArrayOutputStream);
 
-        return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
+        return byteArrayOutputStream.toString(StandardCharsets.UTF_8);
     }
 
     protected boolean blobExists(String storageURI) {
@@ -315,7 +312,7 @@ public class IntegrationTest {
     protected AzureVMDeploymentInfo createDefaultDeployment(
             int numberOfAgents,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         return createDefaultDeployment(numberOfAgents, true, deploymentRegistrar);
     }
 
@@ -323,7 +320,7 @@ public class IntegrationTest {
             String templateName,
             int numberOfAgents,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         return createDefaultDeployment(templateName, numberOfAgents, true, deploymentRegistrar);
     }
 
@@ -331,7 +328,7 @@ public class IntegrationTest {
             int numberOfAgents,
             boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         return createDefaultDeployment(numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
@@ -340,7 +337,7 @@ public class IntegrationTest {
             int numberOfAgents,
             boolean usePrivateIP,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
@@ -348,7 +345,7 @@ public class IntegrationTest {
             int numberOfAgents,
             String nsgName,
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws AzureCloudException, IOException, Exception {
+    ) throws Exception {
         return createDefaultDeployment(numberOfAgents, true, false, false, false, nsgName, deploymentRegistrar);
     }
 
@@ -376,11 +373,11 @@ public class IntegrationTest {
             AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
     ) throws Exception {
         final String osType = OS_TYPE;
-        final String initScript = "echo \"" + UUID.randomUUID().toString() + "\"";
-        final String terminateScript = "echo \"" + UUID.randomUUID().toString() + "\"";
+        final String initScript = "echo \"" + UUID.randomUUID() + "\"";
+        final String terminateScript = "echo \"" + UUID.randomUUID() + "\"";
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
-        final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'");
+        final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'");
         final String storageType = SkuName.STANDARD_LRS.toString();
 
         StandardUsernamePasswordCredentials vmCredentials = mock(StandardUsernamePasswordCredentials.class);
@@ -457,7 +454,7 @@ public class IntegrationTest {
         throw new Exception("Deployment is not completed after 10 minutes");
     }
 
-    protected boolean areAllVMsDeployed(final List<String> vmNames) throws AzureCloudException {
+    protected boolean areAllVMsDeployed(final List<String> vmNames) {
         int deployedVMs = 0;
         PagedIterable<Deployment> deployments = azureClient.deployments().listByResourceGroup(testEnv.azureResourceGroup);
         for (Deployment dep : deployments) {
@@ -491,7 +488,7 @@ public class IntegrationTest {
         return deployedVMs == vmNames.size();
     }
 
-    protected VirtualMachine createAzureVM(String vmName) throws IOException, AzureCloudException {
+    protected VirtualMachine createAzureVM(String vmName) {
         return createAzureVM(vmName, "JenkinsTag", "testing");
     }
 
@@ -505,7 +502,7 @@ public class IntegrationTest {
                 .withoutPrimaryPublicIPAddress()
                 .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_20_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
-                .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();\'") //don't try this at home
+                .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'") //don't try this at home
                 .withOSDiskStorageAccountType(StorageAccountTypes.STANDARD_LRS)
                 .withSize(testEnv.azureImageSize)
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
