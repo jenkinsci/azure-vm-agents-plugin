@@ -17,6 +17,7 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.AzureUtil;
+import com.microsoft.azure.vmagent.util.Constants;
 import org.junit.Assert;
 import org.jvnet.hudson.test.JenkinsRule;
 import jenkins.model.Jenkins;
@@ -27,16 +28,20 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import java.util.Map;
+
 
 public class TestDeploymentTag extends AzureUtil.DeploymentTag{
     @ClassRule public static JenkinsRule j = new JenkinsRule();
 
     private String jenkinsId = "";
+    private String jenkinsUrl = "";
 
     @Before
     public void setUp() {
+        jenkinsId = Jenkins.get().getLegacyInstanceId();
         JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
-        jenkinsId = jenkinsLocation.getUrl();
+        jenkinsUrl = jenkinsLocation.getUrl();
     }
 
     @Test
@@ -48,9 +53,15 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
     @Test
     public void constructFromString() {
         final long ts = 1234;
-        final String tagStr = jenkinsId + "|" + ts;
+        final String tagStr = jenkinsUrl + "|" + ts;
         final AzureUtil.DeploymentTag tag = new AzureUtil.DeploymentTag(tagStr);
         Assert.assertEquals(tagStr, tag.get());
+    }
+
+    @Test()
+    public void constructFromValidString() {
+        Assert.assertEquals(jenkinsUrl + "|123456", (new AzureUtil.DeploymentTag(jenkinsUrl + "|123456")).get());
+        Assert.assertEquals(jenkinsId + "|123456", (new AzureUtil.DeploymentTag(jenkinsId + "/123456")).get());
     }
 
     @Test()
@@ -71,6 +82,26 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("")).get());
         Assert.assertEquals("|0", (new AzureUtil.DeploymentTag(null)).get());
     }
+
+    @Test
+    public void isFromSameInstanceTests() {
+        // deployTag = local resources tag
+        // tags = all tags on the AVM
+        // resourcesTag = value of the resource tag on the VM
+        //AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag().get();
+        AzureUtil.DeploymentTag deployTag = new AzureUtil.DeploymentTag();
+        Map<String, String> tags = Map.of("JenkinsResourceTag", "https://localhost.localdomain:123456/|123");
+        String resourcesTag = tags.getOrDefault(Constants.AZURE_RESOURCES_TAG_NAME, null);
+
+        Assert.assertEquals(resourcesTag, "https://localhost.localdomain:123456/|123");
+        Assert.assertEquals(jenkinsUrl + "|123456", deployTag);
+        Assert.assertTrue(deployTag.isFromSameInsance(new AzureUtil.DeploymentTag(resourcesTag)));
+    }
+
+   //       final String resourcesTag = tags.getOrDefault(Constants.AZURE_RESOURCES_TAG_NAME, null);
+    //                final String cloudTag = tags.getOrDefault(Constants.AZURE_CLOUD_TAG_NAME, null);
+    //                if ( !deployTag.isFromSameInstance(new AzureUtil.DeploymentTag(resourcesTag))) {
+
 
     @Test
     public void match() {

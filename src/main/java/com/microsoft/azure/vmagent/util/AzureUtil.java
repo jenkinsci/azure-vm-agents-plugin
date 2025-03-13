@@ -476,10 +476,17 @@ public final class AzureUtil {
             If timestamp is omitted or it's a negative number than it will be replaced with 0 */
         public DeploymentTag(String tag) {
             String id = "";
+            String sepChar = "";
             long ts = 0;
 
             if (tag != null && !tag.isEmpty()) {
-                String[] parts = tag.split("\\|");
+                // handle old seperator character and new seperator character
+                if (tag.contains("|")) {
+                    sepChar = "\\|";
+                } else if (tag.contains("/")) {
+                    sepChar = "/";
+                }
+                String[] parts = tag.split(sepChar);
                 if (parts.length >= 1) {
                     id = parts[0];
                 }
@@ -493,6 +500,7 @@ public final class AzureUtil {
                 }
             }
             this.instanceId = id;
+            this.instanceUrl = "https://local.fix.me/";
             this.timestamp = ts;
         }
 
@@ -519,17 +527,22 @@ public final class AzureUtil {
 
         protected DeploymentTag(long timestamp) {
             String id = "";
+            String url = "";
             try {
+                id = Jenkins.get().getLegacyInstanceId();
                 JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
-                id = jenkinsLocation.getUrl();
+                url = jenkinsLocation.getUrl();
             } catch (Exception e) {
                 id = "AzureJenkins000";
+                url = "http://localhost:12345/";
             }
             this.instanceId = id;
+            this.instanceUrl = url;
             this.timestamp = timestamp;
         }
 
         private final String instanceId;
+        private final String instanceUrl;
         private final long timestamp;
     }
 
