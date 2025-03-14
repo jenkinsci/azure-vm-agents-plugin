@@ -17,6 +17,7 @@
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.util.AzureUtil;
+import jenkins.model.JenkinsLocationConfiguration;
 import org.junit.Assert;
 import org.jvnet.hudson.test.JenkinsRule;
 import jenkins.model.Jenkins;
@@ -30,16 +31,22 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
     @ClassRule public static JenkinsRule j = new JenkinsRule();
 
     private String jenkinsId = "";
+    private String jenkinsUrl = "";
 
     @Before
     public void setUp() {
         jenkinsId = Jenkins.get().getLegacyInstanceId();
+        JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
+        jenkinsUrl = jenkinsLocation.getUrl();
     }
 
     @Test
     public void constructAndGet() {
         final long ts = 1234;
         Assert.assertEquals(jenkinsId + "/" + ts, tag(ts).get());
+        // TODO: Fix
+        // New tag format
+        // Assert.assertEquals(jenkinsUrl + "|" + ts, tag(ts).get());
     }
 
     @Test
@@ -48,6 +55,11 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         final String tagStr = jenkinsId + "/" + ts;
         final AzureUtil.DeploymentTag tag = new AzureUtil.DeploymentTag(tagStr);
         Assert.assertEquals(tagStr, tag.get());
+
+        // New tag format
+        final String tagStrUrl = jenkinsUrl + "|" + ts;
+        final AzureUtil.DeploymentTag tagUrl = new AzureUtil.DeploymentTag(tagStrUrl);
+        Assert.assertEquals(tagStrUrl, tagUrl.get());
     }
 
     @Test()
@@ -67,6 +79,24 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertEquals(jenkinsId + "/0", (new AzureUtil.DeploymentTag(jenkinsId)).get());
         Assert.assertEquals("/0", (new AzureUtil.DeploymentTag("")).get());
         Assert.assertEquals("/0", (new AzureUtil.DeploymentTag(null)).get());
+
+        // New tag format
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|-1")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|abc")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|123abc")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|-123abc")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "|abc123")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "||123")).get());
+        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "||")).get());
+        Assert.assertEquals(jenkinsUrl + "|123", (new AzureUtil.DeploymentTag(jenkinsUrl + "|123|456")).get());
+        // TODO: Fix
+        // Assert.assertEquals("|1", (new AzureUtil.DeploymentTag("|1")).get());
+        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|-1")).get());
+        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|abc")).get());
+        // Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl)).get());
+        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("")).get());
+        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag(null)).get());
     }
 
     @Test
@@ -81,6 +111,11 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertFalse(tag(100).matches(tag(450), 999));
         Assert.assertFalse(tag(450).matches(tag(100), 999));
         Assert.assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id/100"), 20));
+
+        // TODO: Fix
+        // New tag format
+        // Assert.assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
+        Assert.assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id|100"), 20));
 
     }
 

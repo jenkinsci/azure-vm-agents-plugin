@@ -466,14 +466,13 @@ public final class AzureUtil {
     }
 
     public static class DeploymentTag {
+        private final String instanceId;
+        private final long timestamp;
 
         public DeploymentTag() {
             this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
-        /*  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
-            If id is omitted it will be replaced with an empty string.
-            If timestamp is omitted or invalid, it will be replaced with 0. */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
@@ -482,14 +481,14 @@ public final class AzureUtil {
                 String sepChar = tag.contains("|") ? "\\|" : "/";
                 String[] parts = tag.split(sepChar);
 
-                if (parts.length >= 1) {
+                if (parts.length >= 1 && !parts[0].isEmpty()) {
                     id = parts[0];
                 }
                 if (parts.length >= 2) {
                     try {
                         ts = Long.parseLong(parts[1]);
-                        ts = (ts < 0) ? 0 : ts;
-                    } catch (Exception e) {
+                        if (ts < 0) ts = 0;
+                    } catch (NumberFormatException e) {
                         ts = 0;
                     }
                 }
@@ -500,10 +499,9 @@ public final class AzureUtil {
 
         public String get() {
             String sep = instanceId.contains("http") ? "|" : "/";
-            return instanceId + sep + Long.toString(timestamp);
+            return instanceId + sep + timestamp;
         }
 
-        // Matches another DeploymentTag instance
         public boolean matches(DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }
@@ -520,22 +518,15 @@ public final class AzureUtil {
         }
 
         protected DeploymentTag(long timestamp) {
-            String id;
+            String id = "";
             try {
-                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
-                id = jenkinsLocation.getUrl();
-                if (id == null || id.isEmpty()) {
-                    id = Jenkins.get().getLegacyInstanceId();
-                }
+                id = Jenkins.get().getLegacyInstanceId();
             } catch (Exception e) {
                 id = "AzureJenkins000";
             }
             this.instanceId = id;
             this.timestamp = timestamp;
         }
-
-        private final String instanceId;
-        private final long timestamp;
     }
 
     public static String getLocationNameByLabel(String label) {
