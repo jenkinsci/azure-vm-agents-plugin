@@ -473,6 +473,9 @@ public final class AzureUtil {
             this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
+        /*  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
+            If id is omitted it will be replaced with an empty string.
+            If timestamp is omitted or invalid, it will be replaced with 0. */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
