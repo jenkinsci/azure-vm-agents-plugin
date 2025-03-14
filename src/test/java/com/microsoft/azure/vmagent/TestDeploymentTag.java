@@ -88,13 +88,6 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "||123")).get());
         Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "||")).get());
         Assert.assertEquals(jenkinsUrl + "|123", (new AzureUtil.DeploymentTag(jenkinsUrl + "|123|456")).get());
-        // TODO: Fix
-//        Assert.assertEquals("|1", (new AzureUtil.DeploymentTag("|1")).get());
-//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|-1")).get());
-//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|abc")).get());
-//        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl)).get());
-//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("")).get());
-//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag(null)).get());
     }
 
     @Test
