@@ -471,22 +471,17 @@ public final class AzureUtil {
             this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
-        /*  Expects a string in this format: "<id>/<timestamp>".
-            If id is omitted it will be replaced with an empty string
-            If timestamp is omitted or it's a negative number than it will be replaced with 0 */
+        /*  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
+            If id is omitted it will be replaced with an empty string.
+            If timestamp is omitted or invalid, it will be replaced with 0. */
         public DeploymentTag(String tag) {
             String id = "";
-            String sepChar = "";
             long ts = 0;
 
             if (tag != null && !tag.isEmpty()) {
-                // handle old seperator character and new seperator character
-                if (tag.contains("|")) {
-                    sepChar = "\\|";
-                } else if (tag.contains("/")) {
-                    sepChar = "/";
-                }
+                String sepChar = tag.contains("|") ? "\\|" : "/";
                 String[] parts = tag.split(sepChar);
+
                 if (parts.length >= 1) {
                     id = parts[0];
                 }
@@ -500,16 +495,15 @@ public final class AzureUtil {
                 }
             }
             this.instanceId = id;
-            this.instanceUrl = "https://local.fix.me/";
             this.timestamp = ts;
         }
 
         public String get() {
-            return instanceId + "|" + Long.toString(timestamp);
+            String sep = instanceId.contains("http") ? "|" : "/";
+            return instanceId + sep + Long.toString(timestamp);
         }
 
-        // two tags match if they have the same instance id and the timestamp diff is greater than
-        // Constants.AZURE_DEPLOYMENT_TIMEOUT
+        // Matches another DeploymentTag instance
         public boolean matches(DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }
@@ -526,23 +520,21 @@ public final class AzureUtil {
         }
 
         protected DeploymentTag(long timestamp) {
-            String id = "";
-            String url = "";
+            String id;
             try {
-                id = Jenkins.get().getLegacyInstanceId();
                 JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
-                url = jenkinsLocation.getUrl();
+                id = jenkinsLocation.getUrl();
+                if (id == null || id.isEmpty()) {
+                    id = Jenkins.get().getLegacyInstanceId();
+                }
             } catch (Exception e) {
                 id = "AzureJenkins000";
-                url = "http://localhost:12345/";
             }
             this.instanceId = id;
-            this.instanceUrl = url;
             this.timestamp = timestamp;
         }
 
         private final String instanceId;
-        private final String instanceUrl;
         private final long timestamp;
     }
 
