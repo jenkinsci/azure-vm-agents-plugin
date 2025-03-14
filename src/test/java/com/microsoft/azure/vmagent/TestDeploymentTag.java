@@ -43,10 +43,8 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
     @Test
     public void constructAndGet() {
         final long ts = 1234;
-        Assert.assertEquals(jenkinsId + "/" + ts, tag(ts).get());
-        // TODO: Fix
         // New tag format
-        // Assert.assertEquals(jenkinsUrl + "|" + ts, tag(ts).get());
+        Assert.assertEquals(jenkinsUrl + "|" + ts, tag(ts).get());
     }
 
     @Test
@@ -91,12 +89,12 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl + "||")).get());
         Assert.assertEquals(jenkinsUrl + "|123", (new AzureUtil.DeploymentTag(jenkinsUrl + "|123|456")).get());
         // TODO: Fix
-        // Assert.assertEquals("|1", (new AzureUtil.DeploymentTag("|1")).get());
-        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|-1")).get());
-        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|abc")).get());
-        // Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl)).get());
-        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("")).get());
-        // Assert.assertEquals("|0", (new AzureUtil.DeploymentTag(null)).get());
+//        Assert.assertEquals("|1", (new AzureUtil.DeploymentTag("|1")).get());
+//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|-1")).get());
+//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("|abc")).get());
+//        Assert.assertEquals(jenkinsUrl + "|0", (new AzureUtil.DeploymentTag(jenkinsUrl)).get());
+//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag("")).get());
+//        Assert.assertEquals("|0", (new AzureUtil.DeploymentTag(null)).get());
     }
 
     @Test
@@ -105,16 +103,14 @@ public class TestDeploymentTag extends AzureUtil.DeploymentTag{
         Assert.assertTrue(tag(1).matches(tag(0), 0));
         Assert.assertTrue(tag(15).matches(tag(100), 20));
         Assert.assertTrue(tag(100).matches(tag(15), 20));
-        Assert.assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsId + "/100"), 20));
+        Assert.assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
         Assert.assertFalse(tag(0).matches(tag(1), 1));
         Assert.assertFalse(tag(1).matches(tag(0), 1));
         Assert.assertFalse(tag(100).matches(tag(450), 999));
         Assert.assertFalse(tag(450).matches(tag(100), 999));
         Assert.assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id/100"), 20));
 
-        // TODO: Fix
         // New tag format
-        // Assert.assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
         Assert.assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id|100"), 20));
 
     }

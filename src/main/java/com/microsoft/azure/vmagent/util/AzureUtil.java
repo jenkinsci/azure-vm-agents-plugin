@@ -523,7 +523,8 @@ public final class AzureUtil {
         protected DeploymentTag(long timestamp) {
             String id = "";
             try {
-                id = Jenkins.get().getLegacyInstanceId();
+                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
+                id = jenkinsLocation.getUrl();
             } catch (Exception e) {
                 id = "AzureJenkins000";
             }
