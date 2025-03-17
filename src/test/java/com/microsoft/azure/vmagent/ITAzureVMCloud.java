@@ -23,17 +23,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ITAzureVMCloud extends IntegrationTest {
+class ITAzureVMCloud extends IntegrationTest {
 
     private static final Logger LOGGER = Logger.getLogger(ITAzureVMCloud.class.getName());
 
     @Test
-    public void createProvisionedAgentThrowsExceptionWhenNoDeployments() {
+    void createProvisionedAgentThrowsExceptionWhenNoDeployments() {
         try {
             final String vmName = "fakeVM";
             final String deploymentName = "fakeDeployment";
@@ -43,16 +44,16 @@ public class ITAzureVMCloud extends IntegrationTest {
 
             when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
 
-            Assert.assertThrows(AzureCloudException.class, () -> cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName));
+            assertThrows(AzureCloudException.class, () -> cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 
-    @Ignore
+    @Disabled
     @Test
-    public void createProvisionedAgentWorksWhenDeploymentExists() {
+    void createProvisionedAgentWorksWhenDeploymentExists() {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String vmName = deploymentInfo.getVmBaseName() + "0";
@@ -103,26 +104,26 @@ public class ITAzureVMCloud extends IntegrationTest {
 
             AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
-            Assert.assertEquals(vmDNS, newAgent.getPublicDNSName());
-            Assert.assertEquals(Constants.DEFAULT_SSH_PORT, newAgent.getSshPort());
-            Assert.assertEquals(templateName, newAgent.getTemplateName());
-            Assert.assertEquals(templateDesc, newAgent.getNodeDescription());
-            Assert.assertEquals(noOfParallelJobs, newAgent.getNumExecutors());
-            Assert.assertEquals(useAgentAlwaysIfAvail, newAgent.getMode());
-            Assert.assertEquals(templateLabels, newAgent.getLabelString());
-            Assert.assertEquals(jvmOptions, newAgent.getJvmOptions());
-            Assert.assertEquals(retentionTimeInMin, newAgent.getRetentionTimeInMin());
-            Assert.assertEquals(initScript, newAgent.getInitScript());
-            Assert.assertEquals(terminateScript, newAgent.getTerminateScript());
-            Assert.assertEquals(agentLaunchMethod, newAgent.getAgentLaunchMethod());
-            Assert.assertEquals(executeInitScriptAsRoot, newAgent.getExecuteInitScriptAsRoot());
-            Assert.assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());
-            Assert.assertEquals(enableMSI, newAgent.isEnableMSI());
-            Assert.assertEquals(enableUAMI, newAgent.isEnableUAMI());
-            Assert.assertEquals(ephemeralOSDisk, newAgent.isEphemeralOSDisk());
+            assertEquals(vmDNS, newAgent.getPublicDNSName());
+            assertEquals(Constants.DEFAULT_SSH_PORT, newAgent.getSshPort());
+            assertEquals(templateName, newAgent.getTemplateName());
+            assertEquals(templateDesc, newAgent.getNodeDescription());
+            assertEquals(noOfParallelJobs, newAgent.getNumExecutors());
+            assertEquals(useAgentAlwaysIfAvail, newAgent.getMode());
+            assertEquals(templateLabels, newAgent.getLabelString());
+            assertEquals(jvmOptions, newAgent.getJvmOptions());
+            assertEquals(retentionTimeInMin, newAgent.getRetentionTimeInMin());
+            assertEquals(initScript, newAgent.getInitScript());
+            assertEquals(terminateScript, newAgent.getTerminateScript());
+            assertEquals(agentLaunchMethod, newAgent.getAgentLaunchMethod());
+            assertEquals(executeInitScriptAsRoot, newAgent.getExecuteInitScriptAsRoot());
+            assertEquals(doNotUseMachineIfInitFails, newAgent.getDoNotUseMachineIfInitFails());
+            assertEquals(enableMSI, newAgent.isEnableMSI());
+            assertEquals(enableUAMI, newAgent.isEnableUAMI());
+            assertEquals(ephemeralOSDisk, newAgent.isEphemeralOSDisk());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 
