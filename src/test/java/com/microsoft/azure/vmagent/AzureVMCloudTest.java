@@ -5,13 +5,12 @@ import static org.hamcrest.Matchers.equalTo;
 
 import java.util.Collections;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-
-public class AzureVMCloudTest {
+class AzureVMCloudTest {
 
     @Test
-    public void setCurrentVirtualMachineCountGivenNullThenSetsNull() {
+    void setCurrentVirtualMachineCountGivenNullThenSetsNull() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -31,7 +30,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void setCurrentVirtualMachineCountGivenEmptyThenSetsNull() {
+    void setCurrentVirtualMachineCountGivenEmptyThenSetsNull() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -51,7 +50,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void setCurrentVirtualMachineCountGivenOneTemplateThenRecordsCount() {
+    void setCurrentVirtualMachineCountGivenOneTemplateThenRecordsCount() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -72,7 +71,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void setCurrentVirtualMachineCountGivenNewValuesThenReplacesValues() {
+    void setCurrentVirtualMachineCountGivenNewValuesThenReplacesValues() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -94,7 +93,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void adjustApproximateVirtualMachineCountGivenNegativeAdjustmentThenAdjustsDown() {
+    void adjustApproximateVirtualMachineCountGivenNegativeAdjustmentThenAdjustsDown() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -116,7 +115,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void adjustApproximateVirtualMachineCountGivenPositiveAdjustmentThenAdjustsUp() {
+    void adjustApproximateVirtualMachineCountGivenPositiveAdjustmentThenAdjustsUp() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String templateName = "myTemplate";
@@ -138,7 +137,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void adjustApproximateVirtualMachineCountGivenComplexScenarioThenKeepsTrack() {
+    void adjustApproximateVirtualMachineCountGivenComplexScenarioThenKeepsTrack() {
         // Given
         final AzureVMCloud instance = mkInstance();
         final String template1Name = "myTemplate";
@@ -176,7 +175,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenNoLimitsThenReturnsUnchangedCount() {
+    void calculateNumberOfAgentsToRequestGivenNoLimitsThenReturnsUnchangedCount() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
@@ -192,7 +191,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenHighLimitsThenReturnsUnchangedCount() {
+    void calculateNumberOfAgentsToRequestGivenHighLimitsThenReturnsUnchangedCount() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
@@ -209,7 +208,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenTemplateLimitThenReturnsTemplateRemainder() {
+    void calculateNumberOfAgentsToRequestGivenTemplateLimitThenReturnsTemplateRemainder() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
@@ -227,7 +226,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenCloudLimitThenReturnsCloudRemainder() {
+    void calculateNumberOfAgentsToRequestGivenCloudLimitThenReturnsCloudRemainder() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
@@ -244,7 +243,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenBothCloudAndTemplateLimitThenReturnsLowerRemainder() {
+    void calculateNumberOfAgentsToRequestGivenBothCloudAndTemplateLimitThenReturnsLowerRemainder() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);
@@ -263,7 +262,7 @@ public class AzureVMCloudTest {
     }
 
     @Test
-    public void calculateNumberOfAgentsToRequestGivenTooLowLimitThenReturnsZero() {
+    void calculateNumberOfAgentsToRequestGivenTooLowLimitThenReturnsZero() {
         // Given
         final String templateName = "templateName";
         final AzureVMAgentTemplate template = mkTemplate(templateName);

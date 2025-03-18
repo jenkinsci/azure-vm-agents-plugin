@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
+
 @WithJenkins
 class TestDeploymentTag {
     private static JenkinsRule j;

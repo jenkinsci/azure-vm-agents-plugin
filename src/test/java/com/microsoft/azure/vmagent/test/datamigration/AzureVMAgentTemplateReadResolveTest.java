@@ -3,23 +3,21 @@ package com.microsoft.azure.vmagent.test.datamigration;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import jenkins.model.Jenkins;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 
-public class AzureVMAgentTemplateReadResolveTest {
-
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class AzureVMAgentTemplateReadResolveTest {
 
     @Test
     @LocalData
-    public void readResolve() {
+    void readResolve(JenkinsRule j) {
         Jenkins.CloudList clouds = j.jenkins.clouds;
 
         assertThat(clouds, hasSize(1));
