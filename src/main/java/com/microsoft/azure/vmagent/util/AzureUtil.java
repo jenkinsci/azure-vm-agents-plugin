@@ -490,7 +490,9 @@ public final class AzureUtil {
                 if (parts.length >= 2) {
                     try {
                         ts = Long.parseLong(parts[1]);
-                        if (ts < 0) ts = 0;
+                        if (ts < 0) {
+                            ts = 0;
+                        }
                     } catch (NumberFormatException e) {
                         ts = 0;
                     }
