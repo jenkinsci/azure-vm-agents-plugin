@@ -52,7 +52,7 @@ class TestDeploymentTag {
     void constructAndGet() {
         final long ts = 1234;
         // New tag format
-        assertEquals(jenkinsId + "|" + ts, tag(ts).get());
+        assertEquals(jenkinsUrl + "|" + ts, tag(ts).get());
     }
 
     @Test
@@ -104,7 +104,6 @@ class TestDeploymentTag {
         assertTrue(tag(1).matches(tag(0), 0));
         assertTrue(tag(15).matches(tag(100), 20));
         assertTrue(tag(100).matches(tag(15), 20));
-        assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsId + "/100"), 20));
         assertFalse(tag(0).matches(tag(1), 1));
         assertFalse(tag(1).matches(tag(0), 1));
         assertFalse(tag(100).matches(tag(450), 999));
@@ -112,6 +111,7 @@ class TestDeploymentTag {
         assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id/100"), 20));
 
         // New tag format
+        assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
         assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id|100"), 20));
     }
 
