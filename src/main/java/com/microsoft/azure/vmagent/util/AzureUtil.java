@@ -29,6 +29,8 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import jenkins.model.Jenkins;
+import jenkins.model.JenkinsLocationConfiguration;
+
 import org.apache.commons.lang.StringUtils;
 
 public final class AzureUtil {
@@ -464,28 +466,34 @@ public final class AzureUtil {
     }
 
     public static class DeploymentTag {
+        private final String instanceId;
+        private final long timestamp;
 
         public DeploymentTag() {
             this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
-        /*  Expects a string in this format: "<id>/<timestamp>".
-            If id is omitted it will be replaced with an empty string
-            If timestamp is omitted or it's a negative number than it will be replaced with 0 */
+        /*  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
+            If id is omitted it will be replaced with an empty string.
+            If timestamp is omitted or invalid, it will be replaced with 0. */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
 
             if (tag != null && !tag.isEmpty()) {
-                String[] parts = tag.split("/");
-                if (parts.length >= 1) {
+                String sepChar = tag.contains("|") ? "\\|" : "/";
+                String[] parts = tag.split(sepChar);
+
+                if (parts.length >= 1 && !parts[0].isEmpty()) {
                     id = parts[0];
                 }
                 if (parts.length >= 2) {
                     try {
                         ts = Long.parseLong(parts[1]);
-                        ts = (ts < 0) ? 0 : ts;
-                    } catch (Exception e) {
+                        if (ts < 0) {
+                            ts = 0;
+                        }
+                    } catch (NumberFormatException e) {
                         ts = 0;
                     }
                 }
@@ -495,11 +503,10 @@ public final class AzureUtil {
         }
 
         public String get() {
-            return instanceId + "/" + Long.toString(timestamp);
+            String sep = instanceId.contains("http") ? "|" : "/";
+            return instanceId + sep + timestamp;
         }
 
-        // two tags match if they have the same instance id and the timestamp diff is greater than
-        // Constants.AZURE_DEPLOYMENT_TIMEOUT
         public boolean matches(DeploymentTag rhs) {
             return matches(rhs, Constants.AZURE_DEPLOYMENT_TIMEOUT);
         }
@@ -518,16 +525,14 @@ public final class AzureUtil {
         protected DeploymentTag(long timestamp) {
             String id = "";
             try {
-                id = Jenkins.get().getLegacyInstanceId();
+                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
+                id = jenkinsLocation.getUrl();
             } catch (Exception e) {
                 id = "AzureJenkins000";
             }
             this.instanceId = id;
             this.timestamp = timestamp;
         }
-
-        private final String instanceId;
-        private final long timestamp;
     }
 
     public static String getLocationNameByLabel(String label) {
