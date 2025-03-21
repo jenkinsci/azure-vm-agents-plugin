@@ -29,11 +29,11 @@
               <j:forEach var="template" items="${it.vmTemplates}">
                 <tr id="template_${template.templateName}">
                   <td>
-                    <a href="${it.getCloudUrl(request,app,cloud)}template/${template.templateName}" class="jenkins-table__button">${template.templateName}</a>
+                    <a href="${it.getCloudUrl(request2,app,cloud)}template/${template.templateName}" class="jenkins-table__button">${template.templateName}</a>
                   </td>
                   <td class="jenkins-table__cell--tight">
                     <div class="jenkins-table__cell__button-wrapper">
-                      <a href="${it.getCloudUrl(request,app,cloud)}template/${template.templateName}" class="jenkins-table__button">
+                      <a href="${it.getCloudUrl(request2,app,cloud)}template/${template.templateName}" class="jenkins-table__button">
                         <l:icon src="symbol-settings"/>
                       </a>
                     </div>
