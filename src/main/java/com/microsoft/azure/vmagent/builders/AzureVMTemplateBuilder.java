@@ -18,6 +18,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     public AzureVMTemplateBuilder(AzureVMAgentTemplate template) {
         this.fluent = this;
         fluent.withName(template.getTemplateName());
+        fluent.withMaxVirtualMachinesLimit(template.getMaxVirtualMachinesLimit());
         fluent.withDescription(template.getTemplateDesc());
         fluent.withLabels(template.getLabels());
         fluent.withLocation(template.getLocation());
@@ -52,6 +53,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
     public AzureVMTemplateBuilder(AzureVMTemplateFluent<?> fluent, AzureVMAgentTemplate template) {
         this.fluent = fluent;
         fluent.withName(template.getTemplateName());
+        fluent.withMaxVirtualMachinesLimit(template.getMaxVirtualMachinesLimit());
         fluent.withDescription(template.getTemplateDesc());
         fluent.withLabels(template.getLabels());
         fluent.withLocation(template.getLocation());
@@ -94,6 +96,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         AzureVMAgentTemplate azureVMAgentTemplate = new AzureVMAgentTemplate(
                 fluent.getName(),
                 fluent.getDescription(),
+                fluent.getMaxVirtualMachinesLimit(),
                 fluent.getLabels(),
                 fluent.getLocation(),
                 null,
