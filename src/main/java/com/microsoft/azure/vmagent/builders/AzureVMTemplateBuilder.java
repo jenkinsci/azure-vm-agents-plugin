@@ -6,6 +6,7 @@ import com.microsoft.azure.vmagent.launcher.AzureComputerLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureInboundLauncher;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import com.microsoft.azure.vmagent.util.Constants;
+import com.microsoft.azure.vmagent.availability.NoAvailabilityRequired;
 
 public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplateBuilder> {
 
@@ -13,6 +14,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
 
     public AzureVMTemplateBuilder() {
         this.fluent = this;
+        fluent.withMaxVirtualMachinesLimit("10");
     }
 
     public AzureVMTemplateBuilder(AzureVMAgentTemplate template) {
@@ -96,7 +98,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getDescription(),
                 fluent.getLabels(),
                 fluent.getLocation(),
-                null,
+                new NoAvailabilityRequired(),
                 fluent.getVirtualMachineSize(),
                 fluent.getStorageAccountNameReferenceType(),
                 fluent.getStorageAccountType(),
