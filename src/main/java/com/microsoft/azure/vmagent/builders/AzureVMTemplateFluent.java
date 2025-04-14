@@ -12,6 +12,8 @@ import java.util.List;
 
 public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
+    private String maxVirtualMachinesLimit;
+
     private String name;
 
     private String description;
@@ -57,6 +59,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
     private List<AzureTagPair> cloudTags;
 
     public AzureVMTemplateFluent() {
+        maxVirtualMachinesLimit = "10";
         location = "Japan West";
         virtualMachineSize = "Standard_A0";
         storageAccountType = "Standard_LRS";
@@ -73,6 +76,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
     }
 
     //CHECKSTYLE:OFF
+    public T withMaxVirtualMachinesLimit(String maxVirtualMachinesLimit) {
+        this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+        return (T) this;
+    }
+
     public T withName(String name) {
         this.name = name;
         return (T) this;
@@ -207,6 +215,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         return (T) this;
     }
     //CHECKSTYLE:ON
+
+    public String getMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit;
+    }
 
     public String getName() {
         return name;
