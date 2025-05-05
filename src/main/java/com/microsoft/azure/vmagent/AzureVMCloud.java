@@ -42,6 +42,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.Functions;
+import hudson.Main;
 import hudson.Util;
 import hudson.init.Initializer;
 import hudson.logging.LogRecorder;
@@ -1211,6 +1212,12 @@ public class AzureVMCloud extends Cloud {
 
         @Initializer(before = PLUGINS_STARTED)
         public static void addLogRecorder(Jenkins h) throws IOException {
+            if (Main.isUnitTest) {
+                // TODO once https://github.com/jenkinsci/jenkins/pull/10612 is in baseline then this can be removed
+                // Tests are randomly failing due to it and timing changes in JUnit 5 upgrade
+                return;
+            }
+
             // avoid the failure in dynamic loading.
             if (!h.hasPermission(Jenkins.ADMINISTER)) {
                 return;
