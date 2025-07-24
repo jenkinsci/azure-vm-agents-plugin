@@ -249,7 +249,9 @@ public final class AzureVMManagementServiceDelegate {
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final int osDiskSize = template.getOsDiskSize();
 
-            if (!template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
+            if (
+                    Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(template.getResourceGroupReferenceType()) &&
+                            !template.getResourceGroupName().matches(Constants.DEFAULT_RESOURCE_GROUP_PATTERN)) {
                 LOGGER.log(Level.SEVERE, "ResourceGroup Name {0} is invalid. It should be 1-64 alphanumeric characters",
                         new Object[]{template.getResourceGroupName()});
                 throw new RuntimeException("ResourceGroup Name is invalid");
@@ -1799,11 +1801,13 @@ public final class AzureVMManagementServiceDelegate {
      * Validates certificate configuration.
      *
      * @param resourceGroupName Resource group name.
+     * @param existingResourceGroup If the resource group already exists then skip validating it.
      * @param timeOut           Timeout of the verification.
      * @return Verification result.
      */
     public String verifyConfiguration(
             String resourceGroupName,
+            boolean existingResourceGroup,
             String timeOut) {
         try {
             if (!AzureUtil.isValidTimeOut(timeOut)) {
@@ -1811,12 +1815,11 @@ public final class AzureVMManagementServiceDelegate {
                         + Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC;
             }
 
-            if (!AzureUtil.isValidResourceGroupName(resourceGroupName)) {
+            if (!existingResourceGroup && !AzureUtil.isValidResourceGroupName(resourceGroupName)) {
                 return "Error: " + Messages.Azure_GC_Template_ResourceGroupName_Err();
             }
 
-            if (!(AzureUtil.isValidTimeOut(timeOut)
-                    && AzureUtil.isValidResourceGroupName(resourceGroupName))) {
+            if (!AzureUtil.isValidTimeOut(timeOut)) {
                     return Messages.Azure_GC_Template_Val_Profile_Err();
             }
         } catch (Exception e) {
