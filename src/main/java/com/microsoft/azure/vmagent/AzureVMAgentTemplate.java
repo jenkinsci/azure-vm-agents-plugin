@@ -1997,10 +1997,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                             galleryResourceGroup,
                             gallerySubscriptionId});
 
-            // First validate the subscription info.  If it is not correct,
-            // then we can't validate the
-            String result = AzureClientHolder.getDelegate(cloud.getAzureCredentialsId())
-                    .verifyConfiguration(cloud.getResourceGroupName(), String.valueOf(cloud.getDeploymentTimeout()));
+            AzureVMManagementServiceDelegate delegate = AzureClientHolder.getDelegate(cloud.getAzureCredentialsId());
+            if (delegate == null) {
+                return FormValidation.error("Azure credentials are not configured or are invalid.");
+            }
+
+            String result = delegate
+                    .verifyConfiguration(cloud.getResourceGroupName(),
+                            Constants.RESOURCE_GROUP_REFERENCE_TYPE_EXISTING
+                                    .equals(cloud.getResourceGroupReferenceType()),
+                            String.valueOf(cloud.getDeploymentTimeout()));
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
             }
@@ -2017,7 +2023,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 azureComputerLauncher.setSshConfig(sshConfig);
             }
 
-            final List<String> errors = AzureClientHolder.getDelegate(cloud.getAzureCredentialsId()).verifyTemplate(
+            final List<String> errors = delegate.verifyTemplate(
                     templateName,
                     labels,
                     location,
