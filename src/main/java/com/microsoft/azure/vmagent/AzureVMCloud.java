@@ -1300,7 +1300,10 @@ public class AzureVMCloud extends Cloud {
 
                 final String validationResult = AzureVMManagementServiceDelegate
                         .getInstance(azureClient, azureCredentialsId)
-                        .verifyConfiguration(resourceGroupName, Constants.RESOURCE_GROUP_REFERENCE_TYPE_EXISTING.equals(resourceGroupReferenceType), deploymentTimeout);
+                        .verifyConfiguration(resourceGroupName,
+                                Constants.RESOURCE_GROUP_REFERENCE_TYPE_EXISTING.equals(resourceGroupReferenceType),
+                                deploymentTimeout
+                        );
                 if (!validationResult.equalsIgnoreCase(Constants.OP_SUCCESS)) {
                     return FormValidation.error(validationResult);
                 }

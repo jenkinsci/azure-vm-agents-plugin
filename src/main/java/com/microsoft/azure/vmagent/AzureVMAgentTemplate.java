@@ -2004,7 +2004,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
             String result = delegate
                     .verifyConfiguration(cloud.getResourceGroupName(),
-                            Constants.RESOURCE_GROUP_REFERENCE_TYPE_EXISTING.equals(cloud.getResourceGroupReferenceType()),
+                            Constants.RESOURCE_GROUP_REFERENCE_TYPE_EXISTING
+                                    .equals(cloud.getResourceGroupReferenceType()),
                             String.valueOf(cloud.getDeploymentTimeout()));
             if (!result.equals(Constants.OP_SUCCESS)) {
                 return FormValidation.error(result);
