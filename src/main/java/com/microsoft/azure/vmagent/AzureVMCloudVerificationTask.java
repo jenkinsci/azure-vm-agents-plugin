@@ -21,7 +21,7 @@ import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;

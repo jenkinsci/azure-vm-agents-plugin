@@ -31,7 +31,7 @@ import java.util.Date;
 import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class AzureUtil {
 
