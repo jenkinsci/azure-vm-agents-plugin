@@ -473,9 +473,11 @@ public final class AzureUtil {
             this(System.currentTimeMillis() / Constants.MILLIS_IN_SECOND);
         }
 
-        /*  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
-            If id is omitted it will be replaced with an empty string.
-            If timestamp is omitted or invalid, it will be replaced with 0. */
+        /**
+         *  Expects a string in this format: "<id>/<timestamp>" or "<jenkinsURL>|<timestamp>".
+         *  If id is omitted, it will be replaced with an empty string.
+         *  If the timestamp is omitted or invalid, it will be replaced with 0.
+         */
         public DeploymentTag(String tag) {
             String id = "";
             long ts = 0;
@@ -493,13 +495,26 @@ public final class AzureUtil {
                         if (ts < 0) {
                             ts = 0;
                         }
-                    } catch (NumberFormatException e) {
-                        ts = 0;
+                    } catch (NumberFormatException ignored) {
                     }
                 }
             }
             this.instanceId = id;
             this.timestamp = ts;
+        }
+
+        protected DeploymentTag(long timestamp) {
+            String id = "AzureJenkins000";
+            try {
+                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
+                String url = jenkinsLocation.getUrl();
+                if (url != null) {
+                    id = url;
+                }
+            } catch (Exception ignored) {
+            }
+            this.instanceId = id;
+            this.timestamp = timestamp;
         }
 
         public String get() {
@@ -520,18 +535,6 @@ public final class AzureUtil {
 
         public boolean isFromSameInstance(DeploymentTag rhs) {
             return instanceId.equals(rhs.instanceId);
-        }
-
-        protected DeploymentTag(long timestamp) {
-            String id = "";
-            try {
-                JenkinsLocationConfiguration jenkinsLocation = JenkinsLocationConfiguration.get();
-                id = jenkinsLocation.getUrl();
-            } catch (Exception e) {
-                id = "AzureJenkins000";
-            }
-            this.instanceId = id;
-            this.timestamp = timestamp;
         }
     }
 
