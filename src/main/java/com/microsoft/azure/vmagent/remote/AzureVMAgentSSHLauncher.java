@@ -39,7 +39,7 @@ import hudson.slaves.SlaveComputer;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jvnet.localizer.Localizable;
 
 import java.io.*;
