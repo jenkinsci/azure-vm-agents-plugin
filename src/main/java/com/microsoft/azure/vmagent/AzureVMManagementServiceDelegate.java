@@ -72,6 +72,7 @@ import com.microsoft.azure.vmagent.util.*;
 import com.microsoft.jenkins.credentials.AzureResourceManagerCache;
 import com.sshtools.common.publickey.InvalidPassphraseException;
 import com.sshtools.common.ssh.SshException;
+import hudson.Util;
 import hudson.model.Descriptor.FormException;
 import hudson.util.Secret;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
@@ -1318,7 +1319,7 @@ public final class AzureVMManagementServiceDelegate {
                     template.getTemplateName(),
                     template.getTemplateDesc(),
                     osType,
-                    template.getAgentWorkspace(),
+                    Util.fixNull(template.getAgentWorkspace()),
                     (int) properties.get("noOfParallelJobs"),
                     template.getUsageMode(),
                     template.getLabels(),
