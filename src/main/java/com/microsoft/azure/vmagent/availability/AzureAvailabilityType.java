@@ -1,10 +1,11 @@
 package com.microsoft.azure.vmagent.availability;
 
 import hudson.ExtensionPoint;
-import hudson.model.AbstractDescribableImpl;
+import hudson.model.Describable;
+
 import java.io.Serializable;
 
-public abstract class AzureAvailabilityType extends AbstractDescribableImpl<AzureAvailabilityType>
-        implements ExtensionPoint, Serializable {
+public abstract class AzureAvailabilityType
+        implements ExtensionPoint, Serializable, Describable<AzureAvailabilityType> {
 
 }

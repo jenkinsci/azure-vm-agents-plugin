@@ -47,16 +47,16 @@
       <f:select/>
     </f:entry>
 
-    <f:dropdownDescriptorSelector
-        title="${%Availability_Options}"
-        field="availabilityType"
-        default="${descriptor.defaultAvailabilityType}"
-    />
-
     <f:entry title="${%Virtual_Machine_Size}" field="virtualMachineSize"
              help="/plugin/azure-vm-agents/help-virtualMachineSize.html">
       <f:textbox data-maxsuggestions="20" placeholder="${%Type for suggestions}" />
     </f:entry>
+
+    <f:dropdownDescriptorSelector
+            title="${%Availability_Options}"
+            field="availabilityType"
+            default="${descriptor.defaultAvailabilityType}"
+    />
 
     <f:entry title="${%Storage_Account_Type}" field="storageAccountType"
              help="/plugin/azure-vm-agents/help-storageAccountType.html">

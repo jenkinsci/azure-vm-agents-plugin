@@ -41,6 +41,7 @@ import com.azure.resourcemanager.storage.models.Reason;
 import com.azure.resourcemanager.storage.models.SkuName;
 import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.azure.resourcemanager.storage.models.StorageAccountKey;
+import com.microsoft.azure.vmagent.availability.AvailabilityZone;
 import com.microsoft.jenkins.credentials.BlobServiceClientCache;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
 import com.azure.storage.blob.BlobClient;
@@ -454,12 +455,13 @@ public final class AzureVMManagementServiceDelegate {
                     ((VirtualMachineScaleSet) availabilityType).getName() : null;
 
             boolean availabilitySetEnabled = availabilitySet != null;
+            boolean availabilityZoneEnabled = availabilityType instanceof AvailabilityZone;
             boolean vmssEnabled = vmssName != null;
             boolean isSpecializedImage = false;
             if (template.getImageReference() != null) {
                 isSpecializedImage = template.getImageReference().getGalleryImageSpecialized();
             }
-            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled || isSpecializedImage || vmssEnabled) {
+            if (msiEnabled || uamiEnabled || osDiskSizeChanged || availabilitySetEnabled || isSpecializedImage || vmssEnabled || availabilityZoneEnabled) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
                 for (JsonNode resource : resources) {
                     String type = resource.get("type").asText();
@@ -511,6 +513,22 @@ public final class AzureVMManagementServiceDelegate {
                             ((ObjectNode) propertiesNode).replace("virtualMachineScaleSet",
                                     vmssNode);
                         }
+
+                        if (availabilityZoneEnabled) {
+                            String zone = ((AvailabilityZone) availabilityType).getZone();
+                            if (StringUtils.isNotBlank(zone)) {
+                                if (zone.equals(AvailabilityZone.AZURE_SELECTED)) {
+                                    ObjectNode placementNode = MAPPER.createObjectNode();
+                                    placementNode.put("zonePlacementPolicy", "Any");
+                                    ((ObjectNode) resource).replace("placement", placementNode);
+                                } else {
+                                    ArrayNode zonesNode = MAPPER.createArrayNode();
+                                    zonesNode.add(zone);
+                                    ((ObjectNode) resource).replace("zones", zonesNode);
+                                }
+                            }
+                        }
+
                         if (isSpecializedImage) {
                             // For specialized image remove the osProfile from the properties of the VirtualMachine resource
                             JsonNode propertiesNode = resource.get("properties");
