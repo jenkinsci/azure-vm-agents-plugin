@@ -33,8 +33,8 @@
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
-        <jenkins.baseline>2.504</jenkins.baseline>
-        <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+        <jenkins.baseline>2.516</jenkins.baseline>
+        <jenkins.version>${jenkins.baseline}.1</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <hpi.compatibleSinceVersion>883</hpi.compatibleSinceVersion>
         <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
