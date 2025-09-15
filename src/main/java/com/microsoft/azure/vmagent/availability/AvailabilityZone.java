@@ -99,9 +99,7 @@ public class AvailabilityZone extends AzureAvailabilityType {
                         .map(zone -> new ListBoxModel.Option(zone, zone))
                         .toList();
 
-                model = new ListBoxModel(options);
-                model.add(Messages.AvailabilityZone_azureSelected(), AZURE_SELECTED);
-
+                return new ListBoxModel(options);
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Cannot list availability set: ", e);
             }
