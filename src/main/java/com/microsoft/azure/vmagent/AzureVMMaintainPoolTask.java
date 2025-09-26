@@ -58,10 +58,10 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
     }
 
     public void provisionNodes(AzureVMCloud cloud, AzureVMAgentTemplate template, int newAgents) {
-        if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
+        if (!template.retrieveTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(cloud.getCloudName(), template.getTemplateName());
         }
-        if (template.getTemplateProvisionStrategy().isVerifiedPass()) {
+        if (template.retrieveTemplateProvisionStrategy().isVerifiedPass()) {
             cloud.doProvision(newAgents,
                     new ArrayList<>(),
                     template,

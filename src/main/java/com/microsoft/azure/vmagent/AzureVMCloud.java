@@ -244,7 +244,7 @@ public class AzureVMCloud extends Cloud {
             return false;
         }
 
-        return template.getTemplateProvisionStrategy().isEnabled();
+        return template.retrieveTemplateProvisionStrategy().isEnabled();
 
     }
 
@@ -647,10 +647,10 @@ public class AzureVMCloud extends Cloud {
         int numberOfAgents = (workLoad + template.getNoOfParallelJobs() - 1) / template.getNoOfParallelJobs();
         final List<PlannedNode> plannedNodes = new ArrayList<>(numberOfAgents);
 
-        if (!template.getTemplateProvisionStrategy().isVerifiedPass()) {
+        if (!template.retrieveTemplateProvisionStrategy().isVerifiedPass()) {
             AzureVMCloudVerificationTask.verify(this.name, template.getTemplateName());
         }
-        if (template.getTemplateProvisionStrategy().isVerifiedFailed()) {
+        if (template.retrieveTemplateProvisionStrategy().isVerifiedFailed()) {
             LOGGER.log(Level.INFO, "Template {0} has just verified failed", template.getTemplateName());
             if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
                 LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
@@ -706,7 +706,7 @@ public class AzureVMCloud extends Cloud {
                                                 } catch (Exception e) {
                                                     throw AzureCloudException.create(e);
                                                 }
-                                                template.getTemplateProvisionStrategy().success();
+                                                template.retrieveTemplateProvisionStrategy().success();
                                                 return agentNode;
                                             }
                                         } finally {
@@ -922,7 +922,7 @@ public class AzureVMCloud extends Cloud {
                                 if (isProvisionOutside) {
                                     CloudStatistics.ProvisioningListener.get().onComplete(provisioningId, agent);
                                 }
-                                template.getTemplateProvisionStrategy().success();
+                                template.retrieveTemplateProvisionStrategy().success();
                                 return agent;
                             } catch (AzureCloudException e) {
                                 if (isProvisionOutside) {

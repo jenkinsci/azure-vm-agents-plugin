@@ -1153,12 +1153,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         return noOfParallelJobs;
     }
 
-    public ProvisionStrategy getTemplateProvisionStrategy() {
+    public ProvisionStrategy retrieveTemplateProvisionStrategy() {
         return templateProvisionStrategy;
-    }
-
-    public void setTemplateProvisionStrategy(ProvisionStrategy templateProvisionStrategy) {
-        this.templateProvisionStrategy = templateProvisionStrategy;
     }
 
     /**
