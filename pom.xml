@@ -34,7 +34,7 @@
         <changelist>9999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/azure-vm-agents-plugin</gitHubRepo>
         <jenkins.baseline>2.516</jenkins.baseline>
-        <jenkins.version>${jenkins.baseline}.1</jenkins.version>
+        <jenkins.version>${jenkins.baseline}.3</jenkins.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <hpi.compatibleSinceVersion>883</hpi.compatibleSinceVersion>
         <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
@@ -45,7 +45,7 @@
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-${jenkins.baseline}.x</artifactId>
-                <version>5422.v0fce72a_b_b_8cf</version>
+                <version>5506.va_222b_131ec34</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
