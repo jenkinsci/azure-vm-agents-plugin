@@ -54,7 +54,7 @@
                 <groupId>io.jenkins</groupId>
                 <artifactId>configuration-as-code</artifactId>
                 <!-- TODO remove after JCasC 1995+ is in the BOM -->
-                <version>1998.v3e50e6e9d9d3</version>
+                <version>2006.v001a_2ca_6b_574</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
