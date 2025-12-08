@@ -606,6 +606,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
     }
 
+    public int getEffectiveTemplateMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit > 0 ? maxVirtualMachinesLimit : Integer.MAX_VALUE;
+    }
+
+    public int getEffectiveMaxVirtualMachinesLimit(int cloudMaxVMs) {
+        int effectiveCloudMax = cloudMaxVMs > 0 ? cloudMaxVMs : Integer.MAX_VALUE;
+        return Math.min(getEffectiveTemplateMaxVirtualMachinesLimit(), effectiveCloudMax);
+    }
+
     public boolean isUseEntraIdForStorageAccount() {
         return useEntraIdForStorageAccount;
     }

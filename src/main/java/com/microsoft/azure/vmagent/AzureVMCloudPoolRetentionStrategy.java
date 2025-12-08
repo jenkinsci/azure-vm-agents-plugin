@@ -104,11 +104,13 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
         final int currentPoolSize
                 = ((AzureVMCloudPoolRetentionStrategy) currentTemplate.getRetentionStrategy()).getPoolSize();
+        final int effectiveMaxVMs = currentTemplate.getEffectiveMaxVirtualMachinesLimit(
+                currentCloud.getMaxVirtualMachinesLimit());
 
         Computer.threadPoolForRemoting.submit(new Runnable() {
             @Override
             public void run() {
-                checkPoolSizeAndDelete(agentComputer, currentPoolSize);
+                checkPoolSizeAndDelete(agentComputer, currentPoolSize, effectiveMaxVMs);
             }
         });
 
@@ -138,25 +140,48 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
         }
     }
 
-    private static synchronized void checkPoolSizeAndDelete(AzureVMComputer agentComputer, int poolSize) {
+    /**
+     * Checks if the current VM count exceeds the allowed limit and deletes excess idle VMs.
+     *
+     * This allows:
+     * - poolSize to act as the MINIMUM (maintained by AzureVMMaintainPoolTask)
+     * - effectiveMaxVMs to act as the MAXIMUM (enforced here)
+     *
+     * @param agentComputer The computer to potentially delete
+     * @param poolSize The minimum pool size (agents maintained by pool task)
+     * @param effectiveMaxVMs The effective maximum VMs (from template.getEffectiveMaxVirtualMachinesLimit)
+     */
+    private static synchronized void checkPoolSizeAndDelete(
+            AzureVMComputer agentComputer, int poolSize, int effectiveMaxVMs) {
+        AzureVMAgent templateAgentNode = agentComputer.getNode();
+        if (templateAgentNode == null) {
+            return;
+        }
+
         int count = 0;
         List<Computer> computers = Arrays.asList(Jenkins.get().getComputers());
         for (Computer computer : computers) {
             if (computer instanceof AzureVMComputer) {
                 AzureVMAgent patternAgentNode = ((AzureVMComputer) computer).getNode();
-                AzureVMAgent templateAgentNode = agentComputer.getNode();
-                if (patternAgentNode != null && templateAgentNode != null
+                if (patternAgentNode != null
                         && TemplateUtil.checkSame(patternAgentNode.getTemplate(), templateAgentNode.getTemplate())) {
                     count++;
                 }
             }
         }
 
-        if (count > poolSize) {
-            LOGGER.log(Level.INFO, "Delete VM {0} for pool size exceed limit: {1}",
-                    new Object[]{agentComputer, count});
+        // Use the effective max if it's set and greater than poolSize,
+        // otherwise fall back to poolSize for backwards compatibility
+        int effectiveLimit = (effectiveMaxVMs < Integer.MAX_VALUE && effectiveMaxVMs > poolSize)
+                ? effectiveMaxVMs
+                : poolSize;
+
+        if (count > effectiveLimit) {
+            LOGGER.log(Level.INFO,
+                    "Delete VM {0} for exceeding limit: count={1}, poolSize={2}, "
+                            + "effectiveMaxVMs={3}, effectiveLimit={4}",
+                    new Object[]{agentComputer, count, poolSize, effectiveMaxVMs, effectiveLimit});
             tryDeleteWhenIdle(agentComputer);
-            return;
         }
     }
 
