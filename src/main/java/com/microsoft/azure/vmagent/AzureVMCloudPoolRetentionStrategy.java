@@ -104,12 +104,13 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
         final int currentPoolSize
                 = ((AzureVMCloudPoolRetentionStrategy) currentTemplate.getRetentionStrategy()).getPoolSize();
-        final int maxVirtualMachinesLimit = currentTemplate.getMaxVirtualMachinesLimit();
+        final int effectiveMaxVMs = currentTemplate.getEffectiveMaxVirtualMachinesLimit(
+                currentCloud.getMaxVirtualMachinesLimit());
 
         Computer.threadPoolForRemoting.submit(new Runnable() {
             @Override
             public void run() {
-                checkPoolSizeAndDelete(agentComputer, currentPoolSize, maxVirtualMachinesLimit);
+                checkPoolSizeAndDelete(agentComputer, currentPoolSize, effectiveMaxVMs);
             }
         });
 
@@ -142,20 +143,16 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
     /**
      * Checks if the current VM count exceeds the allowed limit and deletes excess idle VMs.
      *
-     * The effective maximum is determined as follows:
-     * - If maxVirtualMachinesLimit is set (greater than 0) and greater than poolSize, use it as the cap
-     * - Otherwise, use poolSize as the cap (backwards compatibility)
-     *
      * This allows:
      * - poolSize to act as the MINIMUM (maintained by AzureVMMaintainPoolTask)
-     * - maxVirtualMachinesLimit to act as the MAXIMUM (enforced here)
+     * - effectiveMaxVMs to act as the MAXIMUM (enforced here)
      *
      * @param agentComputer The computer to potentially delete
      * @param poolSize The minimum pool size (agents maintained by pool task)
-     * @param maxVirtualMachinesLimit The maximum VMs allowed for this template (0 = no limit beyond poolSize)
+     * @param effectiveMaxVMs The effective maximum VMs (from template.getEffectiveMaxVirtualMachinesLimit)
      */
     private static synchronized void checkPoolSizeAndDelete(
-            AzureVMComputer agentComputer, int poolSize, int maxVirtualMachinesLimit) {
+            AzureVMComputer agentComputer, int poolSize, int effectiveMaxVMs) {
         AzureVMAgent templateAgentNode = agentComputer.getNode();
         if (templateAgentNode == null) {
             return;
@@ -173,33 +170,19 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
             }
         }
 
-        int effectiveMax = calculateEffectiveMax(poolSize, maxVirtualMachinesLimit);
+        // Use the effective max if it's set and greater than poolSize,
+        // otherwise fall back to poolSize for backwards compatibility
+        int effectiveLimit = (effectiveMaxVMs < Integer.MAX_VALUE && effectiveMaxVMs > poolSize)
+                ? effectiveMaxVMs
+                : poolSize;
 
-        if (count > effectiveMax) {
+        if (count > effectiveLimit) {
             LOGGER.log(Level.INFO,
-                    "Delete VM {0} for exceeding limit: count={1}, poolSize={2}, maxLimit={3}, effectiveMax={4}",
-                    new Object[]{agentComputer, count, poolSize, maxVirtualMachinesLimit, effectiveMax});
+                    "Delete VM {0} for exceeding limit: count={1}, poolSize={2}, "
+                            + "effectiveMaxVMs={3}, effectiveLimit={4}",
+                    new Object[]{agentComputer, count, poolSize, effectiveMaxVMs, effectiveLimit});
             tryDeleteWhenIdle(agentComputer);
         }
-    }
-
-    /**
-     * Calculates the effective maximum number of VMs allowed.
-     *
-     * The effective maximum is determined as follows:
-     * - If maxVirtualMachinesLimit is set (greater than 0) and greater than poolSize, use it as the cap
-     * - Otherwise, use poolSize as the cap (backwards compatibility)
-     *
-     * This allows poolSize to act as the MINIMUM while maxVirtualMachinesLimit acts as the MAXIMUM.
-     *
-     * @param poolSize The minimum pool size
-     * @param maxVirtualMachinesLimit The maximum VMs allowed (0 or negative = no limit beyond poolSize)
-     * @return The effective maximum number of VMs allowed
-     */
-    static int calculateEffectiveMax(int poolSize, int maxVirtualMachinesLimit) {
-        return (maxVirtualMachinesLimit > 0 && maxVirtualMachinesLimit > poolSize)
-                ? maxVirtualMachinesLimit
-                : poolSize;
     }
 
     public long getRetentionInHours() {

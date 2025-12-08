@@ -267,6 +267,10 @@ public class AzureVMCloud extends Cloud {
         return maxVirtualMachinesLimit;
     }
 
+    public int getEffectiveCloudMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit > 0 ? maxVirtualMachinesLimit : Integer.MAX_VALUE;
+    }
+
     public static String getResourceGroupName(String type, String newName, String existingName) {
         //type maybe null in this version, so we can guess according to whether newName is blank or not
         if (StringUtils.isBlank(type) && StringUtils.isNotBlank(newName)
@@ -774,12 +778,9 @@ public class AzureVMCloud extends Cloud {
     // Package access for tests only
     int calculateNumberOfAgentsToRequest(final AzureVMAgentTemplate template, int desiredNumberOfAgents) {
         final int currentVMsForTemplate = Math.max(0, getApproximateVirtualMachineCountForTemplate(template));
-        final int maxVMsForTemplate = template.getMaxVirtualMachinesLimit() > 0
-                ? template.getMaxVirtualMachinesLimit()
-                : Integer.MAX_VALUE;
+        final int maxVMsForTemplate = template.getEffectiveTemplateMaxVirtualMachinesLimit();
         final int currentVMsForCloud = Math.max(0, getApproximateVirtualMachineCount());
-        final int maxVMsForCloud = getMaxVirtualMachinesLimit() > 0 ? getMaxVirtualMachinesLimit()
-                : Integer.MAX_VALUE;
+        final int maxVMsForCloud = getEffectiveCloudMaxVirtualMachinesLimit();
         final int maxBeforeTemplateLimit = Math.max(0, maxVMsForTemplate - currentVMsForTemplate);
         final int maxBeforeCloudLimit = Math.max(0, maxVMsForCloud - currentVMsForCloud);
         final int adjustedNumberOfAgents = Math.min(Math.min(maxBeforeTemplateLimit, maxBeforeCloudLimit),
