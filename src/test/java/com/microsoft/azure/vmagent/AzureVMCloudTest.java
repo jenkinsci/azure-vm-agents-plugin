@@ -281,7 +281,7 @@ class AzureVMCloudTest {
 
     private static AzureVMAgentTemplate mkTemplate(final String templateName) {
         return new AzureVMAgentTemplate(templateName, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, false, false, false);
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, false, false);
     }
 
     private static AzureVMCloud mkInstance(int maxVMsLimitForCloud) {
