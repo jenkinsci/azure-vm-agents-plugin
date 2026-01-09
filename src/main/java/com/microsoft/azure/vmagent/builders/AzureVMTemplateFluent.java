@@ -34,6 +34,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private boolean encryptionAtHost;
 
+    private boolean disableWindowsUpdates;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -137,6 +139,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T withEncryptionAtHost(boolean isEncryptionAtHost) {
         this.encryptionAtHost = isEncryptionAtHost;
+        return (T) this;
+    }
+
+    public T withDisableWindowsUpdates(boolean isDisableWindowsUpdates) {
+        this.disableWindowsUpdates = isDisableWindowsUpdates;
         return (T) this;
     }
 
@@ -250,6 +257,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public boolean isEncryptionAtHost() {
         return encryptionAtHost;
+    }
+
+    public boolean isDisableWindowsUpdates() {
+        return disableWindowsUpdates;
     }
 
     public int getOsDiskSize() {

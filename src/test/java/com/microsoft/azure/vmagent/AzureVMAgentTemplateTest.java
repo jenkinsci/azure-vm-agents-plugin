@@ -121,6 +121,6 @@ class AzureVMAgentTemplateTest {
         return new AzureVMAgentTemplate(
                 "testTemplate", null, null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, false, false);
+                null, false, false, false);
     }
 }

@@ -115,6 +115,7 @@ class IntegrationTest {
         public final List<AzureTagPair> templateTags;
         public int osDiskSize;
         public final String azureImageSize;
+        public final boolean disableWindowsUpdates;
         public final Map<String, String> blobEndpointSuffixForTemplate;
         public final Map<String, String> blobEndpointSuffixForCloudStorageAccount;
         public static final String AZUREPUBLIC = "azure public";

@@ -131,6 +131,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     private final String uamiID;
 
+    private final boolean disableWindowsUpdates;
+
     private String javaPath;
 
     private String remotingOptions;
@@ -179,6 +181,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             boolean encryptionAtHost,
             String uamiID,
+            boolean disableWindowsUpdates,
             String javaPath,
             String remotingOptions,
             AzureVMAgentTemplate template) throws FormException, IOException {
@@ -224,6 +227,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.ephemeralOSDisk = ephemeralOSDisk;
         this.encryptionAtHost = encryptionAtHost;
         this.uamiID = uamiID;
+        this.disableWindowsUpdates = disableWindowsUpdates;
         this.template = template;
         this.creationTime = System.currentTimeMillis();
     }
@@ -281,6 +285,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             boolean encryptionAtHost,
             String uamiID,
+            boolean disableWindowsUpdates,
             AzureVMAgentTemplate template,
             String fqdn,
             String javaPath,
@@ -323,6 +328,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 ephemeralOSDisk,
                 encryptionAtHost,
                 uamiID,
+                disableWindowsUpdates,
                 javaPath,
                 remotingOptions,
                 template
@@ -529,6 +535,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public boolean getDoNotUseMachineIfInitFails() {
         return doNotUseMachineIfInitFails;
+    }
+
+    public boolean isDisableWindowsUpdates() {
+        return disableWindowsUpdates;
     }
 
     public boolean isEnableMSI() {

@@ -249,6 +249,8 @@ public final class AzureVMManagementServiceDelegate {
             final String diskType = template.getDiskType();
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
+            final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
+
             final int osDiskSize = template.getOsDiskSize();
 
             if (
@@ -553,6 +555,7 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
             putVariable(tmp, "encryptionAtHost", Boolean.toString(encryptionAtHost));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
+            putVariable(tmp, "disableWindowsUpdates", Boolean.toString(disableWindowsUpdates));
 
             String imageId = getImageId(properties);
 
@@ -1365,6 +1368,7 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("ephemeralOSDisk"),
                     (Boolean) properties.get("encryptionAtHost"),
                     (String) properties.get("uamiID"),
+                    (Boolean) properties.get("disableWindowsUpdates"),
                     template,
                     fqdn,
                     template.getJavaPath(),

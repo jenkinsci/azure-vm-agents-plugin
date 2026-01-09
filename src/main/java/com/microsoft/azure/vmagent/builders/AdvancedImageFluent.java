@@ -52,6 +52,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private boolean enableUAMI;
 
+    private boolean disableWindowsUpdates;
+
     private String uamiID;
 
     private String virtualNetworkName;
@@ -174,6 +176,11 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public T withEnableUAMI(boolean enableUAMI) {
         this.enableUAMI = enableUAMI;
+        return (T) this;
+    }
+
+    public T withDisableWindowsUpdates(boolean disableWindowsUpdates) {
+        this.disableWindowsUpdates = disableWindowsUpdates;
         return (T) this;
     }
 
@@ -312,6 +319,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isEnableUAMI() {
         return enableUAMI;
+    }
+
+    public boolean isDisableWindowsUpdates() {
+        return disableWindowsUpdates;
     }
 
     public String getUamiID() {
