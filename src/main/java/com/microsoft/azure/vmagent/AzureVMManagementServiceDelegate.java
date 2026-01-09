@@ -1368,11 +1368,11 @@ public final class AzureVMManagementServiceDelegate {
                     (Boolean) properties.get("ephemeralOSDisk"),
                     (Boolean) properties.get("encryptionAtHost"),
                     (String) properties.get("uamiID"),
-                    (Boolean) properties.get("disableWindowsUpdates"),
                     template,
                     fqdn,
                     template.getJavaPath(),
-                    template.getRemotingOptions());
+                    template.getRemotingOptions(),
+                    (Boolean) properties.get("disableWindowsUpdates"));
         } catch (FormException | IOException e) {
             throw AzureCloudException.create("Exception occurred while creating agent object", e);
         }

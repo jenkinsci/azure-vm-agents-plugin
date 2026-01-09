@@ -181,9 +181,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             boolean encryptionAtHost,
             String uamiID,
-            boolean disableWindowsUpdates,
             String javaPath,
             String remotingOptions,
+            boolean disableWindowsUpdates,
             AzureVMAgentTemplate template) throws FormException, IOException {
 
         super(name, remoteFS, launcher);
@@ -285,11 +285,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             boolean ephemeralOSDisk,
             boolean encryptionAtHost,
             String uamiID,
-            boolean disableWindowsUpdates,
             AzureVMAgentTemplate template,
             String fqdn,
             String javaPath,
-            String remotingOptions
+            String remotingOptions,
+            boolean disableWindowsUpdates
     ) throws FormException, IOException {
         this(name,
                 templateName,
@@ -328,9 +328,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 ephemeralOSDisk,
                 encryptionAtHost,
                 uamiID,
-                disableWindowsUpdates,
                 javaPath,
                 remotingOptions,
+                disableWindowsUpdates,
                 template
         );
 

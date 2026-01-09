@@ -470,7 +470,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.templateStatusDetails = "";
-        this.disableWindowsUpdates = disableWindowsUpdates;
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
         this.retentionStrategy = retentionStrategy;
