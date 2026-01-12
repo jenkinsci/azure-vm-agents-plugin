@@ -1,10 +1,9 @@
 package com.microsoft.azure.vmagent;
 
+import com.microsoft.azure.vmagent.util.DynamicBufferCalculator;
 import com.microsoft.azure.vmagent.util.PoolLock;
-import com.microsoft.azure.vmagent.util.TemplateUtil;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
-import hudson.model.Computer;
 import hudson.model.TaskListener;
 import hudson.slaves.Cloud;
 import jenkins.model.Jenkins;
@@ -26,28 +25,40 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
     public void maintain(AzureVMCloud cloud, AzureVMAgentTemplate template) {
         LOGGER.log(getNormalLoggingLevel(), "Starting to maintain template: {0}", template.getTemplateName());
-        int currentSize = 0;
-        final int sizeLimit = ((AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy()).getPoolSize();
 
         if (PoolLock.checkProvisionLock(template)) {
             LOGGER.log(getNormalLoggingLevel(), "Agents of template {0} is creating, check later", template);
             return;
         }
 
-        for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureVMComputer = (AzureVMComputer) computer;
-                AzureVMAgent agent = azureVMComputer.getNode();
-                if (agent != null
-                        && agent.getTemplate().getTemplateName().equals(template.getTemplateName())
-                        && TemplateUtil.checkSame(agent.getTemplate(), template)) {
-                    currentSize++;
-                }
-            }
-        }
-        if (currentSize < sizeLimit) {
+        AzureVMCloudPoolRetentionStrategy retentionStrategy =
+                (AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy();
+
+        // Calculate current metrics using the utility class
+        DynamicBufferCalculator.BufferMetrics metrics =
+                DynamicBufferCalculator.calculateBufferMetrics(template);
+
+        // Calculate the effective pool size (static or dynamic based on configuration)
+        final int effectivePoolSize = retentionStrategy.calculateEffectivePoolSize(
+                metrics.getBusyMachines(),
+                metrics.getQueuedItems());
+
+        LOGGER.log(getNormalLoggingLevel(),
+                "Template {0}: busy={1}, idle={2}, total={3}, queued={4}, effectivePoolSize={5}",
+                new Object[]{
+                        template.getTemplateName(),
+                        metrics.getBusyMachines(),
+                        metrics.getIdleMachines(),
+                        metrics.getTotalMachines(),
+                        metrics.getQueuedItems(),
+                        effectivePoolSize
+                });
+
+        int currentSize = metrics.getTotalMachines();
+
+        if (currentSize < effectivePoolSize) {
             // Determine how many nodes to provision
-            int deploymentSize = sizeLimit - currentSize;
+            int deploymentSize = effectivePoolSize - currentSize;
             if (template.getMaximumDeploymentSize() > 0 && deploymentSize > template.getMaximumDeploymentSize()) {
                 deploymentSize = template.getMaximumDeploymentSize();
             }

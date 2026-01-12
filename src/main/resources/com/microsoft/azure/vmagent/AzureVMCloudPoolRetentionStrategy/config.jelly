@@ -13,4 +13,18 @@
         <f:checkbox/>
     </f:entry>
 
+    <f:optionalBlock title="${%Enable_Dynamic_Buffer}" field="dynamicBufferEnabled" inline="true">
+        <f:entry title="${%Buffer_Percentage}" field="bufferPercentage">
+            <f:textbox default="10"/>
+        </f:entry>
+
+        <f:entry title="${%Minimum_Buffer}" field="minimumBuffer">
+            <f:textbox default="0"/>
+        </f:entry>
+
+        <f:entry title="${%Maximum_Buffer}" field="maximumBuffer">
+            <f:textbox default="0"/>
+        </f:entry>
+    </f:optionalBlock>
+
 </j:jelly>
