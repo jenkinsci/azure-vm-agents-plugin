@@ -617,8 +617,6 @@ public final class AzureVMManagementServiceDelegate {
                 addTagToVm(tmp, "JenkinsImageId", imageId);
             }
 
-
-
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
             if (useCustomScriptExtension) {

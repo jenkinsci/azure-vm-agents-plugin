@@ -110,10 +110,6 @@
       <f:checkbox/>
     </f:entry>
 
-    <f:entry title="${%Disable_Windows_Update}" field="disableWindowsUpdate" help="/plugin/azure-vm-agents/help-disableWindowsUpdate.html">
-      <f:checkbox default="false"/>
-    </f:entry>
-
     <f:dropdownDescriptorSelector field="retentionStrategy" title="${%Retention_Strategy}"
                                   descriptors="${descriptor.azureVMRetentionStrategy}"/>
 
@@ -276,6 +272,10 @@
 
       <f:entry title="${%Os_Type}" field="osType" help="/plugin/azure-vm-agents/help-osType.html">
         <f:select/>
+      </f:entry>
+
+      <f:entry title="${%Disable_Windows_Updates}" field="disableWindowsUpdates">
+        <f:checkbox default="true"/>
       </f:entry>
 
       <f:entry title="${%License_Type}" field="licenseType">
