@@ -78,7 +78,7 @@ class ITAzureVMCloud extends IntegrationTest {
             final boolean enableUAMI = false;
             final boolean ephemeralOSDisk = false;
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
-            final boolean disableWindowsUpdates = false;
+            final boolean disableWindowsUpdates = true;
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
