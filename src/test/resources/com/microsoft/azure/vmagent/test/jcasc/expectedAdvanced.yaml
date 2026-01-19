@@ -15,6 +15,7 @@
           name: "vm-agents"
       builtInImage: "Windows Server 2016"
       credentialsId: "admin-cred"
+      disableWindowsUpdates: true
       diskType: "managed"
       doNotUseMachineIfInitFails: true
       executeInitScriptAsRoot: true
