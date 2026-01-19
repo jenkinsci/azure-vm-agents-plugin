@@ -1121,7 +1121,7 @@ public final class AzureVMManagementServiceDelegate {
 
     private static void addWindowsConfiguration(JsonNode template) {
         ObjectNode windowsConfiguration = MAPPER.createObjectNode();
-        windowsConfiguration.put("disablePasswordAuthentication", true);
+        windowsConfiguration.put("enableAutomaticUpdates", false);
         ObjectNode patchSettings = MAPPER.createObjectNode();
         patchSettings.put("patchMode", "Manual");
         windowsConfiguration.set("patchSettings", patchSettings);
