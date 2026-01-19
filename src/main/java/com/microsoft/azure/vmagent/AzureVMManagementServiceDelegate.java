@@ -540,6 +540,10 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
+            if (disableWindowsUpdates) {
+                addWindowsConfiguration(tmp);
+            }
+
             ArrayNode resources = (ArrayNode) tmp.get("resources");
 
             for (JsonNode resource : resources) {
@@ -555,7 +559,6 @@ public final class AzureVMManagementServiceDelegate {
             putVariable(tmp, "ephemeralOSDisk", Boolean.toString(ephemeralOSDisk));
             putVariable(tmp, "encryptionAtHost", Boolean.toString(encryptionAtHost));
             putVariableIfNotBlank(tmp, "image", template.getImageReference().getUri());
-            putVariable(tmp, "disableWindowsUpdates", Boolean.toString(disableWindowsUpdates));
 
             String imageId = getImageId(properties);
 
@@ -1068,7 +1071,6 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-
     private void addDefaultVNetResourceNode(
             JsonNode template,
             String resourceGroupName,
@@ -1113,6 +1115,25 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             if (fragmentStream != null) {
                 fragmentStream.close();
+            }
+        }
+    }
+
+    private static void addWindowsConfiguration(JsonNode template) {
+        ObjectNode windowsConfiguration = MAPPER.createObjectNode();
+        windowsConfiguration.put("disablePasswordAuthentication", true);
+        ObjectNode patchSettings = MAPPER.createObjectNode();
+        patchSettings.put("patchMode", "Manual");
+        windowsConfiguration.set("patchSettings", patchSettings);
+
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                ObjectNode osProfile = (ObjectNode) properties.get("osProfile");
+                osProfile.replace("windowsConfiguration", windowsConfiguration);
+                return;
             }
         }
     }

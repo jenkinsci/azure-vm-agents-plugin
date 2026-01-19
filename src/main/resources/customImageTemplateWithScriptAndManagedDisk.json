@@ -34,12 +34,6 @@
                     }
                 ]
             }
-        },
-        "windowsConfiguration": {
-            "disablePasswordAuthentication": true,
-            "patchSettings": {
-                "patchMode": "Manual"
-            }
         }
     },
     "resources": [
@@ -113,8 +107,7 @@
                     "computerName": "[concat(variables('vmName'), copyIndex())]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[if(equals(parameters('authenticationType'), 'password'), parameters('adminPasswordOrKey'), null())]",
-                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('linuxConfiguration'))]",
-                    "windowsConfiguration": "[if(and(equals(variables('osType'), 'Windows'), bool(variables('disableWindowsUpdates'))), variables('windowsConfiguration'), json('null'))]"
+                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('linuxConfiguration'))]"
                 },
                 "storageProfile": {
                     "imageReference": {
