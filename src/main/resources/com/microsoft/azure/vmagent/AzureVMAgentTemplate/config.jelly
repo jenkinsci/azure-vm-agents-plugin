@@ -274,6 +274,10 @@
         <f:select/>
       </f:entry>
 
+      <f:entry title="${%Disable_Windows_Updates}" field="disableWindowsUpdates">
+        <f:checkbox />
+      </f:entry>
+
       <f:entry title="${%License_Type}" field="licenseType">
         <f:select/>
       </f:entry>

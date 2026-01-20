@@ -78,6 +78,7 @@ class ITAzureVMCloud extends IntegrationTest {
             final boolean enableUAMI = false;
             final boolean ephemeralOSDisk = false;
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
+            final boolean disableWindowsUpdates = true;
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
             AzureVMCloud cloudMock = spy( new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
@@ -101,6 +102,7 @@ class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.isEnableMSI()).thenReturn(enableMSI);
             when(templateMock.isEnableUAMI()).thenReturn(enableUAMI);
             when(templateMock.isEphemeralOSDisk()).thenReturn(ephemeralOSDisk);
+            when(templateMock.isDisableWindowsUpdates()).thenReturn(disableWindowsUpdates);
 
             AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
@@ -121,6 +123,7 @@ class ITAzureVMCloud extends IntegrationTest {
             assertEquals(enableMSI, newAgent.isEnableMSI());
             assertEquals(enableUAMI, newAgent.isEnableUAMI());
             assertEquals(ephemeralOSDisk, newAgent.isEphemeralOSDisk());
+            assertEquals(disableWindowsUpdates, newAgent.isDisableWindowsUpdates());
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             fail(e.getMessage());

@@ -56,6 +56,7 @@
                         <idleTerminationMillis>3600000</idleTerminationMillis>
                         <idleTerminationMinutes>60</idleTerminationMinutes>
                     </retentionStrategy>
+                    <disableWindowsUpdates>true</disableWindowsUpdates>
                 </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
             </vmTemplates>
             <deploymentTimeout>1200</deploymentTimeout>

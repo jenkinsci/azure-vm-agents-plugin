@@ -249,6 +249,8 @@ public final class AzureVMManagementServiceDelegate {
             final String diskType = template.getDiskType();
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
+            final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
+
             final int osDiskSize = template.getOsDiskSize();
 
             if (
@@ -538,6 +540,10 @@ public final class AzureVMManagementServiceDelegate {
                 }
             }
 
+            if (disableWindowsUpdates) {
+                addWindowsConfiguration(tmp);
+            }
+
             ArrayNode resources = (ArrayNode) tmp.get("resources");
 
             for (JsonNode resource : resources) {
@@ -613,8 +619,6 @@ public final class AzureVMManagementServiceDelegate {
             if (imageId != null) {
                 addTagToVm(tmp, "JenkinsImageId", imageId);
             }
-
-
 
             // If using the custom script extension (vs. SSH) to startup the powershell scripts,
             // add variables for that and upload the init script to the storage account
@@ -1067,7 +1071,6 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-
     private void addDefaultVNetResourceNode(
             JsonNode template,
             String resourceGroupName,
@@ -1112,6 +1115,25 @@ public final class AzureVMManagementServiceDelegate {
         } finally {
             if (fragmentStream != null) {
                 fragmentStream.close();
+            }
+        }
+    }
+
+    private static void addWindowsConfiguration(JsonNode template) {
+        ObjectNode windowsConfiguration = MAPPER.createObjectNode();
+        windowsConfiguration.put("enableAutomaticUpdates", false);
+        ObjectNode patchSettings = MAPPER.createObjectNode();
+        patchSettings.put("patchMode", "Manual");
+        windowsConfiguration.set("patchSettings", patchSettings);
+
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode properties = (ObjectNode) resource.get("properties");
+                ObjectNode osProfile = (ObjectNode) properties.get("osProfile");
+                osProfile.replace("windowsConfiguration", windowsConfiguration);
+                return;
             }
         }
     }
@@ -1368,7 +1390,8 @@ public final class AzureVMManagementServiceDelegate {
                     template,
                     fqdn,
                     template.getJavaPath(),
-                    template.getRemotingOptions());
+                    template.getRemotingOptions(),
+                    (Boolean) properties.get("disableWindowsUpdates"));
         } catch (FormException | IOException e) {
             throw AzureCloudException.create("Exception occurred while creating agent object", e);
         }

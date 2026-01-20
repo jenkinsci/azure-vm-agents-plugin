@@ -51,6 +51,7 @@ class BasicConfigAsCodeTest {
         assertThat(template.getCredentialsId(), is("admin-cred"));
         assertThat(template.getDiskType(), is("managed"));
         assertThat(template.getDoNotUseMachineIfInitFails(), is(true));
+        assertThat(template.isDisableWindowsUpdates(), is(true));
         assertThat(template.isEnableMSI(), is(false));
         assertThat(template.isEnableUAMI(), is(false));
         assertThat(template.isEphemeralOSDisk(), is(false));

@@ -279,6 +279,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean encryptionAtHost;
 
+    private boolean disableWindowsUpdates;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -468,7 +470,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.executeInitScriptAsRoot = executeInitScriptAsRoot;
         this.doNotUseMachineIfInitFails = doNotUseMachineIfInitFails;
         this.templateStatusDetails = "";
-
         // Reset the template verification status.
         this.templateProvisionStrategy = new ProvisionStrategy();
         this.retentionStrategy = retentionStrategy;
@@ -753,6 +754,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("encryptionAtHost", template.isEncryptionAtHost());
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
+        templateProperties.put("disableWindowsUpdates", template.isDisableWindowsUpdates());
 
         return templateProperties;
     }
@@ -970,6 +972,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setEncryptionAtHost(boolean encryptionAtHost) {
         this.encryptionAtHost = encryptionAtHost;
+    }
+
+    public boolean isDisableWindowsUpdates() {
+        return disableWindowsUpdates;
+    }
+
+    @DataBoundSetter
+    public void setDisableWindowsUpdates(boolean disableWindowsUpdates) {
+        this.disableWindowsUpdates = disableWindowsUpdates;
     }
 
     @DataBoundSetter

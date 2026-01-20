@@ -9,6 +9,7 @@
     - availabilityType: "none"
       builtInImage: "Ubuntu 16.14 LTS"
       credentialsId: "admin-cred"
+      disableWindowsUpdates: true
       diskType: "managed"
       doNotUseMachineIfInitFails: true
       executeInitScriptAsRoot: true
