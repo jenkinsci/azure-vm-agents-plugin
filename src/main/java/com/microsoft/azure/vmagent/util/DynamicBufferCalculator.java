@@ -39,77 +39,6 @@ public final class DynamicBufferCalculator {
     }
 
     /**
-     * Counts the number of busy machines for a specific template.
-     *
-     * @param template The template to count busy machines for
-     * @return Number of busy machines
-     */
-    public static int countBusyMachines(AzureVMAgentTemplate template) {
-        int busyCount = 0;
-        for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureComputer = (AzureVMComputer) computer;
-                AzureVMAgent agent = azureComputer.getNode();
-                if (agent != null
-                        && TemplateUtil.checkSame(agent.getTemplate(), template)
-                        && !computer.isIdle()) {
-                    busyCount++;
-                }
-            }
-        }
-        LOGGER.log(Level.FINE, "Template {0} has {1} busy machines",
-                new Object[]{template.getTemplateName(), busyCount});
-        return busyCount;
-    }
-
-    /**
-     * Counts the number of idle machines for a specific template.
-     *
-     * @param template The template to count idle machines for
-     * @return Number of idle machines
-     */
-    public static int countIdleMachines(AzureVMAgentTemplate template) {
-        int idleCount = 0;
-        for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureComputer = (AzureVMComputer) computer;
-                AzureVMAgent agent = azureComputer.getNode();
-                if (agent != null
-                        && TemplateUtil.checkSame(agent.getTemplate(), template)
-                        && computer.isIdle()
-                        && computer.isOnline()) {
-                    idleCount++;
-                }
-            }
-        }
-        LOGGER.log(Level.FINE, "Template {0} has {1} idle machines",
-                new Object[]{template.getTemplateName(), idleCount});
-        return idleCount;
-    }
-
-    /**
-     * Counts the total number of machines (both busy and idle) for a specific template.
-     *
-     * @param template The template to count machines for
-     * @return Total number of machines
-     */
-    public static int countTotalMachines(AzureVMAgentTemplate template) {
-        int totalCount = 0;
-        for (Computer computer : Jenkins.get().getComputers()) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMComputer azureComputer = (AzureVMComputer) computer;
-                AzureVMAgent agent = azureComputer.getNode();
-                if (agent != null && TemplateUtil.checkSame(agent.getTemplate(), template)) {
-                    totalCount++;
-                }
-            }
-        }
-        LOGGER.log(Level.FINE, "Template {0} has {1} total machines",
-                new Object[]{template.getTemplateName(), totalCount});
-        return totalCount;
-    }
-
-    /**
      * Counts the number of queued items that could be handled by this template.
      * Only counts buildable items that match the template's labels.
      *
@@ -170,56 +99,49 @@ public final class DynamicBufferCalculator {
     }
 
     /**
-     * Comprehensive calculation that returns all buffer-related metrics for a template.
+     * Calculates all buffer-related metrics for a template in a single pass through computers.
+     * This is more efficient than calling individual count methods separately.
      *
      * @param template The template to analyze
-     * @return BufferMetrics containing all relevant counts
+     * @return BufferMetrics record containing all relevant counts
      */
     public static BufferMetrics calculateBufferMetrics(AzureVMAgentTemplate template) {
-        int busy = countBusyMachines(template);
-        int idle = countIdleMachines(template);
-        int total = countTotalMachines(template);
+        int busy = 0;
+        int idle = 0;
+        int total = 0;
+
+        // Single pass through all computers to collect all metrics
+        for (Computer computer : Jenkins.get().getComputers()) {
+            if (computer instanceof AzureVMComputer) {
+                AzureVMComputer azureComputer = (AzureVMComputer) computer;
+                AzureVMAgent agent = azureComputer.getNode();
+                if (agent != null && TemplateUtil.checkSame(agent.getTemplate(), template)) {
+                    total++;
+                    if (computer.isIdle() && computer.isOnline()) {
+                        idle++;
+                    } else if (!computer.isIdle()) {
+                        busy++;
+                    }
+                }
+            }
+        }
+
         int queued = countQueuedItemsForTemplate(template);
+
+        LOGGER.log(Level.FINE, "Template {0}: busy={1}, idle={2}, total={3}, queued={4}",
+                new Object[]{template.getTemplateName(), busy, idle, total, queued});
 
         return new BufferMetrics(busy, idle, total, queued);
     }
 
     /**
-     * Container class for buffer-related metrics.
+     * Record containing buffer-related metrics for a template.
+     *
+     * @param busyMachines  Number of machines currently running jobs
+     * @param idleMachines  Number of machines that are idle and online
+     * @param totalMachines Total number of machines for this template
+     * @param queuedItems   Number of queued items matching this template
      */
-    public static class BufferMetrics {
-        private final int busyMachines;
-        private final int idleMachines;
-        private final int totalMachines;
-        private final int queuedItems;
-
-        public BufferMetrics(int busyMachines, int idleMachines, int totalMachines, int queuedItems) {
-            this.busyMachines = busyMachines;
-            this.idleMachines = idleMachines;
-            this.totalMachines = totalMachines;
-            this.queuedItems = queuedItems;
-        }
-
-        public int getBusyMachines() {
-            return busyMachines;
-        }
-
-        public int getIdleMachines() {
-            return idleMachines;
-        }
-
-        public int getTotalMachines() {
-            return totalMachines;
-        }
-
-        public int getQueuedItems() {
-            return queuedItems;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("BufferMetrics{busy=%d, idle=%d, total=%d, queued=%d}",
-                    busyMachines, idleMachines, totalMachines, queuedItems);
-        }
+    public record BufferMetrics(int busyMachines, int idleMachines, int totalMachines, int queuedItems) {
     }
 }

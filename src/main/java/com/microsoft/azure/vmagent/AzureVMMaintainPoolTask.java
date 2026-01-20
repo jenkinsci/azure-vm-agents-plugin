@@ -40,21 +40,21 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
 
         // Calculate the effective pool size (static or dynamic based on configuration)
         final int effectivePoolSize = retentionStrategy.calculateEffectivePoolSize(
-                metrics.getBusyMachines(),
-                metrics.getQueuedItems());
+                metrics.busyMachines(),
+                metrics.queuedItems());
 
         LOGGER.log(getNormalLoggingLevel(),
                 "Template {0}: busy={1}, idle={2}, total={3}, queued={4}, effectivePoolSize={5}",
                 new Object[]{
                         template.getTemplateName(),
-                        metrics.getBusyMachines(),
-                        metrics.getIdleMachines(),
-                        metrics.getTotalMachines(),
-                        metrics.getQueuedItems(),
+                        metrics.busyMachines(),
+                        metrics.idleMachines(),
+                        metrics.totalMachines(),
+                        metrics.queuedItems(),
                         effectivePoolSize
                 });
 
-        int currentSize = metrics.getTotalMachines();
+        int currentSize = metrics.totalMachines();
 
         if (currentSize < effectivePoolSize) {
             // Determine how many nodes to provision

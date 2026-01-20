@@ -9,41 +9,6 @@ import org.junit.jupiter.api.Test;
 class DynamicBufferCalculatorTest {
 
     @Test
-    void bufferMetricsConstructorSetsAllFields() {
-        // Given
-        int busy = 5;
-        int idle = 3;
-        int total = 8;
-        int queued = 10;
-
-        // When
-        DynamicBufferCalculator.BufferMetrics metrics =
-                new DynamicBufferCalculator.BufferMetrics(busy, idle, total, queued);
-
-        // Then
-        assertThat(metrics.getBusyMachines(), equalTo(5));
-        assertThat(metrics.getIdleMachines(), equalTo(3));
-        assertThat(metrics.getTotalMachines(), equalTo(8));
-        assertThat(metrics.getQueuedItems(), equalTo(10));
-    }
-
-    @Test
-    void bufferMetricsToStringContainsAllValues() {
-        // Given
-        DynamicBufferCalculator.BufferMetrics metrics =
-                new DynamicBufferCalculator.BufferMetrics(5, 3, 8, 10);
-
-        // When
-        String result = metrics.toString();
-
-        // Then
-        assertThat(result.contains("busy=5"), equalTo(true));
-        assertThat(result.contains("idle=3"), equalTo(true));
-        assertThat(result.contains("total=8"), equalTo(true));
-        assertThat(result.contains("queued=10"), equalTo(true));
-    }
-
-    @Test
     void calculateMachinesToProvisionGivenDeficitReturnsPositiveNumber() {
         // Given
         int effectivePoolSize = 10;

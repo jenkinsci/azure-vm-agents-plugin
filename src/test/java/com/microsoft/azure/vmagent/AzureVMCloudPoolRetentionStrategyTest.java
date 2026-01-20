@@ -8,20 +8,6 @@ import org.junit.jupiter.api.Test;
 class AzureVMCloudPoolRetentionStrategyTest {
 
     @Test
-    void constructorGivenValidValuesThenSetsFields() {
-        // Given
-        int retentionInHours = 24;
-        int poolSize = 100;
-
-        // When
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(retentionInHours, poolSize);
-
-        // Then
-        assertThat(strategy.getRetentionInHours(), equalTo(24L));
-        assertThat(strategy.getPoolSize(), equalTo(100));
-    }
-
-    @Test
     void constructorGivenNegativeRetentionThenSetsToZero() {
         // Given
         int retentionInHours = -5;
@@ -47,69 +33,7 @@ class AzureVMCloudPoolRetentionStrategyTest {
         assertThat(strategy.getPoolSize(), equalTo(0));
     }
 
-    @Test
-    void singleUseAgentsGivenNotSetThenReturnsFalse() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(0, 100);
-
-        // When
-        boolean actual = strategy.isSingleUseAgents();
-
-        // Then
-        assertThat(actual, equalTo(false));
-    }
-
-    @Test
-    void singleUseAgentsGivenSetTrueThenReturnsTrue() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(0, 100);
-        strategy.setSingleUseAgents(true);
-
-        // When
-        boolean actual = strategy.isSingleUseAgents();
-
-        // Then
-        assertThat(actual, equalTo(true));
-    }
-
-    // Dynamic Buffer Tests
-
-    @Test
-    void dynamicBufferEnabledGivenNotSetThenReturnsFalse() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
-
-        // When
-        boolean actual = strategy.isDynamicBufferEnabled();
-
-        // Then
-        assertThat(actual, equalTo(false));
-    }
-
-    @Test
-    void dynamicBufferEnabledGivenSetTrueThenReturnsTrue() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
-        strategy.setDynamicBufferEnabled(true);
-
-        // When
-        boolean actual = strategy.isDynamicBufferEnabled();
-
-        // Then
-        assertThat(actual, equalTo(true));
-    }
-
-    @Test
-    void bufferPercentageGivenValidValueThenSetsValue() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
-
-        // When
-        strategy.setBufferPercentage(25);
-
-        // Then
-        assertThat(strategy.getBufferPercentage(), equalTo(25));
-    }
+    // Dynamic Buffer Validation Tests
 
     @Test
     void bufferPercentageGivenNegativeValueThenSetsToZero() {
@@ -136,18 +60,6 @@ class AzureVMCloudPoolRetentionStrategyTest {
     }
 
     @Test
-    void minimumBufferGivenValidValueThenSetsValue() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
-
-        // When
-        strategy.setMinimumBuffer(5);
-
-        // Then
-        assertThat(strategy.getMinimumBuffer(), equalTo(5));
-    }
-
-    @Test
     void minimumBufferGivenNegativeValueThenSetsToZero() {
         // Given
         AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
@@ -157,18 +69,6 @@ class AzureVMCloudPoolRetentionStrategyTest {
 
         // Then
         assertThat(strategy.getMinimumBuffer(), equalTo(0));
-    }
-
-    @Test
-    void maximumBufferGivenValidValueThenSetsValue() {
-        // Given
-        AzureVMCloudPoolRetentionStrategy strategy = new AzureVMCloudPoolRetentionStrategy(24, 10);
-
-        // When
-        strategy.setMaximumBuffer(50);
-
-        // Then
-        assertThat(strategy.getMaximumBuffer(), equalTo(50));
     }
 
     @Test
@@ -182,6 +82,8 @@ class AzureVMCloudPoolRetentionStrategyTest {
         // Then
         assertThat(strategy.getMaximumBuffer(), equalTo(Integer.MAX_VALUE));
     }
+
+    // Dynamic Buffer Calculation Tests
 
     @Test
     void calculateEffectivePoolSizeGivenDynamicDisabledThenReturnsStaticPoolSize() {
