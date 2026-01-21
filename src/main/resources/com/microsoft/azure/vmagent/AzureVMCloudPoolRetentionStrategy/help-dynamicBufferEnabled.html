@@ -1,0 +1,11 @@
+<div>
+    Enable dynamic buffer sizing based on current workload.
+    <p>
+    When enabled, the plugin will automatically maintain additional idle machines
+    (buffer) proportional to the number of busy machines and queued jobs.
+    This ensures that new jobs always have machines ready immediately.
+    </p>
+    <p>
+    The effective pool size becomes: <code>poolSize + calculatedBuffer</code>
+    </p>
+</div>

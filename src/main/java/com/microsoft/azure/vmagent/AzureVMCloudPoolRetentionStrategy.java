@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetentionStrategy implements ExecutorListener {
-    private static final long serialVersionUID = 1577788691L;
+    private static final long serialVersionUID = 1577788692L;
 
     private final long retentionMillis;
 
@@ -33,15 +33,51 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     private boolean singleUseAgents;
 
+    /**
+     * Enable dynamic buffer sizing based on workload.
+     */
+    private boolean dynamicBufferEnabled;
+
+    /**
+     * Percentage of busy machines to keep as buffer (0-100).
+     * E.g., if 10 machines are busy and bufferPercentage is 20, keep 2 idle machines ready.
+     */
+    private int bufferPercentage;
+
+    /**
+     * Minimum number of buffer machines to always have ready, regardless of percentage calculation.
+     */
+    private int minimumBuffer;
+
+    /**
+     * Maximum buffer size to prevent runaway scaling.
+     */
+    private int maximumBuffer;
+
     private static final long IDLE_LIMIT_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
+
+    /**
+     * Default buffer percentage when dynamic buffer is enabled.
+     */
+    private static final int DEFAULT_BUFFER_PERCENTAGE = 10;
+
+    /**
+     * Maximum valid buffer percentage (100%).
+     */
+    private static final int MAX_BUFFER_PERCENTAGE = 100;
 
     @DataBoundConstructor
     public AzureVMCloudPoolRetentionStrategy(int retentionInHours, int poolSize) {
         retentionInHours = Math.max(retentionInHours, 0);
         this.retentionMillis = TimeUnit.HOURS.toMillis(retentionInHours);
         this.poolSize = Math.max(poolSize, 0);
+        // Default values for dynamic buffer
+        this.dynamicBufferEnabled = false;
+        this.bufferPercentage = DEFAULT_BUFFER_PERCENTAGE;
+        this.minimumBuffer = 0;
+        this.maximumBuffer = Integer.MAX_VALUE;
     }
 
     @Override
@@ -191,6 +227,73 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
 
     public int getPoolSize() {
         return poolSize;
+    }
+
+    public boolean isDynamicBufferEnabled() {
+        return dynamicBufferEnabled;
+    }
+
+    @DataBoundSetter
+    public void setDynamicBufferEnabled(boolean dynamicBufferEnabled) {
+        this.dynamicBufferEnabled = dynamicBufferEnabled;
+    }
+
+    public int getBufferPercentage() {
+        return bufferPercentage;
+    }
+
+    @DataBoundSetter
+    public void setBufferPercentage(int bufferPercentage) {
+        this.bufferPercentage = Math.max(0, Math.min(MAX_BUFFER_PERCENTAGE, bufferPercentage));
+    }
+
+    public int getMinimumBuffer() {
+        return minimumBuffer;
+    }
+
+    @DataBoundSetter
+    public void setMinimumBuffer(int minimumBuffer) {
+        this.minimumBuffer = Math.max(0, minimumBuffer);
+    }
+
+    public int getMaximumBuffer() {
+        return maximumBuffer;
+    }
+
+    @DataBoundSetter
+    public void setMaximumBuffer(int maximumBuffer) {
+        this.maximumBuffer = maximumBuffer <= 0 ? Integer.MAX_VALUE : maximumBuffer;
+    }
+
+    /**
+     * Calculates the effective pool size based on current workload.
+     * If dynamic buffer is disabled, returns the static poolSize.
+     * If enabled, calculates buffer based on busy machines and queue length.
+     *
+     * @param busyMachines  Number of currently busy machines for this template
+     * @param queueLength   Number of items in queue matching this template's labels
+     * @return The effective pool size (minimum idle machines to maintain)
+     */
+    public int calculateEffectivePoolSize(int busyMachines, int queueLength) {
+        if (!dynamicBufferEnabled) {
+            return poolSize;
+        }
+
+        // Calculate buffer based on percentage of busy machines
+        int percentageBuffer = (busyMachines * bufferPercentage) / MAX_BUFFER_PERCENTAGE;
+
+        // Also consider queue length - if queue is growing, add buffer
+        int queueBasedBuffer = (queueLength * bufferPercentage) / MAX_BUFFER_PERCENTAGE;
+
+        // Take the larger of the two calculations
+        int calculatedBuffer = Math.max(percentageBuffer, queueBasedBuffer);
+
+        // Apply minimum and maximum constraints
+        calculatedBuffer = Math.max(calculatedBuffer, minimumBuffer);
+        calculatedBuffer = Math.min(calculatedBuffer, maximumBuffer);
+
+        // The effective pool size is the base pool size plus the dynamic buffer
+        return poolSize + calculatedBuffer;
     }
 
     @Override
