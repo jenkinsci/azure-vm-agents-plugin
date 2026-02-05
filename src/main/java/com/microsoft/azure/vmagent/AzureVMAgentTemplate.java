@@ -291,6 +291,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String osDiskStorageAccountType;
 
+    private List<DataDiskEntry> dataDisks;
+
     private final int noOfParallelJobs;
 
     private Node.Mode usageMode;
@@ -478,6 +480,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         labelDataSet = Label.parse(labels);
 
         this.tags = new ArrayList<>();
+        this.dataDisks = new ArrayList<>();
     }
 
     public DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties() {
@@ -937,6 +940,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setOsDiskStorageAccountType(String osDiskStorageAccountType) {
         this.osDiskStorageAccountType = osDiskStorageAccountType;
+    }
+
+    public List<DataDiskEntry> getDataDisks() {
+        return this.dataDisks;
+    }
+
+    @DataBoundSetter
+    public void setDataDisks(List<DataDiskEntry> dataDisks) {
+        this.dataDisks = dataDisks;
     }
 
     public String getStorageAccountName() {

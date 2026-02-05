@@ -20,6 +20,8 @@ import com.azure.core.management.exception.ManagementException;
 import com.azure.core.util.BinaryData;
 import com.azure.core.util.ExpandableStringEnum;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.DiskCreateOptionTypes;
+import com.azure.resourcemanager.compute.models.DiskDeleteOptionTypes;
 import com.azure.resourcemanager.compute.models.GalleryImageVersion;
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.azure.resourcemanager.compute.models.PowerState;
@@ -252,6 +254,7 @@ public final class AzureVMManagementServiceDelegate {
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
 
             final int osDiskSize = template.getOsDiskSize();
+            final List<DataDiskEntry> dataDisks = template.getDataDisks();
 
             if (
                     Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(template.getResourceGroupReferenceType()) &&
@@ -738,6 +741,10 @@ public final class AzureVMManagementServiceDelegate {
                 addNSGNode(tmp, (String) properties.get("nsgName"));
             }
 
+            if (useManagedDisk) {
+                addManagedDataDisks(tmp, dataDisks);
+            }
+
             final ObjectNode parameters = MAPPER.createObjectNode();
 
             defineParameter(tmp, "adminUsername", "string");
@@ -908,6 +915,40 @@ public final class AzureVMManagementServiceDelegate {
         if (tags != null) {
             for (AzureTagPair tag : tags) {
                 tagsNode.put(tag.getName(), tag.getValue());
+            }
+        }
+    }
+
+    private void addManagedDataDisks(JsonNode template, List<DataDiskEntry> dataDisks) {
+        if (dataDisks == null || dataDisks.isEmpty()) {
+            return;
+        }
+
+        ArrayNode diskNodes = MAPPER.createArrayNode();
+        for (int i = 0; i < dataDisks.size(); i++) {
+            DataDiskEntry dataDisk = dataDisks.get(i);
+            ObjectNode diskNode = MAPPER.createObjectNode();
+            diskNode.put("name", String.format("[concat(variables('vmName'), copyIndex(), '_DataDisk%d')]", i + 1));
+            diskNode.put("caching", dataDisk.getDiskCache());
+            diskNode.put("createOption", DiskCreateOptionTypes.EMPTY.toString());
+            diskNode.put("deleteOption", DiskDeleteOptionTypes.DELETE.toString());
+            diskNode.put("diskSizeGB", dataDisk.getDiskSize());
+            diskNode.put("lun", i);
+
+            ObjectNode managedDiskNode = MAPPER.createObjectNode();
+            managedDiskNode.put("storageAccountType", dataDisk.getStorageAccountType());
+            diskNode.set("managedDisk", managedDiskNode);
+
+            diskNodes.add(diskNode);
+        }
+
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                JsonNode storageProfileNode = resource.get("properties").get("storageProfile");
+                ((ObjectNode) storageProfileNode).set("dataDisks", diskNodes);
+                return;
             }
         }
     }

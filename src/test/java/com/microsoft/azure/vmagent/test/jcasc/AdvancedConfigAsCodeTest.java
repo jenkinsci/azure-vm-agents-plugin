@@ -4,6 +4,7 @@ import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
+import com.microsoft.azure.vmagent.DataDiskEntry;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import hudson.model.Node;
 import io.jenkins.plugins.casc.ConfigurationContext;
@@ -15,6 +16,7 @@ import io.jenkins.plugins.casc.model.CNode;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -77,6 +79,14 @@ class AdvancedConfigAsCodeTest {
         assertThat(template.getNoOfParallelJobs(), is(1));
         assertThat(template.getOsDiskSize(), is(40));
         assertThat(template.getOsType(), is("Linux"));
+
+        List<DataDiskEntry> dataDisks = template.getDataDisks();
+        assertThat(dataDisks.size(), is(1));
+        
+        DataDiskEntry dataDisk = dataDisks.get(0);
+        assertThat(dataDisk.getDiskSize(), is(10));
+        assertThat(dataDisk.getDiskCache(), is("ReadWrite"));
+        assertThat(dataDisk.getStorageAccountType(), is("Premium_LRS"));
 
         AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(40L));
