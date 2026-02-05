@@ -17,7 +17,7 @@ import org.kohsuke.stapler.QueryParameter;
 import java.io.Serializable;
 
 public class DataDiskEntry implements Describable<DataDiskEntry>, Serializable {
-    
+
     private static final long serialVersionUID = -9077525603499087689L;
 
     private final int diskSize;
