@@ -14,7 +14,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class DataDiskEntry implements Describable<DataDiskEntry> {
+import java.io.Serializable;
+
+public class DataDiskEntry implements Describable<DataDiskEntry>, Serializable {
+    
+    private static final long serialVersionUID = -9077525603499087689L;
+
     private final int diskSize;
     private final String diskCache;
     private final String storageAccountType;
