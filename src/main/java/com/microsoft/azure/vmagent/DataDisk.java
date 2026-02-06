@@ -13,6 +13,7 @@ import hudson.util.ListBoxModel;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 import java.io.Serializable;
 
@@ -68,9 +69,12 @@ public class DataDisk implements Describable<DataDisk>, Serializable {
             model.add(DiskSkuTypes.STANDARD_LRS.toString());
             model.add(DiskSkuTypes.STANDARD_SSD_LRS.toString());
             model.add(DiskSkuTypes.PREMIUM_LRS.toString());
+            model.add(DiskSkuTypes.PREMIUM_V2_LRS.toString());
+            model.add(DiskSkuTypes.ULTRA_SSD_LRS.toString());
             return model;
         }
 
+        @POST
         public FormValidation doCheckDiskSize(@QueryParameter String value) {
             try {
                 int diskSize = Integer.parseInt(value);
@@ -80,6 +84,25 @@ public class DataDisk implements Describable<DataDisk>, Serializable {
             } catch (NumberFormatException e) {
                 return FormValidation.error("Disk size must be a valid integer");
             }
+            return FormValidation.ok();
+        }
+
+        @POST
+        public FormValidation doCheckStorageAccountType(
+                @QueryParameter String value,
+                @QueryParameter String diskCache) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.ok();
+            }
+
+            boolean isPremiumV2 = DiskSkuTypes.PREMIUM_V2_LRS.toString().equals(value);
+            boolean isUltraSSD = DiskSkuTypes.ULTRA_SSD_LRS.toString().equals(value);
+            if ((isPremiumV2 || isUltraSSD) && !StringUtils.isBlank(diskCache)
+                    && !CachingTypes.NONE.toString().equals(diskCache)) {
+                return FormValidation.error("Disk caching is not supported for the selected storage account type."
+                        + " Please select 'None' for Disk Cache.");
+            }
+
             return FormValidation.ok();
         }
     }
