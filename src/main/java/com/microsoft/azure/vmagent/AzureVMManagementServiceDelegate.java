@@ -254,7 +254,6 @@ public final class AzureVMManagementServiceDelegate {
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
 
             final int osDiskSize = template.getOsDiskSize();
-            final List<DataDisk> dataDisks = template.getDataDisks();
 
             if (
                     Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(template.getResourceGroupReferenceType()) &&
@@ -742,7 +741,7 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (useManagedDisk) {
-                addManagedDataDisks(tmp, dataDisks);
+                addManagedDataDisks(tmp, template.getDataDisks());
             }
 
             final ObjectNode parameters = MAPPER.createObjectNode();

@@ -109,11 +109,7 @@
     <f:entry title="${%Data_Disks}" field="dataDisks">
       <f:repeatableProperty field="dataDisks" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
         <l:isAdmin>
-          <f:block>
-            <div align="right">
-              <f:repeatableDeleteButton/>
-            </div>
-          </f:block>
+          <f:repeatableDeleteButton/>
         </l:isAdmin>
       </f:repeatableProperty>
     </f:entry>
