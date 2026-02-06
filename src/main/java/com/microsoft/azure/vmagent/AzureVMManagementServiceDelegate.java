@@ -254,7 +254,7 @@ public final class AzureVMManagementServiceDelegate {
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
 
             final int osDiskSize = template.getOsDiskSize();
-            final List<DataDiskEntry> dataDisks = template.getDataDisks();
+            final List<DataDisk> dataDisks = template.getDataDisks();
 
             if (
                     Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(template.getResourceGroupReferenceType()) &&
@@ -919,14 +919,14 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private void addManagedDataDisks(JsonNode template, List<DataDiskEntry> dataDisks) {
+    private void addManagedDataDisks(JsonNode template, List<DataDisk> dataDisks) {
         if (dataDisks == null || dataDisks.isEmpty()) {
             return;
         }
 
         ArrayNode diskNodes = MAPPER.createArrayNode();
         for (int i = 0; i < dataDisks.size(); i++) {
-            DataDiskEntry dataDisk = dataDisks.get(i);
+            DataDisk dataDisk = dataDisks.get(i);
             ObjectNode diskNode = MAPPER.createObjectNode();
             diskNode.put("name", String.format("[concat(variables('vmName'), copyIndex(), '_DataDisk%d')]", i + 1));
             diskNode.put("caching", dataDisk.getDiskCache());

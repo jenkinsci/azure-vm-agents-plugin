@@ -4,7 +4,7 @@ import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
-import com.microsoft.azure.vmagent.DataDiskEntry;
+import com.microsoft.azure.vmagent.DataDisk;
 import com.microsoft.azure.vmagent.launcher.AzureSSHLauncher;
 import hudson.model.Node;
 import io.jenkins.plugins.casc.ConfigurationContext;
@@ -80,10 +80,10 @@ class AdvancedConfigAsCodeTest {
         assertThat(template.getOsDiskSize(), is(40));
         assertThat(template.getOsType(), is("Linux"));
 
-        List<DataDiskEntry> dataDisks = template.getDataDisks();
+        List<DataDisk> dataDisks = template.getDataDisks();
         assertThat(dataDisks.size(), is(1));
         
-        DataDiskEntry dataDisk = dataDisks.get(0);
+        DataDisk dataDisk = dataDisks.get(0);
         assertThat(dataDisk.getDiskSize(), is(10));
         assertThat(dataDisk.getDiskCache(), is("ReadWrite"));
         assertThat(dataDisk.getStorageAccountType(), is("Premium_LRS"));

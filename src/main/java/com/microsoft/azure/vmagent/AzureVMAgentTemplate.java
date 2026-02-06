@@ -291,7 +291,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String osDiskStorageAccountType;
 
-    private List<DataDiskEntry> dataDisks;
+    private List<DataDisk> dataDisks;
 
     private final int noOfParallelJobs;
 
@@ -942,12 +942,12 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.osDiskStorageAccountType = osDiskStorageAccountType;
     }
 
-    public List<DataDiskEntry> getDataDisks() {
+    public List<DataDisk> getDataDisks() {
         return this.dataDisks;
     }
 
     @DataBoundSetter
-    public void setDataDisks(List<DataDiskEntry> dataDisks) {
+    public void setDataDisks(List<DataDisk> dataDisks) {
         this.dataDisks = dataDisks;
     }
 

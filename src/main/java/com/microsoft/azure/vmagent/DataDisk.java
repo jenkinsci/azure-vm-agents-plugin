@@ -16,7 +16,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import java.io.Serializable;
 
-public class DataDiskEntry implements Describable<DataDiskEntry>, Serializable {
+public class DataDisk implements Describable<DataDisk>, Serializable {
 
     private static final long serialVersionUID = -9077525603499087689L;
 
@@ -25,7 +25,7 @@ public class DataDiskEntry implements Describable<DataDiskEntry>, Serializable {
     private final String storageAccountType;
 
     @DataBoundConstructor
-    public DataDiskEntry(int diskSize, String diskCache, String storageAccountType) {
+    public DataDisk(int diskSize, String diskCache, String storageAccountType) {
         this.diskSize = diskSize;
         this.diskCache = diskCache;
         this.storageAccountType = storageAccountType;
@@ -44,7 +44,7 @@ public class DataDiskEntry implements Describable<DataDiskEntry>, Serializable {
     }
 
     @Extension
-    public static class DescriptorImpl extends Descriptor<DataDiskEntry> {
+    public static class DescriptorImpl extends Descriptor<DataDisk> {
 
         @Override
         public String getDisplayName() {
