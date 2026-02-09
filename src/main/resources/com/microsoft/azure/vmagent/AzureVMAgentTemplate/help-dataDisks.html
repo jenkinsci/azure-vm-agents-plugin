@@ -8,21 +8,30 @@
   <ol>
     <li>
       <b>On Ubuntu:</b>
-      <p>For NVME disks:</p>
-<pre><code>parted /dev/nvme0n2 --script mklabel gpt mkpart xfspart xfs 0% 100%
-partprobe /dev/nvme0n2
-mkfs.xfs /dev/nvme0n2p1
+<pre><code>for disk in $(lsblk -d -n -o NAME,TYPE | awk '$2 == "disk" {print $1}'); do
+  # Determine partition suffix: 'p1' for NVMe, '1' for others
+  case "$disk" in
+    nvme*) part="${disk}p1" ;;
+    *)     part="${disk}1" ;;
+  esac
 
-mkdir /datadrive
-mount /dev/nvme0n2p1 /datadrive
-</code></pre>
-      <p>For SCSI disks:</p>
-<pre><code>parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
-partprobe /dev/sdc
-mkfs.xfs /dev/sdc1
+  # Skip disks that already have a filesystem/partition
+  if ! blkid "/dev/$disk" >/dev/null 2>&1 && \
+     ! blkid "/dev/$part" >/dev/null 2>&1; then
 
-mkdir /datadrive
-mount /dev/sdc1 /datadrive
+    parted /dev/$disk --script mklabel gpt mkpart xfspart ext4 0% 100%
+    partprobe /dev/$disk
+
+    sleep 5
+
+    mkfs.ext4 "/dev/$part"
+
+    mkdir -p /datadisk
+    mount "/dev/$part" /datadisk
+
+    break
+  fi
+done
 </code></pre>
       </p>
     </li>

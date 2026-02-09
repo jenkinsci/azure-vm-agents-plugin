@@ -70,7 +70,6 @@ public class DataDisk implements Describable<DataDisk>, Serializable {
             model.add(DiskSkuTypes.STANDARD_SSD_LRS.toString());
             model.add(DiskSkuTypes.PREMIUM_LRS.toString());
             model.add(DiskSkuTypes.PREMIUM_V2_LRS.toString());
-            model.add(DiskSkuTypes.ULTRA_SSD_LRS.toString());
             return model;
         }
 
@@ -95,10 +94,8 @@ public class DataDisk implements Describable<DataDisk>, Serializable {
                 return FormValidation.ok();
             }
 
-            boolean isPremiumV2 = DiskSkuTypes.PREMIUM_V2_LRS.toString().equals(value);
-            boolean isUltraSSD = DiskSkuTypes.ULTRA_SSD_LRS.toString().equals(value);
-            if ((isPremiumV2 || isUltraSSD) && !StringUtils.isBlank(diskCache)
-                    && !CachingTypes.NONE.toString().equals(diskCache)) {
+            if (DiskSkuTypes.PREMIUM_V2_LRS.toString().equalsIgnoreCase(value) && !StringUtils.isBlank(diskCache)
+                    && !CachingTypes.NONE.toString().equalsIgnoreCase(diskCache)) {
                 return FormValidation.error("Disk caching is not supported for the selected storage account type."
                         + " Please select 'None' for Disk Cache.");
             }
