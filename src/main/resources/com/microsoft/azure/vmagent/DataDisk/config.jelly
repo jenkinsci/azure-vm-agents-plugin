@@ -1,0 +1,17 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:c="/lib/credentials"
+         xmlns:f="/lib/form" xmlns:l="/lib/layout">
+
+  <f:entry title="${%Disk_Size}" field="diskSize">
+    <f:number default="32" min="1" />
+  </f:entry>
+
+  <f:entry title="${%Disk_Cache}" field="diskCache">
+    <f:select/>
+  </f:entry>
+
+  <f:entry title="${%Storage_Account_Type}" field="storageAccountType">
+    <f:select/>
+  </f:entry>
+
+</j:jelly>

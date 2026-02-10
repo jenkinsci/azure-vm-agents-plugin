@@ -15,6 +15,10 @@
           name: "vm-agents"
       builtInImage: "Windows Server 2016"
       credentialsId: "admin-cred"
+      dataDisks:
+      - diskCache: "ReadWrite"
+        diskSize: 10
+        storageAccountType: "Premium_LRS"
       disableWindowsUpdates: true
       diskType: "managed"
       doNotUseMachineIfInitFails: true

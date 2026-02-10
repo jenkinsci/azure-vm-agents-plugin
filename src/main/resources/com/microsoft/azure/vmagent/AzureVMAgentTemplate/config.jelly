@@ -106,6 +106,14 @@
       <f:textbox/>
     </f:entry>
 
+    <f:entry title="${%Data_Disks}" field="dataDisks">
+      <f:repeatableProperty field="dataDisks" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
+        <l:isAdmin>
+          <f:repeatableDeleteButton/>
+        </l:isAdmin>
+      </f:repeatableProperty>
+    </f:entry>
+
     <f:entry title="${%Enable_Encryption_At_Host}" field="encryptionAtHost">
       <f:checkbox/>
     </f:entry>

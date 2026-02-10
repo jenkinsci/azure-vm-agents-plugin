@@ -1,0 +1,48 @@
+<div>
+  <p><b>Note: This feature is only available when using managed disks.</b></p>
+  <p>
+    Data disks provide additional storage capacity for Azure virtual machines and multiple data disks can be attached to
+    a single VM.
+    Before they can be used, newly added data disks must be initialized and formatted.
+    The examples below demonstrate how to initialize and format the first data disk attached to the VM.
+  <ol>
+    <li>
+      <b>On Ubuntu:</b>
+<pre><code>for disk in $(lsblk -d -n -o NAME,TYPE | awk '$2 == "disk" {print $1}'); do
+  # Determine partition suffix: 'p1' for NVMe, '1' for others
+  case "$disk" in
+    nvme*) part="${disk}p1" ;;
+    *)     part="${disk}1" ;;
+  esac
+
+  # Skip disks that already have a filesystem/partition
+  if ! blkid "/dev/$disk" >/dev/null 2>&1 && \
+     ! blkid "/dev/$part" >/dev/null 2>&1; then
+
+    parted /dev/$disk --script mklabel gpt mkpart xfspart ext4 0% 100%
+    partprobe /dev/$disk
+
+    sleep 5
+
+    mkfs.ext4 "/dev/$part"
+
+    mkdir -p /datadisk
+    mount "/dev/$part" /datadisk
+
+    break
+  fi
+done
+</code></pre>
+      </p>
+    </li>
+    <li>
+      <b>On Windows:</b>
+<pre><code>$disk = Get-Disk | Where-Object partitionstyle -eq 'raw' | Select-Object -First 1
+$disk | Initialize-Disk -PartitionStyle MBR -PassThru | `
+  New-Partition -UseMaximumSize -DriveLetter E | `
+  Format-Volume -FileSystem NTFS -NewFileSystemLabel 'Data' -Confirm:$false -Force
+</code></pre>
+    </li>
+  </ol>
+  </p>
+</div>

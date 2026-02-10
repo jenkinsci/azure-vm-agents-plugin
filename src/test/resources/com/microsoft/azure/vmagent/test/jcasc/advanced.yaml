@@ -18,6 +18,10 @@ jenkins:
                 name: "vm-agents"
             builtInImage: "Windows Server 2016"
             credentialsId: "admin-cred"
+            dataDisks:
+              - diskSize: 10
+                diskCache: "ReadWrite"
+                storageAccountType: "Premium_LRS"
             disableWindowsUpdates: true
             diskType: "managed"
             doNotUseMachineIfInitFails: true
