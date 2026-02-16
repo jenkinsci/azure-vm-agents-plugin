@@ -58,6 +58,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private List<AzureTagPair> cloudTags;
 
+    private Integer maxVirtualMachinesLimit;
+
     public AzureVMTemplateFluent() {
         location = "Japan West";
         virtualMachineSize = "Standard_A0";
@@ -213,6 +215,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         this.credentialsId = credentialsId;
         return (T) this;
     }
+
+    public T withMaxVirtualMachinesLimit(Integer maxVirtualMachinesLimit) {
+        this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+        return (T) this;
+    }
     //CHECKSTYLE:ON
 
     public String getName() {
@@ -305,6 +312,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     List<AzureTagPair> getCloudTags() {
         return new ArrayList<>(cloudTags);
+    }
+
+    public Integer getMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit;
     }
 
     public class BuiltInImageNested extends BuiltInImageFluent<BuiltInImageNested> {
