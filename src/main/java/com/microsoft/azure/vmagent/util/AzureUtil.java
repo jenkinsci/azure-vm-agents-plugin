@@ -1,18 +1,18 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent.util;
 
 import com.azure.core.http.rest.PagedIterable;
@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Date;
 import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
-
 import org.apache.commons.lang3.StringUtils;
 
 public final class AzureUtil {
@@ -48,7 +47,6 @@ public final class AzureUtil {
     public static final String VAL_LOWER_CASE_REGEX = "(?=.*[a-z]).{1,}";
 
     public static final String VAL_UPPER_CASE_REGEX = "(?=.*[A-Z]).{1,}";
-
 
     public static final String VAL_SPECIAL_CHAR_REGEX =
             "(?=.*[@#\\$%\\^&\\*-_!+=\\[\\]{}|\\\\:`,\\.\\?/~\"\\(\\);\']).{1,}";
@@ -78,8 +76,7 @@ public final class AzureUtil {
         final int byteHigherHalfMask = 0xF0;
         final int byteLowerHalfMask = 0x0F;
         final int byteHalfLength = 4;
-        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                'a', 'b', 'c', 'd', 'e', 'f'};
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
         StringBuffer buf = new StringBuffer(bytes.length * 2);
         for (int i = 0; i < bytes.length; ++i) {
             buf.append(hexDigits[(bytes[i] & byteHigherHalfMask) >> byteHalfLength]);
@@ -102,7 +99,7 @@ public final class AzureUtil {
         return true;
     }
 
-    //** Validates in given input is number or not */
+    // ** Validates in given input is number or not */
     public static boolean validateNumberFormat(String value) {
         return !value.matches(NOT_A_NUMBER_FORMAT);
     }
@@ -151,12 +148,12 @@ public final class AzureUtil {
             matchCount++;
         }
 
-        //check if lowercase is present'
+        // check if lowercase is present'
         if (value.matches(VAL_LOWER_CASE_REGEX)) {
             matchCount++;
         }
 
-        //check if uppercase is present'
+        // check if uppercase is present'
         if (value.matches(VAL_UPPER_CASE_REGEX)) {
             matchCount++;
         }
@@ -198,7 +195,6 @@ public final class AzureUtil {
         } catch (Exception e) {
             throw new IllegalArgumentException("Not a valid number");
         }
-
     }
 
     // consider zero has positive integer
@@ -218,7 +214,6 @@ public final class AzureUtil {
         } catch (Exception e) {
             throw new IllegalArgumentException("Not a valid number");
         }
-
     }
 
     public static boolean isValidJvmOption(String value) {
@@ -250,8 +245,9 @@ public final class AzureUtil {
             return false;
         }
 
-        return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && (errorMessage.contains(
-                Constants.ERROR_CODE_BAD_REQUEST) || errorMessage.contains(Constants.ERROR_CODE_FORBIDDEN));
+        return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION)
+                && (errorMessage.contains(Constants.ERROR_CODE_BAD_REQUEST)
+                        || errorMessage.contains(Constants.ERROR_CODE_FORBIDDEN));
     }
 
     public static boolean isDeploymentNotFound(String errorMessage, String deploymentName) {
@@ -259,9 +255,9 @@ public final class AzureUtil {
             return false;
         }
 
-        return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION) && errorMessage.contains(
-                Constants.ERROR_CODE_RESOURCE_NF) && errorMessage.contains("The deployment name '" + deploymentName
-                + "' does not exist");
+        return errorMessage.contains(Constants.ERROR_CODE_SERVICE_EXCEPTION)
+                && errorMessage.contains(Constants.ERROR_CODE_RESOURCE_NF)
+                && errorMessage.contains("The deployment name '" + deploymentName + "' does not exist");
     }
 
     public static boolean isDeploymentAlreadyOccupied(String errorMessage) {
@@ -357,8 +353,13 @@ public final class AzureUtil {
         }
 
         Format formatter = new SimpleDateFormat(Constants.DEPLOYMENT_NAME_DATE_FORMAT);
-        return String.format("%s%s", getShortenedTemplateName(templateName, Constants.USAGE_TYPE_DEPLOYMENT,
-                Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(), 0),
+        return String.format(
+                "%s%s",
+                getShortenedTemplateName(
+                        templateName,
+                        Constants.USAGE_TYPE_DEPLOYMENT,
+                        Constants.DEPLOYMENT_NAME_DATE_FORMAT.length(),
+                        0),
                 formatter.format(timestamp));
     }
 
@@ -388,11 +389,12 @@ public final class AzureUtil {
         if (deploymentHashString.length() <= Constants.VM_NAME_HASH_LENGTH - 1) {
             shortenedDeploymentHash = deploymentHashString;
         } else {
-            shortenedDeploymentHash = deploymentHashString
-                        .substring(deploymentHashString.length() - (Constants.VM_NAME_HASH_LENGTH - 1));
+            shortenedDeploymentHash =
+                    deploymentHashString.substring(deploymentHashString.length() - (Constants.VM_NAME_HASH_LENGTH - 1));
         }
-        return String.format("%s%s", getShortenedTemplateName(templateName, osType,
-                Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
+        return String.format(
+                "%s%s",
+                getShortenedTemplateName(templateName, osType, Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
                 shortenedDeploymentHash);
     }
 
@@ -400,10 +402,7 @@ public final class AzureUtil {
         // Grab the pass
         StandardUsernameCredentials creds = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(
-                        StandardUsernameCredentials.class,
-                        Jenkins.getInstance(),
-                        ACL.SYSTEM,
-                        Collections.emptyList()),
+                        StandardUsernameCredentials.class, Jenkins.getInstance(), ACL.SYSTEM, Collections.emptyList()),
                 CredentialsMatchers.withId(credentialsId));
 
         if (creds == null) {
@@ -433,7 +432,8 @@ public final class AzureUtil {
      * @return true if it is valid else return false
      */
     public static boolean isValidTimeOut(String deploymentTimeout) {
-        if ((StringUtils.isBlank(deploymentTimeout) || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)
+        if ((StringUtils.isBlank(deploymentTimeout)
+                || !deploymentTimeout.matches(Constants.REG_EX_DIGIT)
                 || Integer.parseInt(deploymentTimeout) < Constants.DEFAULT_DEPLOYMENT_TIMEOUT_SEC)) {
             return false;
         }
@@ -455,7 +455,8 @@ public final class AzureUtil {
         if (defaultClient == null) {
             return false;
         }
-        PagedIterable<Subscription> subscriptions = defaultClient.subscriptions().list();
+        PagedIterable<Subscription> subscriptions =
+                defaultClient.subscriptions().list();
         boolean isSubscriptionIdValid = false;
         for (Subscription subscription : subscriptions) {
             if (subscription.subscriptionId().equals(subscriptionId)) {

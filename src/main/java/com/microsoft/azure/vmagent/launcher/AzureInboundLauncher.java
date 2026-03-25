@@ -12,8 +12,7 @@ public class AzureInboundLauncher extends AzureComputerLauncher {
     private static final long serialVersionUID = 6562610892063268131L;
 
     @DataBoundConstructor
-    public AzureInboundLauncher() {
-    }
+    public AzureInboundLauncher() {}
 
     @Override
     public String toString() {

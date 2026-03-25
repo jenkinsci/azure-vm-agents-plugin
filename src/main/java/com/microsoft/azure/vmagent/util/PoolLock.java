@@ -1,7 +1,6 @@
 package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,5 @@ public final class PoolLock {
         return templateProvisionLock.containsKey(template);
     }
 
-    private PoolLock() {
-
-    }
+    private PoolLock() {}
 }

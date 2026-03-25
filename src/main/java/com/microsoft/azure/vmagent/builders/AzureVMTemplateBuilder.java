@@ -107,7 +107,8 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getUsageMode(),
                 fluent.getAdvancedImage().getOsType(),
                 fluent.getImageTopLevelType(),
-                new AzureVMAgentTemplate.ImageReferenceTypeClass(fluent.getAdvancedImage().getImage(),
+                new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                        fluent.getAdvancedImage().getImage(),
                         fluent.getAdvancedImage().getImageId(),
                         fluent.getAdvancedImage().getImagePublisher(),
                         fluent.getAdvancedImage().getImageOffer(),
@@ -130,8 +131,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
                 fluent.getAdvancedImage().getJvmOptions(),
                 fluent.getRetentionStrategy(),
                 fluent.getAdvancedImage().isExecuteInitScriptAsRoot(),
-                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails()
-                );
+                fluent.getAdvancedImage().isDoNotUseMachineIfInitFails());
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
         azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());
@@ -146,8 +146,9 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
-        azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(
-            fluent.getAdvancedImage().getGalleryImageSpecialized());
+        azureVMAgentTemplate
+                .getImageReference()
+                .setGalleryImageSpecialized(fluent.getAdvancedImage().getGalleryImageSpecialized());
         return azureVMAgentTemplate;
     }
 }

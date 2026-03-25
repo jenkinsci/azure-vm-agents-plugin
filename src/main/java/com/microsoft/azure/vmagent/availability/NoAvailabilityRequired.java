@@ -10,8 +10,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class NoAvailabilityRequired extends AzureAvailabilityType {
 
     @DataBoundConstructor
-    public NoAvailabilityRequired() {
-    }
+    public NoAvailabilityRequired() {}
 
     @Extension
     @Symbol("none")

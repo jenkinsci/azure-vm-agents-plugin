@@ -1,6 +1,5 @@
 package com.microsoft.azure.vmagent.builders;
 
-
 import com.microsoft.azure.vmagent.ImageReferenceType;
 
 public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuilder> {
@@ -18,10 +17,8 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         } else if (ImageReferenceType.CUSTOM_IMAGE.getName().equals(image.getImageReferenceType())) {
             fluent.withCustomManagedImage(image.getImageId());
         } else {
-            fluent.withReferenceImage(image.getImagePublisher(),
-                    image.getImageOffer(),
-                    image.getImageSku(),
-                    image.getImageVersion());
+            fluent.withReferenceImage(
+                    image.getImagePublisher(), image.getImageOffer(), image.getImageSku(), image.getImageVersion());
         }
         fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
         fluent.withOsType(image.getOsType());
@@ -39,7 +36,6 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withDisableTemplate(image.isTemplateDisabled());
         fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
         fluent.withDoNotUseMachineIfInitFails(image.isDoNotUseMachineIfInitFails());
-
     }
 
     public AdvancedImageBuilder() {
@@ -53,10 +49,8 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         } else if (ImageReferenceType.CUSTOM_IMAGE.getName().equals(image.getImageReferenceType())) {
             fluent.withCustomManagedImage(image.getImageId());
         } else {
-            fluent.withReferenceImage(image.getImagePublisher(),
-                    image.getImageOffer(),
-                    image.getImageSku(),
-                    image.getImageVersion());
+            fluent.withReferenceImage(
+                    image.getImagePublisher(), image.getImageOffer(), image.getImageSku(), image.getImageVersion());
         }
         fluent.withNumberOfExecutors(String.valueOf(image.getNoOfParallelJobs()));
         fluent.withOsType(image.getOsType());
@@ -77,7 +71,8 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
     }
 
     public AdvancedImage build() {
-        return new AdvancedImage(fluent.getImageReferenceType(),
+        return new AdvancedImage(
+                fluent.getImageReferenceType(),
                 fluent.getImage(),
                 fluent.getOsType(),
                 fluent.getImageId(),

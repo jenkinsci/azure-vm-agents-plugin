@@ -6,11 +6,10 @@ import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
 import hudson.model.TaskListener;
 import hudson.slaves.Cloud;
-import jenkins.model.Jenkins;
-
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 
 @Extension
 public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
@@ -35,23 +34,22 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
                 (AzureVMCloudPoolRetentionStrategy) template.getRetentionStrategy();
 
         // Calculate current metrics using the utility class
-        DynamicBufferCalculator.BufferMetrics metrics =
-                DynamicBufferCalculator.calculateBufferMetrics(template);
+        DynamicBufferCalculator.BufferMetrics metrics = DynamicBufferCalculator.calculateBufferMetrics(template);
 
         // Calculate the effective pool size (static or dynamic based on configuration)
-        final int effectivePoolSize = retentionStrategy.calculateEffectivePoolSize(
-                metrics.busyMachines(),
-                metrics.queuedItems());
+        final int effectivePoolSize =
+                retentionStrategy.calculateEffectivePoolSize(metrics.busyMachines(), metrics.queuedItems());
 
-        LOGGER.log(getNormalLoggingLevel(),
+        LOGGER.log(
+                getNormalLoggingLevel(),
                 "Template {0}: busy={1}, idle={2}, total={3}, queued={4}, effectivePoolSize={5}",
-                new Object[]{
-                        template.getTemplateName(),
-                        metrics.busyMachines(),
-                        metrics.idleMachines(),
-                        metrics.totalMachines(),
-                        metrics.queuedItems(),
-                        effectivePoolSize
+                new Object[] {
+                    template.getTemplateName(),
+                    metrics.busyMachines(),
+                    metrics.idleMachines(),
+                    metrics.totalMachines(),
+                    metrics.queuedItems(),
+                    effectivePoolSize
                 });
 
         int currentSize = metrics.totalMachines();
@@ -62,8 +60,9 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
             if (template.getMaximumDeploymentSize() > 0 && deploymentSize > template.getMaximumDeploymentSize()) {
                 deploymentSize = template.getMaximumDeploymentSize();
             }
-            LOGGER.log(getNormalLoggingLevel(), "Prepare for provisioning {0} agents for template {1}",
-                    new Object[]{deploymentSize, template.getTemplateName()});
+            LOGGER.log(getNormalLoggingLevel(), "Prepare for provisioning {0} agents for template {1}", new Object[] {
+                deploymentSize, template.getTemplateName()
+            });
             provisionNodes(cloud, template, deploymentSize);
         }
     }
@@ -73,15 +72,11 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
             AzureVMCloudVerificationTask.verify(cloud.getCloudName(), template.getTemplateName());
         }
         if (template.retrieveTemplateProvisionStrategy().isVerifiedPass()) {
-            cloud.doProvision(newAgents,
-                    new ArrayList<>(),
-                    template,
-                    true
-                    );
+            cloud.doProvision(newAgents, new ArrayList<>(), template, true);
             AzureVMCloud.scheduleQueueMaintenance();
         } else {
-            LOGGER.log(Level.WARNING, "Template {0} failed to verify, cannot be provisioned",
-                    template.getTemplateName());
+            LOGGER.log(
+                    Level.WARNING, "Template {0} failed to verify, cannot be provisioned", template.getTemplateName());
         }
     }
 

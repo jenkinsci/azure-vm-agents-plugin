@@ -1,5 +1,14 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
+import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
+import static io.jenkins.plugins.casc.misc.Util.toYamlString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -13,18 +22,9 @@ import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
-import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
-import static io.jenkins.plugins.casc.misc.Util.toYamlString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 @WithJenkinsConfiguredWithCode
 class BasicConfigAsCodeTest {
@@ -76,7 +76,8 @@ class BasicConfigAsCodeTest {
         assertThat(template.getOsDiskSize(), is(0));
         assertThat(template.getOsType(), is("Linux"));
 
-        AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
+        AzureVMCloudRetensionStrategy retentionStrategy =
+                (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(60L));
 
         assertThat(template.isShutdownOnIdle(), is(false));
@@ -93,10 +94,10 @@ class BasicConfigAsCodeTest {
         assertThat(template.getVirtualMachineSize(), is("Standard_DS2_v2"));
 
         assertNotNull(template.getNodeProperties());
-        EnvironmentVariablesNodeProperty property = template.getNodeProperties().get(EnvironmentVariablesNodeProperty.class);
+        EnvironmentVariablesNodeProperty property =
+                template.getNodeProperties().get(EnvironmentVariablesNodeProperty.class);
         assertNotNull(property, "The EnvironmentVariablesNodeProperty should not be null");
         assertTrue(property.getEnvVars().containsKey("FOO"), "The environment variable FOO should exist");
-
     }
 
     @Test
@@ -108,8 +109,8 @@ class BasicConfigAsCodeTest {
 
         String exportedCloud = toYamlString(cloud);
 
-        String expectedYaml = new String(Files.readAllBytes(Paths.get(getClass()
-                .getResource("expectedBasic.yaml").toURI())));
+        String expectedYaml = new String(Files.readAllBytes(
+                Paths.get(getClass().getResource("expectedBasic.yaml").toURI())));
 
         assertThat(exportedCloud, is(expectedYaml));
     }

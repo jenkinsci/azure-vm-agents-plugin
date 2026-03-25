@@ -2,11 +2,10 @@ package com.microsoft.azure.vmagent.builders;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 public class AzureVMCloudBuilder {
 
@@ -46,7 +45,7 @@ public class AzureVMCloudBuilder {
         vmTemplates.addAll(cloud.getVmTemplates());
     }
 
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     public AzureVMCloudBuilder withCloudName(String cloudName) {
         this.cloudName = cloudName;
         return this;
@@ -102,10 +101,11 @@ public class AzureVMCloudBuilder {
     public AzureVMTemplateNested addNewTemplateLike(AzureVMAgentTemplate template) {
         return new AzureVMTemplateNested(template);
     }
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
 
     public AzureVMCloud build() {
-        return new AzureVMCloud(StringUtils.defaultString(cloudName),
+        return new AzureVMCloud(
+                StringUtils.defaultString(cloudName),
                 StringUtils.defaultString(azureCredentialsId),
                 maxVirtualMachinesLimit,
                 deploymentTimeout,

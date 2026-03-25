@@ -11,11 +11,10 @@ import hudson.model.ExecutorListener;
 import hudson.model.Queue;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.RetentionStrategy;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetentionStrategy implements ExecutorListener {
     private static final Logger LOGGER = Logger.getLogger(AzureVMManagementServiceDelegate.class.getName());
@@ -24,9 +23,7 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
     private static final transient long LAPSE = TimeUnit.SECONDS.toMillis(5);
 
     @DataBoundConstructor
-    public AzureVMCloudOnceRetentionStrategy() {
-
-    }
+    public AzureVMCloudOnceRetentionStrategy() {}
 
     @Override
     public long check(final AzureVMComputer agentComputer) {
@@ -43,16 +40,13 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
 
     @Override
     public void start(AzureVMComputer azureComputer) {
-        LOGGER.log(Level.FINE, "Starting azureComputer name {0}",
-                azureComputer.getDisplayName());
+        LOGGER.log(Level.FINE, "Starting azureComputer name {0}", azureComputer.getDisplayName());
         azureComputer.connect(false);
         resetShutdownVMStatus(azureComputer.getNode());
     }
 
     @Override
-    public void taskAccepted(Executor executor, Queue.Task task) {
-
-    }
+    public void taskAccepted(Executor executor, Queue.Task task) {}
 
     @Override
     public void taskCompleted(Executor executor, Queue.Task task, long durationMS) {
@@ -80,8 +74,7 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
 
         computer.setAcceptingTasks(false);
         if (agent.isShutdownOnIdle()) {
-            LOGGER.log(Level.FINE, "Tagging VM to shutdown when idle: {0}",
-                    computer.getName());
+            LOGGER.log(Level.FINE, "Tagging VM to shutdown when idle: {0}", computer.getName());
             agent.setCleanUpAction(CleanUpAction.SHUTDOWN, Messages._Build_Action_Shutdown_Agent());
         } else {
             LOGGER.log(Level.FINE, "Tagging VM to delete when idle: {0}", computer.getName());
@@ -98,7 +91,8 @@ public class AzureVMCloudOnceRetentionStrategy extends AzureVMCloudBaseRetention
     public static final DescriptorImpl DESCRIPTOR = new AzureVMCloudOnceRetentionStrategy.DescriptorImpl();
 
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override @NonNull
+        @Override
+        @NonNull
         public String getDisplayName() {
             return "Azure VM Once Retention Strategy";
         }

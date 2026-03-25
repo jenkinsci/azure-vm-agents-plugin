@@ -1,9 +1,8 @@
 package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 
 public final class TemplateUtil {
 
@@ -12,8 +11,7 @@ public final class TemplateUtil {
                 && StringUtils.equals(a.getLabels(), b.getLabels())
                 && StringUtils.equals(a.getAgentWorkspace(), b.getAgentWorkspace())
                 && StringUtils.equals(a.getLocation(), b.getLocation())
-                && Objects.equals(a.getAvailabilityType(),
-                b.getAvailabilityType())
+                && Objects.equals(a.getAvailabilityType(), b.getAvailabilityType())
                 && StringUtils.equals(a.getVirtualMachineSize(), b.getVirtualMachineSize())
                 && StringUtils.equals(a.getStorageAccountType(), b.getStorageAccountType())
                 && StringUtils.equals(a.getStorageAccountNameReferenceType(), b.getStorageAccountNameReferenceType())
@@ -29,16 +27,21 @@ public final class TemplateUtil {
                 && a.isInstallMaven() == b.isInstallMaven()
                 && a.isInstallQemu() == b.isInstallQemu()
                 && a.getImageReference().getType() == b.getImageReference().getType()
-                && StringUtils.equals(a.getImageReference().getUri(), b.getImageReference().getUri())
+                && StringUtils.equals(
+                        a.getImageReference().getUri(), b.getImageReference().getUri())
                 && StringUtils.equals(a.getOsType(), b.getOsType())
-                && StringUtils.equals(a.getImageReference().getId(), b.getImageReference().getId())
-                && StringUtils.equals(a.getImageReference().getPublisher(),
-                b.getImageReference().getPublisher())
-                && StringUtils.equals(a.getImageReference().getOffer(),
-                b.getImageReference().getOffer())
-                && StringUtils.equals(a.getImageReference().getSku(), b.getImageReference().getSku())
-                && StringUtils.equals(a.getImageReference().getVersion(),
-                b.getImageReference().getVersion())
+                && StringUtils.equals(
+                        a.getImageReference().getId(), b.getImageReference().getId())
+                && StringUtils.equals(
+                        a.getImageReference().getPublisher(),
+                        b.getImageReference().getPublisher())
+                && StringUtils.equals(
+                        a.getImageReference().getOffer(), b.getImageReference().getOffer())
+                && StringUtils.equals(
+                        a.getImageReference().getSku(), b.getImageReference().getSku())
+                && StringUtils.equals(
+                        a.getImageReference().getVersion(),
+                        b.getImageReference().getVersion())
                 && a.getLauncher().equals(b.getLauncher())
                 && StringUtils.equals(a.getInitScript(), b.getInitScript())
                 && StringUtils.equals(a.getTerminateScript(), b.getTerminateScript())
@@ -59,7 +62,5 @@ public final class TemplateUtil {
         return false;
     }
 
-    private TemplateUtil() {
-
-    }
+    private TemplateUtil() {}
 }

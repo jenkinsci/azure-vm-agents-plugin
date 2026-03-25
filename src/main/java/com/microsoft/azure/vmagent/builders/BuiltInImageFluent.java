@@ -21,7 +21,7 @@ public class BuiltInImageFluent<T extends BuiltInImageFluent<T>> {
         isInstallQemu = false;
     }
 
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     public T withBuiltInImageName(String builtInImage) {
         this.builtInImage = builtInImage;
         return (T) this;
@@ -46,7 +46,7 @@ public class BuiltInImageFluent<T extends BuiltInImageFluent<T>> {
         this.isInstallQemu = installQemu;
         return (T) this;
     }
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
 
     public String getBuiltInImage() {
         return builtInImage;

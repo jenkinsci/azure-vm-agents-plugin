@@ -1,18 +1,18 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent.util;
 
 import com.microsoft.azure.vmagent.AzureVMAgent;
@@ -21,10 +21,9 @@ import com.microsoft.azure.vmagent.AzureVMComputer;
 import hudson.model.Computer;
 import hudson.model.Label;
 import hudson.model.Queue;
-import jenkins.model.Jenkins;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 
 /**
  * Utility class for calculating dynamic buffer sizes based on current workload.
@@ -51,7 +50,8 @@ public final class DynamicBufferCalculator {
         Queue.Item[] items = queue.getItems();
 
         String templateLabels = template.getLabels();
-        boolean templateHasLabels = templateLabels != null && !templateLabels.trim().isEmpty();
+        boolean templateHasLabels =
+                templateLabels != null && !templateLabels.trim().isEmpty();
 
         for (Queue.Item item : items) {
             if (item instanceof Queue.BuildableItem) {
@@ -71,8 +71,8 @@ public final class DynamicBufferCalculator {
                 }
             }
         }
-        LOGGER.log(Level.FINE, "Template {0} has {1} queued items",
-                new Object[]{template.getTemplateName(), queueCount});
+        LOGGER.log(
+                Level.FINE, "Template {0} has {1} queued items", new Object[] {template.getTemplateName(), queueCount});
         return queueCount;
     }
 
@@ -84,16 +84,15 @@ public final class DynamicBufferCalculator {
      * @param currentTotalMachines Current total number of machines for this template
      * @return Number of additional machines needed (0 if buffer is satisfied)
      */
-    public static int calculateMachinesToProvision(AzureVMAgentTemplate template,
-                                                    int effectivePoolSize,
-                                                    int currentTotalMachines) {
+    public static int calculateMachinesToProvision(
+            AzureVMAgentTemplate template, int effectivePoolSize, int currentTotalMachines) {
         int deficit = effectivePoolSize - currentTotalMachines;
         int toProvision = Math.max(0, deficit);
 
         String templateName = template != null ? template.getTemplateName() : "unknown";
-        LOGGER.log(Level.FINE,
-                "Template {0}: effectivePoolSize={1}, currentTotal={2}, toProvision={3}",
-                new Object[]{templateName, effectivePoolSize, currentTotalMachines, toProvision});
+        LOGGER.log(Level.FINE, "Template {0}: effectivePoolSize={1}, currentTotal={2}, toProvision={3}", new Object[] {
+            templateName, effectivePoolSize, currentTotalMachines, toProvision
+        });
 
         return toProvision;
     }
@@ -128,8 +127,9 @@ public final class DynamicBufferCalculator {
 
         int queued = countQueuedItemsForTemplate(template);
 
-        LOGGER.log(Level.FINE, "Template {0}: busy={1}, idle={2}, total={3}, queued={4}",
-                new Object[]{template.getTemplateName(), busy, idle, total, queued});
+        LOGGER.log(Level.FINE, "Template {0}: busy={1}, idle={2}, total={3}, queued={4}", new Object[] {
+            template.getTemplateName(), busy, idle, total, queued
+        });
 
         return new BufferMetrics(busy, idle, total, queued);
     }
@@ -142,6 +142,5 @@ public final class DynamicBufferCalculator {
      * @param totalMachines Total number of machines for this template
      * @param queuedItems   Number of queued items matching this template
      */
-    public record BufferMetrics(int busyMachines, int idleMachines, int totalMachines, int queuedItems) {
-    }
+    public record BufferMetrics(int busyMachines, int idleMachines, int totalMachines, int queuedItems) {}
 }

@@ -16,18 +16,17 @@
 
 package com.microsoft.azure.vmagent;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.Node;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class ITAzureVMCloud extends IntegrationTest {
 
@@ -40,11 +39,14 @@ class ITAzureVMCloud extends IntegrationTest {
             final String deploymentName = "fakeDeployment";
             final ProvisioningActivity.Id provisioningId = new ProvisioningActivity.Id(vmName, deploymentName);
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud("", "xyz", "42", "0", "new", testEnv.azureResourceGroup, null,null));
+            AzureVMCloud cloudMock =
+                    spy(new AzureVMCloud("", "xyz", "42", "0", "new", testEnv.azureResourceGroup, null, null));
 
             when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
 
-            assertThrows(AzureCloudException.class, () -> cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName));
+            assertThrows(
+                    AzureCloudException.class,
+                    () -> cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, null, e);
             fail(e.getMessage());
@@ -57,7 +59,11 @@ class ITAzureVMCloud extends IntegrationTest {
         try {
             final AzureVMDeploymentInfo deploymentInfo = createDefaultDeployment(1, null);
             final String vmName = deploymentInfo.getVmBaseName() + "0";
-            final String vmDNS = azureClient.virtualMachines().getByResourceGroup(testEnv.azureResourceGroup, vmName).getPrimaryPublicIPAddress().fqdn();
+            final String vmDNS = azureClient
+                    .virtualMachines()
+                    .getByResourceGroup(testEnv.azureResourceGroup, vmName)
+                    .getPrimaryPublicIPAddress()
+                    .fqdn();
             final String deploymentName = deploymentInfo.getDeploymentName();
             final String templateName = "createTemplate";
             final String templateDesc = "createTemplateDesc";
@@ -81,7 +87,8 @@ class ITAzureVMCloud extends IntegrationTest {
             final boolean disableWindowsUpdates = true;
 
             AzureVMAgentTemplate templateMock = mock(AzureVMAgentTemplate.class);
-            AzureVMCloud cloudMock = spy( new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
+            AzureVMCloud cloudMock =
+                    spy(new AzureVMCloud("", credentialsId, "42", "30", "new", testEnv.azureResourceGroup, null, null));
 
             when(templateMock.retrieveAzureCloudReference()).thenReturn(cloudMock);
             when(templateMock.getTemplateName()).thenReturn(templateName);
@@ -104,7 +111,8 @@ class ITAzureVMCloud extends IntegrationTest {
             when(templateMock.isEphemeralOSDisk()).thenReturn(ephemeralOSDisk);
             when(templateMock.isDisableWindowsUpdates()).thenReturn(disableWindowsUpdates);
 
-            AzureVMAgent newAgent = cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
+            AzureVMAgent newAgent =
+                    cloudMock.createProvisionedAgent(provisioningId, templateMock, vmName, deploymentName);
 
             assertEquals(vmDNS, newAgent.getPublicDNSName());
             assertEquals(Constants.DEFAULT_SSH_PORT, newAgent.getSshPort());
@@ -129,5 +137,4 @@ class ITAzureVMCloud extends IntegrationTest {
             fail(e.getMessage());
         }
     }
-
 }

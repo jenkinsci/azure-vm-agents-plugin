@@ -1,6 +1,5 @@
 package com.microsoft.azure.vmagent.builders;
 
-
 public class AdvancedImage {
 
     private String imageReferenceType;
@@ -67,38 +66,39 @@ public class AdvancedImage {
 
     private boolean templateDisabled;
 
-    public AdvancedImage(String imageReferenceType,
-                         String image,
-                         String osType,
-                         String imageId,
-                         String imagePublisher,
-                         String imageOffer,
-                         String imageSku,
-                         String imageVersion,
-                         String galleryName,
-                         String galleryImageDefinition,
-                         String galleryImageVersion,
-                         boolean galleryImageSpecialized,
-                         String gallerySubscriptionId,
-                         String galleryResourceGroup,
-                         String agentLaunchMethod,
-                         boolean preInstallSsh,
-                         String sshConfig,
-                         String initScript,
-                         String terminateScript,
-                         boolean executeInitScriptAsRoot,
-                         boolean doNotUseMachineIfInitFails,
-                         boolean enableMSI,
-                         boolean enableUAMI,
-                         String uamiID,
-                         String virtualNetworkName,
-                         String virtualNetworkResourceGroupName,
-                         String subnetName,
-                         boolean usePrivateIP,
-                         String nsgName,
-                         String jvmOptions,
-                         String noOfParallelJobs,
-                         boolean templateDisabled) {
+    public AdvancedImage(
+            String imageReferenceType,
+            String image,
+            String osType,
+            String imageId,
+            String imagePublisher,
+            String imageOffer,
+            String imageSku,
+            String imageVersion,
+            String galleryName,
+            String galleryImageDefinition,
+            String galleryImageVersion,
+            boolean galleryImageSpecialized,
+            String gallerySubscriptionId,
+            String galleryResourceGroup,
+            String agentLaunchMethod,
+            boolean preInstallSsh,
+            String sshConfig,
+            String initScript,
+            String terminateScript,
+            boolean executeInitScriptAsRoot,
+            boolean doNotUseMachineIfInitFails,
+            boolean enableMSI,
+            boolean enableUAMI,
+            String uamiID,
+            String virtualNetworkName,
+            String virtualNetworkResourceGroupName,
+            String subnetName,
+            boolean usePrivateIP,
+            String nsgName,
+            String jvmOptions,
+            String noOfParallelJobs,
+            boolean templateDisabled) {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;

@@ -1,6 +1,5 @@
 package com.microsoft.azure.vmagent.builders;
 
-
 import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.util.Constants;
 
@@ -88,7 +87,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.templateDisabled = false;
     }
 
-    //CHECKSTYLE:OFF
+    // CHECKSTYLE:OFF
     public T withCustomImage(String imageUrl) {
         this.imageReferenceType = ImageReferenceType.CUSTOM.getName();
         this.image = imageUrl;
@@ -101,10 +100,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         return (T) this;
     }
 
-    public T withReferenceImage(String imagePublisher,
-                                String imageOffer,
-                                String imageSku,
-                                String imageVersion) {
+    public T withReferenceImage(String imagePublisher, String imageOffer, String imageSku, String imageVersion) {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imagePublisher = imagePublisher;
         this.imageOffer = imageOffer;
@@ -113,12 +109,13 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         return (T) this;
     }
 
-    public T withGalleryImage(String galleryName,
-                              String galleryImageDefinition,
-                              String galleryImageVersion,
-                              boolean galleryImageSpecialized,
-                              String gallerySubscriptionId,
-                              String galleryResourceGroup) {
+    public T withGalleryImage(
+            String galleryName,
+            String galleryImageDefinition,
+            String galleryImageVersion,
+            boolean galleryImageSpecialized,
+            String gallerySubscriptionId,
+            String galleryResourceGroup) {
         this.imageReferenceType = ImageReferenceType.GALLERY.getName();
         this.galleryName = galleryName;
         this.galleryImageDefinition = galleryImageDefinition;
@@ -223,11 +220,12 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.noOfParallelJobs = noOfParallelJobs;
         return (T) this;
     }
+
     public T withDisableTemplate(boolean templateDisabled) {
         this.templateDisabled = templateDisabled;
         return (T) this;
     }
-    //CHECKSTYLE:ON
+    // CHECKSTYLE:ON
 
     public String getImageReferenceType() {
         return imageReferenceType;

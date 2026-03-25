@@ -1,18 +1,18 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent;
 
 import com.azure.resourcemanager.AzureResourceManager;
@@ -22,16 +22,15 @@ import com.microsoft.azure.vmagent.util.ExecutionEngine;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.OfflineCause;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.jenkinsci.plugins.cloudstats.TrackedItem;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
-
-import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> implements TrackedItem {
 
@@ -61,12 +60,9 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                     // Deprovision
                     agent.deprovision(Messages._User_Delete());
                 } catch (Exception e) {
-                    LOGGER.log(Level.INFO,
-                        "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
-                        e);
+                    LOGGER.log(Level.INFO, "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
                     throw AzureCloudException.create(
-                        "AzureVMComputer: doDoDelete: Exception occurred while deleting agent",
-                        e);
+                            "AzureVMComputer: doDoDelete: Exception occurred while deleting agent", e);
                 }
                 return null;
             };
@@ -75,9 +71,10 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                 executionEngine.executeAsync(task, new NoRetryStrategy());
             } catch (AzureCloudException exception) {
                 // No need to throw exception back, just log and move on.
-                LOGGER.log(Level.INFO,
-                    "AzureVMComputer: execute: failed to shutdown/delete " + agent.getDisplayName(),
-                    exception);
+                LOGGER.log(
+                        Level.INFO,
+                        "AzureVMComputer: execute: failed to shutdown/delete " + agent.getDisplayName(),
+                        exception);
             }
         }
 
@@ -142,9 +139,10 @@ public class AzureVMComputer extends AbstractCloudComputer<AzureVMAgent> impleme
                 String subscriptionId = azureClient.getCurrentSubscription().subscriptionId();
                 String resourceGroup = agent.getResourceGroupName();
                 // can't see a way to guarantee getting the tenant ID, this should be enough for now anyway
-                return String.format("https://portal.azure.com/#resource/subscriptions/%s/resourceGroups/%s/"
-                    + "providers/Microsoft.Compute/virtualMachines/%s", subscriptionId,
-                    resourceGroup, nodeName);
+                return String.format(
+                        "https://portal.azure.com/#resource/subscriptions/%s/resourceGroups/%s/"
+                                + "providers/Microsoft.Compute/virtualMachines/%s",
+                        subscriptionId, resourceGroup, nodeName);
             }
         }
         return null;

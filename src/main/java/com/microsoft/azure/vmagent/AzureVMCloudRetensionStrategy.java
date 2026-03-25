@@ -1,18 +1,18 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent;
 
 import com.microsoft.azure.vmagent.exceptions.AzureCloudException;
@@ -26,12 +26,11 @@ import hudson.model.Descriptor;
 import hudson.model.DescriptorVisibilityFilter;
 import hudson.slaves.RetentionStrategy;
 import java.util.concurrent.Callable;
-import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStrategy {
     private static final long serialVersionUID = 15743279621L;
@@ -85,8 +84,9 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
         final AzureVMAgent agent = agentNode.getNode();
 
         if (canRecycle) {
-            LOGGER.log(Level.INFO, "Idle timeout reached for agent: {0}, action: {1}",
-                    new Object[]{agentNode.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"});
+            LOGGER.log(Level.INFO, "Idle timeout reached for agent: {0}, action: {1}", new Object[] {
+                agentNode.getName(), agent.isShutdownOnIdle() ? "shutdown" : "delete"
+            });
 
             Callable<Void> task = () -> {
                 // Block cleanup while we execute so the cleanup task doesn't try to take it
@@ -105,12 +105,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                 final int maxRetries = 3;
                 final int waitInterval = 30;
                 final int defaultTimeoutInSeconds = 30 * 60;
-                executionEngine.executeAsync(task,
-                        new LinearRetryForAllExceptions(
-                                maxRetries,
-                                waitInterval,
-                                defaultTimeoutInSeconds
-                        ));
+                executionEngine.executeAsync(
+                        task, new LinearRetryForAllExceptions(maxRetries, waitInterval, defaultTimeoutInSeconds));
             } catch (AzureCloudException ae) {
                 LOGGER.log(Level.WARNING, String.format("Could not terminate or shutdown %s", agentNode.getName()), ae);
                 // If we have an exception, set the agent for deletion.
@@ -120,8 +116,10 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
                     node.setCleanUpAction(CleanUpAction.DELETE, Messages._Failed_Initial_Shutdown_Or_Delete());
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING,
-                        String.format("Exception occurred while calling timeout on node %s", agentNode.getName()), e);
+                LOGGER.log(
+                        Level.WARNING,
+                        String.format("Exception occurred while calling timeout on node %s", agentNode.getName()),
+                        e);
                 // If we have an exception, set the agent for deletion.
                 // It's unlikely we'll be able to shut it down properly ever.
                 AzureVMAgent node = agentNode.getNode();
@@ -139,9 +137,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
 
     @Override
     public void start(AzureVMComputer azureComputer) {
-        //TODO: check when this method is getting called and add code accordingly
-        LOGGER.log(Level.INFO, "Starting azureComputer {0}",
-                azureComputer.getDisplayName());
+        // TODO: check when this method is getting called and add code accordingly
+        LOGGER.log(Level.INFO, "Starting azureComputer {0}", azureComputer.getDisplayName());
         azureComputer.connect(false);
         resetShutdownVMStatus(azureComputer.getNode());
     }
@@ -156,7 +153,8 @@ public class AzureVMCloudRetensionStrategy extends AzureVMCloudBaseRetentionStra
 
     @Symbol("azureVMCloudRetentionStrategy") //  TODO evaluate impact of renaming class to fix the default symbol name
     public static class DescriptorImpl extends Descriptor<RetentionStrategy<?>> {
-        @Override @NonNull
+        @Override
+        @NonNull
         public String getDisplayName() {
             return "Azure VM Idle Retention Strategy";
         }

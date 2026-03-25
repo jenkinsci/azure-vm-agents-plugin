@@ -1,18 +1,18 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent;
 
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
@@ -184,7 +184,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String javaPath,
             String remotingOptions,
             boolean disableWindowsUpdates,
-            AzureVMAgentTemplate template) throws FormException, IOException {
+            AzureVMAgentTemplate template)
+            throws FormException, IOException {
 
         super(name, remoteFS, launcher);
         setNodeDescription(nodeDescription);
@@ -232,13 +233,11 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         this.creationTime = System.currentTimeMillis();
     }
 
-    private static List<NodeProperty<?>> getNodeProperties(
-            String fqdn, AzureVMAgentTemplate template
-    ) {
+    private static List<NodeProperty<?>> getNodeProperties(String fqdn, AzureVMAgentTemplate template) {
         List<NodeProperty<?>> nodeProperties = new ArrayList<>(template.getNodeProperties());
         DescribableList<NodeProperty<?>, NodePropertyDescriptor> templateNodeProperties = template.getNodeProperties();
-        EnvironmentVariablesNodeProperty envVarsNodeProperty = templateNodeProperties
-                .get(EnvironmentVariablesNodeProperty.class);
+        EnvironmentVariablesNodeProperty envVarsNodeProperty =
+                templateNodeProperties.get(EnvironmentVariablesNodeProperty.class);
 
         List<EnvironmentVariablesNodeProperty.Entry> newEntries = new ArrayList<>();
         if (envVarsNodeProperty != null) {
@@ -289,9 +288,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             String fqdn,
             String javaPath,
             String remotingOptions,
-            boolean disableWindowsUpdates
-    ) throws FormException, IOException {
-        this(name,
+            boolean disableWindowsUpdates)
+            throws FormException, IOException {
+        this(
+                name,
                 templateName,
                 nodeDescription,
                 osType,
@@ -299,8 +299,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 numExecutors,
                 mode,
                 label,
-                agentLaunchMethod.equalsIgnoreCase("SSH")
-                        ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
+                agentLaunchMethod.equalsIgnoreCase("SSH") ? new AzureVMAgentSSHLauncher() : new JNLPLauncher(),
                 retentionStrategy,
                 fqdn,
                 cloudName,
@@ -331,8 +330,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 javaPath,
                 remotingOptions,
                 disableWindowsUpdates,
-                template
-        );
+                template);
 
         this.provisioningId = id;
     }
@@ -567,7 +565,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     @Override
     protected void _terminate(TaskListener arg0) throws IOException, InterruptedException {
-        //TODO: Check when this method is getting called and code accordingly
+        // TODO: Check when this method is getting called and code accordingly
         LOGGER.log(Level.INFO, "Terminate called for agent {0}", getNodeName());
 
         ProvisioningActivity activity = CloudStatistics.get().getActivityFor(this);
@@ -589,11 +587,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
 
     public synchronized void shutdown(Localizable reason) {
         if (isEligibleForReuse()) {
-            LOGGER.log(Level.INFO, "Agent {0} is shut down", this.
-                    getDisplayName());
+            LOGGER.log(Level.INFO, "Agent {0} is shut down", this.getDisplayName());
             return;
         }
-
 
         LOGGER.log(Level.INFO, "Add suspended status for node {0}", this.getNodeName());
         SlaveComputer computer = this.getComputer();
@@ -625,8 +621,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             return;
         }
 
-        LOGGER.log(Level.INFO, "Deprovision called for agent {0}, for reason: {1}",
-                new Object[]{this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()});
+        LOGGER.log(Level.INFO, "Deprovision called for agent {0}, for reason: {1}", new Object[] {
+            this.getDisplayName(), reason == null ? "Unknown reason" : reason.toString()
+        });
 
         computer.setAcceptingTasks(false);
 
@@ -644,9 +641,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             // This still means that a delete agent will eventually get cleaned up.
             try {
                 if (!this.isVMAliveOrHealthy()) {
-                    LOGGER.log(Level.INFO,
-                            "Agent {0} is shut down, deleted, etc. "
-                                    + "Not attempting to connect",
+                    LOGGER.log(
+                            Level.INFO,
+                            "Agent {0} is shut down, deleted, etc. " + "Not attempting to connect",
                             computer.getName());
                     skipTerminateScript = true;
                 }
@@ -666,14 +663,15 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                 if (!skipTerminateScript
                         && azureLauncher.executeRemoteCommand(this, command, terminateStream, isUnix) != 0) {
                     LOGGER.info("Terminate script present for " + computer.getName()
-                    + " preparing to execute script remotely");
+                            + " preparing to execute script remotely");
                     if (isUnix) {
                         azureLauncher.copyFileToRemote(
                                 this,
                                 new ByteArrayInputStream(terminateScript.getBytes(StandardCharsets.UTF_8)),
                                 REMOTE_TERMINATE_FILE_NAME);
                     } else {
-                        azureLauncher.copyFileToRemote(this,
+                        azureLauncher.copyFileToRemote(
+                                this,
                                 new ByteArrayInputStream(terminateScript.getBytes(StandardCharsets.UTF_8)),
                                 REMOTE_TERMINATE_FILE_NAME_WINDOWS);
                     }
@@ -687,14 +685,9 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     }
 
                     int exitStatus = azureLauncher.executeRemoteCommand(
-                            this,
-                            command,
-                            terminateStream,
-                            isUnix,
-                            executeInitScriptAsRoot);
+                            this, command, terminateStream, isUnix, executeInitScriptAsRoot);
                     if (exitStatus != 0) {
-                        LOGGER.log(Level.SEVERE,
-                                "Terminate script failed: exit code={0} ", exitStatus);
+                        LOGGER.log(Level.SEVERE, "Terminate script failed: exit code={0} ", exitStatus);
                     } else {
                         LOGGER.fine("Terminate script was executed successfully");
                     }
@@ -729,7 +722,6 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         } else {
             return null;
         }
-
     }
 
     public boolean isVMAliveOrHealthy() throws Exception {
@@ -747,7 +739,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         if (!publicIP.isEmpty()) {
             return publicIP;
         }
-        //attachPublicIP will try and provision a public IP or will return if one already exists
+        // attachPublicIP will try and provision a public IP or will return if one already exists
         // because of that we can just wait here until we have a public IP
         synchronized (publicIPAttachLock) {
             try {
@@ -757,8 +749,10 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
                     serviceDelegate.attachPublicIP(this, azureVMCloud.getAzureAgentTemplate(templateName));
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE,
-                        String.format("Error while trying to attach a public IP to %s", getNodeName()), e);
+                LOGGER.log(
+                        Level.SEVERE,
+                        String.format("Error while trying to attach a public IP to %s", getNodeName()),
+                        e);
             }
             return publicIP;
         }
@@ -793,7 +787,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
     @Extension
     public static final class AzureVMAgentDescriptor extends SlaveDescriptor {
 
-        @Override @NonNull
+        @Override
+        @NonNull
         public String getDisplayName() {
             return Constants.AZURE_VM_AGENT_CLOUD_DISPLAY_NAME;
         }
@@ -803,7 +798,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             return false;
         }
 
-        //abusing a bit of f:validateButton because it has nice progress
+        // abusing a bit of f:validateButton because it has nice progress
         @RequirePOST
         public FormValidation doAttachPublicIP(@QueryParameter String vmAgentName) {
             Jenkins.get().checkPermission(Computer.CONFIGURE);

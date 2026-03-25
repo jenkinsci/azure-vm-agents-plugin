@@ -3,7 +3,7 @@ package com.microsoft.azure.vmagent;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum  AvailabilityType {
+public enum AvailabilityType {
     UNKNOWN("unknown"),
     AVAILABILITY_SET("availabilitySet");
 

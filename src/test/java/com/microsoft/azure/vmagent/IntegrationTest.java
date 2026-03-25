@@ -1,19 +1,22 @@
 /*
- Copyright 2016 Microsoft, Inc.
+Copyright 2016 Microsoft, Inc.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package com.microsoft.azure.vmagent;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementException;
@@ -42,14 +45,6 @@ import com.microsoft.azure.util.AzureCredentials;
 import com.microsoft.azure.vmagent.availability.AvailabilitySet;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.util.Secret;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-
-import org.junit.jupiter.api.Timeout;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -61,9 +56,12 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Timeout;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /*
 To execute the integration tests you need to set the credentials env variables (the ones that don't have a default)
@@ -128,14 +126,21 @@ class IntegrationTest {
             clientSecret = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_CLIENT_SECRET");
 
             tenantId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_TENANT_ID");
-            serviceManagementURL = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_URL", "https://management.core.windows.net/");
-            authenticationEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_AUTH_URL", "https://login.microsoftonline.com/");
-            resourceManagerEndpoint = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_RESOURCE_URL", "https://management.azure.com/");
+            serviceManagementURL =
+                    TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_URL", "https://management.core.windows.net/");
+            authenticationEndpoint =
+                    TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_AUTH_URL", "https://login.microsoftonline.com/");
+            resourceManagerEndpoint =
+                    TestEnvironment.loadFromEnv("VM_AGENTS_TEST_AZURE_RESOURCE_URL", "https://management.azure.com/");
 
             azureLocation = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_LOCATION", "East US");
-            azureResourceGroup = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-" + TestEnvironment.GenerateRandomString(16);
-            azureResourceGroupReferenceType = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_REFERENCE_TYPE", Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW);
-            azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst") + TestEnvironment.GenerateRandomString(19);
+            azureResourceGroup =
+                    TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_RESOURCE_GROUP_PREFIX", "vmagents-tst") + "-"
+                            + TestEnvironment.GenerateRandomString(16);
+            azureResourceGroupReferenceType = TestEnvironment.loadFromEnv(
+                    "VM_AGENTS_TEST_DEFAULT_RESOURCE_REFERENCE_TYPE", Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW);
+            azureStorageAccountName = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_STORAGE_NAME_PREFIX", "vmtst")
+                    + TestEnvironment.GenerateRandomString(19);
             azureStorageAccountType = SkuName.STANDARD_LRS.toString();
             azureImageId = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_ID", "");
             azureImagePublisher = TestEnvironment.loadFromEnv("VM_AGENTS_TEST_DEFAULT_IMAGE_PUBLISHER", "Canonical");
@@ -190,10 +195,13 @@ class IntegrationTest {
     protected AzureVMManagementServiceDelegate delegate;
     protected TestEnvironment testEnv = null;
 
-    protected void addAzureCredentials(String id, String description, String subscriptionId, String clientId, String clientSecret) {
-        Map<Domain, List<Credentials>> domainCredentialsMap = SystemCredentialsProvider.getInstance().getDomainCredentialsMap();
+    protected void addAzureCredentials(
+            String id, String description, String subscriptionId, String clientId, String clientSecret) {
+        Map<Domain, List<Credentials>> domainCredentialsMap =
+                SystemCredentialsProvider.getInstance().getDomainCredentialsMap();
         List<Credentials> credentials = domainCredentialsMap.get(Domain.global());
-        AzureCredentials cred = new AzureCredentials(CredentialsScope.GLOBAL, id, description, subscriptionId, clientId, Secret.fromString(clientSecret));
+        AzureCredentials cred = new AzureCredentials(
+                CredentialsScope.GLOBAL, id, description, subscriptionId, clientId, Secret.fromString(clientSecret));
         cred.setTenant(testEnv.tenantId);
         credentials.add(cred);
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(domainCredentialsMap);
@@ -206,7 +214,6 @@ class IntegrationTest {
 
         String azureCredentialsId = "testId";
         addAzureCredentials(azureCredentialsId, "test", testEnv.subscriptionId, testEnv.clientId, testEnv.clientSecret);
-
 
         azureClient = AzureClientUtil.getClient(azureCredentialsId);
 
@@ -232,8 +239,10 @@ class IntegrationTest {
         }
     }
 
-    protected String downloadFromAzure(String resourceGroup, String storageAccountName, String containerName, String fileName) {
-        StorageAccount storageAccount = azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName);
+    protected String downloadFromAzure(
+            String resourceGroup, String storageAccountName, String containerName, String fileName) {
+        StorageAccount storageAccount =
+                azureClient.storageAccounts().getByResourceGroup(resourceGroup, storageAccountName);
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         String storageAccountKey = storageKeys.get(0).value();
         BlobServiceClient account = new BlobServiceClientBuilder()
@@ -259,10 +268,9 @@ class IntegrationTest {
             final String containerName = blobUrlParts.getBlobContainerName();
             final String blobName = blobUrlParts.getBlobName();
 
-            StorageAccount storageAccount = azureClient.storageAccounts()
-                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
-            List<StorageAccountKey> storageKeys = storageAccount
-                    .getKeys();
+            StorageAccount storageAccount =
+                    azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
+            List<StorageAccountKey> storageKeys = storageAccount.getKeys();
 
             if (storageKeys.isEmpty()) {
                 return false;
@@ -287,10 +295,9 @@ class IntegrationTest {
             String storageAccountName = blobUrlParts.getAccountName();
             final String containerName = blobUrlParts.getBlobContainerName();
 
-            StorageAccount storageAccount = azureClient.storageAccounts()
-                    .getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
-            List<StorageAccountKey> storageKeys = storageAccount
-                    .getKeys();
+            StorageAccount storageAccount =
+                    azureClient.storageAccounts().getByResourceGroup(testEnv.azureResourceGroup, storageAccountName);
+            List<StorageAccountKey> storageKeys = storageAccount.getKeys();
 
             if (storageKeys.isEmpty()) {
                 return false;
@@ -310,25 +317,19 @@ class IntegrationTest {
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
-            int numberOfAgents,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            int numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar) throws Exception {
         return createDefaultDeployment(numberOfAgents, true, deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
-            String templateName,
-            int numberOfAgents,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            String templateName, int numberOfAgents, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
         return createDefaultDeployment(templateName, numberOfAgents, true, deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
-            int numberOfAgents,
-            boolean usePrivateIP,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            int numberOfAgents, boolean usePrivateIP, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
         return createDefaultDeployment(numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
@@ -336,16 +337,15 @@ class IntegrationTest {
             String templateName,
             int numberOfAgents,
             boolean usePrivateIP,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
-        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
+        return createDefaultDeployment(
+                templateName, numberOfAgents, usePrivateIP, false, false, false, "", deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
-            int numberOfAgents,
-            String nsgName,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            int numberOfAgents, String nsgName, AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
         return createDefaultDeployment(numberOfAgents, true, false, false, false, nsgName, deploymentRegistrar);
     }
 
@@ -356,10 +356,18 @@ class IntegrationTest {
             boolean enableUAMI,
             boolean ephemeralOSDisk,
             String nsgName,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
         final String templateName = "t" + TestEnvironment.GenerateRandomString(7);
-        return createDefaultDeployment(templateName, numberOfAgents, usePrivateIP, enableMSI, enableUAMI, ephemeralOSDisk, nsgName, deploymentRegistrar);
+        return createDefaultDeployment(
+                templateName,
+                numberOfAgents,
+                usePrivateIP,
+                enableMSI,
+                enableUAMI,
+                ephemeralOSDisk,
+                nsgName,
+                deploymentRegistrar);
     }
 
     protected AzureVMDeploymentInfo createDefaultDeployment(
@@ -370,14 +378,15 @@ class IntegrationTest {
             boolean enableUAMI,
             boolean ephemeralOSDisk,
             String nsgName,
-            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar
-    ) throws Exception {
+            AzureVMAgentCleanUpTask.DeploymentRegistrar deploymentRegistrar)
+            throws Exception {
         final String osType = OS_TYPE;
         final String initScript = "echo \"" + UUID.randomUUID() + "\"";
         final String terminateScript = "echo \"" + UUID.randomUUID() + "\"";
         final String launchMethod = Constants.LAUNCH_METHOD_SSH;
         final String vmUser = "tstVmUser";
-        final Secret vmPassword = Secret.fromString(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'");
+        final Secret vmPassword = Secret.fromString(
+                TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'");
         final String storageType = SkuName.STANDARD_LRS.toString();
 
         StandardUsernamePasswordCredentials vmCredentials = mock(StandardUsernamePasswordCredentials.class);
@@ -405,19 +414,19 @@ class IntegrationTest {
         when(templateMock.isTopLevelType(Constants.IMAGE_TOP_LEVEL_BASIC)).thenReturn(false);
         when(templateMock.getTags()).thenReturn(testEnv.templateTags);
 
-        when(templateMock.getImageReference()).thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
-                null,
-                testEnv.azureImageId,
-                testEnv.azureImagePublisher,
-                testEnv.azureImageOffer,
-                testEnv.azureImageSku,
-                testEnv.azureImageVersion,
-                null,
-                null,
-                null,
-                null,
-                null
-        ));
+        when(templateMock.getImageReference())
+                .thenReturn(new AzureVMAgentTemplate.ImageReferenceTypeClass(
+                        null,
+                        testEnv.azureImageId,
+                        testEnv.azureImagePublisher,
+                        testEnv.azureImageOffer,
+                        testEnv.azureImageSku,
+                        testEnv.azureImageVersion,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
 
         when(templateMock.getVirtualMachineSize()).thenReturn(testEnv.azureImageSize);
         when(templateMock.getVMCredentials()).thenReturn(vmCredentials);
@@ -438,8 +447,8 @@ class IntegrationTest {
             vmNames.add(ret.getVmBaseName() + i);
         }
 
-        //wait for deployment to complete
-        final int maxTries = 20; //wait 10 minutes
+        // wait for deployment to complete
+        final int maxTries = 20; // wait 10 minutes
         for (int i = 0; i < maxTries; i++) {
             if (areAllVMsDeployed(vmNames)) {
                 return ret;
@@ -456,7 +465,8 @@ class IntegrationTest {
 
     protected boolean areAllVMsDeployed(final List<String> vmNames) {
         int deployedVMs = 0;
-        PagedIterable<Deployment> deployments = azureClient.deployments().listByResourceGroup(testEnv.azureResourceGroup);
+        PagedIterable<Deployment> deployments =
+                azureClient.deployments().listByResourceGroup(testEnv.azureResourceGroup);
         for (Deployment dep : deployments) {
             PagedIterable<DeploymentOperation> ops = dep.deploymentOperations().list();
             for (DeploymentOperation op : ops) {
@@ -479,8 +489,8 @@ class IntegrationTest {
                             }
                             break;
                         default:
-                            throw new IllegalStateException(
-                                    String.format("the state of VM %s is '%s', message: %s", resource, state, op.statusMessage()));
+                            throw new IllegalStateException(String.format(
+                                    "the state of VM %s is '%s', message: %s", resource, state, op.statusMessage()));
                     }
                 }
             }
@@ -493,7 +503,8 @@ class IntegrationTest {
     }
 
     protected VirtualMachine createAzureVM(final String vmName, final String tagName, final String tagValue) {
-        return azureClient.virtualMachines()
+        return azureClient
+                .virtualMachines()
                 .define(vmName)
                 .withRegion(testEnv.azureLocation)
                 .withNewResourceGroup(testEnv.azureResourceGroup)
@@ -502,7 +513,8 @@ class IntegrationTest {
                 .withoutPrimaryPublicIPAddress()
                 .withPopularLinuxImage(KnownLinuxVirtualMachineImage.UBUNTU_SERVER_20_04_LTS)
                 .withRootUsername(TestEnvironment.GenerateRandomString(8))
-                .withRootPassword(TestEnvironment.GenerateRandomString(16) + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'") //don't try this at home
+                .withRootPassword(TestEnvironment.GenerateRandomString(16)
+                        + "AA@@12345@#$%^&*-_!+=[]{}|\\:`,.?/~\\\"();'") // don't try this at home
                 .withOSDiskStorageAccountType(StorageAccountTypes.STANDARD_LRS)
                 .withSize(testEnv.azureImageSize)
                 .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
@@ -510,7 +522,9 @@ class IntegrationTest {
                 .create();
     }
 
-    protected String uploadFile(StorageAccount storageAccount, String uploadFileName, String writtenData, String containerName) throws Exception {
+    protected String uploadFile(
+            StorageAccount storageAccount, String uploadFileName, String writtenData, String containerName)
+            throws Exception {
         List<StorageAccountKey> storageKeys = storageAccount.getKeys();
         if (storageKeys.isEmpty()) {
             throw new Exception("Can't find key");
