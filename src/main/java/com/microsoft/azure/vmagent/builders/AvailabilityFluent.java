@@ -10,13 +10,13 @@ public class AvailabilityFluent<T extends AvailabilityFluent<T>> {
         this.availabilityType = AvailabilityType.UNKNOWN.getName();
     }
 
-    // CHECKSTYLE:OFF
+    //CHECKSTYLE:OFF
     public T withAvailabilitySet(String availabilitySet) {
         this.availabilityType = AvailabilityType.AVAILABILITY_SET.getName();
         this.availabilitySet = availabilitySet;
         return (T) this;
     }
-    // CHECKSTYLE:ON
+    //CHECKSTYLE:ON
 
     public String getAvailabilitySet() {
         return availabilitySet;

@@ -1,12 +1,5 @@
 package com.microsoft.azure.vmagent.test.jcasc;
 
-import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
-import static io.jenkins.plugins.casc.misc.Util.toYamlString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.nullValue;
-
 import com.microsoft.azure.vmagent.AzureTagPair;
 import com.microsoft.azure.vmagent.AzureVMAgentTemplate;
 import com.microsoft.azure.vmagent.AzureVMCloud;
@@ -20,10 +13,17 @@ import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
+import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+
+import static io.jenkins.plugins.casc.misc.Util.getJenkinsRoot;
+import static io.jenkins.plugins.casc.misc.Util.toYamlString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 
 @WithJenkinsConfiguredWithCode
 class AdvancedConfigAsCodeTest {
@@ -82,14 +82,13 @@ class AdvancedConfigAsCodeTest {
 
         List<DataDisk> dataDisks = template.getDataDisks();
         assertThat(dataDisks.size(), is(1));
-
+        
         DataDisk dataDisk = dataDisks.get(0);
         assertThat(dataDisk.getDiskSize(), is(10));
         assertThat(dataDisk.getDiskCache(), is("ReadWrite"));
         assertThat(dataDisk.getStorageAccountType(), is("Premium_LRS"));
 
-        AzureVMCloudRetensionStrategy retentionStrategy =
-                (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
+        AzureVMCloudRetensionStrategy retentionStrategy = (AzureVMCloudRetensionStrategy) template.getRetentionStrategy();
         assertThat(retentionStrategy.getIdleTerminationMinutes(), is(40L));
 
         assertThat(template.isShutdownOnIdle(), is(false));
@@ -115,8 +114,8 @@ class AdvancedConfigAsCodeTest {
 
         String exportedCloud = toYamlString(cloud);
 
-        String expectedYaml = new String(Files.readAllBytes(
-                Paths.get(getClass().getResource("expectedAdvanced.yaml").toURI())));
+        String expectedYaml = new String(Files.readAllBytes(Paths.get(getClass()
+                .getResource("expectedAdvanced.yaml").toURI())));
 
         assertThat(exportedCloud, is(expectedYaml));
     }

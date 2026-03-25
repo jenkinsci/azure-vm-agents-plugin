@@ -17,7 +17,8 @@ public class AzureSSHLauncher extends AzureComputerLauncher {
     private boolean preInstallSsh;
 
     @DataBoundConstructor
-    public AzureSSHLauncher() {}
+    public AzureSSHLauncher() {
+    }
 
     public String getSshConfig() {
         return sshConfig;
@@ -34,7 +35,8 @@ public class AzureSSHLauncher extends AzureComputerLauncher {
 
     @Override
     public String toString() {
-        return String.format("AzureSSHLauncher{sshConfig='%s', preInstallSsh=%s}", sshConfig, preInstallSsh);
+        return String.format("AzureSSHLauncher{sshConfig='%s', preInstallSsh=%s}",
+                sshConfig, preInstallSsh);
     }
 
     @DataBoundSetter

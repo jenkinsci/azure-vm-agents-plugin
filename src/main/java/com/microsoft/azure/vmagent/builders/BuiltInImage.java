@@ -12,12 +12,11 @@ public class BuiltInImage {
 
     private boolean isInstallQemu;
 
-    public BuiltInImage(
-            String builtInImage,
-            boolean isInstallGit,
-            boolean isInstallMaven,
-            boolean isInstallDocker,
-            boolean isInstallQemu) {
+    public BuiltInImage(String builtInImage,
+                        boolean isInstallGit,
+                        boolean isInstallMaven,
+                        boolean isInstallDocker,
+                        boolean isInstallQemu) {
         this.builtInImage = builtInImage;
         this.isInstallGit = isInstallGit;
         this.isInstallMaven = isInstallMaven;

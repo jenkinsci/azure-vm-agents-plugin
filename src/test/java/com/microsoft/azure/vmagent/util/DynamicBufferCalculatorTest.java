@@ -15,7 +15,8 @@ class DynamicBufferCalculatorTest {
         int currentTotal = 6;
 
         // When
-        int result = DynamicBufferCalculator.calculateMachinesToProvision(null, effectivePoolSize, currentTotal);
+        int result = DynamicBufferCalculator.calculateMachinesToProvision(
+                null, effectivePoolSize, currentTotal);
 
         // Then
         assertThat(result, equalTo(4));
@@ -28,7 +29,8 @@ class DynamicBufferCalculatorTest {
         int currentTotal = 15;
 
         // When
-        int result = DynamicBufferCalculator.calculateMachinesToProvision(null, effectivePoolSize, currentTotal);
+        int result = DynamicBufferCalculator.calculateMachinesToProvision(
+                null, effectivePoolSize, currentTotal);
 
         // Then
         assertThat(result, equalTo(0));
@@ -41,7 +43,8 @@ class DynamicBufferCalculatorTest {
         int currentTotal = 10;
 
         // When
-        int result = DynamicBufferCalculator.calculateMachinesToProvision(null, effectivePoolSize, currentTotal);
+        int result = DynamicBufferCalculator.calculateMachinesToProvision(
+                null, effectivePoolSize, currentTotal);
 
         // Then
         assertThat(result, equalTo(0));
@@ -54,7 +57,8 @@ class DynamicBufferCalculatorTest {
         int currentTotal = 5;
 
         // When
-        int result = DynamicBufferCalculator.calculateMachinesToProvision(null, effectivePoolSize, currentTotal);
+        int result = DynamicBufferCalculator.calculateMachinesToProvision(
+                null, effectivePoolSize, currentTotal);
 
         // Then
         assertThat(result, equalTo(0));
@@ -67,7 +71,8 @@ class DynamicBufferCalculatorTest {
         int currentTotal = -5;
 
         // When
-        int result = DynamicBufferCalculator.calculateMachinesToProvision(null, effectivePoolSize, currentTotal);
+        int result = DynamicBufferCalculator.calculateMachinesToProvision(
+                null, effectivePoolSize, currentTotal);
 
         // Then - should still calculate correctly (10 - (-5) = 15)
         assertThat(result, greaterThanOrEqualTo(10));

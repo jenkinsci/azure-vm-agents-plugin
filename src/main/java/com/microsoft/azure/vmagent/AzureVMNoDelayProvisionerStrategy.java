@@ -32,10 +32,12 @@ import jenkins.util.Timer;
 public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy {
 
     private static final Logger LOGGER = Logger.getLogger(AzureVMNoDelayProvisionerStrategy.class.getName());
-    private static final boolean DISABLE_NO_DELAY_PROVISIONING = SystemProperties.getBoolean(
-            AzureVMNoDelayProvisionerStrategy.class.getName() + ".disableNoDelayProvisioning");
+    private static final boolean DISABLE_NO_DELAY_PROVISIONING =
+            SystemProperties.getBoolean(
+                    AzureVMNoDelayProvisionerStrategy.class.getName() + ".disableNoDelayProvisioning");
     private static final boolean DISABLE_CLOUD_SHUFFLE =
-            SystemProperties.getBoolean(AzureVMNoDelayProvisionerStrategy.class.getName() + ".disableCloudShuffle");
+            SystemProperties.getBoolean(
+                    AzureVMNoDelayProvisionerStrategy.class.getName() + ".disableCloudShuffle");
     public static final int ORDER = 101;
 
     @NonNull

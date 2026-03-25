@@ -92,7 +92,8 @@ public class VirtualMachineScaleSet extends AzureAvailabilityType {
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
                 PagedIterable<com.azure.resourcemanager.compute.models.VirtualMachineScaleSet> scaleSets =
-                        azureClient.virtualMachineScaleSets().listByResourceGroup(resourceGroupName);
+                        azureClient.virtualMachineScaleSets()
+                        .listByResourceGroup(resourceGroupName);
                 for (com.azure.resourcemanager.compute.models.VirtualMachineScaleSet set : scaleSets) {
                     String region = set.region().label();
                     if (region.equals(location) && set.orchestrationMode() == OrchestrationMode.FLEXIBLE) {
@@ -114,5 +115,6 @@ public class VirtualMachineScaleSet extends AzureAvailabilityType {
 
             return null;
         }
+
     }
 }

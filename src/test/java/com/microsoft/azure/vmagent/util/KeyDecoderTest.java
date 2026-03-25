@@ -1,11 +1,11 @@
 package com.microsoft.azure.vmagent.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.sshtools.common.publickey.InvalidPassphraseException;
 import com.sshtools.common.ssh.SshException;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class KeyDecoderTest {
 
@@ -94,16 +94,14 @@ class KeyDecoderTest {
     @Test
     void getRsaPublicKey() throws IOException, InvalidPassphraseException, SshException {
         String actual = KeyDecoder.getPublicKey(TEST_RSA_PEM_FORMAT, null);
-        String expected =
-                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCz9jecrCzqLuGVUayP/k3yzxm6P2uLyQ0Y9pFdI2GUT4G6GZQ70An6jVTufdLSMUL9Sb9xv0Hq/rWsO56vAEl5VJu1vqzmZ+EkfdsiFxiDLdYRhH47pnOYP4CEZmmYl5bO9cdYPvaa0WscRmGuZKm6vM/uniq2xxFEq/CWTTVXMCAvM8JDroP1VdeoPPaXBQROsxxxvw0AsU7PVcdT7YumC2iKeBb6KIePDNdw/6Xv71YQHSnNT9oM49xK8cx2M8j6WBmxHZSQo3fCHLALxdmfd9r/HA5l0WJeBZMM9S9EEd6gw+MaZJ1ChFVvhGYZqcLFqAYUem0UjyV7tdZCMwPQ004pjfkVrfHDQ6szSaKBFAKk2A8+RdGDg9XkKAbbUvam7ISoCu3qFLHSiBABtNmD1AN8huNhexVlCuvJAZKSEnJ0lpPSkFDZrzX1cG0cWuPvRXUpxmVBnSdAHM62uhFA7XuYOcvlUkLnqibIaDibFyvOLuD5xuEyTK4CXnB2r4E=";
+        String expected = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCz9jecrCzqLuGVUayP/k3yzxm6P2uLyQ0Y9pFdI2GUT4G6GZQ70An6jVTufdLSMUL9Sb9xv0Hq/rWsO56vAEl5VJu1vqzmZ+EkfdsiFxiDLdYRhH47pnOYP4CEZmmYl5bO9cdYPvaa0WscRmGuZKm6vM/uniq2xxFEq/CWTTVXMCAvM8JDroP1VdeoPPaXBQROsxxxvw0AsU7PVcdT7YumC2iKeBb6KIePDNdw/6Xv71YQHSnNT9oM49xK8cx2M8j6WBmxHZSQo3fCHLALxdmfd9r/HA5l0WJeBZMM9S9EEd6gw+MaZJ1ChFVvhGYZqcLFqAYUem0UjyV7tdZCMwPQ004pjfkVrfHDQ6szSaKBFAKk2A8+RdGDg9XkKAbbUvam7ISoCu3qFLHSiBABtNmD1AN8huNhexVlCuvJAZKSEnJ0lpPSkFDZrzX1cG0cWuPvRXUpxmVBnSdAHM62uhFA7XuYOcvlUkLnqibIaDibFyvOLuD5xuEyTK4CXnB2r4E=";
         assertEquals(expected, actual);
     }
 
     @Test
     void getOpenSSHPublicKey() throws IOException, InvalidPassphraseException, SshException {
         String actual = KeyDecoder.getPublicKey(TEST_OPENSSH_FORMAT, null);
-        String expected =
-                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDZR1XnngiRSIy8nlH/87HCAHlJWWfDiWG+s8Yfnmlc9J0MtF0eWP5LUPqVvwU9TWTupv89OEoaF9hlNnAnVtObYyAor4c6PmhKtbQ+YlsoNsH9cUbiQKnwC3R+MmBsRFrAuB2YMCr2La82iisHR0jk8x1xhWbOMApgogSMj6S0ads8ZpnGpWR8u5x26Z/HNLWy/Sy5apK4sy+Fi6MAZ9U4PHRU4WlLOU3Onw36tmk76EU4MMgB6r8yPwBnzeT6KlKtdR9LtEVpTjt4k+mLJ2pOiSs8l/NxUsPyP0Eh4jjYQULGORHkk6o2pRMyF7KGMdZIf6nu9WzcoT5nKfT2t20RBw+etbwI4YM/FsLSHNFRlI3TOIbH0Fw6+g8Ygiy2QwuIemVT+ByOH+LuFPTQhs0/cGlZI5A5/e89Y5kKU9SCzBB2btERdy81i1aYsrny95S6bSlzRZvuo6P9/f8iYhM7LzQN1zgkUn9s7Mk0jKiraKrsphcmrHtTM8zIpIQ7m5U=";
+        String expected = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDZR1XnngiRSIy8nlH/87HCAHlJWWfDiWG+s8Yfnmlc9J0MtF0eWP5LUPqVvwU9TWTupv89OEoaF9hlNnAnVtObYyAor4c6PmhKtbQ+YlsoNsH9cUbiQKnwC3R+MmBsRFrAuB2YMCr2La82iisHR0jk8x1xhWbOMApgogSMj6S0ads8ZpnGpWR8u5x26Z/HNLWy/Sy5apK4sy+Fi6MAZ9U4PHRU4WlLOU3Onw36tmk76EU4MMgB6r8yPwBnzeT6KlKtdR9LtEVpTjt4k+mLJ2pOiSs8l/NxUsPyP0Eh4jjYQULGORHkk6o2pRMyF7KGMdZIf6nu9WzcoT5nKfT2t20RBw+etbwI4YM/FsLSHNFRlI3TOIbH0Fw6+g8Ygiy2QwuIemVT+ByOH+LuFPTQhs0/cGlZI5A5/e89Y5kKU9SCzBB2btERdy81i1aYsrny95S6bSlzRZvuo6P9/f8iYhM7LzQN1zgkUn9s7Mk0jKiraKrsphcmrHtTM8zIpIQ7m5U=";
         assertEquals(expected, actual);
     }
 }

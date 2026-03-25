@@ -83,6 +83,7 @@ public class AvailabilitySet extends AzureAvailabilityType {
             String newResourceGroupName = cloud.getNewResourceGroupName();
             String existingResourceGroupName = cloud.getExistingResourceGroupName();
 
+
             try {
                 AzureResourceManager azureClient = AzureResourceManagerCache.get(azureCredentialsId);
                 if (azureClient == null) {
@@ -91,7 +92,8 @@ public class AvailabilitySet extends AzureAvailabilityType {
                 String resourceGroupName = AzureVMCloud.getResourceGroupName(
                         resourceGroupReferenceType, newResourceGroupName, existingResourceGroupName);
                 PagedIterable<com.azure.resourcemanager.compute.models.AvailabilitySet> availabilitySets =
-                        azureClient.availabilitySets().listByResourceGroup(resourceGroupName);
+                        azureClient.availabilitySets()
+                        .listByResourceGroup(resourceGroupName);
                 for (com.azure.resourcemanager.compute.models.AvailabilitySet set : availabilitySets) {
                     String label = set.region().label();
                     if (label.equals(location)) {
@@ -113,5 +115,6 @@ public class AvailabilitySet extends AzureAvailabilityType {
 
             return null;
         }
+
     }
 }

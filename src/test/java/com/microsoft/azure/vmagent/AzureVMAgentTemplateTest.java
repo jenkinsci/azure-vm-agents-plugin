@@ -119,34 +119,8 @@ class AzureVMAgentTemplateTest {
 
     private static AzureVMAgentTemplate mkTemplate() {
         return new AzureVMAgentTemplate(
-                "testTemplate",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false,
-                false);
+                "testTemplate", null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, false, false);
     }
 }

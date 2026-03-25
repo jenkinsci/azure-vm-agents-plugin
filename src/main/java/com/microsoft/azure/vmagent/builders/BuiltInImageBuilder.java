@@ -1,5 +1,6 @@
 package com.microsoft.azure.vmagent.builders;
 
+
 public class BuiltInImageBuilder extends BuiltInImageFluent<BuiltInImageBuilder> {
 
     private BuiltInImageFluent<?> fluent;
@@ -31,8 +32,7 @@ public class BuiltInImageBuilder extends BuiltInImageFluent<BuiltInImageBuilder>
     }
 
     public BuiltInImage build() {
-        return new BuiltInImage(
-                fluent.getBuiltInImage(),
+        return new BuiltInImage(fluent.getBuiltInImage(),
                 fluent.isInstallGit(),
                 fluent.isInstallMaven(),
                 fluent.isInstallDocker(),

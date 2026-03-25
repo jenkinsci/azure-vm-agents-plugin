@@ -16,16 +16,18 @@
 
 package com.microsoft.azure.vmagent;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.microsoft.azure.vmagent.util.AzureUtil;
-import jenkins.model.Jenkins;
-import jenkins.model.JenkinsLocationConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import jenkins.model.Jenkins;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+import jenkins.model.JenkinsLocationConfiguration;
+
 
 @WithJenkins
 class TestDeploymentTag {
@@ -106,14 +108,14 @@ class TestDeploymentTag {
         assertFalse(tag(1).matches(tag(0), 1));
         assertFalse(tag(100).matches(tag(450), 999));
         assertFalse(tag(450).matches(tag(100), 999));
-        assertFalse(tag(15).matches(new AzureUtil.DeploymentTag("wrong_id/100"), 20));
+        assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id/100"), 20));
 
         // New tag format
-        assertTrue(tag(15).matches(new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
-        assertFalse(tag(15).matches(new AzureUtil.DeploymentTag("wrong_id|100"), 20));
+        assertTrue(tag(15).matches( new AzureUtil.DeploymentTag(jenkinsUrl + "|100"), 20));
+        assertFalse(tag(15).matches( new AzureUtil.DeploymentTag("wrong_id|100"), 20));
     }
 
     private AzureUtil.DeploymentTag tag(long timestamp) {
-        return new AzureUtil.DeploymentTag(timestamp) {};
+        return new AzureUtil.DeploymentTag(timestamp){};
     }
 }

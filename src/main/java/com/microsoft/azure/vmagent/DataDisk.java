@@ -3,16 +3,19 @@ package com.microsoft.azure.vmagent;
 import com.azure.resourcemanager.compute.models.CachingTypes;
 import com.azure.resourcemanager.compute.models.DiskSkuTypes;
 import com.azure.resourcemanager.storage.models.SkuName;
+
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import java.io.Serializable;
+
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
+
+import java.io.Serializable;
 
 public class DataDisk implements Describable<DataDisk>, Serializable {
 
@@ -85,13 +88,13 @@ public class DataDisk implements Describable<DataDisk>, Serializable {
 
         @POST
         public FormValidation doCheckStorageAccountType(
-                @QueryParameter String value, @QueryParameter String diskCache) {
+                @QueryParameter String value,
+                @QueryParameter String diskCache) {
             if (StringUtils.isBlank(value)) {
                 return FormValidation.ok();
             }
 
-            if (DiskSkuTypes.PREMIUM_V2_LRS.toString().equalsIgnoreCase(value)
-                    && !StringUtils.isBlank(diskCache)
+            if (DiskSkuTypes.PREMIUM_V2_LRS.toString().equalsIgnoreCase(value) && !StringUtils.isBlank(diskCache)
                     && !CachingTypes.NONE.toString().equalsIgnoreCase(diskCache)) {
                 return FormValidation.error("Disk caching is not supported for the selected storage account type."
                         + " Please select 'None' for Disk Cache.");

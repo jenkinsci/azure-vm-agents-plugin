@@ -1,18 +1,18 @@
 /*
-Copyright 2016 Microsoft, Inc.
+ Copyright 2016 Microsoft, Inc.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
 package com.microsoft.azure.vmagent.util;
 
 import java.util.List;
@@ -93,7 +93,6 @@ public final class Constants {
      * Windows License Types.
      */
     public static final String LICENSE_TYPE_NONE = "None";
-
     public static final List<String> NO_LICENSE_TYPE = List.of(LICENSE_TYPE_NONE, "Classic");
 
     public static final String LICENSE_TYPE_WINDOWS_CLIENT = "Windows_Client";
@@ -109,7 +108,6 @@ public final class Constants {
      * VM/Deployment name date formats.
      **/
     public static final int VM_NAME_HASH_LENGTH = 6;
-
     public static final String DEPLOYMENT_NAME_DATE_FORMAT = "MMddHHmmssSSS";
 
     /**
@@ -125,14 +123,12 @@ public final class Constants {
      * Image top level type.
      */
     public static final String IMAGE_TOP_LEVEL_BASIC = "basic";
-
     public static final String IMAGE_TOP_LEVEL_ADVANCED = "advanced";
 
     /**
      * Built In Image.
      */
     public static final String WINDOWS_SERVER_2025 = "Windows Server 2025";
-
     public static final String WINDOWS_SERVER_2022 = "Windows Server 2022";
     public static final String WINDOWS_SERVER_2019 = "Windows Server 2019";
     public static final String WINDOWS_SERVER_2016 = "Windows Server 2016";
@@ -144,14 +140,12 @@ public final class Constants {
      * ResourceGroup reference type.
      */
     public static final String RESOURCE_GROUP_REFERENCE_TYPE_NEW = "new";
-
     public static final String RESOURCE_GROUP_REFERENCE_TYPE_EXISTING = "existing";
 
     /**
      * Default Image Properties.
      */
     public static final String DEFAULT_IMAGE_ID = "defaultImageId";
-
     public static final String DEFAULT_IMAGE_PUBLISHER = "defaultImagePublisher";
     public static final String DEFAULT_IMAGE_OFFER = "defaultImageOffer";
     public static final String DEFAULT_IMAGE_SKU = "defaultImageSku";
@@ -170,7 +164,6 @@ public final class Constants {
      * Build In Tools.
      */
     public static final String INSTALL_JAVA = "Java";
-
     public static final String INSTALL_MAVEN = "Maven";
     public static final String INSTALL_QEMU = "QEMU";
     public static final String INSTALL_GIT = "Git";
@@ -209,23 +202,24 @@ public final class Constants {
     /**
      * Provisioning failure reasons.
      */
-    public static final String JNLP_POST_PROV_LAUNCH_FAIL =
-            "Provisioning Failure: JNLP agent failed to connect. Make sure that "
-                    + "agent node is able to reach controller and necessary firewall rules are configured";
+    public static final String JNLP_POST_PROV_LAUNCH_FAIL
+            = "Provisioning Failure: JNLP agent failed to connect. Make sure that "
+            + "agent node is able to reach controller and necessary firewall rules are configured";
 
-    public static final String AGENT_POST_PROV_JAVA_NOT_FOUND =
-            "Post Provisioning Failure: Java runtime not found. At a minimum init script "
-                    + " should ensure that java runtime is installed";
+    public static final String AGENT_POST_PROV_JAVA_NOT_FOUND
+            = "Post Provisioning Failure: Java runtime not found. At a minimum init script "
+            + " should ensure that java runtime is installed";
 
-    public static final String AGENT_POST_PROV_AUTH_FAIL =
-            "Post Provisioning Failure: Not able to authenticate via username and "
-                    + " Image may not be supporting password authentication , marking template has disabled";
+    public static final String AGENT_POST_PROV_AUTH_FAIL
+            = "Post Provisioning Failure: Not able to authenticate via username and "
+            + " Image may not be supporting password authentication , marking template has disabled";
 
-    public static final String AGENT_POST_PROV_NULL_COMPUTER = "Post Provisioning Failure: 'Computer' was null";
+    public static final String AGENT_POST_PROV_NULL_COMPUTER
+            = "Post Provisioning Failure: 'Computer' was null";
 
-    public static final String AGENT_POST_PROV_CONN_FAIL =
-            "Post Provisioning Failure: Not able to connect to agent machine. "
-                    + "Ensure that ssh server is configured properly";
+    public static final String AGENT_POST_PROV_CONN_FAIL
+            = "Post Provisioning Failure: Not able to connect to agent machine. "
+            + "Ensure that ssh server is configured properly";
 
     public static final String REG_EX_DIGIT = "\\d+";
 
@@ -258,7 +252,7 @@ public final class Constants {
 
     public static final String AZURE_TEMPLATE_TAG_NAME = "JenkinsTemplateTag";
 
-    public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; // in seconds
+    public static final long AZURE_DEPLOYMENT_TIMEOUT = 2 * 60 * 60; //in seconds
 
     public static final String VERSION_LATEST = "latest";
 

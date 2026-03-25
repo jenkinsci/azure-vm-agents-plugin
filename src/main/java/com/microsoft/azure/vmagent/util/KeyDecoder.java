@@ -8,14 +8,16 @@ import java.io.IOException;
 import java.util.Base64;
 
 public final class KeyDecoder {
-    private KeyDecoder() {}
+    private KeyDecoder() {
+    }
 
-    public static String getPublicKey(String privateKey, String privateSshKeyPassphrase)
-            throws IOException, InvalidPassphraseException, SshException {
+    public static String getPublicKey(String privateKey, String privateSshKeyPassphrase) throws IOException,
+            InvalidPassphraseException,
+            SshException {
         SshKeyPair keyPair = SshKeyUtils.getPrivateKey(privateKey, privateSshKeyPassphrase);
 
-        String publicKey =
-                Base64.getEncoder().encodeToString(keyPair.getPublicKey().getEncoded());
+        String publicKey = Base64.getEncoder().encodeToString(keyPair.getPublicKey().getEncoded());
         return keyPair.getPublicKey().getAlgorithm() + " " + publicKey;
     }
+
 }

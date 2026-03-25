@@ -6,6 +6,7 @@ import com.microsoft.azure.vmagent.AzureVMCloudPoolRetentionStrategy;
 import com.microsoft.azure.vmagent.AzureVMCloudRetensionStrategy;
 import com.microsoft.azure.vmagent.util.Constants;
 import hudson.model.Node;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         cloudTags = new ArrayList<>();
     }
 
-    // CHECKSTYLE:OFF
+    //CHECKSTYLE:OFF
     public T withName(String name) {
         this.name = name;
         return (T) this;
@@ -163,7 +164,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public T addNewPoolRetentionStrategy(String retentionTime, String poolSize, boolean singleUseAgents) {
         AzureVMCloudPoolRetentionStrategy retentionStrategy1 =
-                new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime), Integer.parseInt(poolSize));
+          new AzureVMCloudPoolRetentionStrategy(Integer.parseInt(retentionTime),
+                Integer.parseInt(poolSize));
         retentionStrategy1.setSingleUseAgents(singleUseAgents);
         this.retentionStrategy = retentionStrategy1;
         return (T) this;
@@ -211,7 +213,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         this.credentialsId = credentialsId;
         return (T) this;
     }
-    // CHECKSTYLE:ON
+    //CHECKSTYLE:ON
 
     public String getName() {
         return name;

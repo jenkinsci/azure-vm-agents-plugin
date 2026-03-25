@@ -13,17 +13,18 @@ import hudson.RelativePath;
 import hudson.model.Descriptor;
 import hudson.slaves.Cloud;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang3.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import jenkins.model.Jenkins;
-import org.apache.commons.lang3.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.verb.POST;
 
 public class AvailabilityZone extends AzureAvailabilityType {
 
@@ -70,7 +71,8 @@ public class AvailabilityZone extends AzureAvailabilityType {
         public ListBoxModel doFillZoneItems(
                 @RelativePath("..") @QueryParameter("cloudName") String cloudName,
                 @RelativePath("..") @QueryParameter String location,
-                @RelativePath("..") @QueryParameter String virtualMachineSize) {
+                @RelativePath("..") @QueryParameter String virtualMachineSize
+        ) {
             Jenkins.get().checkPermission(Jenkins.SYSTEM_READ);
 
             ListBoxModel model = new ListBoxModel();
@@ -105,9 +107,11 @@ public class AvailabilityZone extends AzureAvailabilityType {
         }
 
         private static Set<String> getZonesBy(
-                String virtualMachineSize, Region region, AzureResourceManager azureClient) {
-            return azureClient
-                    .computeSkus()
+                String virtualMachineSize,
+                Region region,
+                AzureResourceManager azureClient
+        ) {
+            return azureClient.computeSkus()
                     .listByRegionAndResourceType(region, ComputeResourceType.VIRTUALMACHINES)
                     .stream()
                     // quite an expensive operation currently
@@ -130,5 +134,6 @@ public class AvailabilityZone extends AzureAvailabilityType {
 
             return null;
         }
+
     }
 }
