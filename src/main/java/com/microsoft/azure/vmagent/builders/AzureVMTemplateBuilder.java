@@ -29,6 +29,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
+        fluent.withOSDiskStorageAccountType(template.getOsDiskStorageAccountType());
         fluent.withEphemeralOSDisk(template.isEphemeralOSDisk());
         fluent.withOsDiskSize(template.getOsDiskSize());
         fluent.withRetentionStrategy((AzureVMCloudBaseRetentionStrategy) template.getRetentionStrategy());
@@ -63,6 +64,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         }
         fluent.withStorageAccountType(template.getStorageAccountType());
         fluent.withDiskType(template.getDiskType());
+        fluent.withOSDiskStorageAccountType(template.getOsDiskStorageAccountType());
         fluent.withOsDiskSize(template.getOsDiskSize());
         fluent.withRetentionStrategy((AzureVMCloudBaseRetentionStrategy) template.getRetentionStrategy());
         fluent.withUsageMode(template.getUsageMode());
@@ -135,6 +137,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setShutdownOnIdle(fluent.isShutdownOnIdle());
         azureVMAgentTemplate.setEphemeralOSDisk(fluent.isEphemeralOSDisk());
         azureVMAgentTemplate.setOsDiskSize(fluent.getOsDiskSize());
+        azureVMAgentTemplate.setOsDiskStorageAccountType(fluent.getOSDiskStorageAccountType());
         azureVMAgentTemplate.setTemplateDisabled(fluent.getAdvancedImage().isTemplateDisabled());
         azureVMAgentTemplate.setBuiltInImage(fluent.getBuiltInImage().getBuiltInImage());
         azureVMAgentTemplate.setInstallGit(fluent.getBuiltInImage().isInstallGit());

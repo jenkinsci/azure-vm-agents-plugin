@@ -67,6 +67,8 @@ public class AdvancedImage {
 
     private boolean templateDisabled;
 
+    private String osDiskStorageAccountType;
+
     public AdvancedImage(String imageReferenceType,
                          String image,
                          String osType,
@@ -98,7 +100,8 @@ public class AdvancedImage {
                          String nsgName,
                          String jvmOptions,
                          String noOfParallelJobs,
-                         boolean templateDisabled) {
+                         boolean templateDisabled,
+                         String osDiskStorageAccountType) {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
@@ -131,6 +134,7 @@ public class AdvancedImage {
         this.jvmOptions = jvmOptions;
         this.noOfParallelJobs = noOfParallelJobs;
         this.templateDisabled = templateDisabled;
+        this.osDiskStorageAccountType = osDiskStorageAccountType;
     }
 
     public String getImageReferenceType() {
@@ -259,5 +263,9 @@ public class AdvancedImage {
 
     public boolean isTemplateDisabled() {
         return templateDisabled;
+    }
+
+    public String getOsDiskStorageAccountType() {
+        return osDiskStorageAccountType;
     }
 }
