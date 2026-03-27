@@ -37,6 +37,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
         fluent.withShutdownOnIdle(template.isShutdownOnIdle());
+        fluent.withMaxVirtualMachinesLimit(template.getMaxVirtualMachinesLimit());
 
         if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
             fluent.withBuiltInImage(template.getBuiltInImageInside());
@@ -71,6 +72,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         fluent.withAdminCredential(template.getCredentialsId());
         fluent.withWorkspace(template.getAgentWorkspace());
         fluent.withShutdownOnIdle(template.isShutdownOnIdle());
+        fluent.withMaxVirtualMachinesLimit(template.getMaxVirtualMachinesLimit());
 
         if (template.getImageTopLevelType().equalsIgnoreCase("basic")) {
             fluent.withBuiltInImage(template.getBuiltInImageInside());
@@ -148,6 +150,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setEnableMSI(fluent.getAdvancedImage().isEnableMSI());
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
+        azureVMAgentTemplate.setMaxVirtualMachinesLimit(fluent.getMaxVirtualMachinesLimit());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
         azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(
             fluent.getAdvancedImage().getGalleryImageSpecialized());

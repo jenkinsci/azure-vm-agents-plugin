@@ -58,6 +58,8 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     private String credentialsId;
 
+    private int maxVirtualMachinesLimit;
+
     private List<AzureTagPair> cloudTags;
 
     public AzureVMTemplateFluent() {
@@ -67,6 +69,7 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         storageAccountNameReferenceType = "new";
         diskType = Constants.DISK_MANAGED;
         osDiskSize = 0;
+        maxVirtualMachinesLimit = 0;
         retentionStrategy = new AzureVMCloudRetensionStrategy(Constants.DEFAULT_IDLE_RETENTION_TIME);
         shutdownOnIdle = false;
         usageMode = Node.Mode.NORMAL;
@@ -220,6 +223,11 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
         this.credentialsId = credentialsId;
         return (T) this;
     }
+
+    public T withMaxVirtualMachinesLimit(int maxVirtualMachinesLimit) {
+        this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+        return (T) this;
+    }
     //CHECKSTYLE:ON
 
     public String getName() {
@@ -312,6 +320,10 @@ public class AzureVMTemplateFluent<T extends AzureVMTemplateFluent<T>> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public int getMaxVirtualMachinesLimit() {
+        return maxVirtualMachinesLimit;
     }
 
     List<AzureTagPair> getCloudTags() {
