@@ -72,6 +72,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private boolean templateDisabled;
 
+    private String osDiskStorageAccountType;
+
     public AdvancedImageFluent() {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imageVersion = "latest";
@@ -227,6 +229,11 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.templateDisabled = templateDisabled;
         return (T) this;
     }
+
+    public T withOSDiskStorageAccountType(String osDiskStorageAccountType) {
+        this.osDiskStorageAccountType = osDiskStorageAccountType;
+        return (T) this;
+    }
     //CHECKSTYLE:ON
 
     public String getImageReferenceType() {
@@ -359,5 +366,9 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     public boolean isTemplateDisabled() {
         return templateDisabled;
+    }
+
+    public String getOsDiskStorageAccountType() {
+        return osDiskStorageAccountType;
     }
 }

@@ -444,6 +444,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.existingStorageAccountName = existingStorageAccountName;
         this.storageAccountNameReferenceType = storageAccountNameReferenceType;
         this.diskType = diskType;
+        this.osDiskStorageAccountType = null;
 
         if (StringUtils.isBlank(noOfParallelJobs) || !noOfParallelJobs.matches(Constants.REG_EX_DIGIT)
                 || noOfParallelJobs.
@@ -1316,6 +1317,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 )
                 .withNumberOfExecutors(String.valueOf(getNoOfParallelJobs()))
                 .withOsType(getOsType())
+                .withOSDiskStorageAccountType(getOsDiskStorageAccountType())
                 .withLaunchMethod(isSSH ? Constants.LAUNCH_METHOD_SSH : Constants.LAUNCH_METHOD_JNLP)
                 .withPreInstallSsh(preInstallSshLocal)
                 .withSshConfig(sshConfigLocal)
@@ -1346,7 +1348,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     @SuppressWarnings("unchecked")
     public Descriptor<AzureVMAgentTemplate> getDescriptor() {
-        return Jenkins.get().getDescriptor(getClass());
+        return DescriptorImpl.DESCRIPTOR;
     }
 
     public Set<LabelAtom> getLabelDataSet() {
@@ -1488,6 +1490,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<AzureVMAgentTemplate> {
+        public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
         @Override
         @NonNull

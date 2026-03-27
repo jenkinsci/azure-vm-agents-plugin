@@ -39,6 +39,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withDisableTemplate(image.isTemplateDisabled());
         fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
         fluent.withDoNotUseMachineIfInitFails(image.isDoNotUseMachineIfInitFails());
+        fluent.withOSDiskStorageAccountType(image.getOsDiskStorageAccountType());
 
     }
 
@@ -74,6 +75,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
         fluent.withDisableTemplate(image.isTemplateDisabled());
         fluent.withRunScriptAsRoot(image.isExecuteInitScriptAsRoot());
         fluent.withDoNotUseMachineIfInitFails(image.isDoNotUseMachineIfInitFails());
+        fluent.withOSDiskStorageAccountType(image.getOsDiskStorageAccountType());
     }
 
     public AdvancedImage build() {
@@ -108,6 +110,7 @@ public class AdvancedImageBuilder extends AdvancedImageFluent<AdvancedImageBuild
                 fluent.getNsgName(),
                 fluent.getJvmOptions(),
                 fluent.getNoOfParallelJobs(),
-                fluent.isTemplateDisabled());
+                fluent.isTemplateDisabled(),
+                fluent.getOsDiskStorageAccountType());
     }
 }
