@@ -7,14 +7,18 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class AzureVMCloudBuilder {
+
+    private static final Logger LOGGER = Logger.getLogger(AzureVMCloudBuilder.class.getName());
+    private static final int DEFAULT_MAX_VIRTUAL_MACHINES_LIMIT = 10;
 
     private String cloudName;
 
     private String azureCredentialsId;
 
-    private String maxVirtualMachinesLimit;
+    private int maxVirtualMachinesLimit;
 
     private String deploymentTimeout;
 
@@ -27,7 +31,7 @@ public class AzureVMCloudBuilder {
     private List<AzureVMAgentTemplate> vmTemplates;
 
     public AzureVMCloudBuilder() {
-        maxVirtualMachinesLimit = "10";
+        maxVirtualMachinesLimit = DEFAULT_MAX_VIRTUAL_MACHINES_LIMIT;
         deploymentTimeout = "1200";
         resourceGroupReferenceType = "new";
         vmTemplates = new ArrayList<>();
@@ -36,7 +40,7 @@ public class AzureVMCloudBuilder {
     public AzureVMCloudBuilder(AzureVMCloud cloud) {
         cloudName = cloud.getCloudName();
         azureCredentialsId = cloud.getAzureCredentialsId();
-        maxVirtualMachinesLimit = String.valueOf(cloud.getMaxVirtualMachinesLimit());
+        maxVirtualMachinesLimit = cloud.getMaxVirtualMachinesLimit();
         deploymentTimeout = String.valueOf(cloud.getDeploymentTimeout());
         resourceGroupReferenceType = cloud.getResourceGroupReferenceType();
         newResourceGroupName = cloud.getNewResourceGroupName();
@@ -57,8 +61,21 @@ public class AzureVMCloudBuilder {
         return this;
     }
 
-    public AzureVMCloudBuilder withMaxVirtualMachinesLimit(String maxVirtualMachinesLimit) {
+    public AzureVMCloudBuilder withMaxVirtualMachinesLimit(int maxVirtualMachinesLimit) {
         this.maxVirtualMachinesLimit = maxVirtualMachinesLimit;
+        return this;
+    }
+
+    @Deprecated
+    public AzureVMCloudBuilder withMaxVirtualMachinesLimit(String maxVirtualMachinesLimit) {
+        if (StringUtils.isBlank(maxVirtualMachinesLimit) || !maxVirtualMachinesLimit.matches("\\d+")) {
+            LOGGER.warning("Couldn't parse maxVirtualMachinesLimit, defaulting to "
+                    + DEFAULT_MAX_VIRTUAL_MACHINES_LIMIT);
+            this.maxVirtualMachinesLimit = DEFAULT_MAX_VIRTUAL_MACHINES_LIMIT;
+        } else {
+            LOGGER.warning("deprecated: use the version of this method that is an int");
+            this.maxVirtualMachinesLimit = Integer.parseInt(maxVirtualMachinesLimit);
+        }
         return this;
     }
 
@@ -107,7 +124,7 @@ public class AzureVMCloudBuilder {
     public AzureVMCloud build() {
         return new AzureVMCloud(StringUtils.defaultString(cloudName),
                 StringUtils.defaultString(azureCredentialsId),
-                maxVirtualMachinesLimit,
+                String.valueOf(maxVirtualMachinesLimit),
                 deploymentTimeout,
                 resourceGroupReferenceType,
                 StringUtils.defaultString(newResourceGroupName),
