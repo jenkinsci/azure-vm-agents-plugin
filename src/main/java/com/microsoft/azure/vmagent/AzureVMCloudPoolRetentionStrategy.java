@@ -20,12 +20,15 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetentionStrategy implements ExecutorListener {
     private static final long serialVersionUID = 1577788692L;
+
+    private static final ConcurrentHashMap<String, Object> TEMPLATE_LOCKS = new ConcurrentHashMap<>();
 
     private final long retentionMillis;
 
@@ -187,37 +190,42 @@ public class AzureVMCloudPoolRetentionStrategy extends AzureVMCloudBaseRetention
      * @param poolSize The minimum pool size (agents maintained by pool task)
      * @param effectiveMaxVMs The effective maximum VMs (from template.getEffectiveMaxVirtualMachinesLimit)
      */
-    private static synchronized void checkPoolSizeAndDelete(
+    private static void checkPoolSizeAndDelete(
             AzureVMComputer agentComputer, int poolSize, int effectiveMaxVMs) {
         AzureVMAgent templateAgentNode = agentComputer.getNode();
         if (templateAgentNode == null) {
             return;
         }
 
-        int count = 0;
-        List<Computer> computers = Arrays.asList(Jenkins.get().getComputers());
-        for (Computer computer : computers) {
-            if (computer instanceof AzureVMComputer) {
-                AzureVMAgent patternAgentNode = ((AzureVMComputer) computer).getNode();
-                if (patternAgentNode != null
-                        && TemplateUtil.checkSame(patternAgentNode.getTemplate(), templateAgentNode.getTemplate())) {
-                    count++;
+        String templateKey = templateAgentNode.getTemplate().getTemplateName();
+        Object lock = TEMPLATE_LOCKS.computeIfAbsent(templateKey, k -> new Object());
+
+        synchronized (lock) {
+            int count = 0;
+            List<Computer> computers = Arrays.asList(Jenkins.get().getComputers());
+            for (Computer computer : computers) {
+                if (computer instanceof AzureVMComputer) {
+                    AzureVMAgent patternAgentNode = ((AzureVMComputer) computer).getNode();
+                    if (patternAgentNode != null
+                            && TemplateUtil.checkSame(patternAgentNode.getTemplate(),
+                                    templateAgentNode.getTemplate())) {
+                        count++;
+                    }
                 }
             }
-        }
 
-        // Use the effective max if it's set and greater than poolSize,
-        // otherwise fall back to poolSize for backwards compatibility
-        int effectiveLimit = (effectiveMaxVMs < Integer.MAX_VALUE && effectiveMaxVMs > poolSize)
-                ? effectiveMaxVMs
-                : poolSize;
+            int effectiveLimit = (effectiveMaxVMs < Integer.MAX_VALUE && effectiveMaxVMs > poolSize)
+                    ? effectiveMaxVMs
+                    : poolSize;
 
-        if (count > effectiveLimit) {
-            LOGGER.log(Level.INFO,
-                    "Delete VM {0} for exceeding limit: count={1}, poolSize={2}, "
-                            + "effectiveMaxVMs={3}, effectiveLimit={4}",
-                    new Object[]{agentComputer, count, poolSize, effectiveMaxVMs, effectiveLimit});
-            tryDeleteWhenIdle(agentComputer);
+            if (count > effectiveLimit) {
+                LOGGER.log(Level.INFO,
+                        "Delete VM {0} for exceeding limit: count={1}, poolSize={2}, "
+                                + "effectiveMaxVMs={3}, effectiveLimit={4}",
+                        new Object[]{agentComputer, count, poolSize, effectiveMaxVMs, effectiveLimit});
+                tryDeleteWhenIdle(agentComputer);
+                AzureVMCloud.scheduleQueueMaintenance();
+            }
         }
     }
 

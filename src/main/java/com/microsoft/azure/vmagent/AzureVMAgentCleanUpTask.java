@@ -520,6 +520,7 @@ public class AzureVMAgentCleanUpTask extends AsyncPeriodicWork {
                             agentNode.getDisplayName());
                     try {
                         Jenkins.get().removeNode(agentNode);
+                        AzureVMCloud.scheduleQueueMaintenance();
                     } catch (IOException e) {
                         LOGGER.log(Level.WARNING,
                                 "Node {0} could not be removed: {1}",

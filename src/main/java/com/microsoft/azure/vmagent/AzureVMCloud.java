@@ -84,6 +84,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
+import jenkins.util.SystemProperties;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.cloudstats.CloudStatistics;
@@ -105,6 +106,33 @@ public class AzureVMCloud extends Cloud {
     public static final Logger LOGGER = Logger.getLogger(AzureVMCloud.class.getName());
     private static final int DEFAULT_SSH_CONNECT_RETRY_COUNT = 3;
     private static final int SHH_CONNECT_RETRY_INTERNAL_SECONDS = 20;
+
+    private static final long DEFAULT_MAINTENANCE_DELAY_MS =
+            SystemProperties.getLong("azure.vm.scheduleMaintenanceDelayMs", 1000L);
+
+    public static void scheduleQueueMaintenance() {
+        scheduleQueueMaintenance(DEFAULT_MAINTENANCE_DELAY_MS);
+    }
+
+    public static void scheduleQueueMaintenance(long delayMs) {
+        Jenkins j = Jenkins.getInstanceOrNull();
+        if (j == null) {
+            return;
+        }
+        if (delayMs <= 0) {
+            j.getQueue().scheduleMaintenance();
+        } else {
+            jenkins.util.Timer.get().schedule(
+                    () -> {
+                        Jenkins j2 = Jenkins.getInstanceOrNull();
+                        if (j2 != null) {
+                            j2.getQueue().scheduleMaintenance();
+                        }
+                    },
+                    delayMs,
+                    TimeUnit.MILLISECONDS);
+        }
+    }
 
     private final String credentialsId;
 
@@ -652,14 +680,19 @@ public class AzureVMCloud extends Cloud {
         final List<PlannedNode> plannedNodes = new ArrayList<>(numberOfAgents);
 
         if (!template.retrieveTemplateProvisionStrategy().isVerifiedPass()) {
-            AzureVMCloudVerificationTask.verify(this.name, template.getTemplateName());
-        }
-        if (template.retrieveTemplateProvisionStrategy().isVerifiedFailed()) {
-            LOGGER.log(Level.INFO, "Template {0} has just verified failed", template.getTemplateName());
-            if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
-                LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
+            if (template.retrieveTemplateProvisionStrategy().isVerifiedFailed()) {
+                LOGGER.log(Level.INFO, "Template {0} has previously verified failed", template.getTemplateName());
+                if (StringUtils.isNotBlank(template.getTemplateStatusDetails())) {
+                    LOGGER.log(Level.INFO, template.getTemplateStatusDetails());
+                }
+                return Collections.emptyList();
             }
-            return new ArrayList<>();
+            final String cloudName = this.name;
+            getThreadPool().submit(() ->
+                    AzureVMCloudVerificationTask.verify(cloudName, template.getTemplateName()));
+            LOGGER.log(Level.INFO, "Template {0} not yet verified, async verification submitted",
+                    template.getTemplateName());
+            return Collections.emptyList();
         }
 
         // reuse existing nodes if available
@@ -673,59 +706,54 @@ public class AzureVMCloud extends Cloud {
                 if (agentNode != null && isNodeEligibleForReuse(agentNode, template)) {
                     LOGGER.log(Level.FINE, "Agent computer eligible for reuse {0}", agentComputer.getName());
 
-                    try {
-                        if (AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
-                            numberOfAgents--;
+                    numberOfAgents--;
+                    plannedNodes.add(new PlannedNode(agentNode.getNodeName(),
+                            Computer.threadPoolForRemoting.submit(() -> {
+                                if (!AzureVMManagementServiceDelegate.virtualMachineExists(agentNode)) {
+                                    throw AzureCloudException.create(
+                                            "VM no longer exists: " + agentNode.getNodeName());
+                                }
+                                final Object agentLock = getLockForAgent(agentNode);
+                                try {
+                                    synchronized (agentLock) {
+                                        SlaveComputer computer = agentNode.getComputer();
 
-                            plannedNodes.add(new PlannedNode(agentNode.getNodeName(),
-                                    Computer.threadPoolForRemoting.submit(() -> {
-                                        final Object agentLock = getLockForAgent(agentNode);
-                                        try {
-                                            synchronized (agentLock) {
-                                                SlaveComputer computer = agentNode.getComputer();
-
-                                                if (computer != null && computer.isOnline()) {
-                                                    return agentNode;
-                                                }
-                                                LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
-                                                        agentNode.getNodeName());
-
-                                                try {
-                                                    getServiceDelegate().startVirtualMachine(agentNode);
-                                                    // set virtual machine details again
-                                                    getServiceDelegate().setVirtualMachineDetails(
-                                                            agentNode, template);
-                                                    Jenkins.get().addNode(agentNode);
-                                                    azureComputer.setTemporaryOfflineCause(null);
-                                                    if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
-                                                        retrySshConnect(azureComputer);
-                                                    } else { // Wait until node is online
-                                                        waitUntilJNLPNodeIsOnline(agentNode);
-                                                    }
-                                                    LOGGER.info(String.format("Remove suspended status for node: %s",
-                                                            agentNode.getNodeName()));
-                                                    azureComputer.setAcceptingTasks(true);
-                                                    agentNode.clearCleanUpAction();
-                                                    agentNode.setEligibleForReuse(false);
-                                                } catch (Exception e) {
-                                                    throw AzureCloudException.create(e);
-                                                }
-                                                template.retrieveTemplateProvisionStrategy().success();
-                                                return agentNode;
-                                            }
-                                        } finally {
-                                            releaseLockForAgent(agentNode);
+                                        if (computer != null && computer.isOnline()) {
+                                            return agentNode;
                                         }
-                                    }), template.getNoOfParallelJobs()));
-                        }
-                    } catch (Exception e) {
-                        // Couldn't bring the node back online.  Mark it as needing deletion
-                        LOGGER.log(Level.WARNING, String.format("Failed to reuse agent computer %s",
-                                agentComputer.getName()), e);
-                        azureComputer.setAcceptingTasks(false);
-                        agentNode.setCleanUpAction(CleanUpAction.DEFAULT,
-                                Messages._Shutdown_Agent_Failed_To_Revive());
-                    }
+                                        LOGGER.log(Level.INFO, "Found existing node, starting VM {0}",
+                                                agentNode.getNodeName());
+
+                                        try {
+                                            getServiceDelegate().startVirtualMachine(agentNode);
+                                            getServiceDelegate().setVirtualMachineDetails(
+                                                    agentNode, template);
+                                            Jenkins.get().addNode(agentNode);
+                                            azureComputer.setTemporaryOfflineCause(null);
+                                            if (agentNode.getAgentLaunchMethod().equalsIgnoreCase("SSH")) {
+                                                retrySshConnect(azureComputer);
+                                            } else {
+                                                waitUntilJNLPNodeIsOnline(agentNode);
+                                            }
+                                            LOGGER.info(String.format("Remove suspended status for node: %s",
+                                                    agentNode.getNodeName()));
+                                            azureComputer.setAcceptingTasks(true);
+                                            agentNode.clearCleanUpAction();
+                                            agentNode.setEligibleForReuse(false);
+                                            AzureVMCloud.scheduleQueueMaintenance(0);
+                                        } catch (Exception e) {
+                                            azureComputer.setAcceptingTasks(false);
+                                            agentNode.setCleanUpAction(CleanUpAction.DEFAULT,
+                                                    Messages._Shutdown_Agent_Failed_To_Revive());
+                                            throw AzureCloudException.create(e);
+                                        }
+                                        template.retrieveTemplateProvisionStrategy().success();
+                                        return agentNode;
+                                    }
+                                } finally {
+                                    releaseLockForAgent(agentNode);
+                                }
+                            }), template.getNoOfParallelJobs()));
                 }
             }
         }
@@ -832,6 +860,7 @@ public class AzureVMCloud extends Cloud {
         };
 
         final Future<AzureVMDeploymentInfo> deploymentFuture = getThreadPool().submit(callableTask);
+        AzureVMCloud.scheduleQueueMaintenance();
 
         for (int i = 0; i < numberOfNewAgents; i++) {
             final int index = i;
@@ -896,10 +925,9 @@ public class AzureVMCloud extends Cloud {
                                             waitUntilJNLPNodeIsOnline(agent);
                                         }
                                     } finally {
-                                        // Place node in default state, now can be
-                                        // dealt with by the cleanup task.
                                         agent.clearCleanUpAction();
                                     }
+                                    AzureVMCloud.scheduleQueueMaintenance(0);
                                 } catch (Exception e) {
                                     LOGGER.log(
                                             Level.SEVERE,
