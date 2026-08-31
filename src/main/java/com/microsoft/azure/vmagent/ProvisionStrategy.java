@@ -6,7 +6,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class ProvisionStrategy {
     private static final long INIT_INTERVAL = 10 * 1000; // 10 seconds
 
-    private static final long MAX_INTERVAL = 10 * 60 * 1000; // 10 minutes
+    private static final long MAX_INTERVAL = 20 * 60 * 1000; // 20 minutes
 
     private long interval;
 
