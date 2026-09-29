@@ -379,6 +379,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private String uamiID;
 
+    private boolean useUppercaseComputerName;
+
     private String javaPath;
 
     private RetentionStrategy<?> retentionStrategy;
@@ -1281,6 +1283,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     public String getUamiID() {
         return uamiID;
+    }
+
+    public boolean getUseUppercaseComputerName() {
+        return useUppercaseComputerName;
+    }
+
+    @DataBoundSetter
+    public void setUseUppercaseComputerName(boolean useUppercaseComputerName) {
+        this.useUppercaseComputerName = useUppercaseComputerName;
     }
 
     public AzureComputerLauncher getLauncher() {
