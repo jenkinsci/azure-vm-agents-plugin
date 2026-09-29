@@ -256,6 +256,7 @@ public class AzureVMAgentSSHLauncher extends ComputerLauncher {
             // state to the default for the node.
             agent.clearCleanUpAction();
             successful = true;
+            AzureVMCloud.scheduleQueueMaintenance(0);
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE,"Got exception on agent " + agent.getNodeName(), e);

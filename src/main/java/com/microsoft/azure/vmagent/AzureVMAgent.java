@@ -610,10 +610,8 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
             serviceDelegate.shutdownVirtualMachine(this);
         }
 
-        // After shutting down successfully, set the node as eligible for
-        // reuse.
         setEligibleForReuse(true);
-
+        AzureVMCloud.scheduleQueueMaintenance();
     }
 
     /**
@@ -720,6 +718,7 @@ public class AzureVMAgent extends AbstractCloudSlave implements TrackedItem {
         }
 
         Jenkins.get().removeNode(this);
+        AzureVMCloud.scheduleQueueMaintenance();
     }
 
     @CheckForNull

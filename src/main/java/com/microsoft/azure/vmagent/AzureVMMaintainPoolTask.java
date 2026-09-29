@@ -78,6 +78,7 @@ public class AzureVMMaintainPoolTask extends AsyncPeriodicWork {
                     template,
                     true
                     );
+            AzureVMCloud.scheduleQueueMaintenance();
         } else {
             LOGGER.log(Level.WARNING, "Template {0} failed to verify, cannot be provisioned",
                     template.getTemplateName());

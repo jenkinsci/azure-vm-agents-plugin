@@ -81,6 +81,7 @@ import hudson.util.Secret;
 import io.jenkins.plugins.azuresdk.HttpClientRetriever;
 import jenkins.model.Jenkins;
 import jenkins.slaves.JnlpAgentReceiver;
+import jenkins.util.SystemProperties;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
@@ -199,6 +200,14 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final Cache<String, Set<String>> vmSizesByLocation = Caffeine.newBuilder()
             .expireAfterAccess(24, TimeUnit.HOURS)
+            .build();
+
+    private static final long VM_EXISTS_CACHE_TTL_MS =
+            SystemProperties.getLong("azure.vm.existsCacheTtlMs", 30_000L);
+
+    private static final Cache<String, Boolean> vmExistsCache = Caffeine.newBuilder()
+            .expireAfterWrite(VM_EXISTS_CACHE_TTL_MS, TimeUnit.MILLISECONDS)
+            .maximumSize(1000)
             .build();
 
     public static AzureVMManagementServiceDelegate getInstance(AzureVMCloud cloud) {
@@ -1321,22 +1330,31 @@ public final class AzureVMManagementServiceDelegate {
     private boolean virtualMachineExists(
             String vmName,
             String resourceGroupName) throws AzureCloudException {
-        LOGGER.log(Level.INFO, "Checking VM exists for {0}", vmName);
+        String cacheKey = resourceGroupName + "/" + vmName;
+        Boolean cached = vmExistsCache.getIfPresent(cacheKey);
+        if (cached != null) {
+            LOGGER.log(Level.FINE, "VM exists cache hit for {0}: {1}", new Object[]{vmName, cached});
+            return cached;
+        }
 
+        LOGGER.log(Level.INFO, "Checking VM exists for {0}", vmName);
+        boolean exists;
         try {
             azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName);
+            exists = true;
         } catch (ManagementException e) {
             if (e.getResponse().getStatusCode() == 404) {
                 LOGGER.log(Level.INFO, "{0} doesn't exist", vmName);
-                return false;
+                exists = false;
+            } else {
+                throw e;
             }
-            throw e;
         } catch (Exception e) {
             throw AzureCloudException.create(e);
         }
 
-        LOGGER.log(Level.FINE, "{0} exists", vmName);
-        return true;
+        vmExistsCache.put(cacheKey, exists);
+        return exists;
     }
 
     /**
