@@ -28,6 +28,8 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Locale;
+
 import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 
@@ -369,9 +371,11 @@ public final class AzureUtil {
      * @param osType              Type of OS
      * @param numberOfVMs         Number of VMs that will be created
      *                            (which is added to the suffix of the VM name by azure)
+     * @param upperCase           Whether the VM base name should be in upper case
      * @return Valid VM base name to use for new VMs
      */
-    public static String getVMBaseName(String templateName, String deploymentName, String osType, int numberOfVMs) {
+    public static String getVMBaseName(
+        String templateName, String deploymentName, String osType, int numberOfVMs, boolean upperCase) {
         if (!isValidTemplateName(templateName)) {
             throw new IllegalArgumentException("Invalid template name");
         }
@@ -391,9 +395,10 @@ public final class AzureUtil {
             shortenedDeploymentHash = deploymentHashString
                         .substring(deploymentHashString.length() - (Constants.VM_NAME_HASH_LENGTH - 1));
         }
-        return String.format("%s%s", getShortenedTemplateName(templateName, osType,
+        String vmBaseName = String.format("%s%s", getShortenedTemplateName(templateName, osType,
                 Constants.VM_NAME_HASH_LENGTH, numberOfDigits),
                 shortenedDeploymentHash);
+        return upperCase ? vmBaseName.toUpperCase(Locale.ROOT) : vmBaseName;
     }
 
     public static StandardUsernameCredentials getCredentials(String credentialsId) throws AzureCloudException {

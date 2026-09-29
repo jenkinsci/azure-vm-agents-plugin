@@ -244,7 +244,7 @@ public final class AzureVMManagementServiceDelegate {
             final Date timestamp = new Date(System.currentTimeMillis());
             final String deploymentName = AzureUtil.getDeploymentName(template.getTemplateName(), timestamp);
             final String vmBaseName = AzureUtil.getVMBaseName(
-                    template.getTemplateName(), deploymentName, (String) properties.get("osType"), numberOfAgents);
+                    template.getTemplateName(), deploymentName, (String) properties.get("osType"), numberOfAgents, template.getUseUppercaseComputerName());
             final String locationName = AzureUtil.getLocationNameByLabel(template.getLocation());
             final String storageAccountName = template.getStorageAccountName();
             final String storageAccountType = template.getStorageAccountType();
