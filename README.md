@@ -95,6 +95,25 @@ The built-in image only has a clean Windows or Ubuntu OS and some tools like Git
 
    Init script should finish in 20 minutes (this time can be configured in Deployment Timeout setting of Azure Profile Configuration). It's not recommended to run complex init script, if the init script is expected to take a long time to complete, it is recommended to use a custom-prepared image.
 
+### Join Windows Agents to an Active Directory Domain
+The plugin can join Windows agents to an Active Directory domain while provisioning the VM:
+1. In the agent template, specify the **Domain Name**, for example `domain.com`.
+2. Specify the optional **Domain OU Path** using a distinguished name, for example `OU=Example,DC=domain,DC=com`.
+3. Select **Domain Join Credentials** using a username and password credential, for example `DOMAIN\domain-join-user` or `domain-join-user@domain.com`. This account must have the permissions to join computers to the domain and create computer accounts in the selected OU.
+
+The VM's virtual network must use DNS servers that can resolve the domain controllers. The OU must already exist. Domain joining restarts the VM once before the agent service starts.
+
+To run the agent as a domain account, also configure **Run inbound agent service as** (see below) with a separate account from the domain join account.
+
+### Run the Windows Inbound Agent Service as a Specific Account
+By default, the Windows inbound agent service runs as SYSTEM. Select **Run inbound agent service as** in the agent template to run it as another account instead. This works with or without domain join:
+* **Domain account:** an existing AD account such as `DOMAIN\user` or `user@domain.com`. The VM must be joined to the domain.
+* **Local account:** such as `user`. No domain join is needed. If the account does not exist in the image, the sample script creates it with the credential's password.
+
+This option requires a Windows template using the inbound launcher with an initialization script. Use the sample [Windows inbound agent initialization script](docs/init-scripts/windows-inbound-agent.ps1). The plugin passes the account credentials securely to the initialization script, which configures the agent service to run as that account and grants it write access to the configured agent workspace.
+
+The agent service no longer runs as SYSTEM, so builds only have the permissions of the configured account. Your initialization script must grant the account any additional permissions your builds need, such as local group membership (for example Administrators), access to other folders, or rights to install software. The sample script only grants "Log on as a service" and write access to the agent and workspace folders.
+
 ## Advanced Configurations
 If you choose Use Advanced Image Configurations, you can click on Advanced button where you can find more Virtual Machine configurations:
 1. Virtual Network Name, Virtual Network Resource Group Name and Subnet name: by default the VM does not belong to any virtual network, you can provide one if you want the VM to be in a virtual network for network security. Please be noted the virtual network must exist.

@@ -316,6 +316,11 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean trustedLaunch;
 
+    private String domainName;
+    private String domainOUPath;
+    private String domainJoinCredentialsId;
+    private String agentServiceCredentialsId;
+
     private final String osType;
 
     private transient String agentLaunchMethod;
@@ -665,6 +670,42 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setTrustedLaunch(boolean trustedLaunch) {
         this.trustedLaunch = trustedLaunch;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    @DataBoundSetter
+    public void setDomainName(String domainName) {
+        this.domainName = Util.fixEmptyAndTrim(domainName);
+    }
+
+    public String getDomainOUPath() {
+        return domainOUPath;
+    }
+
+    @DataBoundSetter
+    public void setDomainOUPath(String domainOUPath) {
+        this.domainOUPath = Util.fixEmptyAndTrim(domainOUPath);
+    }
+
+    public String getDomainJoinCredentialsId() {
+        return domainJoinCredentialsId;
+    }
+
+    @DataBoundSetter
+    public void setDomainJoinCredentialsId(String domainJoinCredentialsId) {
+        this.domainJoinCredentialsId = Util.fixEmpty(domainJoinCredentialsId);
+    }
+
+    public String getAgentServiceCredentialsId() {
+        return agentServiceCredentialsId;
+    }
+
+    @DataBoundSetter
+    public void setAgentServiceCredentialsId(String agentServiceCredentialsId) {
+        this.agentServiceCredentialsId = Util.fixEmpty(agentServiceCredentialsId);
     }
 
     public boolean isAcceleratedNetworking() {
@@ -1607,6 +1648,24 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             return model
                     .includeAs(ACL.SYSTEM, context, SSHUserPrivateKey.class)
                     .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
+        }
+
+        @POST
+        public ListBoxModel doFillDomainJoinCredentialsIdItems(@QueryParameter String domainJoinCredentialsId) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(Jenkins.ADMINISTER)) {
+                return model.includeCurrentValue(domainJoinCredentialsId);
+            }
+
+            return model
+                    .includeEmptyValue()
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
+        }
+
+        @POST
+        public ListBoxModel doFillAgentServiceCredentialsIdItems(@QueryParameter String agentServiceCredentialsId) {
+            return doFillDomainJoinCredentialsIdItems(agentServiceCredentialsId);
         }
 
         @POST

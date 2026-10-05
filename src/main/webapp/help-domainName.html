@@ -1,0 +1,12 @@
+<div>
+  <p>Active Directory domain (e.g. <code>domain.com</code>) that newly provisioned <b>Windows</b> agents join,
+    using the Azure <code>JsonADDomainExtension</code>. Leave blank to disable.</p>
+  <ul>
+    <li>Domain join credentials must be username/password credentials, with the username in
+      <code>DOMAIN\user</code> or <code>user@domain.com</code> form.</li>
+    <li>The virtual network/subnet DNS must resolve the domain (point it at your domain controllers).</li>
+    <li>Optionally set an OU path, e.g. <code>OU=Example,DC=domain,DC=com</code>.</li>
+    <li>The VM reboots once after joining; any startup script runs after the reboot.</li>
+    <li>Computer accounts are not removed from Active Directory when agents are deleted.</li>
+  </ul>
+</div>
