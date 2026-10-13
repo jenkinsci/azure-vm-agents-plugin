@@ -351,6 +351,8 @@ public final class AzureVMManagementServiceDelegate {
                     templateLocation);
 
             final JsonNode tmp = MAPPER.readTree(embeddedTemplate);
+            // LUNs of the image's own data disks, listed so they are deleted with the VM by default
+            final List<Integer> imageDataDiskLuns = new ArrayList<>();
 
             if (useCustomScriptExtension) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
@@ -421,6 +423,9 @@ public final class AzureVMManagementServiceDelegate {
                     String id = template.getId();
                     VirtualMachineCustomImage customImage = azureClient.virtualMachineCustomImages().getById(id);
                     if (customImage != null) {
+                        if (customImage.dataDiskImages() != null) {
+                            imageDataDiskLuns.addAll(customImage.dataDiskImages().keySet());
+                        }
                         Map<String, String> imageTags = customImage.tags();
                         if (imageTags != null) {
                             String planInfo = imageTags.get("PlanInfo");
@@ -595,6 +600,11 @@ public final class AzureVMManagementServiceDelegate {
                 imageId = galleryImageVersion.id();
                 LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{imageId});
                 putVariableIfNotBlank(tmp, "imageId", imageId);
+                if (galleryImageVersion.storageProfile() != null
+                        && galleryImageVersion.storageProfile().dataDiskImages() != null) {
+                    galleryImageVersion.storageProfile().dataDiskImages()
+                            .forEach(disk -> imageDataDiskLuns.add(disk.lun()));
+                }
 
                 Map<String, String> imageTags = galleryImageVersion.tags();
                 if (imageTags != null) {
@@ -741,7 +751,7 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (useManagedDisk) {
-                addManagedDataDisks(tmp, template.getDataDisks());
+                addManagedDataDisks(tmp, template.getDataDisks(), imageDataDiskLuns);
             }
 
             final ObjectNode parameters = MAPPER.createObjectNode();
@@ -1043,13 +1053,26 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private void addManagedDataDisks(JsonNode template, List<DataDisk> dataDisks) {
-        if (dataDisks == null || dataDisks.isEmpty()) {
+    private void addManagedDataDisks(JsonNode template, List<DataDisk> dataDisks, List<Integer> imageDataDiskLuns) {
+        boolean hasTemplateDisks = dataDisks != null && !dataDisks.isEmpty();
+        if (!hasTemplateDisks && imageDataDiskLuns.isEmpty()) {
             return;
         }
 
         ArrayNode diskNodes = MAPPER.createArrayNode();
-        for (int i = 0; i < dataDisks.size(); i++) {
+        // All data disks, including the image's own, are deleted with the VM by default
+        // (Azure would otherwise detach image data disks and leave them behind)
+        for (int lun : imageDataDiskLuns) {
+            ObjectNode diskNode = MAPPER.createObjectNode();
+            diskNode.put("lun", lun);
+            diskNode.put("createOption", DiskCreateOptionTypes.FROM_IMAGE.toString());
+            diskNode.put("deleteOption", DiskDeleteOptionTypes.DELETE.toString());
+            diskNodes.add(diskNode);
+        }
+
+        // Template disks go after the image's disks so their LUNs don't collide
+        int nextLun = imageDataDiskLuns.isEmpty() ? 0 : Collections.max(imageDataDiskLuns) + 1;
+        for (int i = 0; hasTemplateDisks && i < dataDisks.size(); i++) {
             DataDisk dataDisk = dataDisks.get(i);
             ObjectNode diskNode = MAPPER.createObjectNode();
             diskNode.put("name", String.format("[concat(variables('vmName'), copyIndex(), '_DataDisk%d')]", i + 1));
@@ -1057,7 +1080,7 @@ public final class AzureVMManagementServiceDelegate {
             diskNode.put("createOption", DiskCreateOptionTypes.EMPTY.toString());
             diskNode.put("deleteOption", DiskDeleteOptionTypes.DELETE.toString());
             diskNode.put("diskSizeGB", dataDisk.getDiskSize());
-            diskNode.put("lun", i);
+            diskNode.put("lun", nextLun++);
 
             ObjectNode managedDiskNode = MAPPER.createObjectNode();
             managedDiskNode.put("storageAccountType", dataDisk.getStorageAccountType());
@@ -2230,7 +2253,6 @@ public final class AzureVMManagementServiceDelegate {
                 } else {
                     diskIdToRemove.add(azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).osDiskId());
                 }
-                // TODO: Remove data disks or add option to do so?
 
                 // Remove the VM
                 LOGGER.log(Level.INFO, "Removing virtual machine {0}", vmName);
