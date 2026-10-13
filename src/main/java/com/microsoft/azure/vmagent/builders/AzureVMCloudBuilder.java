@@ -30,6 +30,7 @@ public class AzureVMCloudBuilder {
 
     private List<AzureVMAgentTemplate> vmTemplates;
 
+    private boolean disableNoDelayProvisioning;
     public AzureVMCloudBuilder() {
         maxVirtualMachinesLimit = DEFAULT_MAX_VIRTUAL_MACHINES_LIMIT;
         deploymentTimeout = "1200";
@@ -48,6 +49,7 @@ public class AzureVMCloudBuilder {
         // getVmTemplates returns unmodifiableList
         vmTemplates = new ArrayList<>();
         vmTemplates.addAll(cloud.getVmTemplates());
+        disableNoDelayProvisioning = cloud.isDisableNoDelayProvisioning();
     }
 
     //CHECKSTYLE:OFF
@@ -96,6 +98,11 @@ public class AzureVMCloudBuilder {
         return this;
     }
 
+    public AzureVMCloudBuilder withDisableNoDelayProvisioning(boolean disableNoDelayProvisioning) {
+        this.disableNoDelayProvisioning = disableNoDelayProvisioning;
+        return this;
+    }
+
     public AzureVMCloudBuilder withTemplates(List<AzureVMAgentTemplate> templates) {
         this.vmTemplates.clear();
         this.vmTemplates.addAll(templates);
@@ -122,7 +129,7 @@ public class AzureVMCloudBuilder {
     //CHECKSTYLE:ON
 
     public AzureVMCloud build() {
-        return new AzureVMCloud(StringUtils.defaultString(cloudName),
+        AzureVMCloud cloud = new AzureVMCloud(StringUtils.defaultString(cloudName),
                 StringUtils.defaultString(azureCredentialsId),
                 String.valueOf(maxVirtualMachinesLimit),
                 deploymentTimeout,
@@ -130,6 +137,8 @@ public class AzureVMCloudBuilder {
                 StringUtils.defaultString(newResourceGroupName),
                 StringUtils.defaultString(existingResourceGroupName),
                 vmTemplates);
+        cloud.setDisableNoDelayProvisioning(disableNoDelayProvisioning);
+        return cloud;
     }
 
     public class AzureVMTemplateNested extends AzureVMTemplateFluent<AzureVMTemplateNested> {

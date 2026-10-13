@@ -1,0 +1,16 @@
+<div>
+  By default, this cloud uses <i>no-delay provisioning</i>: as soon as a task enters the queue and no executor is
+  free, a new agent is started immediately instead of waiting for the standard Jenkins provisioning strategy.
+  This gives the shortest queue time, but it can start extra VMs when an executor is about to become free, for
+  example between consecutive <code>node</code> blocks of a Pipeline.
+  <p>
+  Select this option to use the standard Jenkins provisioning strategy for this cloud instead. Jenkins then waits
+  briefly to see whether queued tasks can be served by existing executors before provisioning new agents. This
+  avoids extra VMs, but jobs may wait longer for an agent to start.
+  </p>
+  <p>
+  The system property
+  <code>com.microsoft.azure.vmagent.AzureVMNoDelayProvisionerStrategy.disableNoDelayProvisioning=true</code>
+  disables no-delay provisioning for all clouds and takes precedence over this option.
+  </p>
+</div>
