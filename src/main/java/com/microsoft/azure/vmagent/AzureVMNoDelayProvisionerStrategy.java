@@ -55,15 +55,6 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
 
         final Label label = strategyState.getLabel();
 
-        if (!canAnyAzureNoDelayCloudProvision(new Cloud.CloudState(label, 0))) {
-            LOGGER.log(
-                    Level.FINE,
-                    "Provisioning not complete, NoDelayProvisionerStrategy is disabled in the cloud configuration "
-                            + "or no Azure VM cloud can provision label {0}",
-                    label == null ? "<none>" : label.getName());
-            return NodeProvisioner.StrategyDecision.CONSULT_REMAINING_STRATEGIES;
-        }
-
         LoadStatistics.LoadStatisticsSnapshot snapshot = strategyState.getSnapshot();
         int availableCapacity = snapshot.getAvailableExecutors() // live executors
                 + snapshot.getConnectingExecutors() // executors present but not yet connected
@@ -86,7 +77,12 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             searchClouds:
             for (Cloud cloud : jenkinsClouds) {
                 int workloadToProvision = currentDemand - availableCapacity;
+                if (!(cloud instanceof AzureVMCloud)) {
+                    continue;
+                }
                 if (!isAzureNoDelayCloud(cloud)) {
+                    LOGGER.log(Level.FINE, "Skipping cloud {0}, no-delay provisioning is disabled in the cloud "
+                            + "configuration", cloud.name);
                     continue;
                 }
                 if (!cloud.canProvision(cloudState)) {
@@ -120,15 +116,6 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             LOGGER.log(Level.FINE, "Provisioning not complete, consulting remaining strategies");
             return NodeProvisioner.StrategyDecision.CONSULT_REMAINING_STRATEGIES;
         }
-    }
-
-    private static boolean canAnyAzureNoDelayCloudProvision(Cloud.CloudState cloudState) {
-        for (Cloud cloud : Jenkins.get().clouds) {
-            if (isAzureNoDelayCloud(cloud) && cloud.canProvision(cloudState)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static boolean isAzureNoDelayCloud(Cloud cloud) {
@@ -166,10 +153,12 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             }
             final Jenkins jenkins = Jenkins.get();
             final Label label = item.getAssignedLabel();
-            if (canAnyAzureNoDelayCloudProvision(new Cloud.CloudState(label, 0))) {
-                final NodeProvisioner provisioner =
-                        (label == null ? jenkins.unlabeledNodeProvisioner : label.nodeProvisioner);
-                provisioner.suggestReviewNow();
+            for (Cloud cloud : jenkins.clouds) {
+                if (isAzureNoDelayCloud(cloud) && cloud.canProvision(new Cloud.CloudState(label, 0))) {
+                    final NodeProvisioner provisioner =
+                            (label == null ? jenkins.unlabeledNodeProvisioner : label.nodeProvisioner);
+                    provisioner.suggestReviewNow();
+                }
             }
         }
     }
