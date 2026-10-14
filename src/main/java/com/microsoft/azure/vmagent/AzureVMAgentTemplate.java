@@ -1665,7 +1665,15 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         @POST
         public ListBoxModel doFillAgentServiceCredentialsIdItems(@QueryParameter String agentServiceCredentialsId) {
-            return doFillDomainJoinCredentialsIdItems(agentServiceCredentialsId);
+            StandardListBoxModel model = new StandardListBoxModel();
+            Jenkins context = Jenkins.get();
+            if (!context.hasPermission(Jenkins.ADMINISTER)) {
+                return model.includeCurrentValue(agentServiceCredentialsId);
+            }
+
+            return model
+                    .includeEmptyValue()
+                    .includeAs(ACL.SYSTEM, context, StandardUsernamePasswordCredentials.class);
         }
 
         @POST
