@@ -110,7 +110,7 @@ By default, the Windows inbound agent service runs as SYSTEM. Select **Run inbou
 * **Domain account:** an existing AD account such as `DOMAIN\user` or `user@domain.com`. The VM must be joined to the domain.
 * **Local account:** such as `user`. No domain join is needed. If the account does not exist in the image, the sample script creates it with the credential's password.
 
-This option requires a Windows template using the inbound launcher with an initialization script. Use the sample [Windows inbound agent initialization script](docs/init-scripts/windows-inbound-agent.ps1). The plugin passes the account credentials securely to the initialization script, which configures the agent service to run as that account and grants it write access to the configured agent workspace.
+This option requires a Windows template using the inbound launcher with an initialization script. The inbound launcher and custom initialization scripts are only available when **Use Advanced Image Configurations** is selected. Use the sample [Windows inbound agent initialization script](docs/init-scripts/windows-inbound-agent.ps1). The plugin passes the account credentials securely to the initialization script, which configures the agent service to run as that account and grants it write access to the configured agent workspace.
 
 The agent service no longer runs as SYSTEM, so builds only have the permissions of the configured account. Your initialization script must grant the account any additional permissions your builds need, such as local group membership (for example Administrators), access to other folders, or rights to install software. The sample script only grants "Log on as a service" and write access to the agent and workspace folders.
 
