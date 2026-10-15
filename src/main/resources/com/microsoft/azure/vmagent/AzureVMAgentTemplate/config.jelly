@@ -335,6 +335,23 @@
       <f:textarea/>
     </f:entry>
 
+    <f:entry title="${%Domain_Name}" field="domainName" help="/plugin/azure-vm-agents/help-domainName.html">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%Domain_OU_Path}" field="domainOUPath">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%Domain_Join_Credentials}" field="domainJoinCredentialsId">
+      <c:select expressionAllowed="false"/>
+    </f:entry>
+
+    <f:entry title="${%Agent_Service_Credentials}" field="agentServiceCredentialsId"
+             help="/plugin/azure-vm-agents/help-agentServiceCredentials.html">
+      <c:select expressionAllowed="false"/>
+    </f:entry>
+
     <f:entry title="${%Execute_Init_Script_As_Root}" field="executeInitScriptAsRoot"
              help="/plugin/azure-vm-agents/help-executeInitScriptAsRoot.html">
       <f:checkbox default="true"/>

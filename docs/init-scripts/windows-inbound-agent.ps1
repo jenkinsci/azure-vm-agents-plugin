@@ -58,4 +58,62 @@ if ($secret) {
 
 # Install the service
 & $wrapperExec install
-& $wrapperExec start
+$svcName = ([xml](Get-Content $configFile)).service.id
+
+# Optional: run the service as a domain or local account (Base64 args 4 and 5, passed by the plugin
+# when "Run inbound agent service as" credentials are configured)
+if ($args.Count -ge 5) {
+    $svcUser = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($args[3]))
+    $svcPass = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($args[4]))
+    $startName = $svcUser
+
+    # Local accounts: a bare 'user', '.\user' or 'COMPUTERNAME\user'
+    $localName = $null
+    if ($svcUser -match '^(?<domain>[^\\]+)\\(?<user>.+)$') {
+        if ($Matches.domain -eq '.' -or $Matches.domain -ieq $env:COMPUTERNAME) { $localName = $Matches.user }
+    } elseif ($svcUser -notmatch '@') {
+        $localName = $svcUser
+    }
+    if ($localName) {
+        if (-not (Get-LocalUser -Name $localName -ErrorAction SilentlyContinue)) {
+            $securePass = ConvertTo-SecureString $svcPass -AsPlainText -Force
+            New-LocalUser -Name $localName -Password $securePass -PasswordNeverExpires -AccountNeverExpires `
+                -Description 'Jenkins inbound agent service account' | Out-Null
+            Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $localName  # BUILTIN\Users
+        }
+        # icacls and the SID lookup need COMPUTERNAME\user; the service needs .\user
+        $svcUser = "$env:COMPUTERNAME\$localName"
+        $startName = ".\$localName"
+    }
+
+    icacls C:\jenkins /grant "${svcUser}:(OI)(CI)M" | Out-Null
+
+    # Optional arg 6: the template's configured agent workspace (Base64)
+    if ($args.Count -ge 6) {
+        $workspace = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($args[5]))
+        New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+        icacls $workspace /grant "${svcUser}:(OI)(CI)M" | Out-Null
+    }
+
+    # Grant "Log on as a service" (Win32_Service.Change does not do this)
+    $sid = (New-Object Security.Principal.NTAccount($svcUser)).Translate([Security.Principal.SecurityIdentifier]).Value
+    $inf = "$env:TEMP\svcright.inf"
+    secedit /export /cfg $inf /areas USER_RIGHTS | Out-Null
+    $content = Get-Content $inf
+    if ($content -match '^SeServiceLogonRight') {
+        $content = $content -replace '^(SeServiceLogonRight = .*)$', "`$1,*$sid"
+    } else {
+        $content = $content -replace '^\[Privilege Rights\]$', "[Privilege Rights]`r`nSeServiceLogonRight = *$sid"
+    }
+    $content | Set-Content $inf -Encoding Unicode
+    secedit /configure /db "$env:TEMP\svcright.sdb" /cfg $inf /areas USER_RIGHTS | Out-Null
+    Remove-Item $inf, "$env:TEMP\svcright.sdb" -ErrorAction SilentlyContinue
+
+    $svc = Get-CimInstance Win32_Service -Filter "Name='$svcName'"
+    $r = Invoke-CimMethod -InputObject $svc -MethodName Change -Arguments @{ StartName = $startName; StartPassword = $svcPass }
+    if ($r.ReturnValue -ne 0) { throw "Failed to set service account: $($r.ReturnValue)" }
+    sc.exe config $svcName start= delayed-auto | Out-Null
+}
+
+# This can fail before the domain-join reboot; delayed-auto starts the service afterwards
+Start-Service $svcName -ErrorAction SilentlyContinue

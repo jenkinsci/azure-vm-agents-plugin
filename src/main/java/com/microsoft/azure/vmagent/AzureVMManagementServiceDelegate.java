@@ -267,17 +267,17 @@ public final class AzureVMManagementServiceDelegate {
             final String resourceGroupName = template.getResourceGroupName();
             final String resourceGroupReferenceType = template.getResourceGroupReferenceType();
 
-            String cloudName = template.retrieveAzureCloudReference().getCloudName();
-            if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
-                createAzureResourceGroup(azureClient, locationName, resourceGroupName, cloudName);
-            }
-
-            //For blob endpoint url in arm template, it's different based on different environments
-            //So create StorageAccount and get suffix
             List<AzureTagPair> cloudTags = template.retrieveAzureCloudReference().getCloudTags();
             List<AzureTagPair> templateTags = template.getTags();
             final List<AzureTagPair> tags = concat(cloudTags, templateTags);
 
+            String cloudName = template.retrieveAzureCloudReference().getCloudName();
+            if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
+                createAzureResourceGroup(azureClient, locationName, resourceGroupName, cloudName, tags);
+            }
+
+            //For blob endpoint url in arm template, it's different based on different environments
+            //So create StorageAccount and get suffix
             createStorageAccount(azureClient, storageAccountType, storageAccountName, locationName, resourceGroupName, template.getTemplateName(), tags);
             StorageAccount storageAccount = getStorageAccount(azureClient, storageAccountName, resourceGroupName);
             String blobEndpointSuffix = getBlobEndpointSuffixForTemplate(storageAccount);
@@ -351,6 +351,8 @@ public final class AzureVMManagementServiceDelegate {
                     templateLocation);
 
             final JsonNode tmp = MAPPER.readTree(embeddedTemplate);
+            // LUNs of the image's own data disks, listed so they are deleted with the VM by default
+            final List<Integer> imageDataDiskLuns = new ArrayList<>();
 
             if (useCustomScriptExtension) {
                 ArrayNode resources = (ArrayNode) tmp.get("resources");
@@ -421,6 +423,9 @@ public final class AzureVMManagementServiceDelegate {
                     String id = template.getId();
                     VirtualMachineCustomImage customImage = azureClient.virtualMachineCustomImages().getById(id);
                     if (customImage != null) {
+                        if (customImage.dataDiskImages() != null) {
+                            imageDataDiskLuns.addAll(customImage.dataDiskImages().keySet());
+                        }
                         Map<String, String> imageTags = customImage.tags();
                         if (imageTags != null) {
                             String planInfo = imageTags.get("PlanInfo");
@@ -595,6 +600,11 @@ public final class AzureVMManagementServiceDelegate {
                 imageId = galleryImageVersion.id();
                 LOGGER.log(Level.INFO, "Create VM with gallery image id {0}", new Object[]{imageId});
                 putVariableIfNotBlank(tmp, "imageId", imageId);
+                if (galleryImageVersion.storageProfile() != null
+                        && galleryImageVersion.storageProfile().dataDiskImages() != null) {
+                    galleryImageVersion.storageProfile().dataDiskImages()
+                            .forEach(disk -> imageDataDiskLuns.add(disk.lun()));
+                }
 
                 Map<String, String> imageTags = galleryImageVersion.tags();
                 if (imageTags != null) {
@@ -741,7 +751,7 @@ public final class AzureVMManagementServiceDelegate {
             }
 
             if (useManagedDisk) {
-                addManagedDataDisks(tmp, template.getDataDisks());
+                addManagedDataDisks(tmp, template.getDataDisks(), imageDataDiskLuns);
             }
 
             final ObjectNode parameters = MAPPER.createObjectNode();
@@ -761,6 +771,22 @@ public final class AzureVMManagementServiceDelegate {
                 String rsaPublicKey = KeyDecoder.getPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
                 putParameter(parameters, "adminPasswordOrKey", rsaPublicKey);
                 putParameter(parameters, "authenticationType", "key");
+            }
+
+            if (StringUtils.isNotBlank(template.getDomainName())
+                    && StringUtils.isNotBlank(template.getDomainJoinCredentialsId())) {
+                if (!windows) {
+                    throw AzureCloudException.create("Domain join is only supported for Windows agents");
+                }
+                addDomainJoinExtension(tmp, template, parameters);
+            }
+
+            if (StringUtils.isNotBlank(template.getAgentServiceCredentialsId())) {
+                if (!(useCustomScriptExtension && windows && inboundAgent)) {
+                    throw AzureCloudException.create(
+                            "Agent service credentials require a Windows inbound agent with an init script");
+                }
+                addAgentServiceCredentials(tmp, template, parameters);
             }
 
             if (template.getLicenseType() != null && !Constants.NO_LICENSE_TYPE.contains(template.getLicenseType())) {
@@ -897,6 +923,115 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
+    private static void addDomainJoinExtension(JsonNode template, AzureVMAgentTemplate agentTemplate,
+                                               ObjectNode parameters) throws AzureCloudException {
+        StandardUsernameCredentials creds = AzureUtil.getCredentials(agentTemplate.getDomainJoinCredentialsId());
+        if (!(creds instanceof StandardUsernamePasswordCredentials)) {
+            throw AzureCloudException.create("Domain join credentials must be username/password credentials");
+        }
+        defineParameter(template, "domainJoinPassword", "secureString");
+        putParameter(parameters, "domainJoinPassword",
+                ((StandardUsernamePasswordCredentials) creds).getPassword().getPlainText());
+
+        ObjectNode settings = MAPPER.createObjectNode();
+        settings.put("Name", agentTemplate.getDomainName());
+        settings.put("User", creds.getUsername());
+        settings.put("Restart", "true");
+        // 3 = NETSETUP_JOIN_DOMAIN | NETSETUP_ACCT_CREATE
+        settings.put("Options", "3");
+        if (StringUtils.isNotBlank(agentTemplate.getDomainOUPath())) {
+            settings.put("OUPath", agentTemplate.getDomainOUPath());
+        }
+
+        ObjectNode protectedSettings = MAPPER.createObjectNode();
+        protectedSettings.put("Password", "[parameters('domainJoinPassword')]");
+
+        ObjectNode properties = MAPPER.createObjectNode();
+        properties.put("publisher", "Microsoft.Compute");
+        properties.put("type", "JsonADDomainExtension");
+        properties.put("typeHandlerVersion", "1.3");
+        properties.put("autoUpgradeMinorVersion", true);
+        properties.set("settings", settings);
+        properties.set("protectedSettings", protectedSettings);
+
+        ObjectNode extension = MAPPER.createObjectNode();
+        extension.put("type", "extensions");
+        extension.put("name", "joinDomain");
+        extension.put("apiVersion", "2020-06-01");
+        extension.put("location", "[variables('location')]");
+        extension.putArray("dependsOn")
+                .add("[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex())]");
+        extension.set("properties", properties);
+
+        String joinDomainRef = "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'), copyIndex(), "
+                + "'/extensions/joinDomain')]";
+
+        for (JsonNode resource : (ArrayNode) template.get("resources")) {
+            if ("Microsoft.Compute/virtualMachines".equals(resource.get("type").asText())) {
+                ArrayNode vmResources = resource.has("resources")
+                        ? (ArrayNode) resource.get("resources")
+                        : ((ObjectNode) resource).putArray("resources");
+                // Ensure the startup script runs only after the join + reboot completes
+                for (JsonNode existing : vmResources) {
+                    JsonNode dependsOn = existing.get("dependsOn");
+                    if (dependsOn instanceof ArrayNode) {
+                        ((ArrayNode) dependsOn).add(joinDomainRef);
+                    }
+                }
+                vmResources.add(extension);
+            }
+        }
+    }
+
+    private static void addAgentServiceCredentials(JsonNode template, AzureVMAgentTemplate agentTemplate,
+                                                   ObjectNode parameters) throws AzureCloudException {
+        StandardUsernameCredentials creds = AzureUtil.getCredentials(agentTemplate.getAgentServiceCredentialsId());
+        if (!(creds instanceof StandardUsernamePasswordCredentials)) {
+            throw AzureCloudException.create("Agent service credentials must be username/password credentials");
+        }
+        // Base64 avoids quoting problems with special characters on the command line
+        Base64.Encoder b64 = Base64.getEncoder();
+        defineParameter(template, "agentServiceUser", "secureString");
+        defineParameter(template, "agentServicePassword", "secureString");
+        putParameter(parameters, "agentServiceUser",
+                b64.encodeToString(creds.getUsername().getBytes(StandardCharsets.UTF_8)));
+        putParameter(parameters, "agentServicePassword",
+                b64.encodeToString(((StandardUsernamePasswordCredentials) creds).getPassword()
+                        .getPlainText().getBytes(StandardCharsets.UTF_8)));
+        String workspace = Util.fixEmptyAndTrim(agentTemplate.getAgentWorkspace());
+        // Base64 output contains no quotes, so it can be embedded as an ARM string literal
+        String workspaceArg = workspace == null ? ""
+                : ",' ', '" + b64.encodeToString(workspace.getBytes(StandardCharsets.UTF_8)) + "'";
+
+        boolean updated = false;
+        for (JsonNode resource : (ArrayNode) template.get("resources")) {
+            if (!"Microsoft.Compute/virtualMachines".equals(resource.get("type").asText())
+                    || !resource.has("resources")) {
+                continue;
+            }
+            for (JsonNode ext : (ArrayNode) resource.get("resources")) {
+                ObjectNode props = (ObjectNode) ext.get("properties");
+                if (!"CustomScriptExtension".equals(props.path("type").asText())) {
+                    continue;
+                }
+                ObjectNode settings = (ObjectNode) props.get("settings");
+                String cmd = settings.remove("commandToExecute").asText();
+                // cmd is "[concat(...)]"; append the extra arguments inside the concat
+                String extended = cmd.substring(0, cmd.length() - 2)
+                        + ",' ', parameters('agentServiceUser'),' ', parameters('agentServicePassword')"
+                        + workspaceArg + ")]";
+                ObjectNode protectedSettings = props.has("protectedSettings")
+                        ? (ObjectNode) props.get("protectedSettings")
+                        : props.putObject("protectedSettings");
+                protectedSettings.put("commandToExecute", extended);
+                updated = true;
+            }
+        }
+        if (!updated) {
+            throw AzureCloudException.create("Could not find the custom script extension to configure the agent service account");
+        }
+    }
+
     private void addLicenseType(JsonNode template, String licenseType) {
         ArrayNode resources = (ArrayNode) template.get("resources");
         for (JsonNode resource : resources) {
@@ -918,13 +1053,26 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private void addManagedDataDisks(JsonNode template, List<DataDisk> dataDisks) {
-        if (dataDisks == null || dataDisks.isEmpty()) {
+    private void addManagedDataDisks(JsonNode template, List<DataDisk> dataDisks, List<Integer> imageDataDiskLuns) {
+        boolean hasTemplateDisks = dataDisks != null && !dataDisks.isEmpty();
+        if (!hasTemplateDisks && imageDataDiskLuns.isEmpty()) {
             return;
         }
 
         ArrayNode diskNodes = MAPPER.createArrayNode();
-        for (int i = 0; i < dataDisks.size(); i++) {
+        // All data disks, including the image's own, are deleted with the VM by default
+        // (Azure would otherwise detach image data disks and leave them behind)
+        for (int lun : imageDataDiskLuns) {
+            ObjectNode diskNode = MAPPER.createObjectNode();
+            diskNode.put("lun", lun);
+            diskNode.put("createOption", DiskCreateOptionTypes.FROM_IMAGE.toString());
+            diskNode.put("deleteOption", DiskDeleteOptionTypes.DELETE.toString());
+            diskNodes.add(diskNode);
+        }
+
+        // Template disks go after the image's disks so their LUNs don't collide
+        int nextLun = imageDataDiskLuns.isEmpty() ? 0 : Collections.max(imageDataDiskLuns) + 1;
+        for (int i = 0; hasTemplateDisks && i < dataDisks.size(); i++) {
             DataDisk dataDisk = dataDisks.get(i);
             ObjectNode diskNode = MAPPER.createObjectNode();
             diskNode.put("name", String.format("[concat(variables('vmName'), copyIndex(), '_DataDisk%d')]", i + 1));
@@ -932,7 +1080,7 @@ public final class AzureVMManagementServiceDelegate {
             diskNode.put("createOption", DiskCreateOptionTypes.EMPTY.toString());
             diskNode.put("deleteOption", DiskDeleteOptionTypes.DELETE.toString());
             diskNode.put("diskSizeGB", dataDisk.getDiskSize());
-            diskNode.put("lun", i);
+            diskNode.put("lun", nextLun++);
 
             ObjectNode managedDiskNode = MAPPER.createObjectNode();
             managedDiskNode.put("storageAccountType", dataDisk.getStorageAccountType());
@@ -1204,7 +1352,7 @@ public final class AzureVMManagementServiceDelegate {
         try {
             if (Constants.RESOURCE_GROUP_REFERENCE_TYPE_NEW.equals(resourceGroupReferenceType)) {
                 AzureVMCloud azureVMCloud = template.retrieveAzureCloudReference();
-                createAzureResourceGroup(azureClient, location, resourceGroupName, azureVMCloud.getCloudName());
+                createAzureResourceGroup(azureClient, location, resourceGroupName, azureVMCloud.getCloudName(), tags);
             }
 
             createStorageAccount(
@@ -2105,7 +2253,6 @@ public final class AzureVMManagementServiceDelegate {
                 } else {
                     diskIdToRemove.add(azureClient.virtualMachines().getByResourceGroup(resourceGroupName, vmName).osDiskId());
                 }
-                // TODO: Remove data disks or add option to do so?
 
                 // Remove the VM
                 LOGGER.log(Level.INFO, "Removing virtual machine {0}", vmName);
@@ -2795,13 +2942,20 @@ public final class AzureVMManagementServiceDelegate {
      */
     private void createAzureResourceGroup(
             AzureResourceManager azureClient, String locationName, String resourceGroupName,
-            String cloudName) throws AzureCloudException {
+            String cloudName, List<AzureTagPair> tags) throws AzureCloudException {
         try {
+            Map<String, String> rgTags = new HashMap<>();
+            if (tags != null) {
+                for (AzureTagPair tag : tags) {
+                    rgTags.put(tag.getName(), tag.getValue());
+                }
+            }
+            rgTags.put(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE);
+            rgTags.put(Constants.AZURE_CLOUD_TAG_NAME, cloudName);
             azureClient.resourceGroups()
                     .define(resourceGroupName)
                     .withRegion(locationName)
-                    .withTag(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE)
-                    .withTag(Constants.AZURE_CLOUD_TAG_NAME, cloudName)
+                    .withTags(rgTags)
                     .create();
         } catch (Exception e) {
             throw AzureCloudException.create(
@@ -2859,9 +3013,11 @@ public final class AzureVMManagementServiceDelegate {
             tmpTags = new ArrayList<>();
         }
 
+        // Template tags come after cloud tags in the list, so a template tag overrides a cloud tag of the same name
         Map<String, String> rawTags = tmpTags
                 .stream()
-                .collect(Collectors.toMap(AzureTagPair::getName, AzureTagPair::getValue));
+                .collect(Collectors.toMap(AzureTagPair::getName, AzureTagPair::getValue,
+                        (cloudValue, templateValue) -> templateValue, HashMap::new));
 
         rawTags.put(Constants.AZURE_JENKINS_TAG_NAME, Constants.AZURE_JENKINS_TAG_VALUE);
         rawTags.put(Constants.AZURE_TEMPLATE_TAG_NAME, templateName);
