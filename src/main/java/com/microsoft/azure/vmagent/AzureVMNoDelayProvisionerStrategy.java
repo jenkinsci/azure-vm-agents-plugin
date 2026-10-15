@@ -80,6 +80,11 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
                 if (!(cloud instanceof AzureVMCloud)) {
                     continue;
                 }
+                if (!isAzureNoDelayCloud(cloud)) {
+                    LOGGER.log(Level.FINE, "Skipping cloud {0}, no-delay provisioning is disabled in the cloud "
+                            + "configuration", cloud.name);
+                    continue;
+                }
                 if (!cloud.canProvision(cloudState)) {
                     continue;
                 }
@@ -111,6 +116,10 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             LOGGER.log(Level.FINE, "Provisioning not complete, consulting remaining strategies");
             return NodeProvisioner.StrategyDecision.CONSULT_REMAINING_STRATEGIES;
         }
+    }
+
+    private static boolean isAzureNoDelayCloud(Cloud cloud) {
+        return cloud instanceof AzureVMCloud azureCloud && !azureCloud.isDisableNoDelayProvisioning();
     }
 
     private static void fireOnStarted(
@@ -145,7 +154,7 @@ public class AzureVMNoDelayProvisionerStrategy extends NodeProvisioner.Strategy 
             final Jenkins jenkins = Jenkins.get();
             final Label label = item.getAssignedLabel();
             for (Cloud cloud : jenkins.clouds) {
-                if (cloud instanceof AzureVMCloud && cloud.canProvision(new Cloud.CloudState(label, 0))) {
+                if (isAzureNoDelayCloud(cloud) && cloud.canProvision(new Cloud.CloudState(label, 0))) {
                     final NodeProvisioner provisioner =
                             (label == null ? jenkins.unlabeledNodeProvisioner : label.nodeProvisioner);
                     provisioner.suggestReviewNow();

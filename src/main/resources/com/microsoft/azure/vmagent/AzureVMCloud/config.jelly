@@ -22,6 +22,11 @@
     <f:textbox default="${descriptor.getDefaultDeploymentTimeout()}"/>
   </f:entry>
 
+  <f:entry title="${%Disable_No_Delay_Provisioning}" field="disableNoDelayProvisioning"
+           help="/plugin/azure-vm-agents/help-disableNoDelayProvisioning.html">
+    <f:checkbox/>
+  </f:entry>
+
   <f:entry title="${%Custom_Tag}" field="cloudTags">
     <f:repeatableProperty field="cloudTags" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
       <l:isAdmin>

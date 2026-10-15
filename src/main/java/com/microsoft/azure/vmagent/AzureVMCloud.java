@@ -142,6 +142,7 @@ public class AzureVMCloud extends Cloud {
 
     private List<AzureTagPair> cloudTags;
 
+    private boolean disableNoDelayProvisioning;
     //The map should not be accessed without acquiring a lock of the map
     private transient Map<AzureVMAgent, AtomicInteger> agentLocks = new HashMap<>();
 
@@ -354,6 +355,15 @@ public class AzureVMCloud extends Cloud {
     @DataBoundSetter
     public void setCloudTags(List<AzureTagPair> cloudTags) {
         this.cloudTags = cloudTags;
+    }
+
+    public boolean isDisableNoDelayProvisioning() {
+        return disableNoDelayProvisioning;
+    }
+
+    @DataBoundSetter
+    public void setDisableNoDelayProvisioning(boolean disableNoDelayProvisioning) {
+        this.disableNoDelayProvisioning = disableNoDelayProvisioning;
     }
 
     /**
