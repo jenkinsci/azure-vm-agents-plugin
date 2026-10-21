@@ -25,10 +25,13 @@ jenkins:
             disableWindowsUpdates: true
             diskType: "managed"
             doNotUseMachineIfInitFails: true
+            enableAutoLogin: true
             enableMSI: false
             enableUAMI: false
             ephemeralOSDisk: false
             executeInitScriptAsRoot: true
+            firstLogonCommands:
+              - command: "ssh-keygen.exe -A"
             imageReference:
               galleryImageDefinition: "Linux"
               galleryImageVersion: "latest"

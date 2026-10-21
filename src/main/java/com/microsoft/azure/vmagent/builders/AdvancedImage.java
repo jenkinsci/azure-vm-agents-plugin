@@ -1,6 +1,9 @@
 package com.microsoft.azure.vmagent.builders;
 
 
+import com.microsoft.azure.vmagent.FirstLogonCommand;
+import java.util.List;
+
 public class AdvancedImage {
 
     private String imageReferenceType;
@@ -69,6 +72,10 @@ public class AdvancedImage {
 
     private String osDiskStorageAccountType;
 
+    private boolean enableAutoLogin;
+
+    private List<FirstLogonCommand> firstLogonCommands;
+
     public AdvancedImage(String imageReferenceType,
                          String image,
                          String osType,
@@ -101,7 +108,9 @@ public class AdvancedImage {
                          String jvmOptions,
                          String noOfParallelJobs,
                          boolean templateDisabled,
-                         String osDiskStorageAccountType) {
+                         String osDiskStorageAccountType,
+                         boolean enableAutoLogin,
+                         List<FirstLogonCommand> firstLogonCommands) {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
@@ -135,6 +144,8 @@ public class AdvancedImage {
         this.noOfParallelJobs = noOfParallelJobs;
         this.templateDisabled = templateDisabled;
         this.osDiskStorageAccountType = osDiskStorageAccountType;
+        this.enableAutoLogin = enableAutoLogin;
+        this.firstLogonCommands = firstLogonCommands;
     }
 
     public String getImageReferenceType() {
@@ -268,4 +279,13 @@ public class AdvancedImage {
     public String getOsDiskStorageAccountType() {
         return osDiskStorageAccountType;
     }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+    public List<FirstLogonCommand> getFirstLogonCommands() {
+        return firstLogonCommands;
+    }
+
 }

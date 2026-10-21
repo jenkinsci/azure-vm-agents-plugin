@@ -1,8 +1,10 @@
 package com.microsoft.azure.vmagent.builders;
 
 
+import com.microsoft.azure.vmagent.FirstLogonCommand;
 import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.util.Constants;
+import java.util.List;
 
 public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
@@ -73,6 +75,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     private boolean templateDisabled;
 
     private String osDiskStorageAccountType;
+
+    private boolean enableAutoLogin;
+
+    private List<FirstLogonCommand> firstLogonCommands;
 
     public AdvancedImageFluent() {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
@@ -234,6 +240,17 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.osDiskStorageAccountType = osDiskStorageAccountType;
         return (T) this;
     }
+
+    public T withEnableAutoLogin(boolean enableAutoLogin) {
+        this.enableAutoLogin = enableAutoLogin;
+        return (T) this;
+    }
+
+    public T withFirstLogonCommands(List<FirstLogonCommand> firstLogonCommands) {
+        this.firstLogonCommands = firstLogonCommands;
+        return (T) this;
+    }
+
     //CHECKSTYLE:ON
 
     public String getImageReferenceType() {
@@ -371,4 +388,13 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     public String getOsDiskStorageAccountType() {
         return osDiskStorageAccountType;
     }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+    public List<FirstLogonCommand> getFirstLogonCommands() {
+        return firstLogonCommands;
+    }
+
 }

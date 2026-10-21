@@ -20,12 +20,16 @@ import com.azure.core.management.exception.ManagementException;
 import com.azure.core.util.BinaryData;
 import com.azure.core.util.ExpandableStringEnum;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.AdditionalUnattendContent;
+import com.azure.resourcemanager.compute.models.ComponentNames;
 import com.azure.resourcemanager.compute.models.DiskCreateOptionTypes;
 import com.azure.resourcemanager.compute.models.DiskDeleteOptionTypes;
 import com.azure.resourcemanager.compute.models.GalleryImageVersion;
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
+import com.azure.resourcemanager.compute.models.PassNames;
 import com.azure.resourcemanager.compute.models.PowerState;
 import com.azure.resourcemanager.compute.models.PurchasePlan;
+import com.azure.resourcemanager.compute.models.SettingNames;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.compute.models.VirtualMachineCustomImage;
 import com.azure.resourcemanager.compute.models.VirtualMachineImage;
@@ -86,9 +90,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.cloudstats.ProvisioningActivity;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -189,6 +206,9 @@ public final class AzureVMManagementServiceDelegate {
 
     private static final String INSTALL_QEMU_UBUNTU_FILENAME = "ubuntuInstallQemuScript.sh";
 
+    private static final int WINDOWS_UNATTEND_CONTENT_MAX_BYTES = 4 * 1024;
+    private static final int WINDOWS_UNATTEND_COMMAND_LINE_MAX_LENGTH = 1024;
+
     private static final String PRE_INSTALL_SSH_FILENAME = "sshInit.ps1";
 
     private final AzureResourceManager azureClient;
@@ -252,6 +272,8 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
+            final boolean enableAutoLogin = template.isEnableAutoLogin();
+            final List<FirstLogonCommand> firstLogonCommands = template.getFirstLogonCommands();
 
             final int osDiskSize = template.getOsDiskSize();
 
@@ -763,9 +785,24 @@ public final class AzureVMManagementServiceDelegate {
             defineParameter(tmp, "adminPasswordOrKey", "secureString");
             if (creds instanceof StandardUsernamePasswordCredentials) {
                 StandardUsernamePasswordCredentials passwordCredentials = (StandardUsernamePasswordCredentials) creds;
-                putParameter(parameters, "adminPasswordOrKey", passwordCredentials.getPassword().getPlainText());
+                String adminPassword = passwordCredentials.getPassword().getPlainText();
+                putParameter(parameters, "adminPasswordOrKey", adminPassword);
                 putParameter(parameters, "authenticationType", "password");
+
+                if (windows && enableAutoLogin) {
+                    if (isSpecializedImage) {
+                        throw new IllegalArgumentException(
+                                "Enable Auto Login requires a generalized Windows image because specialized "
+                                + "images do not support osProfile additionalUnattendContent");
+                    }
+                    addAutoLoginWindowsConfiguration(
+                            tmp, parameters, creds.getUsername(), adminPassword, firstLogonCommands);
+                }
             } else {
+                if (windows && enableAutoLogin) {
+                    throw new IllegalArgumentException(
+                            "Enable Auto Login requires password credentials and cannot be used with an SSH key");
+                }
                 SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
                 String privateKey = sshCredentials.getPrivateKeys().get(0);
                 String rsaPublicKey = KeyDecoder.getPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
@@ -1307,25 +1344,181 @@ public final class AzureVMManagementServiceDelegate {
         }
     }
 
-    private static void addWindowsConfiguration(JsonNode template) {
-        ObjectNode windowsConfiguration = MAPPER.createObjectNode();
-        windowsConfiguration.put("enableAutomaticUpdates", false);
-        ObjectNode patchSettings = MAPPER.createObjectNode();
-        patchSettings.put("patchMode", "Manual");
-        windowsConfiguration.set("patchSettings", patchSettings);
-
+    /**
+     * Returns the VM's {@code windowsConfiguration} node, creating it if needed. Callers merge into
+     * this node so that settings such as disabled updates and auto-login do not overwrite each other.
+     */
+    private static ObjectNode getOrCreateWindowsConfiguration(JsonNode template) {
         ArrayNode resources = (ArrayNode) template.get("resources");
         for (JsonNode resource : resources) {
             String type = resource.get("type").asText();
             if (type.contains("virtualMachine")) {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 ObjectNode osProfile = (ObjectNode) properties.get("osProfile");
-                osProfile.replace("windowsConfiguration", windowsConfiguration);
-                return;
+                if (osProfile == null) {
+                    return null;
+                }
+                JsonNode existing = osProfile.get("windowsConfiguration");
+                if (existing instanceof ObjectNode) {
+                    return (ObjectNode) existing;
+                }
+                ObjectNode windowsConfiguration = MAPPER.createObjectNode();
+                osProfile.set("windowsConfiguration", windowsConfiguration);
+                return windowsConfiguration;
             }
+        }
+        return null;
+    }
+
+    private static void addWindowsConfiguration(JsonNode template) {
+        ObjectNode windowsConfiguration = getOrCreateWindowsConfiguration(template);
+        if (windowsConfiguration == null) {
+            return;
+        }
+        windowsConfiguration.put("enableAutomaticUpdates", false);
+        ObjectNode patchSettings = MAPPER.createObjectNode();
+        patchSettings.put("patchMode", "Manual");
+        windowsConfiguration.set("patchSettings", patchSettings);
+    }
+
+    static void addAutoLoginWindowsConfiguration(
+            JsonNode template,
+            ObjectNode parameters,
+            String username,
+            String password,
+            List<FirstLogonCommand> firstLogonCommands) {
+        ObjectNode windowsConfiguration = getOrCreateWindowsConfiguration(template);
+        if (windowsConfiguration == null) {
+            throw new IllegalArgumentException(
+                    "Enable Auto Login requires a Windows image with an osProfile");
+        }
+
+        defineParameter(template, "windowsAutoLogonContent", "secureString");
+        putParameter(parameters, "windowsAutoLogonContent", buildAutoLogonContent(username, password));
+
+        ArrayNode additionalUnattendContent = MAPPER.createArrayNode();
+        additionalUnattendContent.add(
+                buildUnattendEntry(SettingNames.AUTO_LOGON, "[parameters('windowsAutoLogonContent')]"));
+
+        String firstLogonCommandsXml = buildFirstLogonCommandsContent(firstLogonCommands);
+        if (firstLogonCommandsXml != null) {
+            additionalUnattendContent.add(buildUnattendEntry(SettingNames.FIRST_LOGON_COMMANDS, firstLogonCommandsXml));
+        }
+
+        windowsConfiguration.set("additionalUnattendContent", additionalUnattendContent);
+    }
+
+    private static String buildAutoLogonContent(String username, String password) {
+        Document document = newXmlDocument();
+        Element autoLogon = appendElement(document, document, "AutoLogon", null);
+        Element passwordElement = appendElement(document, autoLogon, "Password", null);
+        appendElement(document, passwordElement, "Value", encodeAutoLogonPassword(password));
+        appendElement(document, passwordElement, "PlainText", "false");
+        appendElement(document, autoLogon, "Enabled", "true");
+        appendElement(document, autoLogon, "LogonCount", "999");
+        appendElement(document, autoLogon, "Username", username);
+        return serializeXml(document);
+    }
+
+    /**
+     * Encodes a plaintext Windows admin password into the obfuscated form the unattend
+     * {@code AutoLogon} setting expects when {@code PlainText} is {@code false}: the password with
+     * the literal suffix {@code "Password"} appended, UTF-16LE encoded, then base64 encoded. This
+     * is the same obfuscation Windows Setup itself uses (e.g. via sysprep answer files), and its
+     * base64 output can never contain XML metacharacters, so it embeds safely into unattend XML
+     * regardless of what characters the real password contains.
+     */
+    private static String encodeAutoLogonPassword(String password) {
+        return Base64.getEncoder().encodeToString((password + "Password").getBytes(StandardCharsets.UTF_16LE));
+    }
+
+    private static ObjectNode buildUnattendEntry(SettingNames settingName, String content) {
+        AdditionalUnattendContent unattendContent = new AdditionalUnattendContent()
+                .withPassName(PassNames.OOBE_SYSTEM)
+                .withComponentName(ComponentNames.MICROSOFT_WINDOWS_SHELL_SETUP)
+                .withSettingName(settingName)
+                .withContent(content);
+        try {
+            return (ObjectNode) MAPPER.readTree(unattendContent.toJsonString());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to serialize additionalUnattendContent entry", e);
         }
     }
 
+    /**
+     * Builds the {@code FirstLogonCommands} XML payload, or {@code null} if there are no non-blank
+     * commands. Each command is written verbatim as the unattend {@code CommandLine}, so it must
+     * already be something the target shell (e.g. {@code cmd.exe}) can execute directly.
+     */
+    private static String buildFirstLogonCommandsContent(List<FirstLogonCommand> commands) {
+        if (commands == null || commands.isEmpty()) {
+            return null;
+        }
+
+        Document document = newXmlDocument();
+        Element firstLogonCommands = appendElement(document, document, "FirstLogonCommands", null);
+
+        int order = 0;
+        for (FirstLogonCommand command : commands) {
+            if (command == null || StringUtils.isBlank(command.getCommand())) {
+                continue;
+            }
+            String commandLine = command.getCommand();
+            if (commandLine.length() > WINDOWS_UNATTEND_COMMAND_LINE_MAX_LENGTH) {
+                throw new IllegalArgumentException(String.format(
+                        "First Logon Command exceeds Azure's %,d character command-line limit",
+                        WINDOWS_UNATTEND_COMMAND_LINE_MAX_LENGTH));
+            }
+            order++;
+            Element synchronousCommand = appendElement(document, firstLogonCommands, "SynchronousCommand", null);
+            appendElement(document, synchronousCommand, "CommandLine", commandLine);
+            appendElement(document, synchronousCommand, "Description", "Jenkins startup command " + order);
+            appendElement(document, synchronousCommand, "Order", String.valueOf(order));
+        }
+        if (order == 0) {
+            return null;
+        }
+        String content = serializeXml(document);
+        if (content.getBytes(StandardCharsets.UTF_8).length >= WINDOWS_UNATTEND_CONTENT_MAX_BYTES) {
+            throw new IllegalArgumentException(
+                    "First Logon Commands exceed Azure's 4 KB additionalUnattendContent limit");
+        }
+        return content;
+    }
+
+    private static Document newXmlDocument() {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            return factory.newDocumentBuilder().newDocument();
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Unable to create XML document builder", e);
+        }
+    }
+
+    private static Element appendElement(Document document, Node parent, String name, String text) {
+        Element element = document.createElement(name);
+        if (text != null) {
+            element.setTextContent(text);
+        }
+        parent.appendChild(element);
+        return element;
+    }
+
+    /**
+     * Serializes {@code document} to an XML string without an XML declaration, matching the
+     * fragment format Azure's {@code additionalUnattendContent} setting expects.
+     */
+    private static String serializeXml(Document document) {
+        try {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(writer));
+            return writer.toString();
+        } catch (TransformerException e) {
+            throw new IllegalStateException("Unable to serialize XML document", e);
+        }
+    }
 
     /**
      * Uploads the custom script for a template to blob storage.

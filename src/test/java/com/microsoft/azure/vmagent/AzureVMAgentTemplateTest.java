@@ -1,8 +1,13 @@
 package com.microsoft.azure.vmagent;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
+import com.microsoft.azure.vmagent.builders.AdvancedImage;
+import com.microsoft.azure.vmagent.builders.AdvancedImageBuilder;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AzureVMAgentTemplateTest {
@@ -115,6 +120,35 @@ class AzureVMAgentTemplateTest {
 
         // Then
         assertThat(actual, equalTo(Integer.MAX_VALUE));
+    }
+
+    @Test
+    void setFirstLogonCommandsGivenNullThenReturnsEmptyList() {
+        // Given
+        AzureVMAgentTemplate template = mkTemplate();
+
+        // When
+        template.setFirstLogonCommands(null);
+
+        // Then
+        assertThat(template.getFirstLogonCommands(), empty());
+    }
+
+    @Test
+    void advancedImageBuilderGivenAutoLoginSettingsThenCopiesThem() {
+        // Given
+        List<FirstLogonCommand> commands = List.of(new FirstLogonCommand("ssh-keygen.exe -A"));
+        AdvancedImage image = new AdvancedImageBuilder()
+                .withEnableAutoLogin(true)
+                .withFirstLogonCommands(commands)
+                .build();
+
+        // When
+        AdvancedImage copy = new AdvancedImageBuilder(image).build();
+
+        // Then
+        assertThat(copy.isEnableAutoLogin(), is(true));
+        assertThat(copy.getFirstLogonCommands(), equalTo(commands));
     }
 
     private static AzureVMAgentTemplate mkTemplate() {

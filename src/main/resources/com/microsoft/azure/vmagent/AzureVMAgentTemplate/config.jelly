@@ -326,6 +326,20 @@
                  help="/plugin/azure-vm-agents/help-templateStatusDetails.html">
           <f:textarea/>
         </f:entry>
+
+        <f:optionalBlock title="${%Enable_Auto_Login}" field="enableAutoLogin" inline="true">
+          <f:entry title="${%First_Logon_Commands}" field="firstLogonCommands">
+            <f:repeatableProperty field="firstLogonCommands" noAddButton="${!h.hasPermission(app.ADMINISTER)}">
+              <l:isAdmin>
+                <f:entry>
+                  <div align="right">
+                    <f:repeatableDeleteButton/>
+                  </div>
+                </f:entry>
+              </l:isAdmin>
+            </f:repeatableProperty>
+          </f:entry>
+        </f:optionalBlock>
       </f:advanced>
     </f:radioBlock>
   </f:section>

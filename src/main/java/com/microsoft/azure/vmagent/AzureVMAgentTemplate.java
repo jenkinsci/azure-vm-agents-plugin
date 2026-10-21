@@ -281,6 +281,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean disableWindowsUpdates;
 
+    private boolean enableAutoLogin;
+
+    private List<FirstLogonCommand> firstLogonCommands;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -489,6 +493,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
         this.tags = new ArrayList<>();
         this.dataDisks = new ArrayList<>();
+        this.firstLogonCommands = new ArrayList<>();
     }
 
     public DescribableList<NodeProperty<?>, NodePropertyDescriptor> getNodeProperties() {
@@ -802,6 +807,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         templateProperties.put("uamiID",
                 isBasic ? "" : template.getUamiID());
         templateProperties.put("disableWindowsUpdates", template.isDisableWindowsUpdates());
+        templateProperties.put("enableAutoLogin", template.isEnableAutoLogin());
+        templateProperties.put("firstLogonCommands", template.getFirstLogonCommands());
 
         return templateProperties;
     }
@@ -942,6 +949,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             this.tags = new ArrayList<>();
         }
 
+        if (firstLogonCommands == null) {
+            firstLogonCommands = new ArrayList<>();
+        }
+
         if (StringUtils.isBlank(imageTopLevelType)) {
             if (imageReference != null && (StringUtils.isNotBlank(imageReference.getUri())
                     || StringUtils.isNotBlank(imageReference.getId())
@@ -1037,6 +1048,24 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setDisableWindowsUpdates(boolean disableWindowsUpdates) {
         this.disableWindowsUpdates = disableWindowsUpdates;
+    }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+    @DataBoundSetter
+    public void setEnableAutoLogin(boolean enableAutoLogin) {
+        this.enableAutoLogin = enableAutoLogin;
+    }
+
+    public List<FirstLogonCommand> getFirstLogonCommands() {
+        return firstLogonCommands;
+    }
+
+    @DataBoundSetter
+    public void setFirstLogonCommands(List<FirstLogonCommand> firstLogonCommands) {
+        this.firstLogonCommands = firstLogonCommands == null ? new ArrayList<>() : firstLogonCommands;
     }
 
     @DataBoundSetter
@@ -1386,6 +1415,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withEnableMSI(isEnableMSI())
                 .withEnableUAMI(isEnableUAMI())
                 .withGetUamiID(getUamiID())
+                .withEnableAutoLogin(isEnableAutoLogin())
+                .withFirstLogonCommands(getFirstLogonCommands())
                 .build();
     }
 
