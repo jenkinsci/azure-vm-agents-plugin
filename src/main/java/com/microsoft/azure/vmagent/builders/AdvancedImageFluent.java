@@ -74,6 +74,10 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String osDiskStorageAccountType;
 
+    private boolean enableAutoLogin;
+
+    private String autoLogonScript;
+
     public AdvancedImageFluent() {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
         this.imageVersion = "latest";
@@ -234,6 +238,18 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         this.osDiskStorageAccountType = osDiskStorageAccountType;
         return (T) this;
     }
+
+    public T withAutoLogonScript(String autoLogonScript) {
+        this.autoLogonScript = autoLogonScript;
+        return (T) this;
+    }
+
+    public T withEnableAutoLogin(boolean enableAutoLogin) {
+        this.enableAutoLogin = enableAutoLogin;
+        return (T) this;
+    }
+
+
     //CHECKSTYLE:ON
 
     public String getImageReferenceType() {
@@ -371,4 +387,14 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
     public String getOsDiskStorageAccountType() {
         return osDiskStorageAccountType;
     }
+
+    public String getAutoLogonScript() {
+        return autoLogonScript;
+    }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+
 }

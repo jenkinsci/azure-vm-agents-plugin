@@ -13,6 +13,7 @@ jenkins:
         vmTemplates:
           - launcher: "ssh"
             agentWorkspace: "/opt/jenkins"
+            autoLogonScript: "Write-Output hello"
             availabilityType:
               availabilitySet:
                 name: "vm-agents"
@@ -25,6 +26,7 @@ jenkins:
             disableWindowsUpdates: true
             diskType: "managed"
             doNotUseMachineIfInitFails: true
+            enableAutoLogin: true
             enableMSI: false
             enableUAMI: false
             ephemeralOSDisk: false

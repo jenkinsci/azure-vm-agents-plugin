@@ -69,6 +69,10 @@ public class AdvancedImage {
 
     private String osDiskStorageAccountType;
 
+    private boolean enableAutoLogin;
+
+    private String autoLogonScript;
+
     public AdvancedImage(String imageReferenceType,
                          String image,
                          String osType,
@@ -101,7 +105,9 @@ public class AdvancedImage {
                          String jvmOptions,
                          String noOfParallelJobs,
                          boolean templateDisabled,
-                         String osDiskStorageAccountType) {
+                         String osDiskStorageAccountType,
+                         boolean enableAutoLogin,
+                         String autoLogonScript) {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
@@ -135,6 +141,8 @@ public class AdvancedImage {
         this.noOfParallelJobs = noOfParallelJobs;
         this.templateDisabled = templateDisabled;
         this.osDiskStorageAccountType = osDiskStorageAccountType;
+        this.enableAutoLogin = enableAutoLogin;
+        this.autoLogonScript = autoLogonScript;
     }
 
     public String getImageReferenceType() {
@@ -268,4 +276,14 @@ public class AdvancedImage {
     public String getOsDiskStorageAccountType() {
         return osDiskStorageAccountType;
     }
+
+    public String getAutoLogonScript() {
+        return autoLogonScript;
+    }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+
 }

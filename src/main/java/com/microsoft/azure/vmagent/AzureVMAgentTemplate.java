@@ -281,6 +281,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean disableWindowsUpdates;
 
+    private boolean enableAutoLogin;
+
+    private String autoLogonScript;
+
     private int osDiskSize;
 
     private String newStorageAccountName;
@@ -1039,6 +1043,24 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.disableWindowsUpdates = disableWindowsUpdates;
     }
 
+    public String getAutoLogonScript() {
+        return autoLogonScript;
+    }
+
+    @DataBoundSetter
+    public void setAutoLogonScript(String autoLogonScript) {
+        this.autoLogonScript = autoLogonScript;
+    }
+
+    public boolean isEnableAutoLogin() {
+        return enableAutoLogin;
+    }
+
+    @DataBoundSetter
+    public void setEnableAutoLogin(boolean enableAutoLogin) {
+        this.enableAutoLogin = enableAutoLogin;
+    }
+
     @DataBoundSetter
     public void setOsDiskSize(int osDiskSize) {
         this.osDiskSize = osDiskSize;
@@ -1386,6 +1408,8 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withEnableMSI(isEnableMSI())
                 .withEnableUAMI(isEnableUAMI())
                 .withGetUamiID(getUamiID())
+                .withEnableAutoLogin(isEnableAutoLogin())
+                .withAutoLogonScript(getAutoLogonScript())
                 .build();
     }
 

@@ -114,6 +114,15 @@ This option requires a Windows template using the inbound launcher with an initi
 
 The agent service no longer runs as SYSTEM, so builds only have the permissions of the configured account. Your initialization script must grant the account any additional permissions your builds need, such as local group membership (for example Administrators), access to other folders, or rights to install software. The sample script only grants "Log on as a service" and write access to the agent and workspace folders.
 
+### Run Windows Agents in an Interactive Desktop Session
+Some builds, such as UI tests, need an interactive desktop session. Select **Enable auto-logon (Windows Only)** in the agent template so the VM automatically logs on as the admin user. This requires username/password admin credentials and a generalized image.
+
+Optionally, set an **Auto-logon script**. It runs once at first logon in the admin user's desktop session and receives the Jenkins URL, agent name and agent secret as arguments. With the inbound launch method, use it to start the agent on the desktop; see the sample [Windows auto-logon script](docs/init-scripts/windows-inbound-agent-autologon.ps1), which registers a scheduled task so the agent reconnects after a reboot. In that case the Init Script can still be used for setup, such as installing Java, but must not start the agent.
+
+Note:
+* The Init Script and the Auto-logon script are not guaranteed to run in order; logon can happen while the Init Script is still running. If the Auto-logon script depends on the Init Script's setup, it must wait for it, for example by polling for a marker file the Init Script writes when it finishes.
+* The plugin does not track the Auto-logon script's result. If it fails, provisioning still succeeds and nothing is reported to Jenkins; an inbound agent just never connects. Log to a file on the VM to troubleshoot.
+
 ## Advanced Configurations
 If you choose Use Advanced Image Configurations, you can click on Advanced button where you can find more Virtual Machine configurations:
 1. Virtual Network Name, Virtual Network Resource Group Name and Subnet name: by default the VM does not belong to any virtual network, you can provide one if you want the VM to be in a virtual network for network security. Please be noted the virtual network must exist.
