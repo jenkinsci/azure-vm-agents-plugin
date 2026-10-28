@@ -1376,9 +1376,10 @@ public final class AzureVMManagementServiceDelegate {
                         .put("content", "[parameters('windowsAutoLogonContent')]");
 
                 if (StringUtils.isNotBlank(autoLogonScript)) {
-                    osProfile.put("customData",
-                            Base64.getEncoder().encodeToString(autoLogonScript.getBytes(StandardCharsets.UTF_8)));
-                    putVariable(template, "jenkinsServerURL", jenkinsUrl);
+                    // The BOM makes Windows PowerShell read the script as UTF-8
+                    osProfile.put("customData", Base64.getEncoder()
+                            .encodeToString(("\uFEFF" + autoLogonScript).getBytes(StandardCharsets.UTF_8)));
+                    putVariable(template, "autoLogonJenkinsServerURL", Util.xmlEscape(jenkinsUrl));
                     defineParameter(template, "autoLogonAgentSecrets", "secureObject");
                     ArrayNode secrets = parameters.putObject("autoLogonAgentSecrets").putObject("value")
                             .putArray("secrets");
@@ -1388,7 +1389,7 @@ public final class AzureVMManagementServiceDelegate {
                             + "cmd.exe /c copy /y C:\\AzureData\\CustomData.bin %PUBLIC%\\jenkins-autologon.ps1"
                             + " &amp;&amp; start \"Jenkins agent\" /min powershell.exe -NoProfile"
                             + " -ExecutionPolicy Bypass -File %PUBLIC%\\jenkins-autologon.ps1"
-                            + " \"', variables('jenkinsServerURL'), '\" ', variables('vmName'), copyIndex(),"
+                            + " \"', variables('autoLogonJenkinsServerURL'), '\" ', variables('vmName'), copyIndex(),"
                             + " ' ', parameters('autoLogonAgentSecrets').secrets[copyIndex()], '"
                             + "</CommandLine><Description>Run Jenkins auto-logon script</Description>"
                             + "<Order>1</Order></SynchronousCommand></FirstLogonCommands>')]";

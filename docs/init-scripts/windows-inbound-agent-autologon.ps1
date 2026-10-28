@@ -7,7 +7,7 @@ $vmname = $args[1]
 $secret = $args[2]
 
 $destSource = "C:\agent.jar"
-$launcher = "C:\jenkins-agent.ps1"
+$launcher = "$env:LOCALAPPDATA\jenkins-agent.ps1"
 
 # Write a launcher script that downloads agent.jar and keeps the agent connected
 @"
