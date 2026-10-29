@@ -150,8 +150,7 @@ public class AzureVMTemplateBuilder extends AzureVMTemplateFluent<AzureVMTemplat
         azureVMAgentTemplate.setEnableMSI(fluent.getAdvancedImage().isEnableMSI());
         azureVMAgentTemplate.setEnableUAMI(fluent.getAdvancedImage().isEnableUAMI());
         azureVMAgentTemplate.setUamiID(fluent.getAdvancedImage().getUamiID());
-        azureVMAgentTemplate.setEnableAutoLogin(fluent.getAdvancedImage().isEnableAutoLogin());
-        azureVMAgentTemplate.setAutoLogonScript(fluent.getAdvancedImage().getAutoLogonScript());
+        azureVMAgentTemplate.setAutoLogon(fluent.getAdvancedImage().getAutoLogon());
         azureVMAgentTemplate.setMaxVirtualMachinesLimit(fluent.getMaxVirtualMachinesLimit());
         azureVMAgentTemplate.setTags(fluent.getCloudTags());
         azureVMAgentTemplate.getImageReference().setGalleryImageSpecialized(

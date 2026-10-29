@@ -1,6 +1,7 @@
 package com.microsoft.azure.vmagent.builders;
 
 
+import com.microsoft.azure.vmagent.AutoLogon;
 import com.microsoft.azure.vmagent.ImageReferenceType;
 import com.microsoft.azure.vmagent.util.Constants;
 
@@ -74,9 +75,7 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
 
     private String osDiskStorageAccountType;
 
-    private boolean enableAutoLogin;
-
-    private String autoLogonScript;
+    private AutoLogon autoLogon;
 
     public AdvancedImageFluent() {
         this.imageReferenceType = ImageReferenceType.REFERENCE.getName();
@@ -239,13 +238,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         return (T) this;
     }
 
-    public T withAutoLogonScript(String autoLogonScript) {
-        this.autoLogonScript = autoLogonScript;
-        return (T) this;
-    }
-
-    public T withEnableAutoLogin(boolean enableAutoLogin) {
-        this.enableAutoLogin = enableAutoLogin;
+    public T withAutoLogon(AutoLogon autoLogon) {
+        this.autoLogon = autoLogon;
         return (T) this;
     }
 
@@ -388,12 +382,8 @@ public class AdvancedImageFluent<T extends AdvancedImageFluent<T>> {
         return osDiskStorageAccountType;
     }
 
-    public String getAutoLogonScript() {
-        return autoLogonScript;
-    }
-
-    public boolean isEnableAutoLogin() {
-        return enableAutoLogin;
+    public AutoLogon getAutoLogon() {
+        return autoLogon;
     }
 
 

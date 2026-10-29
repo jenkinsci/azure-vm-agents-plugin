@@ -53,6 +53,8 @@ class AdvancedConfigAsCodeTest {
         assertThat(template.getDiskType(), is("managed"));
         assertThat(template.getDoNotUseMachineIfInitFails(), is(true));
         assertThat(template.isDisableWindowsUpdates(), is(true));
+        assertThat(template.getAutoLogon().isEnabled(), is(true));
+        assertThat(template.getAutoLogon().getScript(), is("Write-Output hello"));
         assertThat(template.isEnableMSI(), is(false));
         assertThat(template.isEnableUAMI(), is(false));
         assertThat(template.getExecuteInitScriptAsRoot(), is(true));

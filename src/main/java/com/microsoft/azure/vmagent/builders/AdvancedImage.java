@@ -1,5 +1,7 @@
 package com.microsoft.azure.vmagent.builders;
 
+import com.microsoft.azure.vmagent.AutoLogon;
+
 
 public class AdvancedImage {
 
@@ -69,9 +71,7 @@ public class AdvancedImage {
 
     private String osDiskStorageAccountType;
 
-    private boolean enableAutoLogin;
-
-    private String autoLogonScript;
+    private AutoLogon autoLogon;
 
     public AdvancedImage(String imageReferenceType,
                          String image,
@@ -106,8 +106,7 @@ public class AdvancedImage {
                          String noOfParallelJobs,
                          boolean templateDisabled,
                          String osDiskStorageAccountType,
-                         boolean enableAutoLogin,
-                         String autoLogonScript) {
+                         AutoLogon autoLogon) {
         this.imageReferenceType = imageReferenceType;
         this.image = image;
         this.osType = osType;
@@ -141,8 +140,7 @@ public class AdvancedImage {
         this.noOfParallelJobs = noOfParallelJobs;
         this.templateDisabled = templateDisabled;
         this.osDiskStorageAccountType = osDiskStorageAccountType;
-        this.enableAutoLogin = enableAutoLogin;
-        this.autoLogonScript = autoLogonScript;
+        this.autoLogon = autoLogon;
     }
 
     public String getImageReferenceType() {
@@ -277,12 +275,8 @@ public class AdvancedImage {
         return osDiskStorageAccountType;
     }
 
-    public String getAutoLogonScript() {
-        return autoLogonScript;
-    }
-
-    public boolean isEnableAutoLogin() {
-        return enableAutoLogin;
+    public AutoLogon getAutoLogon() {
+        return autoLogon;
     }
 
 

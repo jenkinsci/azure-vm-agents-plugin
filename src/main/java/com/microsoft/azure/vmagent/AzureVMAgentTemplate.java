@@ -281,9 +281,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean disableWindowsUpdates;
 
-    private boolean enableAutoLogin;
-
-    private String autoLogonScript;
+    private AutoLogon autoLogon = new AutoLogon(false);
 
     private int osDiskSize;
 
@@ -938,6 +936,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             availabilityType = new NoAvailabilityRequired();
         }
 
+        if (autoLogon == null) {
+            autoLogon = new AutoLogon(false);
+        }
+
         if (imageReference.type == null) {
             imageReference.type = imageReference.determineType();
         }
@@ -1043,22 +1045,16 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
         this.disableWindowsUpdates = disableWindowsUpdates;
     }
 
-    public String getAutoLogonScript() {
-        return autoLogonScript;
+    public AutoLogon getAutoLogon() {
+        return autoLogon;
     }
 
     @DataBoundSetter
-    public void setAutoLogonScript(String autoLogonScript) {
-        this.autoLogonScript = autoLogonScript;
-    }
-
-    public boolean isEnableAutoLogin() {
-        return enableAutoLogin;
-    }
-
-    @DataBoundSetter
-    public void setEnableAutoLogin(boolean enableAutoLogin) {
-        this.enableAutoLogin = enableAutoLogin;
+    public void setAutoLogon(AutoLogon autoLogon) {
+        this.autoLogon = autoLogon;
+        if (autoLogon == null) {
+            this.autoLogon = new AutoLogon(false);
+        }
     }
 
     @DataBoundSetter
@@ -1408,8 +1404,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withEnableMSI(isEnableMSI())
                 .withEnableUAMI(isEnableUAMI())
                 .withGetUamiID(getUamiID())
-                .withEnableAutoLogin(isEnableAutoLogin())
-                .withAutoLogonScript(getAutoLogonScript())
+                .withAutoLogon(getAutoLogon())
                 .build();
     }
 

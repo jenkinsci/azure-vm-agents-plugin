@@ -6,7 +6,9 @@
     newResourceGroupName: "vm-agent"
     resourceGroupReferenceType: "new"
     vmTemplates:
-    - availabilityType: "none"
+    - autoLogon:
+        enabled: false
+      availabilityType: "none"
       builtInImage: "Ubuntu 16.14 LTS"
       credentialsId: "admin-cred"
       disableWindowsUpdates: true

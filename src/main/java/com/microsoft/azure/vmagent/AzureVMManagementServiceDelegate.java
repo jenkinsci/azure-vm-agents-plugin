@@ -252,7 +252,7 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
-            final boolean enableAutoLogin = template.isEnableAutoLogin();
+            final AutoLogon autoLogon = template.getAutoLogon();
 
             final int osDiskSize = template.getOsDiskSize();
 
@@ -768,12 +768,12 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "adminPasswordOrKey", adminPassword);
                 putParameter(parameters, "authenticationType", "password");
 
-                if (windows && enableAutoLogin) {
+                if (windows && autoLogon.isEnabled()) {
                     if (isSpecializedImage) {
                         throw AzureCloudException.create("Auto-logon is not supported for specialized images");
                     }
                     String rootUrl = fixEmpty(Jenkins.get().getRootUrl());
-                    if (rootUrl == null && StringUtils.isNotBlank(template.getAutoLogonScript())) {
+                    if (rootUrl == null && StringUtils.isNotBlank(autoLogon.getScript())) {
                         throw AzureCloudException.create("Jenkins URL must be set");
                     }
                     List<String> agentSecrets = new ArrayList<>();
@@ -781,10 +781,10 @@ public final class AzureVMManagementServiceDelegate {
                         agentSecrets.add(JnlpAgentReceiver.SLAVE_SECRET.mac(String.format("%s%d", vmBaseName, i)));
                     }
                     addAutoLogonConfiguration(tmp, parameters, creds.getUsername(), adminPassword,
-                            template.getAutoLogonScript(), rootUrl, agentSecrets);
+                            autoLogon.getScript(), rootUrl, agentSecrets);
                 }
             } else {
-                if (windows && enableAutoLogin) {
+                if (windows && autoLogon.isEnabled()) {
                     throw AzureCloudException.create("Auto-logon requires username/password credentials");
                 }
                 SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;

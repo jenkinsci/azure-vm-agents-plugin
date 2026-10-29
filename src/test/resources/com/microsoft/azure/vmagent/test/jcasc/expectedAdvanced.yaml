@@ -10,7 +10,9 @@
     resourceGroupReferenceType: "existing"
     vmTemplates:
     - agentWorkspace: "/opt/jenkins"
-      autoLogonScript: "Write-Output hello"
+      autoLogon:
+        enabled: true
+        script: "Write-Output hello"
       availabilityType:
         availabilitySet:
           name: "vm-agents"
@@ -23,7 +25,6 @@
       disableWindowsUpdates: true
       diskType: "managed"
       doNotUseMachineIfInitFails: true
-      enableAutoLogin: true
       executeInitScriptAsRoot: true
       imageReference:
         galleryImageDefinition: "Linux"
