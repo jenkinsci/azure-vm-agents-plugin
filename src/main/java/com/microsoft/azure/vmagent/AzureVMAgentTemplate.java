@@ -1404,7 +1404,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
                 .withEnableMSI(isEnableMSI())
                 .withEnableUAMI(isEnableUAMI())
                 .withGetUamiID(getUamiID())
-                .withAutoLogon(getAutoLogon())
                 .build();
     }
 
