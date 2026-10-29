@@ -357,6 +357,8 @@
       <f:checkbox default="true"/>
     </f:entry>
 
+    <f:property field="autoLogon"/>
+
     <f:entry title="${%Do_Not_Use_Machine_If_Init_Fails}" field="doNotUseMachineIfInitFails"
              help="/plugin/azure-vm-agents/help-doNotUseMachineIfInitFails.html">
       <f:checkbox default="true"/>

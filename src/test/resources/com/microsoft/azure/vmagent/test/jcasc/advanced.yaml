@@ -13,6 +13,9 @@ jenkins:
         vmTemplates:
           - launcher: "ssh"
             agentWorkspace: "/opt/jenkins"
+            autoLogon:
+              enabled: true
+              script: "Write-Output hello"
             availabilityType:
               availabilitySet:
                 name: "vm-agents"

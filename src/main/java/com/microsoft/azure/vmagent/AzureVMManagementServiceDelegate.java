@@ -252,6 +252,7 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
+            final AutoLogon autoLogon = template.getAutoLogon();
 
             final int osDiskSize = template.getOsDiskSize();
 
@@ -763,9 +764,29 @@ public final class AzureVMManagementServiceDelegate {
             defineParameter(tmp, "adminPasswordOrKey", "secureString");
             if (creds instanceof StandardUsernamePasswordCredentials) {
                 StandardUsernamePasswordCredentials passwordCredentials = (StandardUsernamePasswordCredentials) creds;
-                putParameter(parameters, "adminPasswordOrKey", passwordCredentials.getPassword().getPlainText());
+                String adminPassword = passwordCredentials.getPassword().getPlainText();
+                putParameter(parameters, "adminPasswordOrKey", adminPassword);
                 putParameter(parameters, "authenticationType", "password");
+
+                if (windows && autoLogon.isEnabled()) {
+                    if (isSpecializedImage) {
+                        throw AzureCloudException.create("Auto-logon is not supported for specialized images");
+                    }
+                    String rootUrl = fixEmpty(Jenkins.get().getRootUrl());
+                    if (rootUrl == null && StringUtils.isNotBlank(autoLogon.getScript())) {
+                        throw AzureCloudException.create("Jenkins URL must be set");
+                    }
+                    List<String> agentSecrets = new ArrayList<>();
+                    for (int i = 0; i < numberOfAgents; i++) {
+                        agentSecrets.add(JnlpAgentReceiver.SLAVE_SECRET.mac(String.format("%s%d", vmBaseName, i)));
+                    }
+                    addAutoLogonConfiguration(tmp, parameters, creds.getUsername(), adminPassword,
+                            autoLogon.getScript(), rootUrl, agentSecrets);
+                }
             } else {
+                if (windows && autoLogon.isEnabled()) {
+                    throw AzureCloudException.create("Auto-logon requires username/password credentials");
+                }
                 SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
                 String privateKey = sshCredentials.getPrivateKeys().get(0);
                 String rsaPublicKey = KeyDecoder.getPublicKey(privateKey, Secret.toString(sshCredentials.getPassphrase()));
@@ -1321,6 +1342,63 @@ public final class AzureVMManagementServiceDelegate {
                 ObjectNode properties = (ObjectNode) resource.get("properties");
                 ObjectNode osProfile = (ObjectNode) properties.get("osProfile");
                 osProfile.replace("windowsConfiguration", windowsConfiguration);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Logs the VM on automatically as the admin user. If an auto-logon script is set, it is passed as custom data,
+     * which Windows saves to C:\AzureData\CustomData.bin, and run at first logon with the same arguments as the
+     * init script: Jenkins URL, agent name and secret.
+     */
+    static void addAutoLogonConfiguration(JsonNode template, ObjectNode parameters, String username, String password,
+                                          String autoLogonScript, String jenkinsUrl, List<String> agentSecrets) {
+        // Windows expects the password with "Password" appended, UTF-16LE and base64 encoded
+        String encodedPassword = Base64.getEncoder()
+                .encodeToString((password + "Password").getBytes(StandardCharsets.UTF_16LE));
+        defineParameter(template, "windowsAutoLogonContent", "secureString");
+        putParameter(parameters, "windowsAutoLogonContent", "<AutoLogon><Password><Value>" + encodedPassword
+                + "</Value><PlainText>false</PlainText></Password><Enabled>true</Enabled>"
+                + "<LogonCount>999</LogonCount><Username>" + Util.xmlEscape(username) + "</Username></AutoLogon>");
+
+        ArrayNode resources = (ArrayNode) template.get("resources");
+        for (JsonNode resource : resources) {
+            String type = resource.get("type").asText();
+            if (type.contains("virtualMachine")) {
+                ObjectNode osProfile = (ObjectNode) resource.get("properties").get("osProfile");
+                ArrayNode unattendContent = osProfile.withObjectProperty("windowsConfiguration")
+                        .putArray("additionalUnattendContent");
+                unattendContent.addObject()
+                        .put("passName", "OobeSystem")
+                        .put("componentName", "Microsoft-Windows-Shell-Setup")
+                        .put("settingName", "AutoLogon")
+                        .put("content", "[parameters('windowsAutoLogonContent')]");
+
+                if (StringUtils.isNotBlank(autoLogonScript)) {
+                    // The BOM makes Windows PowerShell read the script as UTF-8
+                    osProfile.put("customData", Base64.getEncoder()
+                            .encodeToString(("\uFEFF" + autoLogonScript).getBytes(StandardCharsets.UTF_8)));
+                    putVariable(template, "autoLogonJenkinsServerURL", Util.xmlEscape(jenkinsUrl));
+                    defineParameter(template, "autoLogonAgentSecrets", "secureObject");
+                    ArrayNode secrets = parameters.putObject("autoLogonAgentSecrets").putObject("value")
+                            .putArray("secrets");
+                    agentSecrets.forEach(secrets::add);
+                    // Copies the script out of custom data and starts it minimized, so it doesn't block the logon
+                    String firstLogonCommands = "[concat('<FirstLogonCommands><SynchronousCommand><CommandLine>"
+                            + "cmd.exe /c copy /y C:\\AzureData\\CustomData.bin %PUBLIC%\\jenkins-autologon.ps1"
+                            + " &amp;&amp; start \"Jenkins agent\" /min powershell.exe -NoProfile"
+                            + " -ExecutionPolicy Bypass -File %PUBLIC%\\jenkins-autologon.ps1"
+                            + " \"', variables('autoLogonJenkinsServerURL'), '\" ', variables('vmName'), copyIndex(),"
+                            + " ' ', parameters('autoLogonAgentSecrets').secrets[copyIndex()], '"
+                            + "</CommandLine><Description>Run Jenkins auto-logon script</Description>"
+                            + "<Order>1</Order></SynchronousCommand></FirstLogonCommands>')]";
+                    unattendContent.addObject()
+                            .put("passName", "OobeSystem")
+                            .put("componentName", "Microsoft-Windows-Shell-Setup")
+                            .put("settingName", "FirstLogonCommands")
+                            .put("content", firstLogonCommands);
+                }
                 return;
             }
         }
