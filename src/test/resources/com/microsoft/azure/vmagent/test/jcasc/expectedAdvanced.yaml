@@ -10,6 +10,8 @@
     resourceGroupReferenceType: "existing"
     vmTemplates:
     - agentWorkspace: "/opt/jenkins"
+      autoLogon:
+        script: "Write-Output hello"
       availabilityType:
         availabilitySet:
           name: "vm-agents"

@@ -1,0 +1,15 @@
+<div>
+    <p>Optional PowerShell script that runs once from the admin user's desktop session at first logon. It receives
+        the Jenkins URL, agent name and agent secret as arguments.</p>
+    <p>With the inbound launch method it can start the agent so it runs on the desktop; see the
+        <a target="_blank"
+           href="https://github.com/jenkinsci/azure-vm-agents-plugin/blob/master/docs/init-scripts/windows-inbound-agent-autologon.ps1">sample
+        auto-logon script</a>. In that case the Init Script, if set, must not also start the agent.</p>
+    <p>The Init Script and the Auto-logon script are not ordered: logon can happen before, during or after the Init
+        Script runs. If the Auto-logon script depends on setup done by the Init Script (e.g. installing Java), it
+        must wait for it, for example by polling for a file the Init Script creates at the end.</p>
+    <p>The plugin does not track the result of the Auto-logon script. If it fails, provisioning still succeeds and
+        no error is reported to Jenkins; with the inbound launch method the agent simply never connects. Log to a
+        file on the VM if you need to troubleshoot it.</p>
+    <p>The script is limited to 64 KB and is stored on the VM as custom data, so do not hard-code secrets in it.</p>
+</div>

@@ -13,6 +13,8 @@ jenkins:
         vmTemplates:
           - launcher: "ssh"
             agentWorkspace: "/opt/jenkins"
+            autoLogon:
+              script: "Write-Output hello"
             availabilityType:
               availabilitySet:
                 name: "vm-agents"
