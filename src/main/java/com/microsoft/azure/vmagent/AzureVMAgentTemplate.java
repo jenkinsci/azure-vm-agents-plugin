@@ -281,7 +281,7 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
 
     private boolean disableWindowsUpdates;
 
-    private AutoLogon autoLogon = new AutoLogon(false);
+    private AutoLogon autoLogon;
 
     private int osDiskSize;
 
@@ -936,10 +936,6 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
             availabilityType = new NoAvailabilityRequired();
         }
 
-        if (autoLogon == null) {
-            autoLogon = new AutoLogon(false);
-        }
-
         if (imageReference.type == null) {
             imageReference.type = imageReference.determineType();
         }
@@ -1052,9 +1048,10 @@ public class AzureVMAgentTemplate implements Describable<AzureVMAgentTemplate>, 
     @DataBoundSetter
     public void setAutoLogon(AutoLogon autoLogon) {
         this.autoLogon = autoLogon;
-        if (autoLogon == null) {
-            this.autoLogon = new AutoLogon(false);
-        }
+    }
+
+    public boolean isAutoLogonEnabled() {
+        return autoLogon != null;
     }
 
     @DataBoundSetter

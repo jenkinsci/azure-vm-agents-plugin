@@ -12,17 +12,10 @@ public class AutoLogon implements Describable<AutoLogon>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final boolean enabled;
-
     private String script;
 
     @DataBoundConstructor
-    public AutoLogon(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
+    public AutoLogon() {
     }
 
     public String getScript() {

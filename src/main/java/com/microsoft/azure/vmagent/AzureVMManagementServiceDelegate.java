@@ -252,7 +252,6 @@ public final class AzureVMManagementServiceDelegate {
             final boolean ephemeralOSDisk = template.isEphemeralOSDisk();
             final boolean encryptionAtHost = template.isEncryptionAtHost();
             final boolean disableWindowsUpdates = template.isDisableWindowsUpdates();
-            final AutoLogon autoLogon = template.getAutoLogon();
 
             final int osDiskSize = template.getOsDiskSize();
 
@@ -768,11 +767,12 @@ public final class AzureVMManagementServiceDelegate {
                 putParameter(parameters, "adminPasswordOrKey", adminPassword);
                 putParameter(parameters, "authenticationType", "password");
 
-                if (windows && autoLogon.isEnabled()) {
+                if (windows && template.isAutoLogonEnabled()) {
                     if (isSpecializedImage) {
                         throw AzureCloudException.create("Auto-logon is not supported for specialized images");
                     }
                     String rootUrl = fixEmpty(Jenkins.get().getRootUrl());
+                    var autoLogon = template.getAutoLogon();
                     if (rootUrl == null && StringUtils.isNotBlank(autoLogon.getScript())) {
                         throw AzureCloudException.create("Jenkins URL must be set");
                     }
@@ -784,7 +784,7 @@ public final class AzureVMManagementServiceDelegate {
                             autoLogon.getScript(), rootUrl, agentSecrets);
                 }
             } else {
-                if (windows && autoLogon.isEnabled()) {
+                if (windows && template.isAutoLogonEnabled()) {
                     throw AzureCloudException.create("Auto-logon requires username/password credentials");
                 }
                 SSHUserPrivateKey sshCredentials = (SSHUserPrivateKey) creds;
@@ -1385,14 +1385,15 @@ public final class AzureVMManagementServiceDelegate {
                             .putArray("secrets");
                     agentSecrets.forEach(secrets::add);
                     // Copies the script out of custom data and starts it minimized, so it doesn't block the logon
-                    String firstLogonCommands = "[concat('<FirstLogonCommands><SynchronousCommand><CommandLine>"
-                            + "cmd.exe /c copy /y C:\\AzureData\\CustomData.bin %PUBLIC%\\jenkins-autologon.ps1"
-                            + " &amp;&amp; start \"Jenkins agent\" /min powershell.exe -NoProfile"
-                            + " -ExecutionPolicy Bypass -File %PUBLIC%\\jenkins-autologon.ps1"
-                            + " \"', variables('autoLogonJenkinsServerURL'), '\" ', variables('vmName'), copyIndex(),"
-                            + " ' ', parameters('autoLogonAgentSecrets').secrets[copyIndex()], '"
-                            + "</CommandLine><Description>Run Jenkins auto-logon script</Description>"
-                            + "<Order>1</Order></SynchronousCommand></FirstLogonCommands>')]";
+                    String firstLogonCommands = """
+                            [concat('<FirstLogonCommands><SynchronousCommand><CommandLine>\
+                            cmd.exe /c copy /y C:\\AzureData\\CustomData.bin %PUBLIC%\\jenkins-autologon.ps1\
+                             &amp;&amp; start "Jenkins agent" /min powershell.exe -NoProfile\
+                             -ExecutionPolicy Bypass -File %PUBLIC%\\jenkins-autologon.ps1\
+                             "', variables('autoLogonJenkinsServerURL'), '" ', variables('vmName'), copyIndex(),\
+                             ' ', parameters('autoLogonAgentSecrets').secrets[copyIndex()], '\
+                            </CommandLine><Description>Run Jenkins auto-logon script</Description>\
+                            <Order>1</Order></SynchronousCommand></FirstLogonCommands>')]""";
                     unattendContent.addObject()
                             .put("passName", "OobeSystem")
                             .put("componentName", "Microsoft-Windows-Shell-Setup")
